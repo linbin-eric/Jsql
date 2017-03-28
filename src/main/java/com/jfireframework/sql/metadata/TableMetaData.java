@@ -1,0 +1,201 @@
+package com.jfireframework.sql.metadata;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import com.jfireframework.baseutil.StringUtil;
+import com.jfireframework.baseutil.reflect.ReflectUtil;
+import com.jfireframework.sql.annotation.Column;
+import com.jfireframework.sql.annotation.Id;
+import com.jfireframework.sql.annotation.SqlIgnore;
+import com.jfireframework.sql.annotation.TableEntity;
+import com.jfireframework.sql.dbstructure.ColNameStrategy;
+
+public class TableMetaData
+{
+    private final String              tableName;
+    private final FieldInfo[]         fieldInfos;
+    private final FieldInfo           idInfo;
+    private final Class<?>            ckass;
+    private final Map<String, String> fieldNameMap   = new HashMap<String, String>();
+    private final ColNameStrategy     colNameStrategy;
+    private final Map<String, Field>  staticFieldMap = new HashMap<String, Field>();
+    private final Map<String, Field>  enumFieldMap   = new HashMap<String, Field>();
+    
+    public static class FieldInfo
+    {
+        private final String  dbColName;
+        private final String  fieldName;
+        private final Field   field;
+        private final int     length;
+        private final boolean loadIgnore;
+        private final boolean saveIgnore;
+        
+        public FieldInfo(Field field, ColNameStrategy colNameStrategy)
+        {
+            fieldName = field.getName();
+            this.field = field;
+            if (field.isAnnotationPresent(Column.class))
+            {
+                Column column = field.getAnnotation(Column.class);
+                if (StringUtil.isNotBlank(column.name()))
+                {
+                    dbColName = field.getAnnotation(Column.class).name();
+                }
+                else
+                {
+                    dbColName = colNameStrategy.toDbName(field.getName());
+                }
+                length = field.getAnnotation(Column.class).length();
+                loadIgnore = column.loadIgnore();
+                saveIgnore = column.saveIgnore();
+            }
+            else
+            {
+                dbColName = colNameStrategy.toDbName(field.getName());
+                length = -1;
+                loadIgnore = false;
+                saveIgnore = false;
+            }
+        }
+        
+        public boolean isLoadIgnore()
+        {
+            return loadIgnore;
+        }
+        
+        public boolean isSaveIgnore()
+        {
+            return saveIgnore;
+        }
+        
+        public String getDbColName()
+        {
+            return dbColName;
+        }
+        
+        public String getFieldName()
+        {
+            return fieldName;
+        }
+        
+        public Field getField()
+        {
+            return field;
+        }
+        
+        public int getLength()
+        {
+            return length;
+        }
+        
+    }
+    
+    public TableMetaData(Class<?> ckass, ColNameStrategy nameStrategy)
+    {
+        this.ckass = ckass;
+        this.colNameStrategy = nameStrategy;
+        TableEntity entity = ckass.getAnnotation(TableEntity.class);
+        tableName = entity.name();
+        List<FieldInfo> list = new LinkedList<FieldInfo>();
+        Field t_idField = null;
+        String prefix = tableName + '.';
+        for (Field each : ReflectUtil.getAllFields(ckass))
+        {
+            if (notTableField(each))
+            {
+                if (Modifier.isStatic(each.getModifiers()))
+                {
+                    each.setAccessible(true);
+                    staticFieldMap.put(each.getName(), each);
+                }
+                continue;
+            }
+            FieldInfo info = new FieldInfo(each, nameStrategy);
+            fieldNameMap.put(prefix + info.getDbColName(), each.getName());
+            list.add(info);
+            if (each.isAnnotationPresent(Id.class))
+            {
+                t_idField = each;
+            }
+            if (Enum.class.isAssignableFrom(each.getType()))
+            {
+                enumFieldMap.put(each.getName(), each);
+            }
+        }
+        fieldInfos = list.toArray(new FieldInfo[list.size()]);
+        if (t_idField != null)
+        {
+            if (t_idField.getType().isPrimitive())
+            {
+                throw new IllegalArgumentException("作为主键的属性不可以使用基本类型，必须使用包装类。请检查" + t_idField.getDeclaringClass().getName() + "." + t_idField.getName());
+            }
+            idInfo = new FieldInfo(t_idField, nameStrategy);
+        }
+        else
+        {
+            idInfo = null;
+        }
+    }
+    
+    private boolean notTableField(Field field)
+    {
+        if (
+            field.isAnnotationPresent(SqlIgnore.class) //
+                    || Map.class.isAssignableFrom(field.getType())//
+                    || List.class.isAssignableFrom(field.getType())//
+                    || field.getType().isInterface()//
+                    || Modifier.isStatic(field.getModifiers())
+        )
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    
+    public ColNameStrategy getColNameStrategy()
+    {
+        return colNameStrategy;
+    }
+    
+    public String getTableName()
+    {
+        return tableName;
+    }
+    
+    public FieldInfo[] getFieldInfos()
+    {
+        return fieldInfos;
+    }
+    
+    public FieldInfo getIdInfo()
+    {
+        return idInfo;
+    }
+    
+    public Class<?> getEntityClass()
+    {
+        return ckass;
+    }
+    
+    public Map<String, Field> staticFieldMap()
+    {
+        return staticFieldMap;
+    }
+    
+    public Map<String, Field> enumFieldMap()
+    {
+        return enumFieldMap;
+    }
+    
+    public String getFieldName(String dbColName)
+    {
+        return fieldNameMap.get(dbColName);
+    }
+}
