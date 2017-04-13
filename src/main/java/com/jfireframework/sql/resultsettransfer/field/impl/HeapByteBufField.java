@@ -10,7 +10,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import com.jfireframework.baseutil.collection.buffer.HeapByteBuf;
 import com.jfireframework.baseutil.exception.JustThrowException;
-import com.jfireframework.sql.dbstructure.ColNameStrategy;
+import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 
 public class HeapByteBufField extends AbstractMapField
 {

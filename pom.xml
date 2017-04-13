@@ -5,11 +5,11 @@
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>com.jfireframework</groupId>
-		<artifactId>framework-parent</artifactId>
+		<artifactId>parent</artifactId>
 		<version>1.0</version>
 	</parent>
-	<version>1.1-SNAPSHOT</version>
-	<artifactId>jfire-sql</artifactId>
+	<version>1.0-SNAPSHOT</version>
+	<artifactId>sql</artifactId>
 	<name>sql</name>
 	<url>http://maven.apache.org</url>
 	<properties>
@@ -47,8 +47,8 @@
 		</dependency>
 		<dependency>
 			<groupId>com.jfireframework</groupId>
-			<artifactId>jfire-baseutil</artifactId>
-			<version>1.0</version>
+			<artifactId>baseutil</artifactId>
+			<version>1.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>com.jfireframework</groupId>
@@ -66,7 +66,6 @@
 			<groupId>mysql</groupId>
 			<artifactId>mysql-connector-java</artifactId>
 			<version>5.1.18</version>
-			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.zaxxer</groupId>

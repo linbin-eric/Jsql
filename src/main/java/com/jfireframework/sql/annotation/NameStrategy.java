@@ -4,7 +4,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import com.jfireframework.sql.dbstructure.ColNameStrategy;
+import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)

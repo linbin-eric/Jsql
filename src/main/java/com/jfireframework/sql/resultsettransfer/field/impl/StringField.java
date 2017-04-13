@@ -4,7 +4,7 @@ import java.lang.reflect.Field;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import com.jfireframework.sql.dbstructure.ColNameStrategy;
+import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 
 public class StringField extends AbstractMapField
 {

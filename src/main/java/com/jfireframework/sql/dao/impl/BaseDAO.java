@@ -1,35 +1,32 @@
 package com.jfireframework.sql.dao.impl;
 
 import java.lang.reflect.Field;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import com.jfireframework.baseutil.collection.StringCache;
-import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
-import com.jfireframework.baseutil.uniqueid.Uid;
 import com.jfireframework.sql.annotation.FindBy;
 import com.jfireframework.sql.annotation.Id;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.dao.Dao;
 import com.jfireframework.sql.dao.LockMode;
 import com.jfireframework.sql.dao.StrategyOperation;
-import com.jfireframework.sql.dbstructure.ColNameStrategy;
-import com.jfireframework.sql.interceptor.SqlPreInterceptor;
+import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.page.PageParse;
+import com.jfireframework.sql.resultsettransfer.FixBeanTransfer;
+import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
 import com.jfireframework.sql.resultsettransfer.field.MapField;
 import com.jfireframework.sql.resultsettransfer.field.MapFieldBuilder;
+import com.jfireframework.sql.session.SqlSession;
+import com.jfireframework.sql.util.IdType;
 import sun.misc.Unsafe;
 
 public abstract class BaseDAO<T> implements Dao<T>
@@ -57,36 +54,30 @@ public abstract class BaseDAO<T> implements Dao<T>
         
     }
     
-    protected final Class<T>             entityClass;
+    protected final Class<T>                        entityClass;
     // 代表数据库主键id的field
-    protected final MapField             idField;
-    protected final long                 idOffset;
-    protected final IdType               idType;
-    protected final static Unsafe        unsafe    = ReflectUtil.getUnsafe();
-    protected final String               tableName;
-    protected final SqlAndFields         getInfo;
-    protected final SqlAndFields         getInShareInfo;
-    protected final SqlAndFields         getForUpdateInfo;
-    protected final SqlAndFields         updateInfo;
-    protected final String               deleteSql;
-    protected static final Logger        LOGGER    = ConsoleLogFactory.getLogger();
-    protected final SqlPreInterceptor[]  preInterceptors;
-    protected final Uid                  uid;
-    protected final boolean              useUid;
-    protected final StrategyOperation<T> strategyOperation;
-    protected final Map<String, String>  findByMap = new HashMap<String, String>();
+    protected final MapField                        idField;
+    protected final long                            idOffset;
+    protected final IdType                          idType;
+    protected final static Unsafe                   unsafe             = ReflectUtil.getUnsafe();
+    protected final String                          tableName;
+    protected final SqlAndFields                    getInfo;
+    protected final SqlAndFields                    getInShareInfo;
+    protected final SqlAndFields                    getForUpdateInfo;
+    protected final SqlAndFields                    updateInfo;
+    protected final String                          deleteSql;
+    protected static final Logger                   LOGGER             = ConsoleLogFactory.getLogger();
+    protected final StrategyOperation<T>            strategyOperation;
+    protected final Map<String, String>             findByMap          = new HashMap<String, String>();
+    protected final Map<String, FixBeanTransfer<?>> findByTransfereMap = new HashMap<String, FixBeanTransfer<?>>();
+    protected ResultSetTransfer<T>                  transfer;
+    protected String[]                              pkName;
     
-    enum IdType
+    @SuppressWarnings({ "unchecked", "rawtypes" })
+    public BaseDAO(TableMetaData metaData)
     {
-        INT, LONG, STRING
-    }
-    
-    @SuppressWarnings("unchecked")
-    public BaseDAO(TableMetaData metaData, SqlPreInterceptor[] preInterceptors, Uid uid)
-    {
-        this.uid = uid;
-        this.preInterceptors = preInterceptors;
         this.entityClass = (Class<T>) metaData.getEntityClass();
+        transfer = new FixBeanTransfer(entityClass);
         ColNameStrategy nameStrategy = metaData.getColNameStrategy();
         tableName = entityClass.getAnnotation(TableEntity.class).name();
         MapField[] allMapFields = buildMapfields(metaData.getFieldInfos(), nameStrategy);
@@ -104,9 +95,9 @@ public abstract class BaseDAO<T> implements Dao<T>
             }
         }
         Field t_idField = t_id.getField();
-        useUid = t_idField.getAnnotation(Id.class).useUid();
         idType = getIdType(t_idField);
         idField = t_id;
+        pkName = new String[] { idField.getColName() };
         idOffset = unsafe.objectFieldOffset(t_idField);
         updateInfo = buildUpdate(allMapFields, idField);
         getInfo = buildGet(allMapFields, idField);
@@ -115,7 +106,7 @@ public abstract class BaseDAO<T> implements Dao<T>
         useForSelf(allMapFields, idField);
         deleteSql = "delete from " + tableName + " where " + idField.getColName() + "=?";
         logSql();
-        strategyOperation = new StrategyOperationImpl<T>(entityClass, allMapFields, preInterceptors);
+        strategyOperation = new StrategyOperationImpl<T>(entityClass, allMapFields);
     }
     
     protected abstract void useForSelf(MapField[] fields, MapField idField);
@@ -241,325 +232,104 @@ public abstract class BaseDAO<T> implements Dao<T>
     }
     
     @Override
-    public int delete(Object entity, Connection connection)
+    public int delete(Object entity, SqlSession session)
     {
-        PreparedStatement pstat = null;
-        try
-        {
-            pstat = connection.prepareStatement(deleteSql);
-            switch (idType)
-            {
-                case INT:
-                    pstat.setInt(1, (Integer) unsafe.getObject(entity, idOffset));
-                    break;
-                case LONG:
-                    pstat.setLong(1, (Long) unsafe.getObject(entity, idOffset));
-                    break;
-                case STRING:
-                    pstat.setString(1, (String) unsafe.getObject(entity, idOffset));
-                    break;
-            }
-            return pstat.executeUpdate();
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
-        }
-        finally
-        {
-            if (pstat != null)
-            {
-                try
-                {
-                    pstat.close();
-                }
-                catch (SQLException e)
-                {
-                    throw new JustThrowException(e);
-                }
-            }
-        }
-    }
-    
-    @SuppressWarnings("unchecked")
-    @Override
-    public T getById(Object pk, Connection connection)
-    {
-        for (SqlPreInterceptor each : preInterceptors)
-        {
-            each.preIntercept(getInfo.getSql(), pk);
-        }
-        PreparedStatement pStat = null;
-        try
-        {
-            pStat = connection.prepareStatement(getInfo.getSql());
-            switch (idType)
-            {
-                case INT:
-                    pStat.setInt(1, (Integer) pk);
-                    break;
-                case LONG:
-                    pStat.setLong(1, (Long) pk);
-                    break;
-                case STRING:
-                    pStat.setString(1, (String) pk);
-                    break;
-            }
-            ResultSet resultSet = pStat.executeQuery();
-            if (resultSet.next())
-            {
-                Object entity = entityClass.newInstance();
-                for (MapField each : getInfo.getFields())
-                {
-                    each.setEntityValue(entity, resultSet);
-                }
-                return (T) entity;
-            }
-            else
-            {
-                return null;
-            }
-        }
-        catch (Exception e)
-        {
-            throw new JustThrowException(e);
-        }
-        finally
-        {
-            if (pStat != null)
-            {
-                try
-                {
-                    pStat.close();
-                }
-                catch (SQLException e)
-                {
-                    throw new JustThrowException(e);
-                }
-            }
-        }
+        return session.update(deleteSql, unsafe.getObject(entity, idOffset));
     }
     
     @Override
-    public void save(T entity, Connection connection)
+    public T getById(Object pk, SqlSession session)
+    {
+        return session.query(transfer, getInfo.getSql(), pk);
+    }
+    
+    @Override
+    public void save(T entity, SqlSession session)
     {
         Object idValue = unsafe.getObject(entity, idOffset);
         if (idValue == null)
         {
-            insert(entity, null, connection);
+            insert(entity, null, session);
         }
         else
         {
-            update(entity, connection);
+            update(entity, session);
         }
         
     }
     
-    @Override
-    public int update(T entity, Connection connection)
+    protected Object[] parseParam(MapField[] fields, Object entity)
     {
-        for (SqlPreInterceptor each : preInterceptors)
+        Object[] params = new Object[fields.length];
+        for (int i = 0; i < params.length; i++)
         {
-            each.preIntercept(updateInfo.getSql(), entity);
+            params[i] = fields[i].statementValue(entity);
         }
-        PreparedStatement pStat = null;
-        try
-        {
-            pStat = connection.prepareStatement(updateInfo.getSql());
-            int index = 1;
-            for (MapField each : updateInfo.getFields())
-            {
-                each.setStatementValue(pStat, entity, index);
-                index++;
-            }
-            return pStat.executeUpdate();
-        }
-        catch (Exception e)
-        {
-            throw new JustThrowException(e);
-        }
-        finally
-        {
-            if (pStat != null)
-            {
-                try
-                {
-                    pStat.close();
-                }
-                catch (SQLException e)
-                {
-                    throw new JustThrowException(e);
-                }
-            }
-        }
+        return params;
     }
     
-    protected abstract void insert(T entity, Object idValue, Connection connection);
+    @Override
+    public int update(T entity, SqlSession session)
+    {
+        return session.update(updateInfo.getSql(), parseParam(updateInfo.getFields(), entity));
+    }
+    
+    protected abstract void insert(T entity, Object idValue, SqlSession session);
     
     @Override
-    public void insert(T entity, Connection connection)
+    public void insert(T entity, SqlSession session)
     {
         Object idValue = unsafe.getObject(entity, idOffset);
-        insert(entity, idValue, connection);
+        insert(entity, idValue, session);
+    }
+    
+    @Override
+    public T getById(Object pk, SqlSession session, LockMode mode)
+    {
+        String sql = mode == LockMode.SHARE ? getInShareInfo.getSql() : getForUpdateInfo.getSql();
+        return session.query(transfer, sql, pk);
     }
     
     @SuppressWarnings("unchecked")
     @Override
-    public T getById(Object pk, Connection connection, LockMode mode)
-    {
-        String sql = mode == LockMode.SHARE ? getInShareInfo.getSql() : getForUpdateInfo.getSql();
-        for (SqlPreInterceptor each : preInterceptors)
-        {
-            each.preIntercept(sql, pk);
-        }
-        PreparedStatement pStat = null;
-        try
-        {
-            pStat = connection.prepareStatement(sql);
-            pStat.setObject(1, pk);
-            ResultSet resultSet = pStat.executeQuery();
-            if (resultSet.next())
-            {
-                Object entity = entityClass.newInstance();
-                for (MapField each : getInfo.getFields())
-                {
-                    each.setEntityValue(entity, resultSet);
-                }
-                return (T) entity;
-            }
-            else
-            {
-                return null;
-            }
-        }
-        catch (Exception e)
-        {
-            throw new JustThrowException(e);
-        }
-        finally
-        {
-            if (pStat != null)
-            {
-                try
-                {
-                    pStat.close();
-                }
-                catch (SQLException e)
-                {
-                    throw new JustThrowException(e);
-                }
-            }
-        }
-    }
-    
-    @Override
-    public T findBy(Connection connection, Object param, String name)
+    public T findBy(SqlSession session, Object param, String name)
     {
         String sql = findByMap.get(name);
         if (sql == null)
         {
             throw new NullPointerException("没有属性:" + name + "的findBy注解,请检查类:" + entityClass.getName());
         }
-        for (SqlPreInterceptor each : preInterceptors)
-        {
-            each.preIntercept(sql, param);
-        }
-        PreparedStatement pStat = null;
-        try
-        {
-            pStat = connection.prepareStatement(sql);
-            pStat.setObject(1, param);
-            ResultSet resultSet = pStat.executeQuery();
-            if (resultSet.next())
-            {
-                T entity = entityClass.newInstance();
-                for (MapField each : getInfo.getFields())
-                {
-                    each.setEntityValue(entity, resultSet);
-                }
-                if (resultSet.next())
-                {
-                    throw new IllegalArgumentException("查询存在两个或以上的数据，不符合要求");
-                }
-                return entity;
-            }
-            else
-            {
-                return null;
-            }
-        }
-        catch (Exception e)
-        {
-            throw new JustThrowException(e);
-        }
-        finally
-        {
-            if (pStat != null)
-            {
-                try
-                {
-                    pStat.close();
-                }
-                catch (SQLException e)
-                {
-                    throw new JustThrowException(e);
-                }
-            }
-        }
-        
+        return (T) session.query(findByTransfereMap.get(name), sql, param);
     }
     
     @Override
-    public int deleteAll(Connection connection)
+    public int deleteAll(SqlSession session)
     {
-        PreparedStatement preparedStatement = null;
-        try
-        {
-            preparedStatement = connection.prepareStatement("delete from " + tableName);
-            return preparedStatement.executeUpdate();
-        }
-        catch (Exception e)
-        {
-            throw new JustThrowException(e);
-        }
-        finally
-        {
-            if (preparedStatement != null)
-            {
-                try
-                {
-                    preparedStatement.close();
-                }
-                catch (SQLException e)
-                {
-                    throw new JustThrowException(e);
-                }
-            }
-        }
+        return session.update("delete from " + tableName);
     }
     
     @Override
-    public int update(Connection connection, T param, String strategyName)
+    public int update(SqlSession session, T param, String strategyName)
     {
-        return strategyOperation.update(connection, param, strategyName);
+        return strategyOperation.update(session, param, strategyName);
     }
     
     @Override
-    public T findOne(Connection connection, T entity, String strategyName)
+    public T findOne(SqlSession session, T entity, String strategyName)
     {
-        return strategyOperation.findOne(connection, entity, strategyName);
+        return strategyOperation.findOne(session, entity, strategyName);
     }
     
     @Override
-    public List<T> findAll(Connection connection, T param, String strategyName)
+    public List<T> findAll(SqlSession session, T param, String strategyName)
     {
-        return strategyOperation.findAll(connection, param, strategyName);
+        return strategyOperation.findAll(session, param, strategyName);
     }
     
     @Override
-    public List<T> findPage(Connection connection, T param, Page page, PageParse pageParse, String strategyName)
+    public List<T> findPage(SqlSession session, T param, Page page, PageParse pageParse, String strategyName)
     {
-        return strategyOperation.findPage(connection, param, page, pageParse, strategyName);
+        return strategyOperation.findPage(session, param, page, pageParse, strategyName);
     }
     
 }

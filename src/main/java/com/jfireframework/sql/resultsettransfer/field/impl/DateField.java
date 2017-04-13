@@ -6,7 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import com.jfireframework.sql.dbstructure.ColNameStrategy;
+import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 
 public class DateField extends AbstractMapField
 {
@@ -42,6 +42,12 @@ public class DateField extends AbstractMapField
         {
             statement.setTimestamp(index, new Timestamp(value.getTime()));
         }
+    }
+    
+    @Override
+    public Object statementValue(Object entity)
+    {
+        return unsafe.getObject(entity, offset);
     }
     
 }

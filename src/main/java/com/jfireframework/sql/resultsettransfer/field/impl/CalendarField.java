@@ -6,7 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Calendar;
-import com.jfireframework.sql.dbstructure.ColNameStrategy;
+import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 
 public class CalendarField extends AbstractMapField
 {
@@ -44,6 +44,12 @@ public class CalendarField extends AbstractMapField
         {
             statement.setTimestamp(index, new Timestamp(value.getTimeInMillis()));
         }
+    }
+    
+    @Override
+    public Object statementValue(Object entity)
+    {
+        return (Calendar) unsafe.getObject(entity, offset);
     }
     
 }

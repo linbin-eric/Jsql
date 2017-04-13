@@ -70,4 +70,11 @@ public class EnumOrdinalHandler extends AbstractEnumHandler<Integer>
         }
     }
     
+    @Override
+    public Object statementValue(Unsafe unsafe, long offfset, Object entity)
+    {
+        Enum<?> instance = (Enum<?>) unsafe.getObject(entity, offfset);
+        return instance.ordinal();
+    }
+    
 }

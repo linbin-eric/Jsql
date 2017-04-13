@@ -5,7 +5,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import com.jfireframework.baseutil.exception.JustThrowException;
-import com.jfireframework.sql.dbstructure.ColNameStrategy;
+import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 import com.jfireframework.sql.util.enumhandler.AbstractEnumHandler;
 import com.jfireframework.sql.util.enumhandler.EnumHandler;
 
@@ -39,6 +39,12 @@ public class EnumField extends AbstractMapField
     public void setStatementValue(PreparedStatement statement, Object entity, int index) throws SQLException
     {
         enumHandler.setStatementValue(statement, index, unsafe, offset, entity);
+    }
+    
+    @Override
+    public Object statementValue(Object entity)
+    {
+        return enumHandler.statementValue(unsafe, offset, entity);
     }
     
 }

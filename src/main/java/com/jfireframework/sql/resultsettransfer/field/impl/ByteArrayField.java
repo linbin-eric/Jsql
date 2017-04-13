@@ -6,7 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
-import com.jfireframework.sql.dbstructure.ColNameStrategy;
+import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 
 public class ByteArrayField extends AbstractMapField
 {
@@ -46,6 +46,12 @@ public class ByteArrayField extends AbstractMapField
             blob.setBytes(1, array);
             statement.setBlob(index, blob);
         }
+    }
+    
+    @Override
+    public Object statementValue(Object entity)
+    {
+        return (byte[]) unsafe.getObject(entity, offset);
     }
     
 }

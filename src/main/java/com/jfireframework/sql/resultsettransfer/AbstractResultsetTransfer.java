@@ -13,8 +13,8 @@ import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.annotation.NameStrategy;
 import com.jfireframework.sql.annotation.SqlIgnore;
-import com.jfireframework.sql.dbstructure.ColNameStrategy;
-import com.jfireframework.sql.dbstructure.DefaultNameStrategy;
+import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
+import com.jfireframework.sql.dbstructure.name.DefaultNameStrategy;
 import com.jfireframework.sql.resultsettransfer.field.MapField;
 import com.jfireframework.sql.resultsettransfer.field.MapFieldBuilder;
 
@@ -33,7 +33,7 @@ public abstract class AbstractResultsetTransfer<T> implements ResultSetTransfer<
         ColNameStrategy colNameStrategy;
         try
         {
-            Class<? extends ColNameStrategy> ckass = (entityClass.isAnnotationPresent(NameStrategy.class) ? entityClass.getAnnotation(NameStrategy.class).value() : DefaultNameStrategy.class);
+            Class<? extends ColNameStrategy> ckass = entityClass.isAnnotationPresent(NameStrategy.class) ? entityClass.getAnnotation(NameStrategy.class).value() : DefaultNameStrategy.class;
             colNameStrategy = ckass.newInstance();
         }
         catch (Exception e)

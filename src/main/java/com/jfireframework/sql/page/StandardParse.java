@@ -7,7 +7,6 @@ import java.sql.SQLException;
 import java.util.List;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
-import com.jfireframework.sql.resultsettransfer.field.MapField;
 
 /**
  * 基于sql92语法,使用limit的方式进行分页
@@ -33,7 +32,7 @@ public class StandardParse implements PageParse
         String countSql = PageSqlCache.getCountSql(originSql);
         if (countSql == null)
         {
-            countSql = "select count(*) from ( "+originSql+" )";
+            countSql = "select count(*) from ( " + originSql + " )";
             PageSqlCache.putCountSql(originSql, countSql);
         }
         return countSql;
@@ -66,64 +65,6 @@ public class StandardParse implements PageParse
             for (Object param : params)
             {
                 pstat.setObject(index++, param);
-            }
-            resultSet = pstat.executeQuery();
-            resultSet.next();
-            page.setTotal(resultSet.getInt(1));
-        }
-        catch (Exception e)
-        {
-            throw new JustThrowException(e);
-        }
-        finally
-        {
-            try
-            {
-                if (resultSet != null)
-                {
-                    resultSet.close();
-                }
-                if (pstat != null)
-                {
-                    pstat.close();
-                }
-            }
-            catch (SQLException e)
-            {
-                throw new JustThrowException(e);
-            }
-        }
-    }
-    
-    @Override
-    public void doQuery(Object entity, MapField[] fields, Connection connection, String sql, ResultSetTransfer<?> transfer, Page page) throws SQLException
-    {
-        PreparedStatement pstat = null;
-        ResultSet resultSet = null;
-        try
-        {
-            String querySql = parseQuerySql(sql);
-            String countSql = parseCountSql(sql);
-            pstat = connection.prepareStatement(querySql);
-            int index = 1;
-            for (MapField each : fields)
-            {
-                each.setStatementValue(pstat, entity, index);
-                index += 1;
-            }
-            pstat.setInt(index++, page.getStart());
-            pstat.setInt(index, page.getPageSize());
-            resultSet = pstat.executeQuery();
-            List<?> list = transfer.transferList(resultSet, querySql);
-            page.setData(list);
-            resultSet.close();
-            pstat.close();
-            pstat = connection.prepareStatement(countSql);
-            index = 1;
-            for (MapField each : fields)
-            {
-                each.setStatementValue(pstat, entity, index);
-                index += 1;
             }
             resultSet = pstat.executeQuery();
             resultSet.next();

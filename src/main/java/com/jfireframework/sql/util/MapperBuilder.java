@@ -120,7 +120,7 @@ public class MapperBuilder
     {
         SqlContext sqlContext = new SqlContext();
         boolean isPage = false;
-        boolean isList = (List.class.isAssignableFrom(method.getReturnType()) ? true : false);
+        boolean isList = List.class.isAssignableFrom(method.getReturnType()) ? true : false;
         if (isList)
         {
             Verify.True(((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0].getClass().equals(Class.class), "方法{}.{}返回类型是泛型，不允许，请指定具体的类型", method.getDeclaringClass(), method.getName());

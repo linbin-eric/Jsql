@@ -4,7 +4,7 @@ import java.lang.reflect.Field;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.annotation.Column;
-import com.jfireframework.sql.dbstructure.ColNameStrategy;
+import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 import com.jfireframework.sql.resultsettransfer.field.MapField;
 import sun.misc.Unsafe;
 
@@ -109,5 +109,11 @@ public abstract class AbstractMapField implements MapField
     public boolean equals(Object o)
     {
         return field.equals(o);
+    }
+    
+    @Override
+    public Object statementValue(Object entity)
+    {
+        return unsafe.getObject(entity, offset);
     }
 }

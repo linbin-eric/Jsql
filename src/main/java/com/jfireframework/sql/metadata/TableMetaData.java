@@ -12,7 +12,7 @@ import com.jfireframework.sql.annotation.Column;
 import com.jfireframework.sql.annotation.Id;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableEntity;
-import com.jfireframework.sql.dbstructure.ColNameStrategy;
+import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 
 public class TableMetaData
 {
@@ -143,13 +143,11 @@ public class TableMetaData
     
     private boolean notTableField(Field field)
     {
-        if (
-            field.isAnnotationPresent(SqlIgnore.class) //
-                    || Map.class.isAssignableFrom(field.getType())//
-                    || List.class.isAssignableFrom(field.getType())//
-                    || field.getType().isInterface()//
-                    || Modifier.isStatic(field.getModifiers())
-        )
+        if (field.isAnnotationPresent(SqlIgnore.class) //
+                || Map.class.isAssignableFrom(field.getType())//
+                || List.class.isAssignableFrom(field.getType())//
+                || field.getType().isInterface()//
+                || Modifier.isStatic(field.getModifiers()))
         {
             return true;
         }

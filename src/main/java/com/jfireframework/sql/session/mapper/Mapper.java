@@ -1,6 +1,5 @@
 package com.jfireframework.sql.session.mapper;
 
-import javax.annotation.Resource;
 import com.jfireframework.sql.session.SessionFactory;
 
 /**
@@ -11,7 +10,6 @@ import com.jfireframework.sql.session.SessionFactory;
  */
 public abstract class Mapper
 {
-    @Resource
     protected SessionFactory        sessionFactory;
     protected static final Object[] emptyParams = new Object[0];
     

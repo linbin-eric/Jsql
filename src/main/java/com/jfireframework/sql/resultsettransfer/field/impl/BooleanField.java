@@ -4,7 +4,7 @@ import java.lang.reflect.Field;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import com.jfireframework.sql.dbstructure.ColNameStrategy;
+import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 
 public class BooleanField extends AbstractMapField
 {
@@ -27,5 +27,11 @@ public class BooleanField extends AbstractMapField
     public void setStatementValue(PreparedStatement statement, Object entity, int index) throws SQLException
     {
         statement.setBoolean(index, unsafe.getBoolean(entity, offset));
+    }
+    
+    @Override
+    public Object statementValue(Object entity)
+    {
+        return unsafe.getBoolean(entity, offset);
     }
 }

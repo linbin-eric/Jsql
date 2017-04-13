@@ -16,6 +16,8 @@ public interface MapField
      */
     public void setEntityValue(Object entity, ResultSet resultSet) throws SQLException;
     
+    public Object statementValue(Object entity);
+    
     /**
      * 从对象中获取值，按照index设置到statement中
      * 

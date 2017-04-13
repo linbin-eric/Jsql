@@ -1,43 +1,39 @@
 package com.jfireframework.sql.session.impl;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
-import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.sql.dao.LockMode;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
-import com.jfireframework.sql.interceptor.SqlInterceptor.InterceptorContext;
-import com.jfireframework.sql.interceptor.SqlPreInterceptor;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.page.PageParse;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
 import com.jfireframework.sql.session.SessionFactory;
 import com.jfireframework.sql.session.SqlSession;
+import com.jfireframework.sql.util.ExecSqlTemplate;
+import com.jfireframework.sql.util.IdType;
 
 public class SqlSessionImpl implements SqlSession
 {
-    private int                       transNum = 0;
-    private int                       autoOpen = 0;
-    private boolean                   closed   = false;
-    private final Connection          connection;
-    private final SessionFactory      sessionFactory;
-    private final static Logger       logger   = ConsoleLogFactory.getLogger();
-    private final SqlPreInterceptor[] preInterceptors;
-    private final SqlInterceptor[]    sqlInterceptors;
-    private final PageParse           pageParse;
+    private int                    transNum = 0;
+    private int                    autoOpen = 0;
+    private boolean                closed   = false;
+    private final Connection       connection;
+    private final SessionFactory   sessionFactory;
+    private final static Logger    logger   = ConsoleLogFactory.getLogger();
+    private final SqlInterceptor[] sqlInterceptors;
+    private final PageParse        pageParse;
     
-    public SqlSessionImpl(Connection connection, SessionFactory sessionFactory, SqlPreInterceptor[] preInterceptors, SqlInterceptor[] sqlInterceptors, PageParse pageParse)
+    public SqlSessionImpl(Connection connection, SessionFactory sessionFactory, SqlInterceptor[] sqlInterceptors, PageParse pageParse)
     {
         logger.trace("打开sqlsession");
         this.connection = connection;
         this.sessionFactory = sessionFactory;
-        this.preInterceptors = preInterceptors;
         this.sqlInterceptors = sqlInterceptors;
         this.pageParse = pageParse;
+        SessionFactory.CURRENT_SESSION.set(this);
     }
     
     @Override
@@ -139,7 +135,7 @@ public class SqlSessionImpl implements SqlSession
         try
         {
             closed = true;
-            sessionFactory.removeCurrentSession();
+            SessionFactory.CURRENT_SESSION.remove();
             connection.close();
         }
         catch (SQLException e)
@@ -152,34 +148,34 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> int delete(T entity)
     {
-        return sessionFactory.getDao((Class<T>) entity.getClass()).delete(entity, connection);
+        return sessionFactory.getDao((Class<T>) entity.getClass()).delete(entity, this);
     }
     
     @Override
     public <T> T get(Class<T> entityClass, Object pk)
     {
-        return sessionFactory.getDao(entityClass).getById(pk, connection);
+        return sessionFactory.getDao(entityClass).getById(pk, this);
     }
     
     @SuppressWarnings("unchecked")
     @Override
     public <T> void save(T entity)
     {
-        sessionFactory.getDao((Class<T>) entity.getClass()).save(entity, connection);
+        sessionFactory.getDao((Class<T>) entity.getClass()).save(entity, this);
     }
     
     @SuppressWarnings("unchecked")
     @Override
     public <T> void batchInsert(List<T> entitys)
     {
-        sessionFactory.getDao((Class<T>) entitys.get(0).getClass()).batchInsert(entitys, connection);
+        sessionFactory.getDao((Class<T>) entitys.get(0).getClass()).batchInsert(entitys, this);
     }
     
     @Override
     @SuppressWarnings("unchecked")
     public <T> void insert(T entity)
     {
-        sessionFactory.getDao((Class<T>) entity.getClass()).insert(entity, connection);
+        sessionFactory.getDao((Class<T>) entity.getClass()).insert(entity, this);
     }
     
     @Override
@@ -191,239 +187,86 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> T get(Class<T> entityClass, Object pk, LockMode mode)
     {
-        return sessionFactory.getDao(entityClass).getById(pk, connection, mode);
+        return sessionFactory.getDao(entityClass).getById(pk, this, mode);
     }
     
     @Override
     public <T> T findBy(Class<T> entityClass, String name, Object param)
     {
-        return sessionFactory.getDao(entityClass).findBy(connection, param, name);
+        return sessionFactory.getDao(entityClass).findBy(this, param, name);
     }
     
+    @SuppressWarnings("unchecked")
     @Override
     public <T> T query(ResultSetTransfer<T> transfer, String sql, Object... params)
     {
-        for (SqlPreInterceptor each : preInterceptors)
-        {
-            sql = each.preIntercept(sql, params);
-        }
-        PreparedStatement pstat = null;
-        ResultSet resultSet = null;
-        try
-        {
-            if (sqlInterceptors.length != 0)
-            {
-                InterceptorContext context = new InterceptorContext();
-                context.setSql(sql);
-                context.setParams(params);
-                for (SqlInterceptor each : sqlInterceptors)
-                {
-                    each.intercept(context);
-                }
-                sql = context.getSql();
-                params = context.getParams();
-            }
-            pstat = connection.prepareStatement(sql);
-            int index = 1;
-            for (Object each : params)
-            {
-                pstat.setObject(index++, each);
-            }
-            resultSet = pstat.executeQuery();
-            return transfer.transfer(resultSet, sql);
-        }
-        catch (Exception e)
-        {
-            throw new JustThrowException(e);
-        }
-        finally
-        {
-            try
-            {
-                if (resultSet != null)
-                {
-                    resultSet.close();
-                }
-                if (pstat != null)
-                {
-                    pstat.close();
-                }
-            }
-            catch (SQLException e)
-            {
-                throw new JustThrowException(e);
-            }
-        }
+        return (T) ExecSqlTemplate.exec(ExecSqlTemplate.query, sqlInterceptors, pageParse, null, transfer, connection, sql, params);
     }
     
+    @SuppressWarnings("unchecked")
     @Override
     public <T> List<T> queryList(ResultSetTransfer<T> transfer, String sql, Object... params)
     {
-        for (SqlPreInterceptor each : preInterceptors)
-        {
-            sql = each.preIntercept(sql, params);
-        }
-        PreparedStatement pstat = null;
-        ResultSet resultSet = null;
-        try
-        {
-            if (sqlInterceptors.length != 0)
-            {
-                InterceptorContext context = new InterceptorContext();
-                context.setSql(sql);
-                context.setParams(params);
-                for (SqlInterceptor each : sqlInterceptors)
-                {
-                    each.intercept(context);
-                }
-                sql = context.getSql();
-                params = context.getParams();
-            }
-            pstat = connection.prepareStatement(sql);
-            int index = 1;
-            for (Object each : params)
-            {
-                pstat.setObject(index++, each);
-            }
-            resultSet = pstat.executeQuery();
-            return transfer.transferList(resultSet, sql);
-        }
-        catch (Exception e)
-        {
-            throw new JustThrowException(e);
-        }
-        finally
-        {
-            try
-            {
-                if (resultSet != null)
-                {
-                    resultSet.close();
-                }
-                if (pstat != null)
-                {
-                    pstat.close();
-                }
-            }
-            catch (SQLException e)
-            {
-                throw new JustThrowException(e);
-            }
-        }
+        return (List<T>) ExecSqlTemplate.exec(ExecSqlTemplate.queryList, sqlInterceptors, pageParse, null, transfer, connection, sql, params);
     }
     
     @SuppressWarnings("unchecked")
     @Override
     public <T> List<T> queryList(ResultSetTransfer<T> transfer, String sql, Page page, Object... params)
     {
-        for (SqlPreInterceptor each : preInterceptors)
-        {
-            sql = each.preIntercept(sql, params);
-        }
-        try
-        {
-            if (sqlInterceptors.length != 0)
-            {
-                InterceptorContext context = new InterceptorContext();
-                context.setSql(sql);
-                context.setParams(params);
-                for (SqlInterceptor each : sqlInterceptors)
-                {
-                    each.intercept(context);
-                }
-                sql = context.getSql();
-                params = context.getParams();
-            }
-            pageParse.doQuery(params, connection, sql, transfer, page);
-            return (List<T>) page.getData();
-        }
-        catch (SQLException e)
-        {
-            throw new JustThrowException(e);
-        }
+        return (List<T>) ExecSqlTemplate.exec(ExecSqlTemplate.page, sqlInterceptors, pageParse, page, transfer, connection, sql, params);
     }
     
     @Override
     public int update(String sql, Object... params)
     {
-        for (SqlPreInterceptor each : preInterceptors)
-        {
-            sql = each.preIntercept(sql, params);
-        }
-        PreparedStatement pstat = null;
-        ResultSet resultSet = null;
-        try
-        {
-            if (sqlInterceptors.length != 0)
-            {
-                InterceptorContext context = new InterceptorContext();
-                context.setSql(sql);
-                context.setParams(params);
-                for (SqlInterceptor each : sqlInterceptors)
-                {
-                    each.intercept(context);
-                }
-                sql = context.getSql();
-                params = context.getParams();
-            }
-            pstat = connection.prepareStatement(sql);
-            int index = 1;
-            for (Object each : params)
-            {
-                pstat.setObject(index++, each);
-            }
-            return pstat.executeUpdate();
-        }
-        catch (Exception e)
-        {
-            throw new JustThrowException(e);
-        }
-        finally
-        {
-            try
-            {
-                if (resultSet != null)
-                {
-                    resultSet.close();
-                }
-                if (pstat != null)
-                {
-                    pstat.close();
-                }
-            }
-            catch (SQLException e)
-            {
-                throw new JustThrowException(e);
-            }
-        }
+        return (Integer) ExecSqlTemplate.exec(ExecSqlTemplate.update, sqlInterceptors, pageParse, null, null, connection, sql, params);
     }
     
     @SuppressWarnings("unchecked")
     @Override
     public <T> T findOneByStrategy(T entity, String strategyName)
     {
-        return sessionFactory.getDao((Class<T>) entity.getClass()).findOne(connection, entity, strategyName);
+        return sessionFactory.getDao((Class<T>) entity.getClass()).findOne(this, entity, strategyName);
     }
     
     @SuppressWarnings("unchecked")
     @Override
     public <T> List<T> findAllByStrategy(T entity, String strategyName)
     {
-        return sessionFactory.getDao((Class<T>) entity.getClass()).findAll(connection, entity, strategyName);
+        return sessionFactory.getDao((Class<T>) entity.getClass()).findAll(this, entity, strategyName);
     }
     
     @SuppressWarnings("unchecked")
     @Override
     public <T> List<T> findPageByStrategy(T entity, Page page, String strategyName)
     {
-        return sessionFactory.getDao((Class<T>) entity.getClass()).findPage(connection, entity, page, pageParse, strategyName);
+        return sessionFactory.getDao((Class<T>) entity.getClass()).findPage(this, entity, page, pageParse, strategyName);
     }
     
     @SuppressWarnings("unchecked")
     @Override
     public <T> int updateByStrategy(T entity, String strategyName)
     {
-        return sessionFactory.getDao((Class<T>) entity.getClass()).update(connection, entity, strategyName);
+        return sessionFactory.getDao((Class<T>) entity.getClass()).update(this, entity, strategyName);
+    }
+    
+    @Override
+    public void insert(String sql, Object... params)
+    {
+        ExecSqlTemplate.exec(ExecSqlTemplate.update, sqlInterceptors, null, null, null, connection, sql, params);
+    }
+    
+    @Override
+    public Object insertWithReturnPKValue(IdType idType, String[] pkName, String sql, Object... params)
+    {
+        return ExecSqlTemplate.insert(idType, pkName, sqlInterceptors, connection, sql, params);
+    }
+    
+    @Override
+    public void batchInsert(String sql, Object... paramArrays)
+    {
+        ExecSqlTemplate.batchInsert(sqlInterceptors, connection, sql, paramArrays);
     }
     
 }

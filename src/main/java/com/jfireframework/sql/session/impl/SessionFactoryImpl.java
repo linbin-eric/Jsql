@@ -1,29 +1,37 @@
 package com.jfireframework.sql.session.impl;
 
-import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.IdentityHashMap;
 import javax.sql.DataSource;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.sql.dao.Dao;
+import com.jfireframework.sql.interceptor.SqlInterceptor;
+import com.jfireframework.sql.page.PageParse;
+import com.jfireframework.sql.session.SessionFactory;
 import com.jfireframework.sql.session.SqlSession;
+import com.jfireframework.sql.session.mapper.Mapper;
 
-public class SessionFactoryImpl extends SessionFactoryBootstrap
+public class SessionFactoryImpl implements SessionFactory
 {
+    private final IdentityHashMap<Class<?>, Mapper> mappers;
+    private final IdentityHashMap<Class<?>, Dao<?>> daos;
+    private final SqlInterceptor[]                  sqlInterceptors;
+    private final PageParse                         pageParse;
+    private final DataSource                        dataSource;
     
-    public SessionFactoryImpl()
+    public SessionFactoryImpl(IdentityHashMap<Class<?>, Mapper> mappers, IdentityHashMap<Class<?>, Dao<?>> daos, SqlInterceptor[] sqlInterceptors, PageParse pageParse, DataSource dataSource)
     {
-        
-    }
-    
-    public SessionFactoryImpl(DataSource dataSource)
-    {
+        this.mappers = mappers;
+        this.daos = daos;
+        this.sqlInterceptors = sqlInterceptors;
+        this.pageParse = pageParse;
         this.dataSource = dataSource;
     }
     
     @Override
     public SqlSession getCurrentSession()
     {
-        return sessionLocal.get();
+        return CURRENT_SESSION.get();
     }
     
     @Override
@@ -31,7 +39,7 @@ public class SessionFactoryImpl extends SessionFactoryBootstrap
     {
         try
         {
-            SqlSession session = new SqlSessionImpl(dataSource.getConnection(), this, preInterceptors, sqlInterceptors, pageParse);
+            SqlSession session = new SqlSessionImpl(dataSource.getConnection(), this, sqlInterceptors, pageParse);
             return session;
         }
         catch (SQLException e)
@@ -41,41 +49,12 @@ public class SessionFactoryImpl extends SessionFactoryBootstrap
     }
     
     @Override
-    public void removeCurrentSession()
-    {
-        sessionLocal.remove();
-    }
-    
-    public void setDataSource(DataSource dataSource)
-    {
-        this.dataSource = dataSource;
-    }
-    
-    @Override
-    public void setCurrentSession(SqlSession session)
-    {
-        sessionLocal.set(session);
-    }
-    
-    @Override
-    public void setScanPackage(String scanPackage)
-    {
-        this.scanPackage = scanPackage;
-    }
-    
-    public void setTableMode(String mode)
-    {
-        tableMode = mode;
-    }
-    
-    @Override
     public SqlSession getOrCreateCurrentSession()
     {
         SqlSession session = getCurrentSession();
         if (session == null)
         {
             session = openSession();
-            sessionLocal.set(session);
         }
         return session;
     }
@@ -106,10 +85,9 @@ public class SessionFactoryImpl extends SessionFactoryBootstrap
     {
         SqlSession session = getOrCreateCurrentSession();
         session.beginTransAction(0);
-        Connection connection = session.getConnection();
         for (Dao<?> dao : daos.values())
         {
-            dao.deleteAll(connection);
+            dao.deleteAll(session);
         }
         session.commit();
         session.close();

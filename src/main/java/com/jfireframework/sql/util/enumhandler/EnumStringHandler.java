@@ -56,4 +56,11 @@ public class EnumStringHandler extends AbstractEnumHandler<String>
         }
     }
     
+    @Override
+    public Object statementValue(Unsafe unsafe, long offfset, Object entity)
+    {
+        Enum<?> value = (Enum<?>) unsafe.getObject(entity, offfset);
+        return value.name();
+    }
+    
 }

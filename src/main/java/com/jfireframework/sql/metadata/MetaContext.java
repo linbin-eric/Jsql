@@ -7,8 +7,8 @@ import java.util.Map;
 import java.util.Set;
 import com.jfireframework.sql.annotation.NameStrategy;
 import com.jfireframework.sql.annotation.TableEntity;
-import com.jfireframework.sql.dbstructure.ColNameStrategy;
-import com.jfireframework.sql.dbstructure.DefaultNameStrategy;
+import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
+import com.jfireframework.sql.dbstructure.name.DefaultNameStrategy;
 
 public class MetaContext
 {
@@ -23,7 +23,7 @@ public class MetaContext
         {
             if (each.isAnnotationPresent(TableEntity.class))
             {
-                Class<? extends ColNameStrategy> ckass = (each.isAnnotationPresent(NameStrategy.class) ? each.getAnnotation(NameStrategy.class).value() : DefaultNameStrategy.class);
+                Class<? extends ColNameStrategy> ckass = each.isAnnotationPresent(NameStrategy.class) ? each.getAnnotation(NameStrategy.class).value() : DefaultNameStrategy.class;
                 ColNameStrategy nameStrategy = map.get(ckass);
                 if (nameStrategy == null)
                 {

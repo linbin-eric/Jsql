@@ -1,19 +1,12 @@
 package com.jfireframework.sql.dao.impl;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.LinkedList;
 import java.util.List;
 import com.jfireframework.baseutil.collection.StringCache;
-import com.jfireframework.baseutil.exception.JustThrowException;
-import com.jfireframework.baseutil.uniqueid.Uid;
 import com.jfireframework.sql.annotation.SeqId;
-import com.jfireframework.sql.interceptor.SqlPreInterceptor;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.resultsettransfer.field.MapField;
+import com.jfireframework.sql.session.SqlSession;
 
 public class OracleDAO<T> extends BaseDAO<T>
 {
@@ -22,114 +15,28 @@ public class OracleDAO<T> extends BaseDAO<T>
     private final boolean useSeq;
     private String[]      returnKey;
     
-    public OracleDAO(TableMetaData metaData, SqlPreInterceptor[] preInterceptors, Uid uid)
+    public OracleDAO(TableMetaData metaData)
     {
-        super(metaData, preInterceptors, uid);
+        super(metaData);
         useSeq = idField.getField().isAnnotationPresent(SeqId.class) ? true : false;
     }
     
     @Override
-    public void batchInsert(List<T> entitys, Connection connection)
+    public void batchInsert(List<T> entitys, SqlSession session)
     {
-        if (useUid || useSeq == false)
+        Object[] array = new Object[entitys.size()];
+        for (Object entity : entitys)
         {
-            for (SqlPreInterceptor each : preInterceptors)
-            {
-                each.preIntercept(insertInfo.getSql(), entitys);
-            }
-            PreparedStatement pStat = null;
-            try
-            {
-                pStat = connection.prepareStatement(insertInfo.getSql());
-                for (Object entity : entitys)
-                {
-                    int index = 1;
-                    if (useUid)
-                    {
-                        Object idValue = unsafe.getObject(entity, idOffset);
-                        if (idValue == null)
-                        {
-                            switch (idType)
-                            {
-                                case LONG:
-                                    unsafe.putObject(entity, idOffset, Long.valueOf(uid.generateLong()));
-                                    break;
-                                case STRING:
-                                    unsafe.putObject(entity, idOffset, uid.generateDigits());
-                                    break;
-                                default:
-                                    throw new IllegalArgumentException();
-                            }
-                        }
-                    }
-                    for (MapField field : insertInfo.getFields())
-                    {
-                        field.setStatementValue(pStat, entity, index);
-                        index++;
-                    }
-                    pStat.addBatch();
-                }
-                pStat.executeBatch();
-            }
-            catch (Exception e)
-            {
-                throw new JustThrowException(e);
-            }
-            finally
-            {
-                if (pStat != null)
-                {
-                    try
-                    {
-                        pStat.close();
-                    }
-                    catch (SQLException e)
-                    {
-                        throw new JustThrowException(e);
-                    }
-                }
-            }
+            int index = 1;
+            array[index] = parseParam(insertInfo.getFields(), entity);
         }
-        else if (useSeq)
+        if (useSeq == false)
         {
-            for (SqlPreInterceptor each : preInterceptors)
-            {
-                each.preIntercept(seqInsertInfo.getSql(), entitys);
-            }
-            PreparedStatement pStat = null;
-            try
-            {
-                pStat = connection.prepareStatement(seqInsertInfo.getSql());
-                for (Object entity : entitys)
-                {
-                    int index = 1;
-                    for (MapField field : seqInsertInfo.getFields())
-                    {
-                        field.setStatementValue(pStat, entity, index);
-                        index++;
-                    }
-                    pStat.addBatch();
-                }
-                pStat.executeBatch();
-            }
-            catch (Exception e)
-            {
-                throw new JustThrowException(e);
-            }
-            finally
-            {
-                if (pStat != null)
-                {
-                    try
-                    {
-                        pStat.close();
-                    }
-                    catch (SQLException e)
-                    {
-                        throw new JustThrowException(e);
-                    }
-                }
-            }
+            session.batchInsert(insertInfo.getSql(), array);
+        }
+        else
+        {
+            session.batchInsert(seqInsertInfo.getSql(), array);
         }
     }
     
@@ -192,101 +99,45 @@ public class OracleDAO<T> extends BaseDAO<T>
     }
     
     @Override
-    protected void insert(T entity, Object idValue, Connection connection)
+    protected void insert(T entity, Object idValue, SqlSession session)
     {
-        PreparedStatement pStat = null;
-        SqlAndFields sqlAndFields = null;
-        try
+        String sql;
+        Object[] params;
+        boolean returnPk = false;
+        if (idValue == null)
         {
-            if (useUid || useSeq == false)
+            returnPk = true;
+        }
+        else
+        {
+            returnPk = false;
+        }
+        if (useSeq == false)
+        {
+            sql = insertInfo.getSql();
+            params = parseParam(insertInfo.getFields(), entity);
+        }
+        else
+        {
+            if (idValue != null)
             {
-                if (useUid && idValue == null)
-                {
-                    switch (idType)
-                    {
-                        case LONG:
-                            idValue = Long.valueOf(uid.generateLong());
-                            unsafe.putObject(entity, idOffset, idValue);
-                            break;
-                        case STRING:
-                            idValue = uid.generateDigits();
-                            unsafe.putObject(entity, idOffset, idValue);
-                            break;
-                        default:
-                            throw new IllegalArgumentException();
-                    }
-                }
-                if (useUid == false)
-                {
-                    pStat = idValue == null ? connection.prepareStatement(insertInfo.getSql(), Statement.RETURN_GENERATED_KEYS) : connection.prepareStatement(insertInfo.getSql());
-                }
-                else
-                {
-                    pStat = connection.prepareStatement(insertInfo.getSql());
-                }
-                sqlAndFields = insertInfo;
+                sql = insertInfo.getSql();
+                params = parseParam(insertInfo.getFields(), entity);
             }
-            else if (useSeq)
+            else
             {
-                if (idValue != null)
-                {
-                    pStat = connection.prepareStatement(insertInfo.getSql());
-                    sqlAndFields = insertInfo;
-                }
-                else
-                {
-                    pStat = connection.prepareStatement(seqInsertInfo.getSql(), returnKey);
-                    sqlAndFields = seqInsertInfo;
-                }
-            }
-            for (SqlPreInterceptor each : preInterceptors)
-            {
-                each.preIntercept(sqlAndFields.getSql(), entity);
-            }
-            int index = 1;
-            for (MapField each : sqlAndFields.getFields())
-            {
-                each.setStatementValue(pStat, entity, index);
-                index++;
-            }
-            pStat.executeUpdate();
-            if (useUid == false && idValue == null)
-            {
-                ResultSet resultSet = pStat.getGeneratedKeys();
-                if (resultSet.next())
-                {
-                    switch (idType)
-                    {
-                        case INT:
-                            unsafe.putObject(entity, idOffset, resultSet.getInt(1));
-                            break;
-                        case LONG:
-                            unsafe.putObject(entity, idOffset, resultSet.getLong(1));
-                            break;
-                        case STRING:
-                            unsafe.putObject(entity, idOffset, resultSet.getString(1));
-                            break;
-                    }
-                }
+                sql = seqInsertInfo.getSql();
+                params = parseParam(seqInsertInfo.getFields(), entity);
             }
         }
-        catch (Exception e)
+        if (returnPk)
         {
-            throw new JustThrowException(e);
+            Object pk = session.insertWithReturnPKValue(idType, returnKey, sql, params);
+            unsafe.putObject(entity, idOffset, pk);
         }
-        finally
+        else
         {
-            if (pStat != null)
-            {
-                try
-                {
-                    pStat.close();
-                }
-                catch (SQLException e)
-                {
-                    throw new JustThrowException(e);
-                }
-            }
+            session.insert(sql, params);
         }
     }
     

@@ -1,7 +1,7 @@
 package com.jfireframework.sql.dao;
 
-import java.sql.Connection;
 import java.util.List;
+import com.jfireframework.sql.session.SqlSession;
 
 public interface Dao<T> extends StrategyOperation<T>
 {
@@ -14,7 +14,7 @@ public interface Dao<T> extends StrategyOperation<T>
      * @param connection
      * @return
      */
-    public void save(T entity, Connection connection);
+    public void save(T entity, SqlSession session);
     
     /**
      * 将一个对象以插入数据的形式保存到数据库
@@ -24,9 +24,9 @@ public interface Dao<T> extends StrategyOperation<T>
      * @param entity
      * @param connection
      */
-    public void insert(T entity, Connection connection);
+    public void insert(T entity, SqlSession session);
     
-    public int update(T entity, Connection connection);
+    public int update(T entity, SqlSession session);
     
     /**
      * 批量将一个list中的数据保存到数据库中
@@ -35,7 +35,7 @@ public interface Dao<T> extends StrategyOperation<T>
      * @param entitys
      * @param connection
      */
-    public void batchInsert(List<T> entitys, Connection connection);
+    public void batchInsert(List<T> entitys, SqlSession session);
     
     /**
      * 将对象entity所代表的数据库行删除. entity其他参数并不重要,只要id参数有存在即可.删除是根据id参数进行删除的
@@ -44,7 +44,7 @@ public interface Dao<T> extends StrategyOperation<T>
      * @param connection
      * @return
      */
-    public int delete(T entity, Connection connection);
+    public int delete(T entity, SqlSession session);
     
     /**
      * 在数据库该表中，使用主键查询并且返回对象
@@ -55,7 +55,7 @@ public interface Dao<T> extends StrategyOperation<T>
      * @param connection
      * @return
      */
-    public T getById(Object pk, Connection connection);
+    public T getById(Object pk, SqlSession session);
     
     /**
      * 在数据表该表中，使用主键查询并且返回对象，但是使用某一个锁定模式
@@ -65,9 +65,9 @@ public interface Dao<T> extends StrategyOperation<T>
      * @param mode
      * @return
      */
-    public T getById(Object pk, Connection connection, LockMode mode);
+    public T getById(Object pk, SqlSession session, LockMode mode);
     
-    public int deleteAll(Connection connection);
+    public int deleteAll(SqlSession session);
     
-    public T findBy(Connection connection, Object param, String name);
+    public T findBy(SqlSession session, Object param, String name);
 }

@@ -15,11 +15,4 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 public @interface Id
 {
-    /**
-     * 是否使用uid进行主键生成。默认为false。如果使用的情况，主键必须为Long或者String
-     * 
-     * @return
-     */
-    public boolean useUid() default false;
-    
 }

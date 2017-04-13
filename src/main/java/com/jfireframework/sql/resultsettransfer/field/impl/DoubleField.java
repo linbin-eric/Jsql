@@ -4,7 +4,7 @@ import java.lang.reflect.Field;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import com.jfireframework.sql.dbstructure.ColNameStrategy;
+import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 
 public class DoubleField extends AbstractMapField
 {
@@ -28,6 +28,12 @@ public class DoubleField extends AbstractMapField
     public void setStatementValue(PreparedStatement statement, Object entity, int index) throws SQLException
     {
         statement.setDouble(index, unsafe.getDouble(entity, offset));
+    }
+    
+    @Override
+    public Object statementValue(Object entity)
+    {
+        return unsafe.getDouble(entity, offset);
     }
     
 }

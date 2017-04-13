@@ -9,6 +9,8 @@ public interface EnumHandler<T>
 {
     public T getValue(Enum<?> instance);
     
+    Object statementValue(Unsafe unsafe, long offfset, Object entity);
+    
     public Enum<?> getInstance(ResultSet resultSet) throws SQLException;
     
     public void setStatementValue(PreparedStatement statement, int index, Unsafe unsafe, long offfset, Object entity) throws SQLException;

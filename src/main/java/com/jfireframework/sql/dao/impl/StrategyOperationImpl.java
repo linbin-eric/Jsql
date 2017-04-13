@@ -1,10 +1,5 @@
 package com.jfireframework.sql.dao.impl;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -12,44 +7,40 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import com.jfireframework.baseutil.collection.StringCache;
-import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.dao.StrategyOperation;
-import com.jfireframework.sql.interceptor.SqlPreInterceptor;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.page.PageParse;
 import com.jfireframework.sql.resultsettransfer.FixBeanTransfer;
-import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
 import com.jfireframework.sql.resultsettransfer.field.MapField;
+import com.jfireframework.sql.session.SqlSession;
 
 public class StrategyOperationImpl<T> implements StrategyOperation<T>
 {
     class FindStrategySql
     {
-        String     sql;
-        MapField[] selectFields;
-        MapField[] whereFields;
+        String             sql;
+        FixBeanTransfer<T> transfer;
+        MapField[]         selectFields;
+        MapField[]         whereFields;
     }
     
     class UpdateStrategySql
     {
-        String     sql;
-        MapField[] fields;
+        String             sql;
+        FixBeanTransfer<T> transfer;
+        MapField[]         fields;
     }
     
-    private final SqlPreInterceptor[]                      preInterceptors;
     private final Class<T>                                 ckass;
-    private final ResultSetTransfer<T>                     resultSetTransfer;
     private final Map<String, MapField>                    mapFields;
     private final ConcurrentMap<String, FindStrategySql>   findMap   = new ConcurrentHashMap<String, StrategyOperationImpl<T>.FindStrategySql>();
     private final ConcurrentMap<String, UpdateStrategySql> updateMap = new ConcurrentHashMap<String, StrategyOperationImpl<T>.UpdateStrategySql>();
     private final String                                   tableName;
     
-    public StrategyOperationImpl(Class<T> ckass, MapField[] mapFields, SqlPreInterceptor[] preInterceptors)
+    public StrategyOperationImpl(Class<T> ckass, MapField[] mapFields)
     {
-        resultSetTransfer = new FixBeanTransfer<T>(ckass);
         this.ckass = ckass;
-        this.preInterceptors = preInterceptors;
         this.mapFields = parse(mapFields);
         tableName = ckass.getAnnotation(TableEntity.class).name();
     }
@@ -127,6 +118,7 @@ public class StrategyOperationImpl<T> implements StrategyOperation<T>
         findStrategySql.sql = cache.toString();
         findStrategySql.selectFields = selectFields.toArray(new MapField[selectFields.size()]);
         findStrategySql.whereFields = whereFields.toArray(new MapField[whereFields.size()]);
+        findStrategySql.transfer = new FixBeanTransfer<T>(ckass);
         return findStrategySql;
     }
     
@@ -153,177 +145,48 @@ public class StrategyOperationImpl<T> implements StrategyOperation<T>
         UpdateStrategySql updateStrategySql = new UpdateStrategySql();
         updateStrategySql.sql = cache.toString();
         updateStrategySql.fields = list.toArray(new MapField[list.size()]);
+        updateStrategySql.transfer = new FixBeanTransfer<T>(ckass);
         return updateStrategySql;
     }
     
     @Override
-    public T findOne(Connection connection, T param, String strategy)
+    public T findOne(SqlSession session, T param, String strategy)
     {
         FindStrategySql findStrategySql = getFind(strategy);
         String sql = findStrategySql.sql;
-        for (SqlPreInterceptor each : preInterceptors)
+        return session.query(findStrategySql.transfer, sql, parseParams(findStrategySql.whereFields, param));
+    }
+    
+    private Object[] parseParams(MapField[] fields, Object entity)
+    {
+        Object[] params = new Object[fields.length];
+        for (int i = 0; i < fields.length; i++)
         {
-            each.preIntercept(sql, param);
+            params[i] = fields[i].statementValue(entity);
         }
-        PreparedStatement pstat = null;
-        try
-        {
-            pstat = connection.prepareStatement(sql);
-            int index = 1;
-            for (MapField each : findStrategySql.whereFields)
-            {
-                each.setStatementValue(pstat, param, index);
-                index += 1;
-            }
-            ResultSet resultSet = pstat.executeQuery();
-            if (resultSet.next())
-            {
-                T entity = ckass.newInstance();
-                for (MapField each : findStrategySql.selectFields)
-                {
-                    each.setEntityValue(entity, resultSet);
-                }
-                if (resultSet.next() == false)
-                {
-                    return entity;
-                }
-                else
-                {
-                    throw new IllegalArgumentException("查询结果不止一个数据,异常");
-                }
-            }
-            else
-            {
-                return null;
-            }
-        }
-        catch (Exception e)
-        {
-            throw new JustThrowException(e);
-        }
-        finally
-        {
-            if (pstat != null)
-            {
-                try
-                {
-                    pstat.close();
-                }
-                catch (SQLException e)
-                {
-                    throw new JustThrowException(e);
-                }
-            }
-        }
+        return params;
     }
     
     @Override
-    public List<T> findAll(Connection connection, T param, String strategy)
+    public List<T> findAll(SqlSession session, T param, String strategy)
     {
         FindStrategySql findStrategySql = getFind(strategy);
-        List<T> list = new ArrayList<T>();
-        String sql = findStrategySql.sql;
-        for (SqlPreInterceptor each : preInterceptors)
-        {
-            each.preIntercept(sql, param);
-        }
-        PreparedStatement pstat = null;
-        try
-        {
-            pstat = connection.prepareStatement(sql);
-            int index = 1;
-            for (MapField each : findStrategySql.whereFields)
-            {
-                each.setStatementValue(pstat, param, index);
-                index += 1;
-            }
-            ResultSet resultSet = pstat.executeQuery();
-            while (resultSet.next())
-            {
-                T entity = ckass.newInstance();
-                for (MapField each : findStrategySql.selectFields)
-                {
-                    each.setEntityValue(entity, resultSet);
-                }
-                list.add(entity);
-            }
-            return list;
-        }
-        catch (Exception e)
-        {
-            throw new JustThrowException(e);
-        }
-        finally
-        {
-            if (pstat != null)
-            {
-                try
-                {
-                    pstat.close();
-                }
-                catch (SQLException e)
-                {
-                    throw new JustThrowException(e);
-                }
-            }
-        }
+        return session.queryList(findStrategySql.transfer, findStrategySql.sql, parseParams(findStrategySql.whereFields, param));
     }
     
-    @SuppressWarnings("unchecked")
     @Override
-    public List<T> findPage(Connection connection, T param, Page page, PageParse pageParse, String strategy)
+    public List<T> findPage(SqlSession session, T param, Page page, PageParse pageParse, String strategy)
     {
         FindStrategySql findStrategySql = getFind(strategy);
-        try
-        {
-            pageParse.doQuery(param, findStrategySql.whereFields, connection, findStrategySql.sql, resultSetTransfer, page);
-        }
-        catch (SQLException e)
-        {
-            throw new JustThrowException(e);
-        }
-        return (List<T>) page.getData();
+        return session.queryList(findStrategySql.transfer, strategy, page, parseParams(findStrategySql.whereFields, param));
     }
     
     @Override
-    public int update(Connection connection, T param, String strategy)
+    public int update(SqlSession session, T param, String strategy)
     {
         UpdateStrategySql updateStrategySql = getUpdate(strategy);
         String sql = updateStrategySql.sql;
-        for (SqlPreInterceptor each : preInterceptors)
-        {
-            each.preIntercept(sql, param);
-        }
-        PreparedStatement pstat = null;
-        try
-        {
-            pstat = connection.prepareStatement(sql);
-            int index = 1;
-            for (MapField each : updateStrategySql.fields)
-            {
-                each.setStatementValue(pstat, param, index);
-                index += 1;
-            }
-            return pstat.executeUpdate();
-        }
-        catch (Exception e)
-        {
-            throw new JustThrowException(e);
-        }
-        finally
-        {
-            if (pstat != null)
-            {
-                try
-                {
-                    pstat.close();
-                }
-                catch (SQLException e)
-                {
-                    throw new JustThrowException(e);
-                }
-            }
-        }
+        return session.update(sql, parseParams(updateStrategySql.fields, param));
     }
     
 }
