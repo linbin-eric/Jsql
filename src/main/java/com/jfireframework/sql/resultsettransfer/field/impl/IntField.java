@@ -30,4 +30,10 @@ public class IntField extends AbstractMapField
         statement.setInt(index, unsafe.getInt(entity, offset));
     }
     
+    @Override
+    public Object statementValue(Object entity)
+    {
+        return unsafe.getInt(entity, offset);
+    }
+    
 }

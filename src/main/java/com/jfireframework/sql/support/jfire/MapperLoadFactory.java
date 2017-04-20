@@ -1,4 +1,4 @@
-package com.jfireframework.sql.jfiresupport;
+package com.jfireframework.sql.support.jfire;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -21,13 +21,13 @@ public class MapperLoadFactory implements BeanLoadFactory, SessionFactory
     private String         scanPackage;
     
     @PostConstruct
-    protected void init()
+    public void init()
     {
         SessionfactoryConfig config = new SessionfactoryConfig();
         config.setClassLoader(classLoader);
-        config.setClassLoader(classLoader);
         config.setScanPackage(scanPackage);
         config.setTableMode(tableMode);
+        config.setDataSource(dataSource);
         sessionFactory = config.build();
     }
     
@@ -72,6 +72,26 @@ public class MapperLoadFactory implements BeanLoadFactory, SessionFactory
     public void cleanAllData()
     {
         sessionFactory.cleanAllData();
+    }
+    
+    public void setTableMode(String tableMode)
+    {
+        this.tableMode = tableMode;
+    }
+    
+    public void setScanPackage(String scanPackage)
+    {
+        this.scanPackage = scanPackage;
+    }
+    
+    public void setDataSource(DataSource dataSource)
+    {
+        this.dataSource = dataSource;
+    }
+    
+    public void setClassLoader(ClassLoader classLoader)
+    {
+        this.classLoader = classLoader;
     }
     
 }

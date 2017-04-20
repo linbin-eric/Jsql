@@ -1,4 +1,4 @@
-package com.jfireframework.sql.jfiresupport;
+package com.jfireframework.sql.support.jfire;
 
 import javax.annotation.Resource;
 import com.jfireframework.baseutil.exception.UnSupportException;

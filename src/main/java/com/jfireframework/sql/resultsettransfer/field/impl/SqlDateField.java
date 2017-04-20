@@ -27,4 +27,11 @@ public class SqlDateField extends AbstractMapField
         Date value = (Date) unsafe.getObject(entity, offset);
         statement.setDate(index, value);
     }
+    
+    @Override
+    public Object statementValue(Object entity)
+    {
+        return unsafe.getObject(entity, offset);
+    }
+    
 }

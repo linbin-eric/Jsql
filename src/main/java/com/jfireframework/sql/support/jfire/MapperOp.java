@@ -1,4 +1,4 @@
-package com.jfireframework.sql.jfiresupport;
+package com.jfireframework.sql.support.jfire;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

@@ -13,5 +13,5 @@ public interface UpdateOperator
      */
     public <T> int delete(T entity);
     
-    public <T> int updateByStrategy(T entity, String strategy);
+    public int update(Class<?> ckass, String strategy, Object... params);
 }

@@ -27,4 +27,10 @@ public class TimeField extends AbstractMapField
         statement.setTime(index, (Time) unsafe.getObject(entity, offset));
     }
     
+    @Override
+    public Object statementValue(Object entity)
+    {
+        return unsafe.getObject(entity, offset);
+    }
+    
 }

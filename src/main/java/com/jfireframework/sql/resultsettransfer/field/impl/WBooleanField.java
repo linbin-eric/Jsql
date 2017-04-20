@@ -42,4 +42,10 @@ public class WBooleanField extends AbstractMapField
         }
     }
     
+    @Override
+    public Object statementValue(Object entity)
+    {
+        return unsafe.getObject(entity, offset);
+    }
+    
 }

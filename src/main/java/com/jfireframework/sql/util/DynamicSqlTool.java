@@ -509,7 +509,23 @@ public class DynamicSqlTool
                         }
                         else if (sqlContext.getStaticValue(var) != null)
                         {
-                            cache.append(sqlContext.getStaticValue(var));
+                            Object staticValue = sqlContext.getStaticValue(var);
+                            if (staticValue instanceof Integer || //
+                                    staticValue instanceof Short || //
+                                    staticValue instanceof Long || //
+                                    staticValue instanceof Float || //
+                                    staticValue instanceof Double)
+                            {
+                                cache.append(sqlContext.getStaticValue(var));
+                            }
+                            else if (staticValue instanceof String)
+                            {
+                                cache.append('\'').append(staticValue).append('\'');
+                            }
+                            else if (staticValue instanceof Boolean)
+                            {
+                                cache.append(staticValue);
+                            }
                         }
                         else
                         {

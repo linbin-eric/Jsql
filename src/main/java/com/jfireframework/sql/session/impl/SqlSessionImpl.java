@@ -18,7 +18,6 @@ import com.jfireframework.sql.util.IdType;
 public class SqlSessionImpl implements SqlSession
 {
     private int                    transNum = 0;
-    private int                    autoOpen = 0;
     private boolean                closed   = false;
     private final Connection       connection;
     private final SessionFactory   sessionFactory;
@@ -80,20 +79,6 @@ public class SqlSessionImpl implements SqlSession
         }
     }
     
-    public void autoOpen()
-    {
-        autoOpen += 1;
-    }
-    
-    public void autoClose()
-    {
-        autoOpen -= 1;
-        if (autoOpen == 0)
-        {
-            close();
-        }
-    }
-    
     @Override
     public void flush()
     {
@@ -128,7 +113,7 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public void close()
     {
-        if (closed || transNum > 0 || autoOpen > 0)
+        if (closed || transNum > 0)
         {
             return;
         }
@@ -223,34 +208,6 @@ public class SqlSessionImpl implements SqlSession
         return (Integer) ExecSqlTemplate.exec(ExecSqlTemplate.update, sqlInterceptors, pageParse, null, null, connection, sql, params);
     }
     
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> T findOneByStrategy(T entity, String strategyName)
-    {
-        return sessionFactory.getDao((Class<T>) entity.getClass()).findOne(this, entity, strategyName);
-    }
-    
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> List<T> findAllByStrategy(T entity, String strategyName)
-    {
-        return sessionFactory.getDao((Class<T>) entity.getClass()).findAll(this, entity, strategyName);
-    }
-    
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> List<T> findPageByStrategy(T entity, Page page, String strategyName)
-    {
-        return sessionFactory.getDao((Class<T>) entity.getClass()).findPage(this, entity, page, pageParse, strategyName);
-    }
-    
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> int updateByStrategy(T entity, String strategyName)
-    {
-        return sessionFactory.getDao((Class<T>) entity.getClass()).update(this, entity, strategyName);
-    }
-    
     @Override
     public void insert(String sql, Object... params)
     {
@@ -267,6 +224,30 @@ public class SqlSessionImpl implements SqlSession
     public void batchInsert(String sql, Object... paramArrays)
     {
         ExecSqlTemplate.batchInsert(sqlInterceptors, connection, sql, paramArrays);
+    }
+    
+    @Override
+    public int update(Class<?> ckass, String strategy, Object... params)
+    {
+        return sessionFactory.getDao(ckass).update(this, strategy, params);
+    }
+    
+    @Override
+    public <T> T findOneByStrategy(Class<T> entityClass, String strategy, Object... params)
+    {
+        return sessionFactory.getDao(entityClass).findOne(this, strategy, params);
+    }
+    
+    @Override
+    public <T> List<T> findAllByStrategy(Class<T> entityClass, String strategy, Object... params)
+    {
+        return sessionFactory.getDao(entityClass).findAll(this, strategy, params);
+    }
+    
+    @Override
+    public <T> List<T> findPageByStrategy(Class<T> entityClass, Page page, String strategy, Object... params)
+    {
+        return sessionFactory.getDao(entityClass).findPage(this, page, strategy, params);
     }
     
 }

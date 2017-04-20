@@ -23,6 +23,10 @@ public class InterceptorChain
     
     protected void doChain(Connection connection, String sql, Object... params)
     {
+        if (index == interceptors.length)
+        {
+            return;
+        }
         SqlInterceptor now = interceptors[index];
         this.sql = sql;
         this.params = params;

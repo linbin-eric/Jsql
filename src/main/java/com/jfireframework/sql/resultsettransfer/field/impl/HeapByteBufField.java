@@ -60,4 +60,10 @@ public class HeapByteBufField extends AbstractMapField
         }
     }
     
+    @Override
+    public Object statementValue(Object entity)
+    {
+        return unsafe.getObject(entity, offset);
+    }
+    
 }

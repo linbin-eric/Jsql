@@ -26,6 +26,10 @@ public class SessionFactoryImpl implements SessionFactory
         this.sqlInterceptors = sqlInterceptors;
         this.pageParse = pageParse;
         this.dataSource = dataSource;
+        for (Mapper each : mappers.values())
+        {
+            each.setSessionFactory(this);
+        }
     }
     
     @Override

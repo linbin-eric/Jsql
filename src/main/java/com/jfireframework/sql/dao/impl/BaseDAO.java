@@ -20,7 +20,6 @@ import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
 import com.jfireframework.sql.page.Page;
-import com.jfireframework.sql.page.PageParse;
 import com.jfireframework.sql.resultsettransfer.FixBeanTransfer;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
 import com.jfireframework.sql.resultsettransfer.field.MapField;
@@ -92,6 +91,7 @@ public abstract class BaseDAO<T> implements Dao<T>
             {
                 String sql = "select * from " + tableName + " where " + mapField.getColName() + " = ?";
                 findByMap.put(mapField.getFieldName(), sql);
+                findByTransfereMap.put(mapField.getFieldName(), new FixBeanTransfer<T>(entityClass));
             }
         }
         Field t_idField = t_id.getField();
@@ -263,7 +263,15 @@ public abstract class BaseDAO<T> implements Dao<T>
         Object[] params = new Object[fields.length];
         for (int i = 0; i < params.length; i++)
         {
-            params[i] = fields[i].statementValue(entity);
+            try
+            {
+                params[i] = fields[i].statementValue(entity);
+            }
+            catch (Exception e)
+            {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
         return params;
     }
@@ -308,28 +316,24 @@ public abstract class BaseDAO<T> implements Dao<T>
         return session.update("delete from " + tableName);
     }
     
-    @Override
-    public int update(SqlSession session, T param, String strategyName)
+    public int update(SqlSession session, String strategy, Object... params)
     {
-        return strategyOperation.update(session, param, strategyName);
+        return strategyOperation.update(session, strategy, params);
     }
     
-    @Override
-    public T findOne(SqlSession session, T entity, String strategyName)
+    public T findOne(SqlSession session, String strategy, Object... params)
     {
-        return strategyOperation.findOne(session, entity, strategyName);
+        return strategyOperation.findOne(session, strategy, params);
     }
     
-    @Override
-    public List<T> findAll(SqlSession session, T param, String strategyName)
+    public List<T> findAll(SqlSession session, String strategy, Object... params)
     {
-        return strategyOperation.findAll(session, param, strategyName);
+        return strategyOperation.findAll(session, strategy, params);
     }
     
-    @Override
-    public List<T> findPage(SqlSession session, T param, Page page, PageParse pageParse, String strategyName)
+    public List<T> findPage(SqlSession session, Page page, String strategy, Object... params)
     {
-        return strategyOperation.findPage(session, param, page, pageParse, strategyName);
+        return strategyOperation.findPage(session, page, strategy, params);
     }
     
 }

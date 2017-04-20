@@ -33,4 +33,11 @@ public class StringField extends AbstractMapField
     {
         statement.setString(index, (String) unsafe.getObject(entity, offset));
     }
+    
+    @Override
+    public Object statementValue(Object entity)
+    {
+        return unsafe.getObject(entity, offset);
+    }
+    
 }

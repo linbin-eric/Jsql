@@ -16,6 +16,7 @@ import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.order.AescComparator;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
+import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.annotation.Sql;
 import com.jfireframework.sql.dao.Dao;
 import com.jfireframework.sql.dao.impl.MysqlDAO;
@@ -58,6 +59,7 @@ public class SessionfactoryConfig
             {
                 throw new NullPointerException("no dataSource set");
             }
+            Verify.notNull(scanPackage, "sql的扫描路径不能为空");
             Set<Class<?>> set = buildClassNameSet(classLoader);
             initSqlInterceptor(set);
             detectProductName();

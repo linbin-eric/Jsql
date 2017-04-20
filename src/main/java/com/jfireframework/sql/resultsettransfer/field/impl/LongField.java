@@ -30,4 +30,10 @@ public class LongField extends AbstractMapField
         statement.setLong(index, unsafe.getLong(entity, offset));
     }
     
+    @Override
+    public Object statementValue(Object entity)
+    {
+        return unsafe.getLong(entity, offset);
+    }
+    
 }

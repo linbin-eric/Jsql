@@ -111,9 +111,4 @@ public abstract class AbstractMapField implements MapField
         return field.equals(o);
     }
     
-    @Override
-    public Object statementValue(Object entity)
-    {
-        return unsafe.getObject(entity, offset);
-    }
 }

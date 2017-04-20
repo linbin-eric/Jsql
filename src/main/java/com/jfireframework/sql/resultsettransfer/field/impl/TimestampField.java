@@ -27,4 +27,10 @@ public class TimestampField extends AbstractMapField
         statement.setTimestamp(index, (Timestamp) unsafe.getObject(entity, offset));
     }
     
+    @Override
+    public Object statementValue(Object entity)
+    {
+        return unsafe.getObject(entity, offset);
+    }
+    
 }
