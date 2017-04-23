@@ -27,7 +27,7 @@ public class AutoSession implements RessourceManager
         SqlSession session = sessionFactory.getCurrentSession();
         if (session != null)
         {
-            ((AutoSessionProxy) session).close();
+            ((AutoSessionProxy) session).realClose();
         }
     }
     
@@ -43,7 +43,6 @@ public class AutoSession implements RessourceManager
         else
         {
             proxy = new AutoSessionProxy(session);
-            proxy.open();
             SessionFactory.CURRENT_SESSION.set(proxy);
         }
         proxy.open();
@@ -57,6 +56,15 @@ public class AutoSession implements RessourceManager
         public void open()
         {
             open += 1;
+        }
+        
+        public void realClose()
+        {
+            open -= 1;
+            if (open == 0)
+            {
+                host.close();
+            }
         }
         
         public AutoSessionProxy(SqlSession session)
@@ -151,11 +159,7 @@ public class AutoSession implements RessourceManager
         @Override
         public void close()
         {
-            open -= 1;
-            if (open == 0)
-            {
-                host.close();
-            }
+            ;
         }
         
         @Override
