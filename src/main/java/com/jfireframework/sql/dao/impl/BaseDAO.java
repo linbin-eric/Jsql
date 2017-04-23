@@ -2,15 +2,12 @@ package com.jfireframework.sql.dao.impl;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
 import com.jfireframework.baseutil.simplelog.Logger;
-import com.jfireframework.sql.annotation.FindBy;
 import com.jfireframework.sql.annotation.Id;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.dao.Dao;
@@ -67,8 +64,6 @@ public abstract class BaseDAO<T> implements Dao<T>
     protected final String                          deleteSql;
     protected static final Logger                   LOGGER             = ConsoleLogFactory.getLogger();
     protected final StrategyOperation<T>            strategyOperation;
-    protected final Map<String, String>             findByMap          = new HashMap<String, String>();
-    protected final Map<String, FixBeanTransfer<?>> findByTransfereMap = new HashMap<String, FixBeanTransfer<?>>();
     protected ResultSetTransfer<T>                  transfer;
     protected String[]                              pkName;
     
@@ -86,12 +81,6 @@ public abstract class BaseDAO<T> implements Dao<T>
             if (mapField.getField().isAnnotationPresent(Id.class))
             {
                 t_id = mapField;
-            }
-            if (mapField.getField().isAnnotationPresent(FindBy.class))
-            {
-                String sql = "select * from " + tableName + " where " + mapField.getColName() + " = ?";
-                findByMap.put(mapField.getFieldName(), sql);
-                findByTransfereMap.put(mapField.getFieldName(), new FixBeanTransfer<T>(entityClass));
             }
         }
         Field t_idField = t_id.getField();
@@ -296,18 +285,6 @@ public abstract class BaseDAO<T> implements Dao<T>
     {
         String sql = mode == LockMode.SHARE ? getInShareInfo.getSql() : getForUpdateInfo.getSql();
         return session.query(transfer, sql, pk);
-    }
-    
-    @SuppressWarnings("unchecked")
-    @Override
-    public T findBy(SqlSession session, Object param, String name)
-    {
-        String sql = findByMap.get(name);
-        if (sql == null)
-        {
-            throw new NullPointerException("没有属性:" + name + "的findBy注解,请检查类:" + entityClass.getName());
-        }
-        return (T) session.query(findByTransfereMap.get(name), sql, param);
     }
     
     @Override

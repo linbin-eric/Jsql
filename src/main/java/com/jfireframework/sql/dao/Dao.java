@@ -68,6 +68,4 @@ public interface Dao<T> extends StrategyOperation<T>
     public T getById(Object pk, SqlSession session, LockMode mode);
     
     public int deleteAll(SqlSession session);
-    
-    public T findBy(SqlSession session, Object param, String name);
 }

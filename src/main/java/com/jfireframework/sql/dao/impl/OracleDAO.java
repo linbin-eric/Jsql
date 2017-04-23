@@ -137,7 +137,7 @@ public class OracleDAO<T> extends BaseDAO<T>
         }
         else
         {
-            session.insert(sql, params);
+            session.update(sql, params);
         }
     }
     

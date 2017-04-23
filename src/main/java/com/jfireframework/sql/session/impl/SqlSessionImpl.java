@@ -175,12 +175,6 @@ public class SqlSessionImpl implements SqlSession
         return sessionFactory.getDao(entityClass).getById(pk, this, mode);
     }
     
-    @Override
-    public <T> T findBy(Class<T> entityClass, String name, Object param)
-    {
-        return sessionFactory.getDao(entityClass).findBy(this, param, name);
-    }
-    
     @SuppressWarnings("unchecked")
     @Override
     public <T> T query(ResultSetTransfer<T> transfer, String sql, Object... params)
@@ -205,13 +199,7 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public int update(String sql, Object... params)
     {
-        return (Integer) ExecSqlTemplate.exec(ExecSqlTemplate.update, sqlInterceptors, pageParse, null, null, connection, sql, params);
-    }
-    
-    @Override
-    public void insert(String sql, Object... params)
-    {
-        ExecSqlTemplate.exec(ExecSqlTemplate.update, sqlInterceptors, null, null, null, connection, sql, params);
+        return (Integer) ExecSqlTemplate.exec(ExecSqlTemplate.update, sqlInterceptors, null, null, null, connection, sql, params);
     }
     
     @Override
@@ -233,19 +221,19 @@ public class SqlSessionImpl implements SqlSession
     }
     
     @Override
-    public <T> T findOneByStrategy(Class<T> entityClass, String strategy, Object... params)
+    public <T> T findOne(Class<T> entityClass, String strategy, Object... params)
     {
         return sessionFactory.getDao(entityClass).findOne(this, strategy, params);
     }
     
     @Override
-    public <T> List<T> findAllByStrategy(Class<T> entityClass, String strategy, Object... params)
+    public <T> List<T> findAll(Class<T> entityClass, String strategy, Object... params)
     {
         return sessionFactory.getDao(entityClass).findAll(this, strategy, params);
     }
     
     @Override
-    public <T> List<T> findPageByStrategy(Class<T> entityClass, Page page, String strategy, Object... params)
+    public <T> List<T> findPage(Class<T> entityClass, Page page, String strategy, Object... params)
     {
         return sessionFactory.getDao(entityClass).findPage(this, page, strategy, params);
     }

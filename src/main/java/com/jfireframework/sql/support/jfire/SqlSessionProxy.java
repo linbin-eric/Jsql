@@ -24,13 +24,6 @@ public class SqlSessionProxy implements SqlSession
     }
     
     @Override
-    public <T> T findBy(Class<T> entityClass, String name, Object param)
-    {
-        SqlSession session = sessionFactory.getCurrentSession();
-        return session.findBy(entityClass, name, param);
-    }
-    
-    @Override
     public <T> T get(Class<T> entityClass, Object pk, LockMode mode)
     {
         SqlSession session = sessionFactory.getCurrentSession();
@@ -94,13 +87,6 @@ public class SqlSessionProxy implements SqlSession
     }
     
     @Override
-    public void insert(String sql, Object... params)
-    {
-        SqlSession session = sessionFactory.getCurrentSession();
-        session.insert(sql, params);
-    }
-    
-    @Override
     public void batchInsert(String sql, Object... paramArrays)
     {
         SqlSession session = sessionFactory.getCurrentSession();
@@ -157,24 +143,24 @@ public class SqlSessionProxy implements SqlSession
     }
     
     @Override
-    public <T> T findOneByStrategy(Class<T> entityClass, String strategy, Object... params)
+    public <T> T findOne(Class<T> entityClass, String strategy, Object... params)
     {
         SqlSession session = sessionFactory.getCurrentSession();
-        return session.findOneByStrategy(entityClass, strategy, params);
+        return session.findOne(entityClass, strategy, params);
     }
     
     @Override
-    public <T> List<T> findAllByStrategy(Class<T> entityClass, String strategy, Object... params)
+    public <T> List<T> findAll(Class<T> entityClass, String strategy, Object... params)
     {
         SqlSession session = sessionFactory.getCurrentSession();
-        return session.findAllByStrategy(entityClass, strategy, params);
+        return session.findAll(entityClass, strategy, params);
     }
     
     @Override
-    public <T> List<T> findPageByStrategy(Class<T> entityClass, Page page, String strategy, Object... params)
+    public <T> List<T> findPage(Class<T> entityClass, Page page, String strategy, Object... params)
     {
         SqlSession session = sessionFactory.getCurrentSession();
-        return session.findPageByStrategy(entityClass, page, strategy, params);
+        return session.findPage(entityClass, page, strategy, params);
     }
     
     @Override

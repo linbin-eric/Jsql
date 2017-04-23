@@ -79,12 +79,6 @@ public class AutoSession implements RessourceManager
         }
         
         @Override
-        public <T> T findBy(Class<T> entityClass, String name, Object param)
-        {
-            return host.findBy(entityClass, name, param);
-        }
-        
-        @Override
         public <T> T get(Class<T> entityClass, Object pk, LockMode mode)
         {
             return host.get(entityClass, pk, mode);
@@ -139,12 +133,6 @@ public class AutoSession implements RessourceManager
         }
         
         @Override
-        public void insert(String sql, Object... params)
-        {
-            host.insert(sql, params);
-        }
-        
-        @Override
         public void batchInsert(String sql, Object... paramArrays)
         {
             host.batchInsert(sql, paramArrays);
@@ -193,21 +181,21 @@ public class AutoSession implements RessourceManager
         }
         
         @Override
-        public <T> T findOneByStrategy(Class<T> entityClass, String strategy, Object... params)
+        public <T> T findOne(Class<T> entityClass, String strategy, Object... params)
         {
-            return host.findOneByStrategy(entityClass, strategy, params);
+            return host.findOne(entityClass, strategy, params);
         }
         
         @Override
-        public <T> List<T> findAllByStrategy(Class<T> entityClass, String strategy, Object... params)
+        public <T> List<T> findAll(Class<T> entityClass, String strategy, Object... params)
         {
-            return host.findAllByStrategy(entityClass, strategy, params);
+            return host.findAll(entityClass, strategy, params);
         }
         
         @Override
-        public <T> List<T> findPageByStrategy(Class<T> entityClass, Page page, String strategy, Object... params)
+        public <T> List<T> findPage(Class<T> entityClass, Page page, String strategy, Object... params)
         {
-            return host.findPageByStrategy(entityClass, page, strategy, params);
+            return host.findPage(entityClass, page, strategy, params);
         }
         
         @Override
