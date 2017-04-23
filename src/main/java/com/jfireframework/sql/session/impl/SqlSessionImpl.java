@@ -122,6 +122,7 @@ public class SqlSessionImpl implements SqlSession
             closed = true;
             SessionFactory.CURRENT_SESSION.remove();
             connection.close();
+            logger.trace("关闭session");
         }
         catch (SQLException e)
         {
