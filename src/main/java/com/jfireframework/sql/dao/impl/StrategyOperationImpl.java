@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import com.jfireframework.baseutil.collection.StringCache;
+import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.dao.StrategyOperation;
 import com.jfireframework.sql.page.Page;
@@ -89,16 +90,19 @@ public class StrategyOperationImpl<T> implements StrategyOperation<T>
         {
             for (String selectField : valueFields.split(","))
             {
+                Verify.notNull(mapFields.get(selectField), "策略:{}中的字段:{}不存在", fields, selectField);
                 cache.append(mapFields.get(selectField).getColName()).appendComma();
             }
             for (String whereField : whereFields.split(","))
             {
+                Verify.notNull(mapFields.get(whereField), "策略:{}中的字段:{}不存在", fields, whereField);
                 cache.append(mapFields.get(whereField).getColName()).appendComma();
             }
         }
         cache.deleteLast().append(" from ").append(tableName).append(" where ");
         for (String whereField : whereFields.split(","))
         {
+            Verify.notNull(mapFields.get(whereField), "策略:{}中的字段:{}不存在", fields, whereField);
             cache.append(mapFields.get(whereField).getColName()).append("=? and ");
         }
         cache.deleteEnds(4);
@@ -117,11 +121,13 @@ public class StrategyOperationImpl<T> implements StrategyOperation<T>
         String whereFields = tmp[1];
         for (String setField : valueFields.split(","))
         {
+            Verify.notNull(mapFields.get(setField), "策略:{}中的字段:{}不存在", fields, setField);
             cache.append(mapFields.get(setField).getColName()).append("=?,");
         }
         cache.deleteLast().append(" where ");
         for (String whereField : whereFields.split(","))
         {
+            Verify.notNull(mapFields.get(whereField), "策略:{}中的字段:{}不存在", fields, whereField);
             cache.append(mapFields.get(whereField).getColName()).append("=? and ");
         }
         cache.deleteEnds(4);

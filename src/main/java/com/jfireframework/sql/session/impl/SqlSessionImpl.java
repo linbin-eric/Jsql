@@ -3,8 +3,8 @@ package com.jfireframework.sql.session.impl;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
-import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
-import com.jfireframework.baseutil.simplelog.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.jfireframework.sql.dao.LockMode;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.page.Page;
@@ -21,7 +21,7 @@ public class SqlSessionImpl implements SqlSession
     private boolean                closed   = false;
     private final Connection       connection;
     private final SessionFactory   sessionFactory;
-    private final static Logger    logger   = ConsoleLogFactory.getLogger();
+    private final static Logger    logger   = LoggerFactory.getLogger(SqlSession.class);
     private final SqlInterceptor[] sqlInterceptors;
     private final PageParse        pageParse;
     

@@ -11,11 +11,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.jfireframework.baseutil.PackageScan;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.order.AescComparator;
-import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
-import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.annotation.Sql;
 import com.jfireframework.sql.dao.Dao;
@@ -49,7 +49,7 @@ public class SessionfactoryConfig
     private SqlInterceptor[]                  sqlInterceptors;
     private PageParse                         pageParse;
     private String                            productName;
-    protected static final Logger             logger      = ConsoleLogFactory.getLogger();
+    protected static final Logger             logger      = LoggerFactory.getLogger(SessionfactoryConfig.class);
     
     public SessionFactory build()
     {
@@ -118,7 +118,7 @@ public class SessionfactoryConfig
         List<SqlInterceptor> list = new LinkedList<SqlInterceptor>();
         for (Class<?> each : set)
         {
-            if (SqlInterceptor.class.isAssignableFrom(each))
+            if (SqlInterceptor.class.isAssignableFrom(each) && each.isInterface() == false)
             {
                 list.add((SqlInterceptor) each.newInstance());
             }

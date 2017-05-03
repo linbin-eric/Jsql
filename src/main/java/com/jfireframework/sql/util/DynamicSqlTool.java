@@ -2,222 +2,22 @@ package com.jfireframework.sql.util;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Stack;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.exception.JustThrowException;
-import com.jfireframework.baseutil.reflect.ReflectUtil;
+import com.jfireframework.baseutil.smc.SmcHelper;
+import com.jfireframework.baseutil.smc.el.SmcEl;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.metadata.MetaContext;
-import com.jfireframework.sql.metadata.TableMetaData;
-import com.jfireframework.sql.util.MapperBuilder.InvokeNameAndType;
 import com.jfireframework.sql.util.MapperBuilder.SqlContext;
 import com.jfireframework.sql.util.enumhandler.AbstractEnumHandler;
 import com.jfireframework.sql.util.enumhandler.EnumHandler;
 
 public class DynamicSqlTool
 {
-    /**
-     * 分析动态sql语句，并且生成动态sql情况下的前置的热编码代码部分
-     * 
-     * @param sql
-     * @param paramNames
-     * @param paramTypes
-     * @return
-     * @throws NoSuchFieldException
-     * @throws SecurityException
-     */
-    public static String analyseDynamicSql(String sql, String[] paramNames, Class<?>[] paramTypes, MetaContext metaContext, SqlContext sqlContext) throws NoSuchFieldException, SecurityException
-    {
-        sql = transMapSql(sql, sqlContext, metaContext);
-        String bk = "\t";
-        String context = bk + "com.jfireframework.baseutil.collection.StringCache builder = new StringCache();\n" + bk + "List list = new ArrayList();\n";
-        int pre = 0;
-        int now = 0;
-        String section = null;
-        while (now < sql.length())
-        {
-            switch (sql.charAt(now))
-            {
-                case '\'':
-                    // 如果不是转义字符
-                    now = sql.indexOf('\'', now);
-                    now++;
-                    break;
-                case '{':
-                    section = sql.substring(pre, now);
-                    context += bk + "builder.append(\"" + section + "\");\n";
-                    pre = now + 1;
-                    now = sql.indexOf('}', pre);
-                    section = sql.substring(pre, now);
-                    now++;
-                    pre = now;
-                    context += bk + "builder.append(" + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ");\n";
-                    break;
-                case '[':
-                    section = sql.substring(pre, now);
-                    context += bk + "builder.append(\"" + section + "\");\n";
-                    pre = now + 1;
-                    now = sql.indexOf(']', pre);
-                    section = sql.substring(pre, now).trim();
-                    context += bk + "if(" + createVarIf(section, paramNames, paramTypes, sqlContext) + ")\n";
-                    context += bk + "{\n";
-                    bk += "\t";
-                    now++;
-                    pre = now;
-                    break;
-                case '$':
-                    if (sql.charAt(now + 1) == '~')
-                    {
-                        section = sql.substring(pre, now);
-                        context += bk + "builder.append(\"" + section + "\").append(\" (  \");\n";
-                    }
-                    else
-                    {
-                        section = sql.substring(pre, now);
-                        context += bk + "builder.append(\"" + section + "\").append('?');\n";
-                    }
-                    pre = now + 1;
-                    now++;
-                    now = getEndFlag(sql, now);
-                    if (sql.charAt(pre) == '~')
-                    {
-                        section = sql.substring(pre, now);
-                        section = section.substring(1);
-                        context = _handleWithTidle(context, section, paramNames, paramTypes, sql, sqlContext);
-                    }
-                    else
-                    {
-                        section = sql.substring(pre, now);
-                        if (section.startsWith("%") || section.endsWith("%"))
-                        {
-                            context += bk + "list.add(" + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ");\n";
-                        }
-                        else
-                        {
-                            context += bk + "list.add(($w)(" + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + "));\n";
-                        }
-                    }
-                    pre = now;
-                    break;
-                case '#':
-                    section = sql.substring(pre, now);
-                    if (section.equals("") == false)
-                    {
-                        context += bk + "builder.append(\"" + section + "\");\n";
-                    }
-                    bk = bk.substring(0, bk.length() - 1);
-                    context += bk + "}\n";
-                    pre = now + 1;
-                    now++;
-                    break;
-                default:
-                    now++;
-                    break;
-            }
-        }
-        section = sql.substring(pre, now);
-        if (section.equals("") == false)
-        {
-            context += bk + "builder.append(\"" + section + "\");\n";
-        }
-        context += bk + "String sql = builder.toString();\n";
-        // context += bk + "Object[] queryParam = list.toArray();\n";
-        return context;
-    }
     
-    private static String _handleWithTidle(String context, String section, String[] paramNames, Class<?>[] paramTypes, String sql, SqlContext sqlContext) throws SecurityException, NoSuchFieldException
-    {
-        String bk = "\t";
-        Class<?> paramType = getParamType(section, paramNames, paramTypes, sql);
-        if (paramType.equals(String.class))
-        {
-            context += bk + "{\n" + bk + "\tString[] tmp = ((String)" + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ").split(\",\");\n";
-        }
-        else if (paramType.equals(String[].class))
-        {
-            context += bk + bk + "{\n" + bk + "\n" + bk + "\tString[] tmp = " + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ";\n";
-        }
-        else if (paramType.equals(int[].class))
-        {
-            context += bk + "{\n" + bk + "\tint[] tmp = " + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ";\n";
-        }
-        else if (paramType.equals(Integer[].class))
-        {
-            context += bk + "{\n" + bk + "\tInteger[] tmp = " + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ";\n";
-        }
-        else if (paramType.equals(long[].class))
-        {
-            context += bk + "{\n" + bk + "\tlong[] tmp = " + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ";\n";
-        }
-        else if (paramType.equals(Long[].class))
-        {
-            context += bk + "{\n" + bk + "\tLong[] tmp = " + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ";\n";
-        }
-        else if (paramType.equals(float[].class))
-        {
-            context += bk + "{\n" + bk + "\tfloat[] tmp = " + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ";\n";
-        }
-        else if (paramType.equals(Float[].class))
-        {
-            context += bk + "{\n" + bk + "\tFloat[] tmp = " + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ";\n";
-        }
-        else if (paramType.equals(double[].class))
-        {
-            context += bk + "{\n" + bk + "\tdouble[] tmp = " + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ";\n";
-        }
-        else if (paramType.equals(Double[].class))
-        {
-            context += bk + "{\n" + bk + "\tDouble[] tmp = " + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ";\n";
-        }
-        else if (List.class.isAssignableFrom(paramType))
-        {
-            context += bk + "{\n" + bk + "\tjava.util.List tmp = " + buildParam(section, paramNames, paramTypes, sqlContext).getInvokeName() + ";\n";
-        }
-        else
-        {
-            throw new RuntimeException("in操作中存在不识别的类型");
-        }
-        bk += "\t";
-        if (List.class.isAssignableFrom(paramType))
-        {
-            context += bk + "int length = tmp.size();\n";
-        }
-        else
-        {
-            context += bk + "int length = tmp.length;\n";
-        }
-        context += bk + "for(int i=0;i<length;i++){builder.append(\"?,\");}\n";
-        context += bk + "builder.deleteLast().append(\")\");\n";
-        if (List.class.isAssignableFrom(paramType))
-        {
-            context += bk + "for(int i=0;i<length;i++){list.add(tmp.get(i));}\n";
-        }
-        else
-        {
-            context += bk + "for(int i=0;i<length;i++){list.add(($w)tmp[i]);}\n";
-        }
-        bk = bk.substring(0, bk.length() - 1);
-        context += bk + "}\n";
-        return context;
-    }
-    
-    /**
-     * 给定参数字符串inject，在所有的方法入参名称中搜索可能的对应值。
-     * 比如字符串为user.name。有一个参数为类user,并且参数位置在第一个。则返回的内容是$1.getName()
-     * 如果只是单一参数，比如name。有一个参数为name。并且在第一个。返回的内容是$1
-     * 如果字符串前后有%，最后的结果是"%"+$1.getName()+"%"这样的形式。前后会自动补上%
-     * 
-     * @param inject
-     * @param paramNames
-     * @param paramTypes
-     * @param originalSql
-     * @return
-     * @throws NoSuchFieldException
-     * @throws SecurityException
-     */
     @SuppressWarnings("unchecked")
-    private static InvokeNameAndType buildParam(String inject, String[] paramNames, Class<?>[] paramTypes, SqlContext sqlContext) throws NoSuchFieldException, SecurityException
+    private static String buildParam(String inject, String[] paramNames, Class<?>[] paramTypes, SqlContext sqlContext)
     {
         boolean before = false;
         boolean after = false;
@@ -231,90 +31,159 @@ public class DynamicSqlTool
             inject = inject.substring(0, inject.length() - 1);
             after = true;
         }
-        if (inject.indexOf('.') == -1)
+        Class<?> type = SmcHelper.getType(inject, paramNames, paramTypes);
+        String result = "";
+        if (before)
         {
-            int index = getParamNameIndex(inject, paramNames);
-            String result = "";
-            if (before)
-            {
-                result += "\"%\"+";
-            }
-            if (Enum.class.isAssignableFrom(paramTypes[index]))
-            {
-                Class<? extends EnumHandler<?>> handlerType = AbstractEnumHandler.getEnumBoundHandler((Class<? extends Enum<?>>) paramTypes[index]);
-                String fieldName = "enumHandler$" + System.nanoTime();
-                sqlContext.addEnumHandler(fieldName, (Class<? extends Enum<?>>) paramTypes[index], handlerType);
-                result += fieldName + ".getValue($" + (index + 1) + ")";
-            }
-            else
-            {
-                result += "$" + (index + 1);
-            }
-            if (after)
-            {
-                result += "+\"%\"";
-            }
-            InvokeNameAndType invokeNameAndType = new InvokeNameAndType(result, paramTypes[index], inject);
-            return invokeNameAndType;
+            result += "\"%\"+";
+        }
+        if (Enum.class.isAssignableFrom(type))
+        {
+            Class<? extends EnumHandler<?>> handlerType = AbstractEnumHandler.getEnumBoundHandler((Class<? extends Enum<?>>) type);
+            String fieldName = "enumHandler$" + System.nanoTime();
+            sqlContext.addEnumHandler(fieldName, (Class<? extends Enum<?>>) type, handlerType);
+            result += fieldName + ".getValue(" + SmcHelper.buildInvoke(inject, paramNames, paramTypes) + ")";
         }
         else
         {
-            String[] tmp = inject.split("\\.");
-            int index = getParamNameIndex(tmp[0], paramNames);
-            Object[] returns = ReflectUtil.getBuildMethodAndType(inject, paramTypes[index]);
-            Class<?> returnType = (Class<?>) returns[1];
-            String result = "";
-            if (before)
-            {
-                result += "\"%\"+";
-            }
-            if (Enum.class.isAssignableFrom(returnType))
-            {
-                Class<? extends EnumHandler<?>> handlerType = AbstractEnumHandler.getEnumBoundHandler((Class<? extends Enum<?>>) returnType);
-                String fieldName = "enumHandler$" + System.nanoTime();
-                sqlContext.addEnumHandler(fieldName, (Class<? extends Enum<?>>) returnType, handlerType);
-                result += fieldName + ".getValue($" + (index + 1) + returns[0] + ")";
-            }
-            else
-            {
-                result += "$" + (index + 1) + returns[0];
-            }
-            if (after)
-            {
-                result += "+\"%\"";
-            }
-            InvokeNameAndType invokeNameAndType = new InvokeNameAndType(result, returnType, inject);
-            return invokeNameAndType;
+            result += SmcHelper.buildInvoke(inject, paramNames, paramTypes);
         }
+        if (after)
+        {
+            result += "+\"%\"";
+        }
+        return result;
+    }
+    
+    private static String handleWithTidle(String context, String section, String[] paramNames, Class<?>[] paramTypes, String sql, SqlContext sqlContext)
+    {
+        String bk = "\t";
+        Class<?> paramType = SmcHelper.getType(section, paramNames, paramTypes);
+        if (paramType.equals(String.class))
+        {
+            context += "{\r\n" + "\tString[] tmp = ((String)" + SmcHelper.buildInvoke(section, paramNames, paramTypes) + ").split(\",\");\r\n";
+        }
+        else if (paramType.isArray())
+        {
+            context += "{\r\n" + "\r\n" + "\t" + paramType.getComponentType().getName() + "[] tmp = " + SmcHelper.buildInvoke(section, paramNames, paramTypes) + ";\r\n";
+        }
+        else if (List.class.isAssignableFrom(paramType))
+        {
+            context += "{\r\n" + "\tjava.util.List tmp = " + SmcHelper.buildInvoke(section, paramNames, paramTypes) + ";\r\n";
+        }
+        else
+        {
+            throw new RuntimeException("in操作中存在不识别的类型");
+        }
+        if (List.class.isAssignableFrom(paramType))
+        {
+            context += "int length = tmp.size();\r\n";
+        }
+        else
+        {
+            context += "int length = tmp.length;\r\n";
+        }
+        context += "for(int i=0;i<length;i++){builder.append(\"?,\");}\r\n";
+        context += "builder.deleteLast().append(\")\");\r\n";
+        if (List.class.isAssignableFrom(paramType))
+        {
+            context += "for(int i=0;i<length;i++){list.add(tmp.get(i));}\r\n";
+        }
+        else
+        {
+            context += "for(int i=0;i<length;i++){list.add(tmp[i]);}\r\n";
+        }
+        bk = bk.substring(0, bk.length() - 1);
+        context += "}\r\n";
+        return context;
     }
     
     /**
-     * 给定字符串inject，搜索可能的参数字符串。比如字符串为user.name，有一个参数为类user。
-     * 则参数字符串应该是user.getName() 返回的结果是这个方法或者这个参数的类型。如果方法的返回类型是数组，则返回的结果是这个数组的元素类型
+     * 分析动态sql语句，并且生成动态sql情况下的前置的热编码代码部分
      * 
-     * @param inject
+     * @param sql
      * @param paramNames
      * @param paramTypes
-     * @param originalSql
      * @return
      * @throws NoSuchFieldException
      * @throws SecurityException
      */
-    private static Class<?> getParamType(String inject, String[] paramNames, Class<?>[] paramTypes, String originalSql) throws NoSuchFieldException, SecurityException
+    public static String analyseDynamicSql(String sql, String[] paramNames, Class<?>[] paramTypes, MetaContext metaContext, SqlContext sqlContext) throws NoSuchFieldException, SecurityException
     {
-        if (inject.indexOf('.') == -1)
+        sql = transMapSql(sql, sqlContext, metaContext);
+        String context = "com.jfireframework.baseutil.collection.StringCache builder = new com.jfireframework.baseutil.collection.StringCache();\r\n" + "java.util.List list = new java.util.ArrayList();\r\n";
+        int pre = 0;
+        int now = 0;
+        String section = null;
+        while (now < sql.length())
         {
-            Integer index = getParamNameIndex(inject, paramNames);
-            Verify.notNull(index, "sql注入语句{}无法找到注入属性{}", originalSql, inject);
-            return paramTypes[index];
+            char c = sql.charAt(now);
+            if (c == '\'')
+            {
+                now = sql.indexOf('\'', now + 1);
+                now += 1;
+                continue;
+            }
+            else if (c == '<' && sql.charAt(now + 1) == 'i' && sql.charAt(now + 2) == 'f')
+            {
+                section = sql.substring(pre, now);
+                context += "builder.append(\"" + section + "\");\r\n";
+                pre = now + 4;// <if(
+                now = sql.indexOf(")>", pre); // )>
+                String ifContent = sql.substring(pre, now);
+                context += "if(" + SmcEl.createIf(ifContent, paramNames, paramTypes) + ")\r\n";
+                context += "{\r\n";
+                pre = now + 2;
+                now = sql.indexOf("</if>", pre);
+                section = sql.substring(pre, now);
+                context += "builder.append(\"" + section + "\");\r\n";
+                context += "}\r\n";
+                now += 5;
+                pre = now;
+                continue;
+            }
+            else if (c == '$')
+            {
+                if (sql.charAt(now + 1) == '~')
+                {
+                    section = sql.substring(pre, now);
+                    context += "builder.append(\"" + section + "\").append(\" (  \");\r\n";
+                }
+                else
+                {
+                    section = sql.substring(pre, now);
+                    context += "builder.append(\"" + section + "\").append('?');\r\n";
+                }
+                pre = now + 1;
+                now++;
+                now = getEndFlag(sql, now);
+                if (sql.charAt(pre) == '~')
+                {
+                    section = sql.substring(pre, now);
+                    section = section.substring(1);
+                    context = handleWithTidle(context, section, paramNames, paramTypes, sql, sqlContext);
+                }
+                else
+                {
+                    section = sql.substring(pre, now);
+                    context += "list.add(" + buildParam(section, paramNames, paramTypes, sqlContext) + ");\r\n";
+                }
+                pre = now;
+                continue;
+            }
+            else
+            {
+                now++;
+                continue;
+            }
         }
-        else
+        section = sql.substring(pre, now);
+        if (section.equals("") == false)
         {
-            String[] tmp = inject.split("\\.");
-            Integer index = getParamNameIndex(tmp[0], paramNames);
-            Verify.notNull(index, "sql注入语句{}无法找到注入属性{}", originalSql, inject);
-            return ReflectUtil.getFinalReturnType(inject, paramTypes[index]);
+            context += "builder.append(\"" + section + "\");\r\n";
         }
+        context += "String sql = builder.toString();\r\n";
+        return context;
     }
     
     /**
@@ -336,6 +205,264 @@ public class DynamicSqlTool
         throw new RuntimeException("给定的参数" + inject + "不在参数列表中");
     }
     
+    private static void findTableNameAndAliasName(String sql, SqlContext sqlContext, MetaContext metaContext)
+    {
+        String simpleClassName = null;
+        int end = 0;
+        int index = 0;
+        boolean as = false;
+        boolean hasIf = false;
+        while (index < sql.length())
+        {
+            char c = sql.charAt(index);
+            if (c == '\'')
+            {
+                end = sql.indexOf('\'', index + 1);
+                end++;
+                index = end;
+                continue;
+            }
+            else if (c == '<' && sql.charAt(index + 1) == 'i' && sql.charAt(index + 2) == 'f')
+            {
+                index = sql.indexOf(")>", index);
+                index += 2;
+                hasIf = true;
+                continue;
+            }
+            else if (c == '<' && sql.charAt(index + 1) == '/' && sql.charAt(index + 2) == 'i' && sql.charAt(index + 3) == 'f' && sql.charAt(index + 4) == '>')
+            {
+                index += 5;
+                hasIf = false;
+                continue;
+            }
+            else if (c == '$')
+            {
+                end = getEndFlag(sql, index);
+                index = end + 1;
+                continue;
+            }
+            else if (c == '{')
+            {
+                end = sql.indexOf('}', index);
+                index = end + 1;
+                continue;
+            }
+            else if (c == ' ')
+            {
+                index += 1;
+                continue;
+            }
+            else if (c == '(' || c == ')')
+            {
+                index += 1;
+                continue;
+            }
+            else if (c == ' ' || c == ',' || c == '(' || c == '+' || c == '=' || c == '-' || c == '!' || c == '>' || c == '<')
+            {
+                index += 1;
+                continue;
+            }
+            else if (c == 'a' && index < sql.length() - 2 && sql.charAt(index + 1) == 's' && sql.charAt(index + 2) == ' ')
+            {
+                as = true;
+                index += 2;
+                continue;
+            }
+            else if (c >= 'A' && c <= 'Z')
+            {
+                end = getEndFlag(sql, index);
+                String tmp = sql.substring(index, end);
+                if (tmp.indexOf('.') == -1)
+                {
+                    simpleClassName = tmp;
+                    try
+                    {
+                        sqlContext.addMetaData(metaContext.get(simpleClassName));
+                    }
+                    catch (Exception e)
+                    {
+                        throw new JustThrowException("无法识别" + simpleClassName, e);
+                    }
+                }
+                index = end + 1;
+                continue;
+            }
+            else
+            {
+                end = getEndFlag(sql, index);
+                String tmp = sql.substring(index, end);
+                if (tmp.indexOf('.') == -1)
+                {
+                    if (as)
+                    {
+                        as = false;
+                        String alias = tmp;
+                        sqlContext.addAliasName(alias, metaContext.get(simpleClassName));
+                    }
+                    else
+                    {
+                        ;
+                    }
+                }
+                else
+                {
+                    ;
+                }
+                index = end + 1;
+                continue;
+            }
+        }
+        if (hasIf)
+        {
+            throw new UnsupportedOperationException(StringUtil.format("sql语句没有使用</if>来结束,存在语法错误。请检查:{}", sql));
+        }
+    }
+    
+    private static String replaceEntityNameAndFieldName(String sql, SqlContext sqlContext, MetaContext metaContext)
+    {
+        String simpleClassName = null;
+        int end = 0;
+        int index = 0;
+        boolean as = false;
+        StringCache cache = new StringCache();
+        while (index < sql.length())
+        {
+            char c = sql.charAt(index);
+            if (c == '\'')
+            {
+                end = sql.indexOf('\'', index + 1);
+                end++;
+                cache.append(sql.substring(index, end));
+                index = end;
+                continue;
+            }
+            else if (c == '<' && sql.charAt(index + 1) == 'i' && sql.charAt(index + 2) == 'f')
+            {
+                end = sql.indexOf(")>", index);
+                cache.append(sql.substring(index, end + 2));
+                index = end + 2;
+                continue;
+            }
+            else if (c == '<' && sql.charAt(index + 1) == '/' && sql.charAt(index + 2) == 'i' && sql.charAt(index + 3) == 'f' && sql.charAt(index + 4) == '>')
+            {
+                index += 5;
+                cache.append("</if>");
+                continue;
+            }
+            else if (c == '$')
+            {
+                end = getEndFlag(sql, index);
+                cache.append(sql.substring(index, end));
+                index = end;
+                continue;
+            }
+            else if (c == '{')
+            {
+                end = sql.indexOf('}', index);
+                cache.append(sql.substring(index, end));
+                index = end + 1;
+                continue;
+            }
+            else if (c == ' ')
+            {
+                index += 1;
+                cache.append(c);
+                continue;
+            }
+            else if (c == '(' || c == ')')
+            {
+                index += 1;
+                cache.append(c);
+                continue;
+            }
+            else if (c == ' ' || c == ',' || c == '(' || c == '+' || c == '=' || c == '-' || c == '!' || c == '>' || c == '<')
+            {
+                index += 1;
+                cache.append(c);
+                continue;
+            }
+            else if (c == 'a' && index < sql.length() - 2 && sql.charAt(index + 1) == 's' && sql.charAt(index + 2) == ' ')
+            {
+                as = true;
+                index += 2;
+                cache.append("as ");
+                continue;
+            }
+            else if (c >= 'A' && c <= 'Z')
+            {
+                end = getEndFlag(sql, index);
+                String tmp = sql.substring(index, end);
+                if (tmp.indexOf('.') == -1)
+                {
+                    simpleClassName = tmp;
+                    cache.append(metaContext.get(simpleClassName).getTableName());
+                }
+                else
+                {
+                    Object staticValue = sqlContext.getStaticValue(tmp);
+                    if (staticValue == null)
+                    {
+                        throw new NullPointerException(StringUtil.format("無法识别:{},请检查sql:{}", tmp, sql));
+                    }
+                    if (staticValue instanceof Integer || //
+                            staticValue instanceof Short || //
+                            staticValue instanceof Long || //
+                            staticValue instanceof Float || //
+                            staticValue instanceof Boolean || //
+                            staticValue instanceof Double)
+                    {
+                        cache.append(sqlContext.getStaticValue(tmp));
+                    }
+                    else if (staticValue instanceof String)
+                    {
+                        cache.append('\'').append(staticValue).append('\'');
+                    }
+                }
+                index = end;
+                continue;
+            }
+            else
+            {
+                end = getEndFlag(sql, index);
+                String tmp = sql.substring(index, end);
+                if (tmp.indexOf('.') == -1)
+                {
+                    if (as)
+                    {
+                        as = false;
+                        String alias = tmp;
+                        cache.append(alias);
+                    }
+                    else
+                    {
+                        if (sqlContext.getDbColName(tmp) != null)
+                        {
+                            cache.append(sqlContext.getDbColName(tmp));
+                        }
+                        else
+                        {
+                            cache.append(tmp);
+                        }
+                    }
+                }
+                else
+                {
+                    if (sqlContext.getDbColName(tmp) != null)
+                    {
+                        cache.append(sqlContext.getDbColName(tmp));
+                    }
+                    else
+                    {
+                        cache.append(tmp);
+                    }
+                }
+                index = end;
+                continue;
+            }
+        }
+        return cache.toString();
+    }
+    
     /**
      * 将sql语句中的类映射和字段映射替换为各自映射的数据库表名和字段名
      * 
@@ -344,235 +471,8 @@ public class DynamicSqlTool
      */
     public static String transMapSql(String sql, SqlContext sqlContext, MetaContext metaContext)
     {
-        try
-        {
-            String simpleClassName = null;
-            int end = 0;
-            int index = 0;
-            boolean as = false;
-            boolean preIsTableName = false;
-            while (index < sql.length())
-            {
-                char c = sql.charAt(index);
-                if (c == '\'')
-                {
-                    preIsTableName = false;
-                    end = sql.indexOf('\'', index);
-                    end++;
-                    index = end;
-                    continue;
-                }
-                else if (c == ' ' || c == ',' || c == '(' || c == '+' || c == '=' || c == '-' || c == '!' || c == '>' || c == '<')
-                {
-                    index++;
-                    end = getEndFlag(sql, index);
-                    String tmp = sql.substring(index, end).trim();
-                    if (tmp.equals(""))
-                    {
-                        preIsTableName = false;
-                        continue;
-                    }
-                    while (tmp.charAt(0) == '(')
-                    {
-                        tmp = tmp.substring(1).trim();
-                    }
-                    if (tmp.equals(""))
-                    {
-                        preIsTableName = false;
-                        continue;
-                    }
-                    if (tmp.indexOf(".") != -1 || tmp.indexOf("$") != -1)
-                    {
-                        preIsTableName = false;
-                    }
-                    else if (tmp.charAt(0) >= 'A' && tmp.charAt(0) <= 'Z')
-                    {
-                        preIsTableName = true;
-                        simpleClassName = tmp;
-                        try
-                        {
-                            sqlContext.addMetaData(metaContext.get(simpleClassName));
-                        }
-                        catch (Exception e)
-                        {
-                            throw new JustThrowException("无法识别" + simpleClassName, e);
-                        }
-                    }
-                    else if (tmp.equals("as") && end < sql.length() && sql.charAt(end) == ' ')
-                    {
-                        as = true;
-                    }
-                    else if (as == true)
-                    {
-                        if (preIsTableName)
-                        {
-                            TableMetaData tableMetaData = metaContext.get(simpleClassName);
-                            if (tableMetaData != null)
-                            {
-                                sqlContext.addAliasName(tmp, metaContext.get(simpleClassName));
-                            }
-                            else
-                            {
-                                throw new NullPointerException(StringUtil.format("无法识别类{}", simpleClassName));
-                            }
-                            preIsTableName = false;
-                            simpleClassName = null;
-                        }
-                        else
-                        {
-                            ;
-                        }
-                        as = false;
-                    }
-                    else
-                    {
-                        preIsTableName = false;
-                    }
-                    index = end;
-                    continue;
-                }
-                else if (c == 'a')
-                {
-                    // 确保as是一个独立的单词
-                    if (index + 2 < sql.length() && sql.charAt(index - 1) == ' ' && sql.charAt(index + 1) == 's' && sql.charAt(index + 2) == ' ')
-                    {
-                        as = true;
-                    }
-                    else
-                    {
-                        preIsTableName = false;
-                    }
-                    index++;
-                    continue;
-                }
-                else
-                {
-                    preIsTableName = false;
-                    index++;
-                    continue;
-                }
-            }
-            if (sqlContext.hasMetaContext() == false)
-            {
-                return sql;
-            }
-            StringCache cache = new StringCache();
-            int length = sql.length();
-            index = 0;
-            as = false;
-            while (index < length)
-            {
-                char c = sql.charAt(index);
-                if (c == '\'')
-                {
-                    end = sql.indexOf('\'', index);
-                    end++;
-                    cache.append(sql.substring(index, end));
-                    index = end;
-                    continue;
-                }
-                else if (c == ' ' || c == ',' || c == '(' || c == '+' || c == '=' || c == '-' || c == '!' || c == '>' || c == '<')
-                {
-                    cache.append(c);
-                    index++;
-                    end = getEndFlag(sql, index);
-                    String var = sql.substring(index, end).trim();
-                    if (var.equals(""))
-                    {
-                        index = end;
-                        continue;
-                    }
-                    if (var.equals("as"))
-                    {
-                        as = true;
-                        cache.append("as");
-                        index = end;
-                        continue;
-                    }
-                    while (var.charAt(0) == '(')
-                    {
-                        var = var.substring(1).trim();
-                    }
-                    if (var.equals(""))
-                    {
-                        cache.append(sql.substring(index, end).trim());
-                        index = end;
-                        continue;
-                    }
-                    if (var.indexOf(".") != -1 && var.indexOf("$") == -1 && as == false)
-                    {
-                        String[] tmp = var.split("\\.");
-                        Verify.True(tmp.length == 2, "sql有错误，请检查{},关注：{}", sql, var);
-                        if (sqlContext.getDbColName(var) != null)
-                        {
-                            cache.append(sqlContext.getDbColName(var));
-                        }
-                        else if (sqlContext.getStaticValue(var) != null)
-                        {
-                            Object staticValue = sqlContext.getStaticValue(var);
-                            if (staticValue instanceof Integer || //
-                                    staticValue instanceof Short || //
-                                    staticValue instanceof Long || //
-                                    staticValue instanceof Float || //
-                                    staticValue instanceof Double)
-                            {
-                                cache.append(sqlContext.getStaticValue(var));
-                            }
-                            else if (staticValue instanceof String)
-                            {
-                                cache.append('\'').append(staticValue).append('\'');
-                            }
-                            else if (staticValue instanceof Boolean)
-                            {
-                                cache.append(staticValue);
-                            }
-                        }
-                        else
-                        {
-                            throw new IllegalArgumentException(StringUtil.format("字段{}不存在数据库映射，请检查{}", var, sql));
-                        }
-                    }
-                    else if (var.charAt(0) >= 'A' && var.charAt(0) <= 'Z')
-                    {
-                        cache.append(metaContext.get(var).getTableName());
-                    }
-                    else
-                    {
-                        if (as)
-                        {
-                            as = false;
-                            cache.append(var);
-                        }
-                        else
-                        {
-                            if (sqlContext.getDbColName(var) != null)
-                            {
-                                cache.append(sqlContext.getDbColName(var));
-                            }
-                            else if (sqlContext.getStaticValue(var) != null)
-                            {
-                                cache.append(sqlContext.getStaticValue(var));
-                            }
-                            else
-                            {
-                                cache.append(var);
-                            }
-                        }
-                    }
-                    index = end;
-                }
-                else
-                {
-                    cache.append(c);
-                    index++;
-                }
-            }
-            return cache.toString();
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        findTableNameAndAliasName(sql, sqlContext, metaContext);
+        return replaceEntityNameAndFieldName(sql, sqlContext, metaContext);
     }
     
     /**
@@ -609,7 +509,7 @@ public class DynamicSqlTool
     public static void analyseFormatSql(String originalSql, String[] paramNames, Class<?>[] paramTypes, MetaContext metaContext, SqlContext sqlContext) throws NoSuchFieldException, SecurityException
     {
         getFormatSql(originalSql, metaContext, sqlContext);
-        List<InvokeNameAndType> invokeNameAndTypes = buildParams(sqlContext.getInjectNames(), paramNames, paramTypes, sqlContext);
+        List<String> invokeNameAndTypes = buildParams(sqlContext.getInjectNames(), paramNames, paramTypes, sqlContext);
         sqlContext.setQueryParams(invokeNameAndTypes);
     }
     
@@ -659,9 +559,9 @@ public class DynamicSqlTool
      * @throws SecurityException
      * @throws NoSuchFieldException
      */
-    private static List<InvokeNameAndType> buildParams(List<String> injects, String[] paramNames, Class<?>[] paramTypes, SqlContext sqlContext) throws NoSuchFieldException, SecurityException
+    private static List<String> buildParams(List<String> injects, String[] paramNames, Class<?>[] paramTypes, SqlContext sqlContext) throws NoSuchFieldException, SecurityException
     {
-        List<InvokeNameAndType> list = new LinkedList<MapperBuilder.InvokeNameAndType>();
+        List<String> list = new LinkedList<String>();
         int length = injects.size();
         if (length == 0)
         {
@@ -682,9 +582,7 @@ public class DynamicSqlTool
      */
     public static boolean isDynamic(String sql)
     {
-        Stack<Character> stack = new Stack<Character>();
         int now = 0;
-        int quote = 0;
         boolean dynamic = false;
         while (now < sql.length())
         {
@@ -692,272 +590,65 @@ public class DynamicSqlTool
             switch (c)
             {
                 case '\'':
-                    quote = quote == 0 ? 1 : 0;
-                    break;
-                case '[':
-                    if (quote != 1)
+                {
+                    
+                    int end = sql.indexOf('\'', now + 1);
+                    if (end == -1)
                     {
-                        stack.push(c);
+                        throw new UnsupportedOperationException(StringUtil.format("sql语句存在问题，'符号没有正确结束。请检查:{},并且关注:{}", sql, sql.subSequence(0, now)));
                     }
+                    now = end + 1;
                     break;
-                case ']':
-                    if (quote != -1)
+                }
+                case '<':
+                {
+                    if (sql.startsWith("<if", now))
                     {
-                        Verify.True(stack.peek() == '[', "sql语句存在问题，缺少[。请检查{},并且关注{}", sql, sql.subSequence(0, now));
-                        stack.push(c);
-                    }
-                    break;
-                case '{':
-                    if (quote != 1)
-                    {
-                        stack.push(c);
-                    }
-                    break;
-                case '}':
-                    if (quote != -1)
-                    {
-                        Verify.True(stack.pop() == '{', "sql语句存在问题，缺少{。请检查{},并且关注{}", sql, sql.subSequence(0, now));
                         dynamic = true;
-                    }
-                    break;
-                case '#':
-                    if (quote != 1)
-                    {
-                        Verify.True(stack.pop() == ']', "sql语句存在问题，缺少]。请检查{},并且关注{}", sql, sql.subSequence(0, now));
-                        Verify.True(stack.pop() == '[', "sql语句存在问题，缺少[。请检查{},并且关注{}", sql, sql.subSequence(0, now));
-                        dynamic = true;
-                    }
-                    break;
-                case '~':
-                    if (quote != 1)
-                    {
-                        Verify.True(now < sql.length() - 1, "sql语句存在错误，符号~不应该在最后一个，请检查{}", sql);
-                        Verify.True(sql.charAt(now - 1) == '$', "sql语句存在错误，符号~前面是$。请检查{}，并关注{}", sql, sql.substring(0, now));
-                        dynamic = true;
-                    }
-                    break;
-                default:
-                    break;
-            }
-            now++;
-        }
-        Verify.True(stack.size() == 0, "sql语句存在问题，少写了#来结束动态sql条件");
-        return dynamic;
-    }
-    
-    /**
-     * 将[]包围起来的条件语句进行解析，生成放在if条件语句中的编译代码。比如[user.age >15]会被生成(user !=null) &&
-     * (user.getAge() !=null) && (user.getAge().intValue()>15)
-     * 
-     * @param conditionStatment 条件语句如[user.age >15]
-     * @param paramNames 接口方法所有的入参名称
-     * @param types 接口方法所有的入参类型
-     * @return
-     * @throws NoSuchFieldException
-     * @throws SecurityException
-     */
-    private static String createVarIf(String conditionStatment, String[] paramNames, Class<?>[] types, SqlContext sqlContext) throws NoSuchFieldException, SecurityException
-    {
-        conditionStatment = conditionStatment.trim();
-        StringCache cache = new StringCache();
-        char c;
-        int flag = 0;
-        InvokeNameAndType invokeNameAndType = null;
-        String condition = null;
-        String param = null;
-        // 表达式的写法只支持变量在前，参数在后。也就是说只能写$user.age >24 而不能写24<$user.age
-        while (flag < conditionStatment.length())
-        {
-            c = conditionStatment.charAt(flag);
-            if (c == '$')
-            {
-                int varStart = flag + 1;
-                flag = getEndFlag(conditionStatment, flag);
-                String var = null;
-                if (flag < conditionStatment.length() - 1 && conditionStatment.charAt(flag) == '(' && conditionStatment.charAt(flag + 1) == ')')
-                {
-                    flag += 2;
-                    var = conditionStatment.substring(varStart, flag);
-                }
-                else if (flag < conditionStatment.length() - 1 && conditionStatment.charAt(flag) == '(')
-                {
-                    throw new IllegalArgumentException(StringUtil.format("动态sql功能只支持无参方法，请检查{}", conditionStatment));
-                }
-                else
-                {
-                    var = conditionStatment.substring(varStart, flag);
-                }
-                invokeNameAndType = buildParam(var, paramNames, types, sqlContext);
-                continue;
-            }
-            else if (c == '>' || c == '<' || c == '!' || c == '=')
-            {
-                if (conditionStatment.charAt(flag + 1) == '=')
-                {
-                    condition = String.valueOf(c + "=");
-                    flag += 2;
-                    continue;
-                }
-                else
-                {
-                    condition = String.valueOf(c);
-                    flag++;
-                    continue;
-                }
-            }
-            else if (c == ' ' || c == '(' || c == ')' || c == '|' || c == '&')
-            {
-                // 在遇到(,||,&& 时代表条件的结束。此时可以生成一个表达式
-                if (invokeNameAndType != null && c != ' ' && c != ')' && flag < conditionStatment.length() - 1)
-                {
-                    if (c == '(' || conditionStatment.charAt(flag + 1) == '|' || conditionStatment.charAt(flag + 1) == '&')
-                    {
-                        if (param == null && condition == null)
+                        int end = sql.indexOf(")>", now);
+                        if (end == -1)
                         {
-                            createStatement("null", cache, invokeNameAndType.getInvokeName(), invokeNameAndType.getReturnType(), "!=");
+                            throw new UnsupportedOperationException(StringUtil.format("sql语句存在问题，if标识符没有被结束。请检查:{},并且关注:{}", sql, sql.subSequence(0, now)));
                         }
                         else
                         {
-                            createStatement(param, cache, invokeNameAndType.getInvokeName(), invokeNameAndType.getReturnType(), condition);
+                            now = sql.indexOf("</if>", end);
+                            if (end == -1)
+                            {
+                                throw new UnsupportedOperationException(StringUtil.format("sql语句存在问题，if标识符没有被结束。请检查:{},并且关注:{}", sql, sql.subSequence(0, now)));
+                            }
+                            now = end + 5;
+                            break;
                         }
-                        cache.append(' ');
-                        invokeNameAndType = null;
-                        condition = null;
-                        param = null;
+                    }
+                    else
+                    {
+                        now += 1;
+                        break;
                     }
                 }
-                cache.append(c);
-                flag++;
-                continue;
-            }
-            else if (c == '\'')
-            {
-                int end = conditionStatment.indexOf('\'', flag);
-                param = conditionStatment.substring(flag + 1, end);
-                createStatement(param, cache, invokeNameAndType.getInvokeName(), invokeNameAndType.getReturnType(), condition);
-                invokeNameAndType = null;
-                condition = null;
-                param = null;
-                flag = end + 1;
-                continue;
-            }
-            // 如果都不是上面的那些字符，就意味着可能是数字或者是布尔值。（在输入正确的情况下，故意输错不说。）
-            else
-            {
-                Verify.notNull(invokeNameAndType, "sql语句错误，请检查是否条件判断'{}'前面是否缺少了$", conditionStatment);
-                int paramStart = flag;
-                flag = getEndFlag(conditionStatment, flag);
-                param = conditionStatment.substring(paramStart, flag);
-                createStatement(param, cache, invokeNameAndType.getInvokeName(), invokeNameAndType.getReturnType(), condition);
-                invokeNameAndType = null;
-                condition = null;
-                param = null;
-                continue;
+                case '{':
+                {
+                    int end = sql.indexOf('}', now);
+                    if (end == -1)
+                    {
+                        throw new UnsupportedOperationException(StringUtil.format("sql语句存在问题,{标识没有结束符}.请检查:{}，并且关注:{}", sql, sql.substring(0, now)));
+                    }
+                    now = end + 1;
+                    break;
+                }
+                case '~':
+                    Verify.True(now < sql.length() - 1, "sql语句存在错误，符号~不应该在最后一个，请检查{}", sql);
+                    Verify.True(sql.charAt(now - 1) == '$', "sql语句存在错误，符号~前面是$。请检查{}，并关注{}", sql, sql.substring(0, now));
+                    dynamic = true;
+                    now += 1;
+                    break;
+                default:
+                    now += 1;
+                    break;
             }
         }
-        if (invokeNameAndType != null && condition == null && param == null)
-        {
-            createStatement("null", cache, invokeNameAndType.getInvokeName(), invokeNameAndType.getReturnType(), "!=");
-        }
-        return cache.toString();
+        return dynamic;
     }
     
-    /**
-     * 创建一个条件判断，使用变量名，条件，参数三个属性。并且将生成的条件判断加入到formatsql中。
-     * 
-     * @param param
-     * @param formatSql
-     * @param transVar
-     * @param varType
-     * @param condition
-     */
-    private static void createStatement(String param, StringCache formatSql, String transVar, Class<?> varType, String condition)
-    {
-        // 如果是user.name，需要判断user！=null 并且user.getName() != null。必须逐层验证
-        int flag = 0;
-        formatSql.append(" (");
-        while ((flag = transVar.indexOf('.', flag)) != -1)
-        {
-            formatSql.append("($w)").append(transVar.substring(0, flag)).append(" != null && ");
-            flag++;
-        }
-        if (param != null && param.equals("null"))
-        {
-            if (condition.equals("==") || condition.equals("!="))
-            {
-                formatSql.append(transVar).append(" ").append(condition).append(" null )");
-                return;
-            }
-            else
-            {
-                throw new RuntimeException(StringUtil.format("条件语句存在错误，参数为null时，条件只能是'='或'!='"));
-            }
-        }
-        if (varType == null)
-        {
-            formatSql.append(transVar);
-            if (condition == null)
-            {
-                formatSql.append("==true )");
-            }
-            else
-            {
-                formatSql.append(condition).append(param).append(" )");
-            }
-            return;
-        }
-        if (varType.isPrimitive())
-        {
-            if (varType == char.class)
-            {
-                formatSql.append(transVar).append(condition).append("'").append(param).append("' )");
-                
-            }
-            else
-            {
-                formatSql.append(transVar).append(condition).append(param).append(" )");
-            }
-            return;
-        }
-        formatSql.append(transVar).append(" != null && ");
-        if (varType == String.class)
-        {
-            if (condition.equals("=="))
-            {
-                formatSql.append(transVar).append(".equals(\"").append(param).append("\") )");
-            }
-            else if (condition.equals("!="))
-            {
-                formatSql.append(transVar).append(".equals(\"").append(param).append("\")==false )");
-            }
-        }
-        else if (varType == Integer.class)
-        {
-            formatSql.append(transVar).append(".intValue() ").append(condition).append(param).append(" )");
-        }
-        else if (varType == Long.class)
-        {
-            formatSql.append(transVar).append(".longValue() ").append(condition).append(param).append(" )");
-        }
-        else if (varType == Short.class)
-        {
-            formatSql.append(transVar).append(".shortValue() ").append(condition).append(param).append(" )");
-        }
-        else if (varType == Double.class)
-        {
-            formatSql.append(transVar).append(".doubleValue() ").append(condition).append(param).append(" )");
-        }
-        else if (varType == Float.class)
-        {
-            formatSql.append(transVar).append(".floatValue() ").append(condition).append(param).append(" )");
-        }
-        else if (varType == Long.class)
-        {
-            formatSql.append(transVar).append(".longValue() ").append(condition).append(param).append(" )");
-        }
-        else
-        {
-            throw new RuntimeException("不能识别的处理类型" + varType);
-        }
-    }
 }

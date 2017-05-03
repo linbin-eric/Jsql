@@ -63,10 +63,7 @@ public class TransferHelper
                 return "new com.jfireframework.sql.resultsettransfer.DynamicBeanTransfer(" + type.getName() + ".class)";
             }
             else
-            {
                 return "new com.jfireframework.sql.resultsettransfer.FixBeanTransfer(" + type.getName() + ".class)";
-            }
         }
     }
-    
 }

@@ -4,10 +4,10 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
-import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
-import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.sql.annotation.Id;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.dao.Dao;
@@ -50,22 +50,22 @@ public abstract class BaseDAO<T> implements Dao<T>
         
     }
     
-    protected final Class<T>                        entityClass;
+    protected final Class<T>             entityClass;
     // 代表数据库主键id的field
-    protected final MapField                        idField;
-    protected final long                            idOffset;
-    protected final IdType                          idType;
-    protected final static Unsafe                   unsafe             = ReflectUtil.getUnsafe();
-    protected final String                          tableName;
-    protected final SqlAndFields                    getInfo;
-    protected final SqlAndFields                    getInShareInfo;
-    protected final SqlAndFields                    getForUpdateInfo;
-    protected final SqlAndFields                    updateInfo;
-    protected final String                          deleteSql;
-    protected static final Logger                   LOGGER             = ConsoleLogFactory.getLogger();
-    protected final StrategyOperation<T>            strategyOperation;
-    protected ResultSetTransfer<T>                  transfer;
-    protected String[]                              pkName;
+    protected final MapField             idField;
+    protected final long                 idOffset;
+    protected final IdType               idType;
+    protected final static Unsafe        unsafe = ReflectUtil.getUnsafe();
+    protected final String               tableName;
+    protected final SqlAndFields         getInfo;
+    protected final SqlAndFields         getInShareInfo;
+    protected final SqlAndFields         getForUpdateInfo;
+    protected final SqlAndFields         updateInfo;
+    protected final String               deleteSql;
+    protected static final Logger        LOGGER = LoggerFactory.getLogger(BaseDAO.class);
+    protected final StrategyOperation<T> strategyOperation;
+    protected ResultSetTransfer<T>       transfer;
+    protected String[]                   pkName;
     
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public BaseDAO(TableMetaData metaData)
@@ -293,21 +293,25 @@ public abstract class BaseDAO<T> implements Dao<T>
         return session.update("delete from " + tableName);
     }
     
+    @Override
     public int update(SqlSession session, String strategy, Object... params)
     {
         return strategyOperation.update(session, strategy, params);
     }
     
+    @Override
     public T findOne(SqlSession session, String strategy, Object... params)
     {
         return strategyOperation.findOne(session, strategy, params);
     }
     
+    @Override
     public List<T> findAll(SqlSession session, String strategy, Object... params)
     {
         return strategyOperation.findAll(session, strategy, params);
     }
     
+    @Override
     public List<T> findPage(SqlSession session, Page page, String strategy, Object... params)
     {
         return strategyOperation.findPage(session, page, strategy, params);

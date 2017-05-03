@@ -12,12 +12,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
-import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
-import com.jfireframework.baseutil.simplelog.Logger;
+import com.jfireframework.baseutil.smc.compiler.JavaStringCompiler;
+import com.jfireframework.baseutil.smc.model.CompilerModel;
+import com.jfireframework.baseutil.smc.model.FieldModel;
+import com.jfireframework.baseutil.smc.model.MethodModel;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.annotation.EnumBoundHandler;
 import com.jfireframework.sql.annotation.Sql;
@@ -27,38 +31,20 @@ import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
 import com.jfireframework.sql.resultsettransfer.TransferHelper;
-import com.jfireframework.sql.session.SqlSession;
-import com.jfireframework.sql.session.mapper.Mapper;
 import com.jfireframework.sql.util.MapperBuilder.SqlContext.EnumHandlerInfo;
 import com.jfireframework.sql.util.enumhandler.EnumHandler;
 import com.jfireframework.sql.util.enumhandler.EnumStringHandler;
-import javassist.CannotCompileException;
-import javassist.ClassClassPath;
-import javassist.ClassPool;
-import javassist.CtClass;
-import javassist.CtField;
-import javassist.CtMethod;
-import javassist.NotFoundException;
+import com.jfireframework.sql.util.smc.DynamicCodeTool;
 
 public class MapperBuilder
 {
-    private Logger            logger    = ConsoleLogFactory.getLogger();
-    private ClassPool         classPool = ClassPool.getDefault();
-    private final MetaContext metaContext;
-    private int               fieldNo   = 1;
+    private final MetaContext   metaContext;
+    private int                 fieldNo = 1;
+    private static final Logger logger  = LoggerFactory.getLogger(MapperBuilder.class);
     
     public MapperBuilder(MetaContext metaContext)
     {
         this.metaContext = metaContext;
-        ClassPool.doPruning = true;
-        classPool.importPackage("com.jfireframework.sql");
-        classPool.importPackage("com.jfireframework.baseutil.collection");
-        classPool.importPackage("com.jfireframework.sql.session");
-        classPool.importPackage("com.jfireframework.sql.session.impl");
-        classPool.importPackage("com.jfireframework.baseutil.exception");
-        classPool.importPackage("java.sql");
-        classPool.importPackage("java.util");
-        classPool.appendClassPath(new ClassClassPath(SqlSession.class));
     }
     
     /**
@@ -71,12 +57,19 @@ public class MapperBuilder
     {
         try
         {
-            CtClass implClass = classPool.makeClass(origin.getName() + "_JfireSqlMapper_" + System.nanoTime());
-            implClass.setSuperclass(classPool.get(Mapper.class.getName()));
-            CtClass interfaceCtClass = classPool.getCtClass(origin.getName());
-            implClass.setInterfaces(new CtClass[] { interfaceCtClass });
-            createTargetClassMethod(implClass, origin);
-            return implClass.toClass(Thread.currentThread().getContextClassLoader(), null);
+            CompilerModel compilerModel = DynamicCodeTool.createMapper(origin);
+            createTargetClassMethod(compilerModel, origin);
+            JavaStringCompiler compiler = new JavaStringCompiler();
+            try
+            {
+                Class<?> result = compiler.compile(compilerModel, Thread.currentThread().getContextClassLoader());
+                logger.debug("接口:{}编译的源代码是\r\n{}\r\n", origin.getName(), compilerModel.toString());
+                return result;
+            }
+            catch (Exception e)
+            {
+                throw new JustThrowException(e);
+            }
         }
         catch (Exception e)
         {
@@ -84,9 +77,8 @@ public class MapperBuilder
         }
     }
     
-    private void createTargetClassMethod(CtClass targetCtClass, Class<?> interfaceCtClass) throws Exception
+    private void createTargetClassMethod(CompilerModel compilerModel, Class<?> interfaceCtClass) throws Exception
     {
-        
         for (Method method : interfaceCtClass.getDeclaredMethods())
         {
             try
@@ -96,11 +88,11 @@ public class MapperBuilder
                     Sql sql = method.getAnnotation(Sql.class);
                     if (sql.sql().startsWith("select"))
                     {
-                        targetCtClass.addMethod(createQueryMethod(targetCtClass, method, sql.sql(), sql.paramNames().split(",")));
+                        createQueryMethod(compilerModel, method, sql.sql(), sql.paramNames().split(","));
                     }
                     else
                     {
-                        targetCtClass.addMethod(createUpdateMethod(targetCtClass, method, sql.sql(), sql.paramNames().split(",")));
+                        createUpdateMethod(compilerModel, method, sql.sql(), sql.paramNames().split(","));
                     }
                 }
                 else
@@ -116,7 +108,7 @@ public class MapperBuilder
         
     }
     
-    private CtMethod createQueryMethod(CtClass weaveClass, Method method, String sql, String[] paramNames) throws Exception
+    private void createQueryMethod(CompilerModel compilerModel, Method method, String sql, String[] paramNames) throws Exception
     {
         SqlContext sqlContext = new SqlContext();
         boolean isPage = false;
@@ -134,51 +126,32 @@ public class MapperBuilder
         }
         boolean isDynamicSql = DynamicSqlTool.isDynamic(sql);
         StringCache methodBody = new StringCache(1024);
-        methodBody.append("{\n");
-        methodBody.append("SqlSession session = sessionFactory.getCurrentSession();\n");
-        methodBody.append("if(session==null){throw new NullPointerException(\"current session 为空，请检查\");}\n");
+        methodBody.append("com.jfireframework.sql.session.SqlSession session = sessionFactory.getCurrentSession();\r\n");
+        methodBody.append("if(session==null){throw new java.lang.NullPointerException(\"current session 为空，请检查\");}\r\n");
         if (isDynamicSql)
         {
             methodBody.append(DynamicSqlTool.analyseDynamicSql(sql, paramNames, method.getParameterTypes(), metaContext, sqlContext));
             if (isList)
             {
                 Type returnParamType = ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0];
-                String fieldName = addResultsetTransferField(weaveClass, TransferHelper.buildInitStr((Class<?>) returnParamType, true));
-                methodBody.append("if(list.size()==0){");
+                String fieldName = addResultsetTransferField(compilerModel, TransferHelper.buildInitStr((Class<?>) returnParamType, true));
                 if (isPage)
                 {
-                    methodBody.append("return ($r)session.queryList(").append(fieldName)//
-                            .append(",sql,$").append(method.getParameterTypes().length).append(",emptyParams);\n}");
+                    methodBody.append("return session.queryList(").append(fieldName)//
+                            .append(",sql,$").append(method.getParameterTypes().length - 1).append(",list.toArray());");
                 }
                 else
                 {
-                    methodBody.append("return ($r)session.queryList(").append(fieldName)//
-                            .append(",sql,emptyParams);\n}");
+                    methodBody.append("return session.queryList(").append(fieldName)//
+                            .append(",sql,list.toArray());");
                 }
-                methodBody.append("else{");
-                if (isPage)
-                {
-                    methodBody.append("return ($r)session.queryList(").append(fieldName)//
-                            .append(",sql,$").append(method.getParameterTypes().length).append(",list.toArray());\n}");
-                }
-                else
-                {
-                    methodBody.append("return ($r)session.queryList(").append(fieldName)//
-                            .append(",sql,list.toArray());\n}");
-                }
-                methodBody.append("}");
             }
             else
             {
                 Class<?> returnType = method.getReturnType();
-                String fieldName = addResultsetTransferField(weaveClass, TransferHelper.buildInitStr(returnType, true));
-                methodBody.append("if(list.size()==0){");
-                methodBody.append("return ($r)session.query(").append(fieldName)//
-                        .append(",sql,emptyParams);}\n");
-                methodBody.append("else{");
-                methodBody.append("return ($r)session.query(").append(fieldName)//
-                        .append(",sql,list.toArray());\n}");
-                methodBody.append("}");
+                String fieldName = addResultsetTransferField(compilerModel, TransferHelper.buildInitStr(returnType, true));
+                methodBody.append("return (" + returnType.getName() + ")session.query(").append(fieldName)//
+                        .append(",sql,list.toArray());");
             }
         }
         else
@@ -187,102 +160,78 @@ public class MapperBuilder
             if (isList)
             {
                 Type returnParamType = ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0];
-                String fieldName = addResultsetTransferField(weaveClass, TransferHelper.buildInitStr((Class<?>) returnParamType, false));
+                String fieldName = addResultsetTransferField(compilerModel, TransferHelper.buildInitStr((Class<?>) returnParamType, false));
                 if (isPage)
                 {
-                    methodBody.append("return ($r)session.queryList(").append(fieldName).append(",\"")//
-                            .append(sqlContext.getSql()).append("\",$").append(method.getParameterTypes().length).append(",");
+                    methodBody.append("return session.queryList(").append(fieldName).append(",\"")//
+                            .append(sqlContext.getSql()).append("\",$").append(method.getParameterTypes().length - 1).append(",");
                 }
                 else
                 {
-                    methodBody.append("return ($r)session.queryList(").append(fieldName).append(",\"")//
+                    methodBody.append("return session.queryList(").append(fieldName).append(",\"")//
                             .append(sqlContext.getSql()).append("\",");
                 }
             }
             else
             {
                 Class<?> returnType = method.getReturnType();
-                String fieldName = addResultsetTransferField(weaveClass, TransferHelper.buildInitStr(returnType, false));
-                methodBody.append("return ($r)session.query(").append(fieldName).append(",\"")//
+                String fieldName = addResultsetTransferField(compilerModel, TransferHelper.buildInitStr(returnType, false));
+                methodBody.append("return (" + returnType.getName() + ")session.query(").append(fieldName).append(",\"")//
                         .append(sqlContext.getSql()).append("\",");
             }
             if (sqlContext.getQueryParams().size() == 0)
             {
-                methodBody.append("emptyParams);}\n");
+                methodBody.append("emptyParams);");
             }
             else
             {
                 methodBody.append("new Object[]{");
-                for (InvokeNameAndType each : sqlContext.getQueryParams())
+                for (String each : sqlContext.getQueryParams())
                 {
-                    methodBody.append("($w)").append(each.getInvokeName()).appendComma();
+                    methodBody.append(each).appendComma();
                 }
-                methodBody.deleteLast().append("});}\n");
+                methodBody.deleteLast().append("});");
             }
         }
-        CtMethod targetMethod = forCtMethod(method, weaveClass);
-        createEnumBoundHandlerField(sqlContext, weaveClass);
-        logger.debug("为{}.{}创建的方法体是\n{}\n", method.getDeclaringClass().getName(), method.getName(), methodBody.toString());
-        targetMethod.setBody(methodBody.toString());
-        return targetMethod;
+        MethodModel methodModel = new MethodModel(method);
+        methodModel.setBody(methodBody.toString());
+        compilerModel.putMethod(method, methodModel);
+        createEnumBoundHandlerField(sqlContext, compilerModel);
     }
     
-    private void createEnumBoundHandlerField(SqlContext sqlContext, CtClass ctClass) throws CannotCompileException, NotFoundException
+    private void createEnumBoundHandlerField(SqlContext sqlContext, CompilerModel compilerModel)
     {
         for (EnumHandlerInfo each : sqlContext.enumHandlerInfos)
         {
-            CtField ctField = new CtField(classPool.get(each.getHandlerType().getName()), each.getName(), ctClass);
-            ctClass.addField(ctField, StringUtil.format("new {}({}.class)", each.getHandlerType().getName(), each.getType().getName()));
+            FieldModel fieldModel = new FieldModel(each.getName(), each.getHandlerType(), StringUtil.format("new {}({}.class)", each.getHandlerType().getName(), each.getType().getName()));
+            compilerModel.addField(fieldModel);
         }
     }
     
-    private String addResultsetTransferField(CtClass targetCc, String initStr) throws CannotCompileException, NotFoundException
+    private String addResultsetTransferField(CompilerModel compilerModel, String initStr)
     {
         String fieldName = "transferField_" + fieldNo;
         fieldNo++;
-        CtClass transferType = classPool.get(ResultSetTransfer.class.getName());
-        CtField ctField = new CtField(transferType, fieldName, targetCc);
-        targetCc.addField(ctField, initStr);
+        compilerModel.addField(new FieldModel(fieldName, ResultSetTransfer.class, initStr));
         return fieldName;
     }
     
-    /**
-     * 创建一个ctmethod，方法签名与method一致
-     *
-     * @param method
-     * @param ctClass
-     * @return
-     * @throws NotFoundException
-     */
-    private CtMethod forCtMethod(Method method, CtClass ctClass) throws NotFoundException
-    {
-        CtClass returnType = classPool.get(method.getReturnType().getName());
-        CtClass[] paramClasses = new CtClass[method.getParameterTypes().length];
-        int index = 0;
-        for (Class<?> each : method.getParameterTypes())
-        {
-            paramClasses[index++] = classPool.get(each.getName());
-        }
-        return new CtMethod(returnType, method.getName(), paramClasses, ctClass);
-    }
-    
-    private CtMethod createUpdateMethod(CtClass mapperClass, Method method, String sql, String[] paramNames) throws Exception
+    private void createUpdateMethod(CompilerModel compilerModel, Method method, String sql, String[] paramNames) throws Exception
     {
         SqlContext sqlContext = new SqlContext();
         StringCache cache = new StringCache(1024);
-        cache.append("{\n");
-        cache.append("SqlSession session = sessionFactory.getCurrentSession();\n");
-        cache.append("if(session==null){throw new NullPointerException(\"current session 为空，请检查\");}\n");
+        cache.append("com.jfireframework.sql.session.SqlSession session = sessionFactory.getCurrentSession();\r\n");
+        cache.append("if(session==null){throw new NullPointerException(\"current session 为空，请检查\");}\r\n");
         boolean isDynamicSql = DynamicSqlTool.isDynamic(sql);
         if (isDynamicSql)
         {
             cache.append(DynamicSqlTool.analyseDynamicSql(sql, paramNames, method.getParameterTypes(), metaContext, sqlContext));
-            cache.append("int updateRows=0;\n");
-            cache.append("if(list.size()==0){\n");
-            cache.append("updateRows = session.update(sql,emptyParams);}\n");
-            cache.append("else{\n");
-            cache.append("updateRows = session.update(sql,list.toArray());\n");
-            cache.append("}\n");
+            cache.append("int updateRows=0;\r\n");
+            cache.append("if(list.size()==0){\r\n");
+            cache.append("updateRows = session.update(sql,emptyParams);}\r\n");
+            cache.append("else{\r\n");
+            cache.append("updateRows = session.update(sql,list.toArray());\r\n");
+            cache.append("}\r\n");
         }
         else
         {
@@ -290,16 +239,16 @@ public class MapperBuilder
             cache.append("int updateRows = session.update(\"").append(sqlContext.getSql()).append("\",");
             if (sqlContext.getQueryParams().isEmpty())
             {
-                cache.append("emptyParams);\n");
+                cache.append("emptyParams);\r\n");
             }
             else
             {
                 cache.append("new Object[]{");
-                for (InvokeNameAndType each : sqlContext.getQueryParams())
+                for (String each : sqlContext.getQueryParams())
                 {
-                    cache.append("($w)").append(each.getInvokeName()).appendComma();
+                    cache.append(each).appendComma();
                 }
-                cache.deleteLast().append("});\n");
+                cache.deleteLast().append("});\r\n");
             }
         }
         Class<?> returnType = method.getReturnType();
@@ -307,45 +256,27 @@ public class MapperBuilder
         {
             ;
         }
-        else if (returnType == int.class)
-        {
-            cache.append("return updateRows;\n");
-        }
-        else if (returnType == long.class)
-        {
-            cache.append("return (long)updateRows;\n");
-        }
-        else if (returnType == Integer.class)
-        {
-            cache.append("return ($w)updateRows;\n");
-        }
-        else if (returnType == Long.class)
-        {
-            cache.append("return ($w)((long)updateRows);\n");
-        }
         else
         {
-            throw new UnsupportedOperationException(StringUtil.format("更新方法只支持void，int，long，Integer，Long 五种返回类型"));
+            cache.append("return updateRows;\r\n");
         }
-        cache.append("}");
-        createEnumBoundHandlerField(sqlContext, mapperClass);
-        CtMethod targetCtMethod = forCtMethod(method, mapperClass);
-        logger.debug("为{}.{}创建的方法体是\n{}\n", method.getDeclaringClass().getName(), method.getName(), cache.toString());
-        targetCtMethod.setBody(cache.toString());
-        return targetCtMethod;
+        MethodModel methodModel = new MethodModel(method);
+        methodModel.setBody(cache.toString());
+        compilerModel.putMethod(method, methodModel);
+        createEnumBoundHandlerField(sqlContext, compilerModel);
     }
     
     public static class SqlContext
     {
-        private List<String>            injectNames      = new LinkedList<String>();
-        private Set<TableMetaData>      metaContexts     = new HashSet<TableMetaData>();
-        private Map<String, String>     dbColNameMap     = new HashMap<String, String>();
-        private Map<String, String>     fieldNameMap     = new HashMap<String, String>();
-        private Map<String, Object>     staticValueMap   = new HashMap<String, Object>();
-        private String                  sql;
-        private String                  countSql;
-        private List<InvokeNameAndType> queryParams      = new LinkedList<MapperBuilder.InvokeNameAndType>();
-        private List<EnumHandlerInfo>   enumHandlerInfos = new LinkedList<MapperBuilder.SqlContext.EnumHandlerInfo>();
+        private List<String>          injectNames      = new LinkedList<String>();
+        private Set<TableMetaData>    metaContexts     = new HashSet<TableMetaData>();
+        private Map<String, String>   dbColNameMap     = new HashMap<String, String>();
+        private Map<String, String>   fieldNameMap     = new HashMap<String, String>();
+        private Map<String, Object>   staticValueMap   = new HashMap<String, Object>();
+        private String                sql;
+        private String                countSql;
+        private List<String>          queryParams      = new LinkedList<String>();
+        private List<EnumHandlerInfo> enumHandlerInfos = new LinkedList<MapperBuilder.SqlContext.EnumHandlerInfo>();
         
         public boolean hasMetaContext()
         {
@@ -362,12 +293,12 @@ public class MapperBuilder
             injectNames.add(inject);
         }
         
-        public List<InvokeNameAndType> getQueryParams()
+        public List<String> getQueryParams()
         {
             return queryParams;
         }
         
-        public void setQueryParams(List<InvokeNameAndType> queryParams)
+        public void setQueryParams(List<String> queryParams)
         {
             this.queryParams = queryParams;
         }

@@ -10,12 +10,12 @@ import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.collection.buffer.HeapByteBuf;
 import com.jfireframework.baseutil.exception.JustThrowException;
-import com.jfireframework.baseutil.simplelog.ConsoleLogFactory;
-import com.jfireframework.baseutil.simplelog.Logger;
 import com.jfireframework.sql.annotation.Column;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
@@ -24,7 +24,7 @@ import com.jfireframework.sql.util.enumhandler.EnumHandler;
 
 public class H2DBStructure implements Structure
 {
-    private Logger                                logger    = ConsoleLogFactory.getLogger();
+    private static final Logger                   logger    = LoggerFactory.getLogger(H2DBStructure.class);
     
     protected static Map<Class<?>, TypeAndLength> dbTypeMap = new HashMap<Class<?>, TypeAndLength>();
     
