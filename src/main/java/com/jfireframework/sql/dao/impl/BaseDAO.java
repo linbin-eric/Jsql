@@ -14,10 +14,11 @@ import com.jfireframework.sql.dao.Dao;
 import com.jfireframework.sql.dao.LockMode;
 import com.jfireframework.sql.dao.StrategyOperation;
 import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
+import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
 import com.jfireframework.sql.page.Page;
-import com.jfireframework.sql.resultsettransfer.FixBeanTransfer;
+import com.jfireframework.sql.resultsettransfer.BeanTransfer;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
 import com.jfireframework.sql.resultsettransfer.field.MapField;
 import com.jfireframework.sql.resultsettransfer.field.MapFieldBuilder;
@@ -64,14 +65,16 @@ public abstract class BaseDAO<T> implements Dao<T>
     protected final String               deleteSql;
     protected static final Logger        LOGGER = LoggerFactory.getLogger(BaseDAO.class);
     protected final StrategyOperation<T> strategyOperation;
-    protected ResultSetTransfer<T>       transfer;
-    protected String[]                   pkName;
+    protected final ResultSetTransfer<T> transfer;
+    protected final String[]             pkName;
+    protected final SqlInterceptor[]     sqlInterceptors;
     
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public BaseDAO(TableMetaData metaData)
+    public BaseDAO(TableMetaData metaData, SqlInterceptor[] sqlInterceptors)
     {
         this.entityClass = (Class<T>) metaData.getEntityClass();
-        transfer = new FixBeanTransfer(entityClass);
+        this.sqlInterceptors = sqlInterceptors;
+        transfer = new BeanTransfer(entityClass);
         ColNameStrategy nameStrategy = metaData.getColNameStrategy();
         tableName = entityClass.getAnnotation(TableEntity.class).name();
         MapField[] allMapFields = buildMapfields(metaData.getFieldInfos(), nameStrategy);
@@ -94,20 +97,10 @@ public abstract class BaseDAO<T> implements Dao<T>
         getInShareInfo = buildGetInShare(allMapFields, idField);
         useForSelf(allMapFields, idField);
         deleteSql = "delete from " + tableName + " where " + idField.getColName() + "=?";
-        logSql();
         strategyOperation = new StrategyOperationImpl<T>(entityClass, allMapFields);
     }
     
     protected abstract void useForSelf(MapField[] fields, MapField idField);
-    
-    protected void logSql()
-    {
-        LOGGER.debug("为表{},类{}创建的更新语句是{}", tableName, entityClass.getName(), updateInfo.getSql());
-        LOGGER.debug("为表{},类{}创建的获取语句是{}", tableName, entityClass.getName(), getInfo.getSql());
-        LOGGER.debug("为表{},类{}创建的获取加锁语句是{}", tableName, entityClass.getName(), getForUpdateInfo.getSql());
-        LOGGER.debug("为表{},类{}创建的获取共享语句是{}", tableName, entityClass.getName(), getInShareInfo.getSql());
-        LOGGER.debug("为表{},类{}创建的删除语句是{}", tableName, entityClass.getName(), deleteSql);
-    }
     
     protected SqlAndFields buildGet(MapField[] fields, MapField idField)
     {
@@ -252,15 +245,7 @@ public abstract class BaseDAO<T> implements Dao<T>
         Object[] params = new Object[fields.length];
         for (int i = 0; i < params.length; i++)
         {
-            try
-            {
-                params[i] = fields[i].statementValue(entity);
-            }
-            catch (Exception e)
-            {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+            params[i] = fields[i].statementValue(entity);
         }
         return params;
     }
@@ -300,6 +285,12 @@ public abstract class BaseDAO<T> implements Dao<T>
     }
     
     @Override
+    public int delete(SqlSession session, String strategy, Object... params)
+    {
+        return strategyOperation.delete(session, strategy, params);
+    }
+    
+    @Override
     public T findOne(SqlSession session, String strategy, Object... params)
     {
         return strategyOperation.findOne(session, strategy, params);
@@ -315,6 +306,11 @@ public abstract class BaseDAO<T> implements Dao<T>
     public List<T> findPage(SqlSession session, Page page, String strategy, Object... params)
     {
         return strategyOperation.findPage(session, page, strategy, params);
+    }
+    
+    public int count(SqlSession session, String strategy, Object... params)
+    {
+        return strategyOperation.count(session, strategy, params);
     }
     
 }

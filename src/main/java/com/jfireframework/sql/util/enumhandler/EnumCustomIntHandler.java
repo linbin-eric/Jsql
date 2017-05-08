@@ -70,6 +70,10 @@ public class EnumCustomIntHandler extends AbstractEnumHandler<Integer>
     public Object statementValue(Unsafe unsafe, long offfset, Object entity)
     {
         Enum<?> instance = (Enum<?>) unsafe.getObject(entity, offfset);
+        if (instance == null)
+        {
+            return null;
+        }
         return ((EnumIntValue) instance).intValue();
     }
     

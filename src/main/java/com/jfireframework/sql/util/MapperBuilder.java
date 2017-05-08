@@ -5,6 +5,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -18,6 +21,7 @@ import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
+import com.jfireframework.baseutil.smc.SmcHelper;
 import com.jfireframework.baseutil.smc.compiler.JavaStringCompiler;
 import com.jfireframework.baseutil.smc.model.CompilerModel;
 import com.jfireframework.baseutil.smc.model.FieldModel;
@@ -30,11 +34,10 @@ import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
-import com.jfireframework.sql.resultsettransfer.TransferHelper;
+import com.jfireframework.sql.session.mapper.Mapper;
 import com.jfireframework.sql.util.MapperBuilder.SqlContext.EnumHandlerInfo;
 import com.jfireframework.sql.util.enumhandler.EnumHandler;
 import com.jfireframework.sql.util.enumhandler.EnumStringHandler;
-import com.jfireframework.sql.util.smc.DynamicCodeTool;
 
 public class MapperBuilder
 {
@@ -57,23 +60,16 @@ public class MapperBuilder
     {
         try
         {
-            CompilerModel compilerModel = DynamicCodeTool.createMapper(origin);
+            CompilerModel compilerModel = SmcHelper.createImplClass(Mapper.class, origin);
             createTargetClassMethod(compilerModel, origin);
             JavaStringCompiler compiler = new JavaStringCompiler();
-            try
-            {
-                Class<?> result = compiler.compile(compilerModel, Thread.currentThread().getContextClassLoader());
-                logger.debug("接口:{}编译的源代码是\r\n{}\r\n", origin.getName(), compilerModel.toString());
-                return result;
-            }
-            catch (Exception e)
-            {
-                throw new JustThrowException(e);
-            }
+            Class<?> result = compiler.compile(compilerModel, Thread.currentThread().getContextClassLoader());
+            logger.debug("接口:{}编译的源代码是\r\n{}\r\n", origin.getName(), compilerModel.toString());
+            return result;
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new JustThrowException(e);
         }
     }
     
@@ -83,21 +79,18 @@ public class MapperBuilder
         {
             try
             {
-                if (method.isAnnotationPresent(Sql.class))
+                if (method.isAnnotationPresent(Sql.class) == false)
                 {
-                    Sql sql = method.getAnnotation(Sql.class);
-                    if (sql.sql().startsWith("select"))
-                    {
-                        createQueryMethod(compilerModel, method, sql.sql(), sql.paramNames().split(","));
-                    }
-                    else
-                    {
-                        createUpdateMethod(compilerModel, method, sql.sql(), sql.paramNames().split(","));
-                    }
+                    throw new UnsupportedOperationException(StringUtil.format("Mapper接口内不能存在非注解的方法。请检查{}.{}", method.getDeclaringClass().getName(), method.getName()));
+                }
+                Sql sql = method.getAnnotation(Sql.class);
+                if (sql.sql().startsWith("select"))
+                {
+                    createQueryMethod(compilerModel, method, sql.sql(), sql.paramNames().split(","));
                 }
                 else
                 {
-                    throw new UnsupportedOperationException(StringUtil.format("Mapper接口内不能存在非注解的方法。请检查{}.{}", method.getDeclaringClass().getName(), method.getName()));
+                    createUpdateMethod(compilerModel, method, sql.sql(), sql.paramNames().split(","));
                 }
             }
             catch (Exception e)
@@ -108,59 +101,82 @@ public class MapperBuilder
         
     }
     
-    private void createQueryMethod(CompilerModel compilerModel, Method method, String sql, String[] paramNames) throws Exception
+    private boolean detectIsList(Method method)
     {
-        SqlContext sqlContext = new SqlContext();
-        boolean isPage = false;
         boolean isList = List.class.isAssignableFrom(method.getReturnType()) ? true : false;
         if (isList)
         {
             Verify.True(((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0].getClass().equals(Class.class), "方法{}.{}返回类型是泛型，不允许，请指定具体的类型", method.getDeclaringClass(), method.getName());
             Type returnParamType = ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0];
-            // 确认方法放回不是List<T>的形式
+            // 方法返回不能是泛型
             Verify.False(returnParamType instanceof WildcardType, "接口的返回类型不能是泛型，请检查{}.{}", method.getDeclaringClass().getName(), method.getName());
         }
+        return isList;
+    }
+    
+    private boolean detectIsPage(Method method)
+    {
         if (method.getParameterTypes().length > 0 && Page.class.isAssignableFrom(method.getParameterTypes()[method.getParameterTypes().length - 1]))
         {
-            isPage = true;
+            return true;
         }
-        boolean isDynamicSql = DynamicSqlTool.isDynamic(sql);
+        else
+        {
+            return false;
+        }
+    }
+    
+    private void createQueryMethod(CompilerModel compilerModel, Method method, String sql, String[] paramNames) throws Exception
+    {
+        SqlContext sqlContext = new SqlContext();
+        boolean isPage = detectIsPage(method);
+        boolean isList = detectIsList(method);
+        boolean isDynamicSql = SqlTextAnalyse.isDynamic(sql);
         StringCache methodBody = new StringCache(1024);
         methodBody.append("com.jfireframework.sql.session.SqlSession session = sessionFactory.getCurrentSession();\r\n");
         methodBody.append("if(session==null){throw new java.lang.NullPointerException(\"current session 为空，请检查\");}\r\n");
         if (isDynamicSql)
         {
-            methodBody.append(DynamicSqlTool.analyseDynamicSql(sql, paramNames, method.getParameterTypes(), metaContext, sqlContext));
+            methodBody.append(SqlTextAnalyse.analyseDynamicText(sql, paramNames, method.getParameterTypes(), metaContext, sqlContext));
             if (isList)
             {
                 Type returnParamType = ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0];
-                String fieldName = addResultsetTransferField(compilerModel, TransferHelper.buildInitStr((Class<?>) returnParamType, true));
+                String fieldName = addResultsetTransferField(compilerModel, buildInitStr((Class<?>) returnParamType));
                 if (isPage)
                 {
-                    methodBody.append("return session.queryList(").append(fieldName)//
-                            .append(",sql,$").append(method.getParameterTypes().length - 1).append(",list.toArray());");
+                    String pageParamName = "$" + (method.getParameterTypes().length - 1);
+                    methodBody//
+                            .append("return session.queryList(")//
+                            .append(fieldName).appendComma()//
+                            .append("sql").appendComma()//
+                            .append(pageParamName)//
+                            .appendComma().append("list.toArray()")//
+                            .append(");");
                 }
                 else
                 {
-                    methodBody.append("return session.queryList(").append(fieldName)//
-                            .append(",sql,list.toArray());");
+                    methodBody.append("return session.queryList(")//
+                            .append(fieldName).appendComma()//
+                            .append("sql").appendComma()//
+                            .append("list.toArray()")//
+                            .append(");");
                 }
             }
             else
             {
                 Class<?> returnType = method.getReturnType();
-                String fieldName = addResultsetTransferField(compilerModel, TransferHelper.buildInitStr(returnType, true));
-                methodBody.append("return (" + returnType.getName() + ")session.query(").append(fieldName)//
-                        .append(",sql,list.toArray());");
+                String fieldName = addResultsetTransferField(compilerModel, buildInitStr(returnType));
+                methodBody.append("return (" + returnType.getName() + ")session.query(")//
+                        .append(fieldName).append(",sql,list.toArray());");
             }
         }
         else
         {
-            DynamicSqlTool.analyseFormatSql(sql, paramNames, method.getParameterTypes(), metaContext, sqlContext);
+            SqlTextAnalyse.analyseStaticText(sql, paramNames, method.getParameterTypes(), metaContext, sqlContext);
             if (isList)
             {
                 Type returnParamType = ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0];
-                String fieldName = addResultsetTransferField(compilerModel, TransferHelper.buildInitStr((Class<?>) returnParamType, false));
+                String fieldName = addResultsetTransferField(compilerModel, buildInitStr((Class<?>) returnParamType));
                 if (isPage)
                 {
                     methodBody.append("return session.queryList(").append(fieldName).append(",\"")//
@@ -175,7 +191,7 @@ public class MapperBuilder
             else
             {
                 Class<?> returnType = method.getReturnType();
-                String fieldName = addResultsetTransferField(compilerModel, TransferHelper.buildInitStr(returnType, false));
+                String fieldName = addResultsetTransferField(compilerModel, buildInitStr(returnType));
                 methodBody.append("return (" + returnType.getName() + ")session.query(").append(fieldName).append(",\"")//
                         .append(sqlContext.getSql()).append("\",");
             }
@@ -197,6 +213,62 @@ public class MapperBuilder
         methodModel.setBody(methodBody.toString());
         compilerModel.putMethod(method, methodModel);
         createEnumBoundHandlerField(sqlContext, compilerModel);
+    }
+    
+    private String buildInitStr(Class<?> type)
+    {
+        if (type == Integer.class || type == int.class)
+        {
+            return "new com.jfireframework.sql.resultsettransfer.IntegerTransfer()";
+        }
+        else if (type == Short.class || type == short.class)
+        {
+            return "new com.jfireframework.sql.resultsettransfer.ShortTransfer()";
+        }
+        else if (type == Long.class || type == long.class)
+        {
+            return "new com.jfireframework.sql.resultsettransfer.LongTransfer()";
+        }
+        else if (type == Float.class || type == float.class)
+        {
+            return "new com.jfireframework.sql.resultsettransfer.FloatTransfer()";
+        }
+        else if (type == Double.class || type == double.class)
+        {
+            return "new com.jfireframework.sql.resultsettransfer.DoubleTransfer()";
+        }
+        else if (type == Boolean.class || type == boolean.class)
+        {
+            return "new com.jfireframework.sql.resultsettransfer.BooleanTransfer()";
+        }
+        else if (type == String.class)
+        {
+            return "new com.jfireframework.sql.resultsettransfer.StringTransfer()";
+        }
+        else if (type == Date.class)
+        {
+            return "new com.jfireframework.sql.resultsettransfer.SqlDateTransfer()";
+        }
+        else if (type == java.util.Date.class)
+        {
+            return "new com.jfireframework.sql.resultsettransfer.UtilDateTransfer()";
+        }
+        else if (type == Time.class)
+        {
+            return "new com.jfireframework.sql.resultsettransfer.TimeTransfer()";
+        }
+        else if (type == Timestamp.class)
+        {
+            return "new com.jfireframework.sql.resultsettransfer.TimeStampTransfer()";
+        }
+        else if (Enum.class.isAssignableFrom(type))
+        {
+            return "new com.jfireframework.sql.resultsettransfer.EnumTransfer(" + type.getName() + ".class)";
+        }
+        else
+        {
+            return "new com.jfireframework.sql.resultsettransfer.BeanTransfer(" + type.getName() + ".class)";
+        }
     }
     
     private void createEnumBoundHandlerField(SqlContext sqlContext, CompilerModel compilerModel)
@@ -222,24 +294,19 @@ public class MapperBuilder
         StringCache cache = new StringCache(1024);
         cache.append("com.jfireframework.sql.session.SqlSession session = sessionFactory.getCurrentSession();\r\n");
         cache.append("if(session==null){throw new NullPointerException(\"current session 为空，请检查\");}\r\n");
-        boolean isDynamicSql = DynamicSqlTool.isDynamic(sql);
+        boolean isDynamicSql = SqlTextAnalyse.isDynamic(sql);
         if (isDynamicSql)
         {
-            cache.append(DynamicSqlTool.analyseDynamicSql(sql, paramNames, method.getParameterTypes(), metaContext, sqlContext));
-            cache.append("int updateRows=0;\r\n");
-            cache.append("if(list.size()==0){\r\n");
-            cache.append("updateRows = session.update(sql,emptyParams);}\r\n");
-            cache.append("else{\r\n");
-            cache.append("updateRows = session.update(sql,list.toArray());\r\n");
-            cache.append("}\r\n");
+            cache.append(SqlTextAnalyse.analyseDynamicText(sql, paramNames, method.getParameterTypes(), metaContext, sqlContext));
+            cache.append("int updateRows=session.update(sql,emptyParams);\r\n");
         }
         else
         {
-            DynamicSqlTool.analyseFormatSql(sql, paramNames, method.getParameterTypes(), metaContext, sqlContext);
+            SqlTextAnalyse.analyseStaticText(sql, paramNames, method.getParameterTypes(), metaContext, sqlContext);
             cache.append("int updateRows = session.update(\"").append(sqlContext.getSql()).append("\",");
             if (sqlContext.getQueryParams().isEmpty())
             {
-                cache.append("emptyParams);\r\n");
+                cache.append("emptyParams);");
             }
             else
             {
@@ -248,7 +315,7 @@ public class MapperBuilder
                 {
                     cache.append(each).appendComma();
                 }
-                cache.deleteLast().append("});\r\n");
+                cache.deleteLast().append("});");
             }
         }
         Class<?> returnType = method.getReturnType();
@@ -511,40 +578,4 @@ public class MapperBuilder
         
     }
     
-    /**
-     * 用来存储调用的方法源代码，和最终的表达式返回的类型。
-     * 比如存储类似$1.getName()这样的表达式，和String.class这样的该方法调用都返回值
-     *
-     * @author 林斌
-     *
-     */
-    public static class InvokeNameAndType
-    {
-        private final String   origin;
-        private final String   invokeName;
-        private final Class<?> returnType;
-        
-        public InvokeNameAndType(String invokeName, Class<?> returnType, String origin)
-        {
-            this.invokeName = invokeName;
-            this.returnType = returnType;
-            this.origin = origin;
-        }
-        
-        public String getOrigin()
-        {
-            return origin;
-        }
-        
-        public String getInvokeName()
-        {
-            return invokeName;
-        }
-        
-        public Class<?> getReturnType()
-        {
-            return returnType;
-        }
-        
-    }
 }

@@ -3,18 +3,20 @@ package com.jfireframework.sql.dao.impl;
 import java.util.ArrayList;
 import java.util.List;
 import com.jfireframework.baseutil.collection.StringCache;
+import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.resultsettransfer.field.MapField;
 import com.jfireframework.sql.session.SqlSession;
+import com.jfireframework.sql.util.ExecSqlTemplate;
 
 public class StandardDAO<T> extends BaseDAO<T>
 {
     protected SqlAndFields insertInfo;
     private SqlAndFields   identityInsertInfo;
     
-    public StandardDAO(TableMetaData metaData)
+    public StandardDAO(TableMetaData metaData, SqlInterceptor[] sqlInterceptors)
     {
-        super(metaData);
+        super(metaData, sqlInterceptors);
     }
     
     @Override
@@ -46,10 +48,10 @@ public class StandardDAO<T> extends BaseDAO<T>
         cache.append(')');
         String sql = cache.toString();
         insertInfo = new SqlAndFields(sql.replace(identityStr, "?"), insertFields.toArray(new MapField[insertFields.size()]));
-        LOGGER.debug("为表{},类{}创建的插入语句是{}", tableName, entityClass.getName(), insertInfo.getSql());
+        LOGGER.trace("为表{},类{}创建的插入语句是{}", tableName, entityClass.getName(), insertInfo.getSql());
         insertFields.remove(0);
         identityInsertInfo = new SqlAndFields(cache.toString(), insertFields.toArray(new MapField[insertFields.size()]));
-        LOGGER.debug("为表{},类{}创建的插入语句是{}", tableName, entityClass.getName(), identityInsertInfo.getSql());
+        LOGGER.trace("为表{},类{}创建的主键新增插入语句是{}", tableName, entityClass.getName(), identityInsertInfo.getSql());
     }
     
     @Override
@@ -61,7 +63,7 @@ public class StandardDAO<T> extends BaseDAO<T>
         }
         else
         {
-            Object pk = session.insertWithReturnPKValue(idType, pkName, identityInsertInfo.getSql(), parseParam(identityInsertInfo.getFields(), entity));
+            Object pk = ExecSqlTemplate.insert(idType, pkName, sqlInterceptors, session.getConnection(), identityInsertInfo.getSql(), parseParam(identityInsertInfo.getFields(), entity));
             unsafe.putObject(entity, idOffset, pk);
         }
     }
@@ -70,12 +72,13 @@ public class StandardDAO<T> extends BaseDAO<T>
     public void batchInsert(List<T> entitys, SqlSession session)
     {
         Object[] array = new Object[entitys.size()];
+        int index = 0;
         for (Object entity : entitys)
         {
-            int index = 1;
             array[index] = parseParam(identityInsertInfo.getFields(), entity);
+            index += 1;
         }
-        session.batchInsert(identityInsertInfo.getSql(), array);
+        ExecSqlTemplate.batchInsert(sqlInterceptors, session.getConnection(), identityInsertInfo.getSql(), array);
     }
     
 }

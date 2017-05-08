@@ -13,7 +13,7 @@ import com.jfireframework.sql.util.MapperBuilder.SqlContext;
 import com.jfireframework.sql.util.enumhandler.AbstractEnumHandler;
 import com.jfireframework.sql.util.enumhandler.EnumHandler;
 
-public class DynamicSqlTool
+public class SqlTextAnalyse
 {
     
     @SuppressWarnings("unchecked")
@@ -61,15 +61,15 @@ public class DynamicSqlTool
         Class<?> paramType = SmcHelper.getType(section, paramNames, paramTypes);
         if (paramType.equals(String.class))
         {
-            context += "{\r\n" + "\tString[] tmp = ((String)" + SmcHelper.buildInvoke(section, paramNames, paramTypes) + ").split(\",\");\r\n";
+            context += "{\r\n\tString[] tmp = ((String)" + SmcHelper.buildInvoke(section, paramNames, paramTypes) + ").split(\",\");\r\n";
         }
         else if (paramType.isArray())
         {
-            context += "{\r\n" + "\r\n" + "\t" + paramType.getComponentType().getName() + "[] tmp = " + SmcHelper.buildInvoke(section, paramNames, paramTypes) + ";\r\n";
+            context += "{\r\n\t" + paramType.getComponentType().getName() + "[] tmp = " + SmcHelper.buildInvoke(section, paramNames, paramTypes) + ";\r\n";
         }
         else if (List.class.isAssignableFrom(paramType))
         {
-            context += "{\r\n" + "\tjava.util.List tmp = " + SmcHelper.buildInvoke(section, paramNames, paramTypes) + ";\r\n";
+            context += "{\r\n\tjava.util.List tmp = " + SmcHelper.buildInvoke(section, paramNames, paramTypes) + ";\r\n";
         }
         else
         {
@@ -77,21 +77,21 @@ public class DynamicSqlTool
         }
         if (List.class.isAssignableFrom(paramType))
         {
-            context += "int length = tmp.size();\r\n";
+            context += "\tint length = tmp.size();\r\n";
         }
         else
         {
-            context += "int length = tmp.length;\r\n";
+            context += "\tint length = tmp.length;\r\n";
         }
-        context += "for(int i=0;i<length;i++){builder.append(\"?,\");}\r\n";
-        context += "builder.deleteLast().append(\")\");\r\n";
+        context += "\tfor(int i=0;i<length;i++){builder.append(\"?,\");}\r\n";
+        context += "\tbuilder.deleteLast().append(\")\");\r\n";
         if (List.class.isAssignableFrom(paramType))
         {
-            context += "for(int i=0;i<length;i++){list.add(tmp.get(i));}\r\n";
+            context += "\tfor(int i=0;i<length;i++){list.add(tmp.get(i));}\r\n";
         }
         else
         {
-            context += "for(int i=0;i<length;i++){list.add(tmp[i]);}\r\n";
+            context += "\tfor(int i=0;i<length;i++){list.add(tmp[i]);}\r\n";
         }
         bk = bk.substring(0, bk.length() - 1);
         context += "}\r\n";
@@ -108,7 +108,7 @@ public class DynamicSqlTool
      * @throws NoSuchFieldException
      * @throws SecurityException
      */
-    public static String analyseDynamicSql(String sql, String[] paramNames, Class<?>[] paramTypes, MetaContext metaContext, SqlContext sqlContext) throws NoSuchFieldException, SecurityException
+    public static String analyseDynamicText(String sql, String[] paramNames, Class<?>[] paramTypes, MetaContext metaContext, SqlContext sqlContext) throws NoSuchFieldException, SecurityException
     {
         sql = transMapSql(sql, sqlContext, metaContext);
         String context = "com.jfireframework.baseutil.collection.StringCache builder = new com.jfireframework.baseutil.collection.StringCache();\r\n" + "java.util.List list = new java.util.ArrayList();\r\n";
@@ -384,7 +384,7 @@ public class DynamicSqlTool
             else if (c == 'a' && index < sql.length() - 2 && sql.charAt(index + 1) == 's' && sql.charAt(index + 2) == ' ')
             {
                 as = true;
-                index += 2;
+                index += 3;
                 cache.append("as ");
                 continue;
             }
@@ -506,7 +506,7 @@ public class DynamicSqlTool
      * @throws SecurityException
      * @throws NoSuchFieldException
      */
-    public static void analyseFormatSql(String originalSql, String[] paramNames, Class<?>[] paramTypes, MetaContext metaContext, SqlContext sqlContext) throws NoSuchFieldException, SecurityException
+    public static void analyseStaticText(String originalSql, String[] paramNames, Class<?>[] paramTypes, MetaContext metaContext, SqlContext sqlContext) throws NoSuchFieldException, SecurityException
     {
         getFormatSql(originalSql, metaContext, sqlContext);
         List<String> invokeNameAndTypes = buildParams(sqlContext.getInjectNames(), paramNames, paramTypes, sqlContext);

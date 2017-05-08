@@ -6,6 +6,7 @@ import com.jfireframework.sql.session.SqlSession;
 
 public interface StrategyOperation<T>
 {
+    public int delete(SqlSession session, String strategy, Object... params);
     
     public int update(SqlSession session, String strategy, Object... params);
     
@@ -14,4 +15,6 @@ public interface StrategyOperation<T>
     public List<T> findAll(SqlSession session, String strategy, Object... params);
     
     public List<T> findPage(SqlSession session, Page page, String strategy, Object... params);
+    
+    public int count(SqlSession session, String strategy, Object... params);
 }

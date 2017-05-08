@@ -60,6 +60,10 @@ public class EnumStringHandler extends AbstractEnumHandler<String>
     public Object statementValue(Unsafe unsafe, long offfset, Object entity)
     {
         Enum<?> value = (Enum<?>) unsafe.getObject(entity, offfset);
+        if (value == null)
+        {
+            return null;
+        }
         return value.name();
     }
     

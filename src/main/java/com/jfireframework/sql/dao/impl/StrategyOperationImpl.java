@@ -10,7 +10,9 @@ import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.dao.StrategyOperation;
 import com.jfireframework.sql.page.Page;
-import com.jfireframework.sql.resultsettransfer.FixBeanTransfer;
+import com.jfireframework.sql.resultsettransfer.BeanTransfer;
+import com.jfireframework.sql.resultsettransfer.IntegerTransfer;
+import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
 import com.jfireframework.sql.resultsettransfer.field.MapField;
 import com.jfireframework.sql.session.SqlSession;
 
@@ -18,20 +20,17 @@ public class StrategyOperationImpl<T> implements StrategyOperation<T>
 {
     class FindStrategySql
     {
-        String             sql;
-        FixBeanTransfer<T> transfer;
+        String          sql;
+        BeanTransfer<T> transfer;
     }
     
-    class UpdateStrategySql
-    {
-        String sql;
-    }
-    
-    private final Class<T>                                 ckass;
-    private final Map<String, MapField>                    mapFields;
-    private final ConcurrentMap<String, FindStrategySql>   findMap   = new ConcurrentHashMap<String, StrategyOperationImpl<T>.FindStrategySql>();
-    private final ConcurrentMap<String, UpdateStrategySql> updateMap = new ConcurrentHashMap<String, StrategyOperationImpl<T>.UpdateStrategySql>();
-    private final String                                   tableName;
+    private final Class<T>                               ckass;
+    private final Map<String, MapField>                  mapFields;
+    private final ConcurrentMap<String, FindStrategySql> findMap   = new ConcurrentHashMap<String, StrategyOperationImpl<T>.FindStrategySql>();
+    private final ConcurrentMap<String, String>          updateMap = new ConcurrentHashMap<String, String>();
+    private final ConcurrentMap<String, String>          deleteMap = new ConcurrentHashMap<String, String>();
+    private final ConcurrentMap<String, String>          countMap  = new ConcurrentHashMap<String, String>();
+    private final String                                 tableName;
     
     public StrategyOperationImpl(Class<T> ckass, MapField[] mapFields)
     {
@@ -61,15 +60,38 @@ public class StrategyOperationImpl<T> implements StrategyOperation<T>
         return findStrategySql;
     }
     
-    private UpdateStrategySql getUpdate(String strategy)
+    private String getUpdate(String strategy)
     {
-        UpdateStrategySql updateStrategySql = updateMap.get(strategy);
+        String updateStrategySql = updateMap.get(strategy);
         if (updateStrategySql == null)
         {
             updateStrategySql = buildUpdate(strategy);
             updateMap.putIfAbsent(strategy, updateStrategySql);
         }
         return updateStrategySql;
+    }
+    
+    private String getDelete(String strategy)
+    {
+        String delete = deleteMap.get(strategy);
+        if (delete == null)
+        {
+            delete = buildDelete(strategy);
+            deleteMap.putIfAbsent(strategy, delete);
+        }
+        return delete;
+    }
+    
+    private String buildDelete(String strategy)
+    {
+        StringCache cache = new StringCache();
+        cache.append("delete from ").append(tableName).append(" where ");
+        for (String field : strategy.split(","))
+        {
+            Verify.notNull(mapFields.get(field), "策略:{}中的字段:{}不存在", strategy, field);
+            cache.append(mapFields.get(field).getColName()).append("=? and ");
+        }
+        return cache.deleteEnds(4).toString();
     }
     
     private FindStrategySql buildFind(String fields)
@@ -108,11 +130,11 @@ public class StrategyOperationImpl<T> implements StrategyOperation<T>
         cache.deleteEnds(4);
         FindStrategySql findStrategySql = new FindStrategySql();
         findStrategySql.sql = cache.toString();
-        findStrategySql.transfer = new FixBeanTransfer<T>(ckass);
+        findStrategySql.transfer = new BeanTransfer<T>(ckass);
         return findStrategySql;
     }
     
-    private UpdateStrategySql buildUpdate(String fields)
+    private String buildUpdate(String fields)
     {
         StringCache cache = new StringCache();
         cache.append("update ").append(tableName).append(" set ");
@@ -130,17 +152,14 @@ public class StrategyOperationImpl<T> implements StrategyOperation<T>
             Verify.notNull(mapFields.get(whereField), "策略:{}中的字段:{}不存在", fields, whereField);
             cache.append(mapFields.get(whereField).getColName()).append("=? and ");
         }
-        cache.deleteEnds(4);
-        UpdateStrategySql updateStrategySql = new UpdateStrategySql();
-        updateStrategySql.sql = cache.toString();
-        return updateStrategySql;
+        return cache.deleteEnds(4).toString();
     }
     
     @Override
     public int update(SqlSession session, String strategy, Object... params)
     {
-        UpdateStrategySql strategySql = getUpdate(strategy);
-        return session.update(strategySql.sql, params);
+        String strategySql = getUpdate(strategy);
+        return session.update(strategySql, params);
     }
     
     @Override
@@ -161,7 +180,53 @@ public class StrategyOperationImpl<T> implements StrategyOperation<T>
     public List<T> findPage(SqlSession session, Page page, String strategy, Object... params)
     {
         FindStrategySql strategySql = getFind(strategy);
-        return session.queryList(strategySql.transfer, strategy, page, params);
+        return session.queryList(strategySql.transfer, strategySql.sql, page, params);
     }
     
+    @Override
+    public int delete(SqlSession session, String strategy, Object... params)
+    {
+        String delete = getDelete(strategy);
+        return session.update(delete, params);
+    }
+    
+    private static final ResultSetTransfer<Integer> countTransfer = new IntegerTransfer();
+    
+    @Override
+    public int count(SqlSession session, String strategy, Object... params)
+    {
+        String count = getCount(strategy);
+        return session.query(countTransfer, count, params);
+    }
+    
+    private String getCount(String strategy)
+    {
+        String sql = countMap.get(strategy);
+        if (sql == null)
+        {
+            sql = buildCount(strategy);
+            countMap.putIfAbsent(strategy, sql);
+        }
+        return sql;
+    }
+    
+    private String buildCount(String strategy)
+    {
+        StringCache cache = new StringCache();
+        cache.append("select count(*) from ").append(tableName);
+        if ("".equals(strategy))
+        {
+            return cache.toString();
+        }
+        else
+        {
+            cache.append(" where ");
+            for (String whereField : strategy.split(","))
+            {
+                Verify.notNull(mapFields.get(whereField), "策略:{}中的字段:{}不存在", strategy, whereField);
+                cache.append(mapFields.get(whereField).getColName()).append("=? and ");
+            }
+            return cache.deleteEnds(4).toString();
+        }
+    }
 }

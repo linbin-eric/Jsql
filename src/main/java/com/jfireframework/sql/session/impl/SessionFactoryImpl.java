@@ -94,7 +94,6 @@ public class SessionFactoryImpl implements SessionFactory
             dao.deleteAll(session);
         }
         session.commit();
-        session.close();
     }
     
 }

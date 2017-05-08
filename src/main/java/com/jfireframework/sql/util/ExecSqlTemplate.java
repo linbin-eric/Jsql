@@ -19,7 +19,7 @@ public class ExecSqlTemplate
     public static final int update    = 3;
     public static final int page      = 4;
     
-    public static int batchInsert(SqlInterceptor[] interceptors, Connection connection, String sql, Object[] paramArrays)
+    public static int[] batchInsert(SqlInterceptor[] interceptors, Connection connection, String sql, Object... paramArrays)
     {
         PreparedStatement pstat = null;
         ResultSet resultSet = null;
@@ -28,10 +28,10 @@ public class ExecSqlTemplate
             if (interceptors.length != 0)
             {
                 InterceptorChain chain = new InterceptorChain(interceptors);
-                if (chain.intercept(connection, sql, paramArrays))
+                if (chain.intercept(connection, sql,  paramArrays))
                 {
                     sql = chain.getSql();
-                    paramArrays = chain.getParams();
+                    paramArrays =  chain.getParams();
                 }
                 else
                 {
@@ -48,7 +48,7 @@ public class ExecSqlTemplate
                 }
                 pstat.addBatch();
             }
-            return pstat.executeUpdate();
+            return pstat.executeBatch();
         }
         catch (Exception e)
         {

@@ -20,8 +20,8 @@ import com.jfireframework.sql.resultsettransfer.field.MapFieldBuilder;
 
 public abstract class AbstractResultsetTransfer<T> implements ResultSetTransfer<T>
 {
-    protected Map<String, MapField> mapFields;
-    protected Class<T>              entityClass;
+    protected Map<String, MapField[]> mapFields;
+    protected Class<T>                entityClass;
     
     public AbstractResultsetTransfer()
     {
@@ -49,10 +49,21 @@ public abstract class AbstractResultsetTransfer<T> implements ResultSetTransfer<
             }
             list.add(MapFieldBuilder.buildMapField(each, colNameStrategy));
         }
-        mapFields = new HashMap<String, MapField>();
+        mapFields = new HashMap<String, MapField[]>();
         for (MapField each : list)
         {
-            mapFields.put(each.getColName().toLowerCase(), each);
+            if (mapFields.containsKey(each.getColName().toLowerCase()) == false)
+            {
+                mapFields.put(each.getColName().toLowerCase(), new MapField[] { each });
+            }
+            else
+            {
+                MapField[] exists = mapFields.get(each.getColName().toLowerCase());
+                MapField[] newPut = new MapField[exists.length + 1];
+                System.arraycopy(exists, 0, newPut, 0, exists.length);
+                newPut[exists.length] = each;
+                mapFields.put(each.getColName().toLowerCase(), newPut);
+            }
         }
     }
     

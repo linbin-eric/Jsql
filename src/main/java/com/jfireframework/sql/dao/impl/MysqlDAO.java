@@ -3,17 +3,19 @@ package com.jfireframework.sql.dao.impl;
 import java.util.LinkedList;
 import java.util.List;
 import com.jfireframework.baseutil.collection.StringCache;
+import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.resultsettransfer.field.MapField;
 import com.jfireframework.sql.session.SqlSession;
+import com.jfireframework.sql.util.ExecSqlTemplate;
 
 public class MysqlDAO<T> extends BaseDAO<T>
 {
     protected SqlAndFields insertInfo;
     
-    public MysqlDAO(TableMetaData metaData)
+    public MysqlDAO(TableMetaData metaData, SqlInterceptor[] sqlInterceptors)
     {
-        super(metaData);
+        super(metaData, sqlInterceptors);
     }
     
     @Override
@@ -48,7 +50,7 @@ public class MysqlDAO<T> extends BaseDAO<T>
     {
         if (idValue == null)
         {
-            Object pk = session.insertWithReturnPKValue(idType, pkName, insertInfo.getSql(), parseParam(insertInfo.getFields(), entity));
+            Object pk = ExecSqlTemplate.insert(idType, pkName, sqlInterceptors, session.getConnection(), insertInfo.getSql(), parseParam(insertInfo.getFields(), entity));
             unsafe.putObject(entity, idOffset, pk);
         }
         else
@@ -61,12 +63,13 @@ public class MysqlDAO<T> extends BaseDAO<T>
     public void batchInsert(List<T> entitys, SqlSession session)
     {
         Object[] array = new Object[entitys.size()];
+        int index = 0;
         for (Object entity : entitys)
         {
-            int index = 1;
             array[index] = parseParam(insertInfo.getFields(), entity);
+            index += 1;
         }
-        session.batchInsert(insertInfo.getSql(), array);
+        ExecSqlTemplate.batchInsert(sqlInterceptors, session.getConnection(), insertInfo.getSql(), array);
     }
     
 }

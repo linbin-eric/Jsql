@@ -5,17 +5,9 @@ import java.util.List;
 import com.jfireframework.sql.dao.LockMode;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
-import com.jfireframework.sql.util.IdType;
 
-/**
- * 代表一个connection链接，提供各种dao操作入口
- * 
- * @author eric
- * 
- */
-public interface SqlSession
+interface baseOp
 {
-    
     /**
      * 关闭session，释放数据库链接
      */
@@ -48,6 +40,10 @@ public interface SqlSession
      */
     Connection getConnection();
     
+}
+
+interface CurdOp
+{
     /**
      * 将一个对象保存或者更新到数据库。如果对象的id属性有值，就是更新操作，如果没有值就是插入操作
      * 
@@ -104,24 +100,41 @@ public interface SqlSession
      */
     <T> T get(Class<T> entityClass, Object pk, LockMode mode);
     
-    
+}
+
+interface StrategyOp
+{
     <T> T findOne(Class<T> entityClass, String strategy, Object... params);
     
     <T> List<T> findAll(Class<T> entityClass, String strategy, Object... params);
     
     <T> List<T> findPage(Class<T> entityClass, Page page, String strategy, Object... params);
     
+    int update(Class<?> ckass, String strategy, Object... params);
+    
+    int delete(Class<?> ckass, String strategy, Object... params);
+    
+    int count(Class<?> ckass, String strategy, Object... params);
+}
+
+interface SqlOp
+{
+    int update(String sql, Object... params);
+    
     <T> T query(ResultSetTransfer<T> transfer, String sql, Object... params);
     
     <T> List<T> queryList(ResultSetTransfer<T> transfer, String sql, Object... params);
     
     <T> List<T> queryList(ResultSetTransfer<T> transfer, String sql, Page page, Object... params);
+}
+
+/**
+ * 代表一个connection链接，提供各种dao操作入口
+ * 
+ * @author eric
+ * 
+ */
+public interface SqlSession extends baseOp, CurdOp, StrategyOp, SqlOp
+{
     
-    int update(String sql, Object... params);
-    
-    int update(Class<?> ckass, String strategy, Object... params);
-    
-    void batchInsert(String sql, Object... paramArrays);
-    
-    Object insertWithReturnPKValue(IdType idType, String[] pkName, String sql, Object... params);
 }

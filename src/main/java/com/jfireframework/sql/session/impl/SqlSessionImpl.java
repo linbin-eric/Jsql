@@ -13,7 +13,6 @@ import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
 import com.jfireframework.sql.session.SessionFactory;
 import com.jfireframework.sql.session.SqlSession;
 import com.jfireframework.sql.util.ExecSqlTemplate;
-import com.jfireframework.sql.util.IdType;
 
 public class SqlSessionImpl implements SqlSession
 {
@@ -204,18 +203,6 @@ public class SqlSessionImpl implements SqlSession
     }
     
     @Override
-    public Object insertWithReturnPKValue(IdType idType, String[] pkName, String sql, Object... params)
-    {
-        return ExecSqlTemplate.insert(idType, pkName, sqlInterceptors, connection, sql, params);
-    }
-    
-    @Override
-    public void batchInsert(String sql, Object... paramArrays)
-    {
-        ExecSqlTemplate.batchInsert(sqlInterceptors, connection, sql, paramArrays);
-    }
-    
-    @Override
     public int update(Class<?> ckass, String strategy, Object... params)
     {
         return sessionFactory.getDao(ckass).update(this, strategy, params);
@@ -237,6 +224,18 @@ public class SqlSessionImpl implements SqlSession
     public <T> List<T> findPage(Class<T> entityClass, Page page, String strategy, Object... params)
     {
         return sessionFactory.getDao(entityClass).findPage(this, page, strategy, params);
+    }
+    
+    @Override
+    public int delete(Class<?> ckass, String strategy, Object... params)
+    {
+        return sessionFactory.getDao(ckass).delete(this, strategy, params);
+    }
+    
+    @Override
+    public int count(Class<?> ckass, String strategy, Object... params)
+    {
+        return sessionFactory.getDao(ckass).count(this, strategy, params);
     }
     
 }

@@ -31,7 +31,6 @@ public class TableMetaData
         private final String  fieldName;
         private final Field   field;
         private final int     length;
-        private final boolean loadIgnore;
         private final boolean saveIgnore;
         
         public FieldInfo(Field field, ColNameStrategy colNameStrategy)
@@ -50,21 +49,14 @@ public class TableMetaData
                     dbColName = colNameStrategy.toDbName(field.getName());
                 }
                 length = field.getAnnotation(Column.class).length();
-                loadIgnore = column.loadIgnore();
                 saveIgnore = column.saveIgnore();
             }
             else
             {
                 dbColName = colNameStrategy.toDbName(field.getName());
                 length = -1;
-                loadIgnore = false;
                 saveIgnore = false;
             }
-        }
-        
-        public boolean isLoadIgnore()
-        {
-            return loadIgnore;
         }
         
         public boolean isSaveIgnore()

@@ -287,19 +287,19 @@ public class SessionfactoryConfig
                 {
                     if (productName.equals("mysql") || productName.equals("marridb"))
                     {
-                        daos.put(each.getEntityClass(), new MysqlDAO(each));
+                        daos.put(each.getEntityClass(), new MysqlDAO(each, sqlInterceptors));
                     }
                     else if (productName.equals("oracle"))
                     {
-                        daos.put(each.getEntityClass(), new OracleDAO(each));
+                        daos.put(each.getEntityClass(), new OracleDAO(each, sqlInterceptors));
                     }
                     else if (productName.contains("hsql"))
                     {
-                        daos.put(each.getEntityClass(), new StandardDAO(each));
+                        daos.put(each.getEntityClass(), new StandardDAO(each, sqlInterceptors));
                     }
                     else if (productName.equals("h2"))
                     {
-                        daos.put(each.getEntityClass(), new StandardDAO(each));
+                        daos.put(each.getEntityClass(), new StandardDAO(each, sqlInterceptors));
                     }
                     else
                     {

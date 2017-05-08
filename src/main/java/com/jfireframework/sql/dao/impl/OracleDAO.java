@@ -4,9 +4,11 @@ import java.util.LinkedList;
 import java.util.List;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.sql.annotation.SeqId;
+import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.resultsettransfer.field.MapField;
 import com.jfireframework.sql.session.SqlSession;
+import com.jfireframework.sql.util.ExecSqlTemplate;
 
 public class OracleDAO<T> extends BaseDAO<T>
 {
@@ -15,9 +17,9 @@ public class OracleDAO<T> extends BaseDAO<T>
     private final boolean useSeq;
     private String[]      returnKey;
     
-    public OracleDAO(TableMetaData metaData)
+    public OracleDAO(TableMetaData metaData, SqlInterceptor[] sqlInterceptors)
     {
-        super(metaData);
+        super(metaData, sqlInterceptors);
         useSeq = idField.getField().isAnnotationPresent(SeqId.class) ? true : false;
     }
     
@@ -25,18 +27,19 @@ public class OracleDAO<T> extends BaseDAO<T>
     public void batchInsert(List<T> entitys, SqlSession session)
     {
         Object[] array = new Object[entitys.size()];
+        int index = 0;
         for (Object entity : entitys)
         {
-            int index = 1;
             array[index] = parseParam(insertInfo.getFields(), entity);
+            index += 1;
         }
         if (useSeq == false)
         {
-            session.batchInsert(insertInfo.getSql(), array);
+            ExecSqlTemplate.batchInsert(sqlInterceptors, session.getConnection(), insertInfo.getSql(), array);
         }
         else
         {
-            session.batchInsert(seqInsertInfo.getSql(), array);
+            ExecSqlTemplate.batchInsert(sqlInterceptors, session.getConnection(), seqInsertInfo.getSql(), array);
         }
     }
     
@@ -132,7 +135,7 @@ public class OracleDAO<T> extends BaseDAO<T>
         }
         if (returnPk)
         {
-            Object pk = session.insertWithReturnPKValue(idType, returnKey, sql, params);
+            Object pk = ExecSqlTemplate.insert(idType, returnKey, sqlInterceptors, session.getConnection(), sql, params);
             unsafe.putObject(entity, idOffset, pk);
         }
         else
