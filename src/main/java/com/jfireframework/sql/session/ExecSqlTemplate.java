@@ -1,4 +1,4 @@
-package com.jfireframework.sql.util;
+package com.jfireframework.sql.session;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -10,6 +10,7 @@ import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.page.PageParse;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
+import com.jfireframework.sql.util.IdType;
 
 public class ExecSqlTemplate
 {

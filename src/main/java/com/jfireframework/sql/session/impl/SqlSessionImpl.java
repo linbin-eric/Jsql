@@ -10,9 +10,9 @@ import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.page.PageParse;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
+import com.jfireframework.sql.session.ExecSqlTemplate;
 import com.jfireframework.sql.session.SessionFactory;
 import com.jfireframework.sql.session.SqlSession;
-import com.jfireframework.sql.util.ExecSqlTemplate;
 
 public class SqlSessionImpl implements SqlSession
 {

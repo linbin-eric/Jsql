@@ -6,8 +6,8 @@ import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.resultsettransfer.field.MapField;
+import com.jfireframework.sql.session.ExecSqlTemplate;
 import com.jfireframework.sql.session.SqlSession;
-import com.jfireframework.sql.util.ExecSqlTemplate;
 
 public class MysqlDAO<T> extends BaseDAO<T>
 {

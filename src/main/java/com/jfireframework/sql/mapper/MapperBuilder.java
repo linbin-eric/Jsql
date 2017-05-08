@@ -1,4 +1,4 @@
-package com.jfireframework.sql.util;
+package com.jfireframework.sql.mapper;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -29,13 +29,12 @@ import com.jfireframework.baseutil.smc.model.MethodModel;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.annotation.EnumBoundHandler;
 import com.jfireframework.sql.annotation.Sql;
+import com.jfireframework.sql.mapper.MapperBuilder.SqlContext.EnumHandlerInfo;
 import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
-import com.jfireframework.sql.session.mapper.Mapper;
-import com.jfireframework.sql.util.MapperBuilder.SqlContext.EnumHandlerInfo;
 import com.jfireframework.sql.util.enumhandler.EnumHandler;
 import com.jfireframework.sql.util.enumhandler.EnumStringHandler;
 
@@ -275,7 +274,7 @@ public class MapperBuilder
     {
         for (EnumHandlerInfo each : sqlContext.enumHandlerInfos)
         {
-            FieldModel fieldModel = new FieldModel(each.getName(), each.getHandlerType(), StringUtil.format("new {}({}.class)", each.getHandlerType().getName(), each.getType().getName()));
+            FieldModel fieldModel = new FieldModel(each.getName(), each.getHandlerType(), StringUtil.format("new {}({}.class)", each.getHandlerType().getName(), SmcHelper.getTypeName(each.getType())));
             compilerModel.addField(fieldModel);
         }
     }

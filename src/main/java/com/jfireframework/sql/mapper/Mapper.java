@@ -1,4 +1,4 @@
-package com.jfireframework.sql.session.mapper;
+package com.jfireframework.sql.mapper;
 
 import com.jfireframework.sql.session.SessionFactory;
 

@@ -1,4 +1,4 @@
-package com.jfireframework.sql.util;
+package com.jfireframework.sql.mapper;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -8,8 +8,8 @@ import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.smc.SmcHelper;
 import com.jfireframework.baseutil.smc.el.SmcEl;
 import com.jfireframework.baseutil.verify.Verify;
+import com.jfireframework.sql.mapper.MapperBuilder.SqlContext;
 import com.jfireframework.sql.metadata.MetaContext;
-import com.jfireframework.sql.util.MapperBuilder.SqlContext;
 import com.jfireframework.sql.util.enumhandler.AbstractEnumHandler;
 import com.jfireframework.sql.util.enumhandler.EnumHandler;
 
@@ -171,6 +171,18 @@ public class SqlTextAnalyse
                 pre = now;
                 continue;
             }
+            else if (c == '{')
+            {
+                section = sql.substring(pre, now);
+                context += "builder.append(\"" + section + "\");\r\n";
+                pre = now + 1;
+                now = sql.indexOf('}', pre);
+                section = sql.substring(pre, now);
+                context += "builder.append(" + buildParam(section, paramNames, paramTypes, sqlContext) + ");\r\n";
+                now += 1;
+                pre = now;
+                continue;
+            }
             else
             {
                 now++;
@@ -184,25 +196,6 @@ public class SqlTextAnalyse
         }
         context += "String sql = builder.toString();\r\n";
         return context;
-    }
-    
-    /**
-     * 通过字符比对，确定需要注入的属性是第几个参数的内部属性或者内容
-     * 
-     * @param inject
-     * @param paramNames
-     * @return
-     */
-    public static int getParamNameIndex(String inject, String[] paramNames)
-    {
-        for (int i = 0; i < paramNames.length; i++)
-        {
-            if (paramNames[i].equals(inject))
-            {
-                return i;
-            }
-        }
-        throw new RuntimeException("给定的参数" + inject + "不在参数列表中");
     }
     
     private static void findTableNameAndAliasName(String sql, SqlContext sqlContext, MetaContext metaContext)
@@ -296,8 +289,13 @@ public class SqlTextAnalyse
                     if (as)
                     {
                         as = false;
-                        String alias = tmp;
-                        sqlContext.addAliasName(alias, metaContext.get(simpleClassName));
+                        // 因为存在对字段进行as的情形，所以如果simpleClassName为null，就意味着是这种情况。忽略即可
+                        if (simpleClassName != null)
+                        {
+                            String alias = tmp;
+                            sqlContext.addAliasName(alias, metaContext.get(simpleClassName));
+                            simpleClassName = null;
+                        }
                     }
                     else
                     {
@@ -359,7 +357,7 @@ public class SqlTextAnalyse
             else if (c == '{')
             {
                 end = sql.indexOf('}', index);
-                cache.append(sql.substring(index, end));
+                cache.append(sql.substring(index, end + 1));
                 index = end + 1;
                 continue;
             }
@@ -635,6 +633,7 @@ public class SqlTextAnalyse
                         throw new UnsupportedOperationException(StringUtil.format("sql语句存在问题,{标识没有结束符}.请检查:{}，并且关注:{}", sql, sql.substring(0, now)));
                     }
                     now = end + 1;
+                    dynamic = true;
                     break;
                 }
                 case '~':

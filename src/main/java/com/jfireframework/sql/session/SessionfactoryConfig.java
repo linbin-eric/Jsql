@@ -27,14 +27,14 @@ import com.jfireframework.sql.dbstructure.HsqlDBStructure;
 import com.jfireframework.sql.dbstructure.MariaDBStructure;
 import com.jfireframework.sql.dbstructure.Structure;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
+import com.jfireframework.sql.mapper.Mapper;
+import com.jfireframework.sql.mapper.MapperBuilder;
 import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.page.OracleParse;
 import com.jfireframework.sql.page.PageParse;
 import com.jfireframework.sql.page.StandardParse;
 import com.jfireframework.sql.session.impl.SessionFactoryImpl;
-import com.jfireframework.sql.session.mapper.Mapper;
-import com.jfireframework.sql.util.MapperBuilder;
 
 public class SessionfactoryConfig
 {
