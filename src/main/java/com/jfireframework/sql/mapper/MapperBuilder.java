@@ -396,25 +396,18 @@ public class MapperBuilder
                     staticValueMap.put(prefix + each.getKey(), each.getValue().get(null));
                     staticValueMap.put(each.getKey(), each.getValue().get(null));
                 }
-            }
-            catch (Exception e)
-            {
-                throw new JustThrowException(e);
-            }
-            for (Entry<String, Field> each : metaData.enumFieldMap().entrySet())
-            {
-                Class<? extends Enum<?>> fieldType = (Class<? extends Enum<?>>) each.getValue().getType();
-                Class<? extends EnumHandler<?>> ckass = null;
-                if (fieldType.isAnnotationPresent(EnumBoundHandler.class))
+                for (Entry<String, Field> each : metaData.enumFieldMap().entrySet())
                 {
-                    ckass = fieldType.getAnnotation(EnumBoundHandler.class).value();
-                }
-                else
-                {
-                    ckass = EnumStringHandler.class;
-                }
-                try
-                {
+                    Class<? extends Enum<?>> fieldType = (Class<? extends Enum<?>>) each.getValue().getType();
+                    Class<? extends EnumHandler<?>> ckass = null;
+                    if (fieldType.isAnnotationPresent(EnumBoundHandler.class))
+                    {
+                        ckass = fieldType.getAnnotation(EnumBoundHandler.class).value();
+                    }
+                    else
+                    {
+                        ckass = EnumStringHandler.class;
+                    }
                     EnumHandler<?> enumHandler = ckass.getConstructor(Class.class).newInstance(fieldType);
                     for (Enum<?> enumInstance : ReflectUtil.getAllEnumInstances(fieldType).values())
                     {
@@ -422,19 +415,18 @@ public class MapperBuilder
                         staticValueMap.put(enumInstance.name(), enumHandler.getValue(enumInstance));
                     }
                 }
-                catch (Exception e)
-                {
-                    throw new JustThrowException(e);
-                }
-                
+            }
+            catch (Exception e)
+            {
+                throw new JustThrowException(e);
             }
         }
         
         public static class EnumHandlerInfo
         {
-            private Class<? extends Enum<?>>        type;
-            private Class<? extends EnumHandler<?>> handlerType;
-            private String                          name;
+            private final Class<? extends Enum<?>>        type;
+            private final Class<? extends EnumHandler<?>> handlerType;
+            private final String                          name;
             
             public EnumHandlerInfo(String name, Class<? extends Enum<?>> type, Class<? extends EnumHandler<?>> handlerType)
             {
@@ -448,29 +440,14 @@ public class MapperBuilder
                 return type;
             }
             
-            public void setType(Class<? extends Enum<?>> type)
-            {
-                this.type = type;
-            }
-            
             public Class<? extends EnumHandler<?>> getHandlerType()
             {
                 return handlerType;
             }
             
-            public void setHandlerType(Class<? extends EnumHandler<?>> handlerType)
-            {
-                this.handlerType = handlerType;
-            }
-            
             public String getName()
             {
                 return name;
-            }
-            
-            public void setName(String name)
-            {
-                this.name = name;
             }
             
         }
@@ -480,19 +457,9 @@ public class MapperBuilder
             enumHandlerInfos.add(new EnumHandlerInfo(name, enumType, handleType));
         }
         
-        public List<EnumHandlerInfo> enumHandlerInfos()
-        {
-            return enumHandlerInfos;
-        }
-        
         public String getDbColName(String fieldName)
         {
             return dbColNameMap.get(fieldName);
-        }
-        
-        public String getFieldName(String dbColName)
-        {
-            return fieldNameMap.get(dbColName);
         }
         
         public Object getStaticValue(String name)

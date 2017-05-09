@@ -5,12 +5,12 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
-import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.smc.SmcHelper;
 import com.jfireframework.baseutil.smc.el.SmcEl;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.mapper.MapperBuilder.SqlContext;
 import com.jfireframework.sql.metadata.MetaContext;
+import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.util.enumhandler.AbstractEnumHandler;
 import com.jfireframework.sql.util.enumhandler.EnumHandler;
 
@@ -135,16 +135,12 @@ public class SqlTextAnalyse
                 String ifContent = sql.substring(pre, now);
                 context += "if(" + SmcEl.createIf(ifContent, paramNames, paramTypes) + ")\r\n";
                 context += "{\r\n";
-                now+=2;
+                now += 2;
                 pre = now;
-//                now = sql.indexOf("</if>", pre);
-               
                 continue;
             }
             else if (c == '<' && sql.charAt(now + 1) == '/' && sql.charAt(now + 2) == 'i' && sql.charAt(now + 3) == 'f')
             {
-//                section = sql.substring(pre, now);
-//                context += "builder.append(\"" + section + "\");\r\n";
                 context += "}\r\n";
                 now += 5;
                 pre = now;
@@ -275,14 +271,12 @@ public class SqlTextAnalyse
                 if (tmp.indexOf('.') == -1)
                 {
                     simpleClassName = tmp;
-                    try
+                    TableMetaData tableMetaData = metaContext.get(simpleClassName);
+                    if (tableMetaData == null)
                     {
-                        sqlContext.addMetaData(metaContext.get(simpleClassName));
+                        throw new NullPointerException("无法识别" + simpleClassName);
                     }
-                    catch (Exception e)
-                    {
-                        throw new JustThrowException("无法识别" + simpleClassName, e);
-                    }
+                    sqlContext.addMetaData(tableMetaData);
                 }
                 index = end + 1;
                 continue;
@@ -291,22 +285,15 @@ public class SqlTextAnalyse
             {
                 end = getEndFlag(sql, index);
                 String tmp = sql.substring(index, end);
-                if (tmp.indexOf('.') == -1)
+                if (tmp.indexOf('.') == -1 && as)
                 {
-                    if (as)
+                    as = false;
+                    // 因为存在对字段进行as的情形，所以如果simpleClassName为null，就意味着是这种情况。忽略即可
+                    if (simpleClassName != null)
                     {
-                        as = false;
-                        // 因为存在对字段进行as的情形，所以如果simpleClassName为null，就意味着是这种情况。忽略即可
-                        if (simpleClassName != null)
-                        {
-                            String alias = tmp;
-                            sqlContext.addAliasName(alias, metaContext.get(simpleClassName));
-                            simpleClassName = null;
-                        }
-                    }
-                    else
-                    {
-                        ;
+                        String alias = tmp;
+                        sqlContext.addAliasName(alias, metaContext.get(simpleClassName));
+                        simpleClassName = null;
                     }
                 }
                 else

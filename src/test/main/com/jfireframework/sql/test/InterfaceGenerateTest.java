@@ -8,8 +8,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import com.jfireframework.sql.annotation.Sql;
-import com.jfireframework.sql.mapper.SqlTextAnalyse;
 import com.jfireframework.sql.mapper.MapperBuilder.SqlContext;
+import com.jfireframework.sql.mapper.SqlTextAnalyse;
 import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.session.SessionfactoryConfig;
 import com.jfireframework.sql.test.vo.User;
@@ -211,5 +211,27 @@ public class InterfaceGenerateTest
     public void test_9()
     {
         build("com.jfireframework.sql.test:in~*$test_9;com.jfireframework.sql.test.vo");
+    }
+    
+    public static interface test_10
+    {
+        @Sql(sql = "select count(*) <if(name == \"s\")> from {name}", paramNames = "name")
+        public int count(String name);
+    }
+    
+    /**
+     * 测试缺少</if>的星狂
+     */
+    @Test
+    public void test_10()
+    {
+        try
+        {
+            build("com.jfireframework.sql.test:in~*$test_10;com.jfireframework.sql.test.vo");
+            Assert.fail();
+        }
+        catch (Exception e)
+        {
+        }
     }
 }
