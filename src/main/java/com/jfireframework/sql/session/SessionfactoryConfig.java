@@ -31,9 +31,9 @@ import com.jfireframework.sql.mapper.Mapper;
 import com.jfireframework.sql.mapper.MapperBuilder;
 import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.metadata.TableMetaData;
-import com.jfireframework.sql.page.OracleParse;
 import com.jfireframework.sql.page.PageParse;
-import com.jfireframework.sql.page.StandardParse;
+import com.jfireframework.sql.page.impl.OracleParse;
+import com.jfireframework.sql.page.impl.StandardParse;
 import com.jfireframework.sql.session.impl.SessionFactoryImpl;
 
 public class SessionfactoryConfig

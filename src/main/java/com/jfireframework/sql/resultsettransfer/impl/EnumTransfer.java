@@ -1,4 +1,4 @@
-package com.jfireframework.sql.resultsettransfer;
+package com.jfireframework.sql.resultsettransfer.impl;
 
 import java.sql.ResultSet;
 import com.jfireframework.baseutil.exception.JustThrowException;
@@ -12,6 +12,7 @@ public class EnumTransfer extends AbstractResultsetTransfer<Enum<?>>
     @SuppressWarnings("unchecked")
     public EnumTransfer(Class<?> type)
     {
+        super(type);
         try
         {
             enumHandler = AbstractEnumHandler.getEnumBoundHandler((Class<? extends Enum<?>>) type).getConstructor(Class.class).newInstance(type);

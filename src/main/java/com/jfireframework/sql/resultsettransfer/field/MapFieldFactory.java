@@ -31,7 +31,7 @@ import com.jfireframework.sql.resultsettransfer.field.impl.WDoubleField;
 import com.jfireframework.sql.resultsettransfer.field.impl.WFloatField;
 import com.jfireframework.sql.resultsettransfer.field.impl.WLongField;
 
-public class MapFieldBuilder
+public class MapFieldFactory
 {
     private static final Map<Class<?>, Constructor<? extends MapField>> fieldMap = new HashMap<Class<?>, Constructor<? extends MapField>>();
     static
@@ -62,6 +62,11 @@ public class MapFieldBuilder
             throw new JustThrowException(e);
         }
         
+    }
+    
+    public static void registerField(Class<?> type, Constructor<MapField> constructor)
+    {
+        fieldMap.put(type, constructor);
     }
     
     public static MapField buildMapField(Field field, ColNameStrategy colNameStrategy)

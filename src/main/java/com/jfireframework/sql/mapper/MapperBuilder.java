@@ -5,9 +5,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -35,6 +32,7 @@ import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
+import com.jfireframework.sql.resultsettransfer.TransferFactory;
 import com.jfireframework.sql.util.enumhandler.EnumHandler;
 import com.jfireframework.sql.util.enumhandler.EnumStringHandler;
 
@@ -140,7 +138,7 @@ public class MapperBuilder
             if (isList)
             {
                 Type returnParamType = ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0];
-                String fieldName = addResultsetTransferField(compilerModel, buildInitStr((Class<?>) returnParamType));
+                String fieldName = addResultsetTransferField(compilerModel, (Class<?>) returnParamType);
                 if (isPage)
                 {
                     String pageParamName = "$" + (method.getParameterTypes().length - 1);
@@ -164,8 +162,8 @@ public class MapperBuilder
             else
             {
                 Class<?> returnType = method.getReturnType();
-                String fieldName = addResultsetTransferField(compilerModel, buildInitStr(returnType));
-                methodBody.append("return (" + returnType.getName() + ")session.query(")//
+                String fieldName = addResultsetTransferField(compilerModel, returnType);
+                methodBody.append("return (" + SmcHelper.getTypeName(returnType) + ")session.query(")//
                         .append(fieldName).append(",sql,list.toArray());");
             }
         }
@@ -175,7 +173,7 @@ public class MapperBuilder
             if (isList)
             {
                 Type returnParamType = ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0];
-                String fieldName = addResultsetTransferField(compilerModel, buildInitStr((Class<?>) returnParamType));
+                String fieldName = addResultsetTransferField(compilerModel, (Class<?>) returnParamType);
                 if (isPage)
                 {
                     methodBody.append("return session.queryList(").append(fieldName).append(",\"")//
@@ -190,8 +188,8 @@ public class MapperBuilder
             else
             {
                 Class<?> returnType = method.getReturnType();
-                String fieldName = addResultsetTransferField(compilerModel, buildInitStr(returnType));
-                methodBody.append("return (" + returnType.getName() + ")session.query(").append(fieldName).append(",\"")//
+                String fieldName = addResultsetTransferField(compilerModel, returnType);
+                methodBody.append("return (" + SmcHelper.getTypeName(returnType) + ")session.query(").append(fieldName).append(",\"")//
                         .append(sqlContext.getSql()).append("\",");
             }
             if (sqlContext.getQueryParams().size() == 0)
@@ -214,62 +212,6 @@ public class MapperBuilder
         createEnumBoundHandlerField(sqlContext, compilerModel);
     }
     
-    private String buildInitStr(Class<?> type)
-    {
-        if (type == Integer.class || type == int.class)
-        {
-            return "new com.jfireframework.sql.resultsettransfer.IntegerTransfer()";
-        }
-        else if (type == Short.class || type == short.class)
-        {
-            return "new com.jfireframework.sql.resultsettransfer.ShortTransfer()";
-        }
-        else if (type == Long.class || type == long.class)
-        {
-            return "new com.jfireframework.sql.resultsettransfer.LongTransfer()";
-        }
-        else if (type == Float.class || type == float.class)
-        {
-            return "new com.jfireframework.sql.resultsettransfer.FloatTransfer()";
-        }
-        else if (type == Double.class || type == double.class)
-        {
-            return "new com.jfireframework.sql.resultsettransfer.DoubleTransfer()";
-        }
-        else if (type == Boolean.class || type == boolean.class)
-        {
-            return "new com.jfireframework.sql.resultsettransfer.BooleanTransfer()";
-        }
-        else if (type == String.class)
-        {
-            return "new com.jfireframework.sql.resultsettransfer.StringTransfer()";
-        }
-        else if (type == Date.class)
-        {
-            return "new com.jfireframework.sql.resultsettransfer.SqlDateTransfer()";
-        }
-        else if (type == java.util.Date.class)
-        {
-            return "new com.jfireframework.sql.resultsettransfer.UtilDateTransfer()";
-        }
-        else if (type == Time.class)
-        {
-            return "new com.jfireframework.sql.resultsettransfer.TimeTransfer()";
-        }
-        else if (type == Timestamp.class)
-        {
-            return "new com.jfireframework.sql.resultsettransfer.TimeStampTransfer()";
-        }
-        else if (Enum.class.isAssignableFrom(type))
-        {
-            return "new com.jfireframework.sql.resultsettransfer.EnumTransfer(" + type.getName() + ".class)";
-        }
-        else
-        {
-            return "new com.jfireframework.sql.resultsettransfer.BeanTransfer(" + type.getName() + ".class)";
-        }
-    }
-    
     private void createEnumBoundHandlerField(SqlContext sqlContext, CompilerModel compilerModel)
     {
         for (EnumHandlerInfo each : sqlContext.enumHandlerInfos)
@@ -279,12 +221,19 @@ public class MapperBuilder
         }
     }
     
-    private String addResultsetTransferField(CompilerModel compilerModel, String initStr)
+    private String addResultsetTransferField(CompilerModel compilerModel, Class<?> type)
     {
         String fieldName = "transferField_" + fieldNo;
         fieldNo++;
+        String initStr = buildInitStr(type);
         compilerModel.addField(new FieldModel(fieldName, ResultSetTransfer.class, initStr));
         return fieldName;
+    }
+    
+    private String buildInitStr(Class<?> type)
+    {
+        Class<? extends ResultSetTransfer<?>> transfer = TransferFactory.get(type);
+        return "new " + SmcHelper.getTypeName(transfer) + "(" + SmcHelper.getTypeName(type) + ".class)";
     }
     
     private void createUpdateMethod(CompilerModel compilerModel, Method method, String sql, String[] paramNames) throws Exception
@@ -340,14 +289,8 @@ public class MapperBuilder
         private Map<String, String>   fieldNameMap     = new HashMap<String, String>();
         private Map<String, Object>   staticValueMap   = new HashMap<String, Object>();
         private String                sql;
-        private String                countSql;
         private List<String>          queryParams      = new LinkedList<String>();
         private List<EnumHandlerInfo> enumHandlerInfos = new LinkedList<MapperBuilder.SqlContext.EnumHandlerInfo>();
-        
-        public boolean hasMetaContext()
-        {
-            return !metaContexts.isEmpty();
-        }
         
         public List<String> getInjectNames()
         {
@@ -367,16 +310,6 @@ public class MapperBuilder
         public void setQueryParams(List<String> queryParams)
         {
             this.queryParams = queryParams;
-        }
-        
-        public String getCountSql()
-        {
-            return countSql;
-        }
-        
-        public void setCountSql(String countSql)
-        {
-            this.countSql = countSql;
         }
         
         public String getSql()
@@ -416,25 +349,18 @@ public class MapperBuilder
                     staticValueMap.put(prefix + each.getKey(), each.getValue().get(null));
                     staticValueMap.put(each.getKey(), each.getValue().get(null));
                 }
-            }
-            catch (Exception e)
-            {
-                throw new JustThrowException(e);
-            }
-            for (Entry<String, Field> each : metaData.enumFieldMap().entrySet())
-            {
-                Class<? extends Enum<?>> fieldType = (Class<? extends Enum<?>>) each.getValue().getType();
-                Class<? extends EnumHandler<?>> ckass = null;
-                if (fieldType.isAnnotationPresent(EnumBoundHandler.class))
+                for (Entry<String, Field> each : metaData.enumFieldMap().entrySet())
                 {
-                    ckass = fieldType.getAnnotation(EnumBoundHandler.class).value();
-                }
-                else
-                {
-                    ckass = EnumStringHandler.class;
-                }
-                try
-                {
+                    Class<? extends Enum<?>> fieldType = (Class<? extends Enum<?>>) each.getValue().getType();
+                    Class<? extends EnumHandler<?>> ckass = null;
+                    if (fieldType.isAnnotationPresent(EnumBoundHandler.class))
+                    {
+                        ckass = fieldType.getAnnotation(EnumBoundHandler.class).value();
+                    }
+                    else
+                    {
+                        ckass = EnumStringHandler.class;
+                    }
                     EnumHandler<?> enumHandler = ckass.getConstructor(Class.class).newInstance(fieldType);
                     for (Enum<?> enumInstance : ReflectUtil.getAllEnumInstances(fieldType).values())
                     {
@@ -442,11 +368,10 @@ public class MapperBuilder
                         staticValueMap.put(enumInstance.name(), enumHandler.getValue(enumInstance));
                     }
                 }
-                catch (Exception e)
-                {
-                    throw new JustThrowException(e);
-                }
-                
+            }
+            catch (Exception e)
+            {
+                throw new JustThrowException(e);
             }
         }
         

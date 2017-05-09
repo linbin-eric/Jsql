@@ -1,7 +1,6 @@
 package com.jfireframework.sql.resultsettransfer.field.impl;
 
 import java.lang.reflect.Field;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import com.jfireframework.baseutil.exception.JustThrowException;
@@ -36,13 +35,7 @@ public class EnumField extends AbstractMapField
     }
     
     @Override
-    public void setStatementValue(PreparedStatement statement, Object entity, int index) throws SQLException
-    {
-        enumHandler.setStatementValue(statement, index, unsafe, offset, entity);
-    }
-    
-    @Override
-    public Object statementValue(Object entity)
+    public Object fieldValue(Object entity)
     {
         return enumHandler.statementValue(unsafe, offset, entity);
     }

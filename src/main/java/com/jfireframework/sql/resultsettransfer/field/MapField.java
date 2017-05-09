@@ -1,7 +1,6 @@
 package com.jfireframework.sql.resultsettransfer.field;
 
 import java.lang.reflect.Field;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -16,17 +15,13 @@ public interface MapField
      */
     public void setEntityValue(Object entity, ResultSet resultSet) throws SQLException;
     
-    public Object statementValue(Object entity);
-    
     /**
-     * 从对象中获取值，按照index设置到statement中
+     * 获得该属性的值
      * 
-     * @param statement
      * @param entity
-     * @param index
-     * @throws SQLException
+     * @return
      */
-    public void setStatementValue(PreparedStatement statement, Object entity, int index) throws SQLException;
+    public Object fieldValue(Object entity);
     
     /**
      * 获取该属性所对应的数据库字段名称
@@ -62,19 +57,5 @@ public interface MapField
      * @return
      */
     public Field getField();
-    
-    /**
-     * 获取该属性在数据库的对应类型
-     * 
-     * @return
-     */
-    public Class<?> getFieldType();
-    
-    /**
-     * 返回该字段代表的数据库的长度。如果是-1代表使用默认值
-     * 
-     * @return
-     */
-    public int getDbLength();
     
 }

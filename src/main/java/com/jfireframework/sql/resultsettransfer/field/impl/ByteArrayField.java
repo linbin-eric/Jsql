@@ -2,10 +2,8 @@ package com.jfireframework.sql.resultsettransfer.field.impl;
 
 import java.lang.reflect.Field;
 import java.sql.Blob;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
 import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 
 public class ByteArrayField extends AbstractMapField
@@ -33,23 +31,7 @@ public class ByteArrayField extends AbstractMapField
     }
     
     @Override
-    public void setStatementValue(PreparedStatement statement, Object entity, int index) throws SQLException
-    {
-        byte[] array = (byte[]) unsafe.getObject(entity, offset);
-        if (array == null)
-        {
-            statement.setNull(index, Types.BLOB);
-        }
-        else
-        {
-            Blob blob = statement.getConnection().createBlob();
-            blob.setBytes(1, array);
-            statement.setBlob(index, blob);
-        }
-    }
-    
-    @Override
-    public Object statementValue(Object entity)
+    public Object fieldValue(Object entity)
     {
         return (byte[]) unsafe.getObject(entity, offset);
     }

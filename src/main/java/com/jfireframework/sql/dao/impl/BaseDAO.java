@@ -18,10 +18,10 @@ import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
 import com.jfireframework.sql.page.Page;
-import com.jfireframework.sql.resultsettransfer.BeanTransfer;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
 import com.jfireframework.sql.resultsettransfer.field.MapField;
-import com.jfireframework.sql.resultsettransfer.field.MapFieldBuilder;
+import com.jfireframework.sql.resultsettransfer.field.MapFieldFactory;
+import com.jfireframework.sql.resultsettransfer.impl.BeanTransfer;
 import com.jfireframework.sql.session.SqlSession;
 import com.jfireframework.sql.util.IdType;
 import sun.misc.Unsafe;
@@ -208,7 +208,7 @@ public abstract class BaseDAO<T> implements Dao<T>
         List<MapField> list = new ArrayList<MapField>(infos.length);
         for (FieldInfo each : infos)
         {
-            list.add(MapFieldBuilder.buildMapField(each.getField(), colNameStrategy));
+            list.add(MapFieldFactory.buildMapField(each.getField(), colNameStrategy));
         }
         return list.toArray(new MapField[list.size()]);
     }
@@ -245,7 +245,7 @@ public abstract class BaseDAO<T> implements Dao<T>
         Object[] params = new Object[fields.length];
         for (int i = 0; i < params.length; i++)
         {
-            params[i] = fields[i].statementValue(entity);
+            params[i] = fields[i].fieldValue(entity);
         }
         return params;
     }

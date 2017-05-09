@@ -1,4 +1,4 @@
-package com.jfireframework.sql.page;
+package com.jfireframework.sql.page.impl;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -6,16 +6,25 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.sql.page.Page;
+import com.jfireframework.sql.page.PageParse;
+import com.jfireframework.sql.page.PageSqlCache;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
 
-public class OracleParse implements PageParse
+/**
+ * 基于sql92语法,使用limit的方式进行分页
+ * 
+ * @author linbin
+ *
+ */
+public class StandardParse implements PageParse
 {
     private String parseQuerySql(String originSql)
     {
         String querySql = PageSqlCache.getQuerySql(originSql);
         if (querySql == null)
         {
-            querySql = "select * from ( select a.*,rownum from(" + originSql + ") a where rownum<=?) where rownum>=?";
+            querySql = originSql + " limit ?,?";
             PageSqlCache.putQuerySql(originSql, querySql);
         }
         return querySql;
@@ -47,8 +56,8 @@ public class OracleParse implements PageParse
             {
                 pstat.setObject(index++, param);
             }
-            pstat.setInt(index++, page.getStart() + page.getPageSize());
-            pstat.setInt(index, page.getStart());
+            pstat.setInt(index++, page.getStart());
+            pstat.setInt(index, page.getPageSize());
             resultSet = pstat.executeQuery();
             List<?> list = transfer.transferList(resultSet, querySql);
             page.setData(list);

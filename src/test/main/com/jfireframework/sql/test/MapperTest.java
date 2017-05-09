@@ -7,6 +7,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import com.jfireframework.sql.annotation.Sql;
+import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.session.SessionFactory;
 import com.jfireframework.sql.session.SessionfactoryConfig;
 import com.jfireframework.sql.session.SqlSession;
@@ -74,10 +75,30 @@ public class MapperTest
         public User find3(String name);
         
         /** 测试as类别名 **/
-        /** 测试参数类型是Enum */
+        /** 测试Enum */
         @Sql(sql = "select * from User where state =$s", paramNames = "s")
         public User find(State s);
-        /** 测试参数类型是Enum */
+        
+        @Sql(sql = "select state from User where name=$name", paramNames = "name")
+        public State findState(String name);
+        
+        @Sql(sql = "select state from User where name like $%name%", paramNames = "name")
+        public List<State> findListState(String name);
+        
+        /** 测试Enum */
+        
+        /* 测试对POJO属性的提取 */
+        @Sql(sql = "select length from User where name=$user.name and age = $user.age", paramNames = "user")
+        public int findLength(User user);
+        
+        /* 测试对POJO属性的提取 */
+        /* 测试page */
+        @Sql(sql = "select * from User <if( $name == \"lin\")> where name like $%name% </if>", paramNames = "name")
+        public List<User> find(String name, Page page);
+        
+        @Sql(sql = "select * from User where name like $%name%", paramNames = "name")
+        public List<User> find2(String name, Page page);
+        /* 测试page */
     }
     
     private SessionFactory       sessionFactory;
@@ -177,12 +198,47 @@ public class MapperTest
     }
     
     /**
-     * 测试方法入参是enum
+     * 测试enum
      */
     @Test
     public void test_5()
     {
         Assert.assertNotNull(testOp.find(State.off));
+        Assert.assertEquals(State.off, testOp.findState("lin"));
+        List<State> list = testOp.findListState("lin");
+        Assert.assertEquals(2, list.size());
+        Assert.assertEquals(State.off, list.get(0));
+        sessionFactory.getCurrentSession().close();
+    }
+    
+    /**
+     * 测试对pojo属性的提取
+     */
+    @Test
+    public void test_6()
+    {
+        User query = new User();
+        query.setName("lin");
+        query.setAge(12);
+        Assert.assertEquals(18, testOp.findLength(query));
+        sessionFactory.getCurrentSession().close();
+    }
+    
+    /**
+     * 测试page功能
+     */
+    @Test
+    public void test_7()
+    {
+        Page page = new Page();
+        page.setPageSize(1);
+        page.setPage(1);
+        List<User> users = testOp.find("lin", page);
+        Assert.assertEquals(2, page.getTotal());
+        Assert.assertEquals(1, users.size());
+        users = testOp.find2("lin", page);
+        Assert.assertEquals(2, page.getTotal());
+        Assert.assertEquals(1, users.size());
         sessionFactory.getCurrentSession().close();
     }
 }

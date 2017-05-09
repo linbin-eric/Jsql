@@ -10,10 +10,10 @@ import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.dao.StrategyOperation;
 import com.jfireframework.sql.page.Page;
-import com.jfireframework.sql.resultsettransfer.BeanTransfer;
-import com.jfireframework.sql.resultsettransfer.IntegerTransfer;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
 import com.jfireframework.sql.resultsettransfer.field.MapField;
+import com.jfireframework.sql.resultsettransfer.impl.BeanTransfer;
+import com.jfireframework.sql.resultsettransfer.impl.IntegerTransfer;
 import com.jfireframework.sql.session.SqlSession;
 
 public class StrategyOperationImpl<T> implements StrategyOperation<T>
@@ -190,7 +190,7 @@ public class StrategyOperationImpl<T> implements StrategyOperation<T>
         return session.update(delete, params);
     }
     
-    private static final ResultSetTransfer<Integer> countTransfer = new IntegerTransfer();
+    private static final ResultSetTransfer<Integer> countTransfer = new IntegerTransfer(int.class);
     
     @Override
     public int count(SqlSession session, String strategy, Object... params)

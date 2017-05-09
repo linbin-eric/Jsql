@@ -1,14 +1,16 @@
-package com.jfireframework.sql.resultsettransfer;
+package com.jfireframework.sql.resultsettransfer.impl;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import com.jfireframework.baseutil.StringUtil;
+import java.util.concurrent.ConcurrentHashMap;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.annotation.NameStrategy;
@@ -16,24 +18,22 @@ import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 import com.jfireframework.sql.dbstructure.name.DefaultNameStrategy;
 import com.jfireframework.sql.resultsettransfer.field.MapField;
-import com.jfireframework.sql.resultsettransfer.field.MapFieldBuilder;
+import com.jfireframework.sql.resultsettransfer.field.MapFieldFactory;
 
-public abstract class AbstractResultsetTransfer<T> implements ResultSetTransfer<T>
+public class BeanTransfer<T> extends AbstractResultsetTransfer<T>
 {
-    protected Map<String, MapField[]> mapFields;
-    protected Class<T>                entityClass;
+    protected final Map<String, MapField[]>             mapFields;
+    protected final Class<T>                            type;
+    private final ConcurrentHashMap<String, MapField[]> fieldCache = new ConcurrentHashMap<String, MapField[]>();
     
-    public AbstractResultsetTransfer()
+    public BeanTransfer(Class<T> type)
     {
-    }
-    
-    public AbstractResultsetTransfer(Class<T> entityClass)
-    {
-        this.entityClass = entityClass;
+        super(type);
+        this.type = type;
         ColNameStrategy colNameStrategy;
         try
         {
-            Class<? extends ColNameStrategy> ckass = entityClass.isAnnotationPresent(NameStrategy.class) ? entityClass.getAnnotation(NameStrategy.class).value() : DefaultNameStrategy.class;
+            Class<? extends ColNameStrategy> ckass = type.isAnnotationPresent(NameStrategy.class) ? type.getAnnotation(NameStrategy.class).value() : DefaultNameStrategy.class;
             colNameStrategy = ckass.newInstance();
         }
         catch (Exception e)
@@ -41,13 +41,13 @@ public abstract class AbstractResultsetTransfer<T> implements ResultSetTransfer<
             throw new JustThrowException(e);
         }
         List<MapField> list = new ArrayList<MapField>();
-        for (Field each : ReflectUtil.getAllFields(entityClass))
+        for (Field each : ReflectUtil.getAllFields(type))
         {
             if (each.isAnnotationPresent(SqlIgnore.class) || Map.class.isAssignableFrom(each.getType()) || List.class.isAssignableFrom(each.getType()) || each.getType().isInterface() || Modifier.isStatic(each.getModifiers()))
             {
                 continue;
             }
-            list.add(MapFieldBuilder.buildMapField(each, colNameStrategy));
+            list.add(MapFieldFactory.buildMapField(each, colNameStrategy));
         }
         mapFields = new HashMap<String, MapField[]>();
         for (MapField each : list)
@@ -68,36 +68,38 @@ public abstract class AbstractResultsetTransfer<T> implements ResultSetTransfer<
     }
     
     @Override
-    public T transfer(ResultSet resultSet, String sql) throws Exception
+    protected T valueOf(ResultSet resultSet, String sql) throws Exception
     {
-        if (resultSet.next())
+        MapField[] fields = fieldCache.get(sql);
+        if (fields == null)
         {
-            T result = valueOf(resultSet, sql);
-            if (resultSet.next())
-            {
-                throw new IllegalArgumentException(StringUtil.format("存在2行数据，不符合返回值要求。"));
-            }
-            else
-            {
-                return result;
-            }
+            fields = buildFieldsFromMetadata(resultSet.getMetaData());
+            fieldCache.put(sql, fields);
         }
-        else
+        T entity = type.newInstance();
+        for (MapField each : fields)
         {
-            return null;
+            each.setEntityValue(entity, resultSet);
         }
+        return entity;
     }
     
-    @Override
-    public List<T> transferList(ResultSet resultSet, String sql) throws Exception
+    private MapField[] buildFieldsFromMetadata(ResultSetMetaData metaData) throws SQLException
     {
-        List<T> list = new LinkedList<T>();
-        while (resultSet.next())
+        int colCount = metaData.getColumnCount();
+        List<MapField> resultFields = new LinkedList<MapField>();
+        for (int i = 0; i < colCount; i++)
         {
-            list.add(valueOf(resultSet, sql));
+            MapField[] fit = mapFields.get(metaData.getColumnName(i + 1).toLowerCase());
+            if (fit != null)
+            {
+                for (MapField each : fit)
+                {
+                    resultFields.add(each);
+                }
+            }
         }
-        return list;
+        MapField[] fields = resultFields.toArray(new MapField[resultFields.size()]);
+        return fields;
     }
-    
-    protected abstract T valueOf(ResultSet resultSet, String sql) throws Exception;
 }

@@ -16,13 +16,12 @@ import sun.misc.Unsafe;
  */
 public abstract class AbstractMapField implements MapField
 {
+    protected final static Unsafe unsafe = ReflectUtil.getUnsafe();
     protected final long          offset;
     protected final String        dbColName;
-    protected final static Unsafe unsafe = ReflectUtil.getUnsafe();
     protected final boolean       saveIgnore;
-    protected boolean             loadIgnore;
+    protected final boolean       loadIgnore;
     protected final Field         field;
-    protected int                 length;
     
     public AbstractMapField(Field field, ColNameStrategy colNameStrategy)
     {
@@ -41,11 +40,9 @@ public abstract class AbstractMapField implements MapField
             }
             loadIgnore = column.loadIgnore();
             saveIgnore = column.saveIgnore();
-            length = column.length();
         }
         else
         {
-            length = -1;
             saveIgnore = false;
             loadIgnore = false;
             dbColName = colNameStrategy.toDbName(field.getName());
@@ -74,18 +71,6 @@ public abstract class AbstractMapField implements MapField
     public String getFieldName()
     {
         return field.getName();
-    }
-    
-    @Override
-    public Class<?> getFieldType()
-    {
-        return field.getType();
-    }
-    
-    @Override
-    public int getDbLength()
-    {
-        return length;
     }
     
     /**

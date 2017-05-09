@@ -2,6 +2,7 @@ package com.jfireframework.sql.mapper;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.exception.JustThrowException;
@@ -15,6 +16,7 @@ import com.jfireframework.sql.util.enumhandler.EnumHandler;
 
 public class SqlTextAnalyse
 {
+    private static final AtomicInteger count = new AtomicInteger(0);
     
     @SuppressWarnings("unchecked")
     private static String buildParam(String inject, String[] paramNames, Class<?>[] paramTypes, SqlContext sqlContext)
@@ -40,7 +42,7 @@ public class SqlTextAnalyse
         if (Enum.class.isAssignableFrom(type))
         {
             Class<? extends EnumHandler<?>> handlerType = AbstractEnumHandler.getEnumBoundHandler((Class<? extends Enum<?>>) type);
-            String fieldName = "enumHandler$" + System.nanoTime();
+            String fieldName = "enumHandler_" + count.incrementAndGet();
             sqlContext.addEnumHandler(fieldName, (Class<? extends Enum<?>>) type, handlerType);
             result += fieldName + ".getValue(" + SmcHelper.buildInvoke(inject, paramNames, paramTypes) + ")";
         }
@@ -133,14 +135,19 @@ public class SqlTextAnalyse
                 String ifContent = sql.substring(pre, now);
                 context += "if(" + SmcEl.createIf(ifContent, paramNames, paramTypes) + ")\r\n";
                 context += "{\r\n";
-                pre = now + 2;
-                now = sql.indexOf("</if>", pre);
-                section = sql.substring(pre, now);
-                context += "builder.append(\"" + section + "\");\r\n";
+                now+=2;
+                pre = now;
+//                now = sql.indexOf("</if>", pre);
+               
+                continue;
+            }
+            else if (c == '<' && sql.charAt(now + 1) == '/' && sql.charAt(now + 2) == 'i' && sql.charAt(now + 3) == 'f')
+            {
+//                section = sql.substring(pre, now);
+//                context += "builder.append(\"" + section + "\");\r\n";
                 context += "}\r\n";
                 now += 5;
                 pre = now;
-                continue;
             }
             else if (c == '$')
             {

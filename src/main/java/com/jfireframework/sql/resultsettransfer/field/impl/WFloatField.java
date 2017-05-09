@@ -1,7 +1,6 @@
 package com.jfireframework.sql.resultsettransfer.field.impl;
 
 import java.lang.reflect.Field;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
@@ -29,21 +28,7 @@ public class WFloatField extends AbstractMapField
     }
     
     @Override
-    public void setStatementValue(PreparedStatement statement, Object entity, int index) throws SQLException
-    {
-        Float value = (Float) unsafe.getObject(entity, offset);
-        if (value == null)
-        {
-            statement.setObject(index, null);
-        }
-        else
-        {
-            statement.setFloat(index, value);
-        }
-    }
-    
-    @Override
-    public Object statementValue(Object entity)
+    public Object fieldValue(Object entity)
     {
         return unsafe.getObject(entity, offset);
     }

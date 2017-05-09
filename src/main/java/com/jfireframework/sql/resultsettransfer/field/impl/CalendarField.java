@@ -1,7 +1,6 @@
 package com.jfireframework.sql.resultsettransfer.field.impl;
 
 import java.lang.reflect.Field;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -33,21 +32,7 @@ public class CalendarField extends AbstractMapField
     }
     
     @Override
-    public void setStatementValue(PreparedStatement statement, Object entity, int index) throws SQLException
-    {
-        Calendar value = (Calendar) unsafe.getObject(entity, offset);
-        if (value == null)
-        {
-            statement.setDate(index, null);
-        }
-        else
-        {
-            statement.setTimestamp(index, new Timestamp(value.getTimeInMillis()));
-        }
-    }
-    
-    @Override
-    public Object statementValue(Object entity)
+    public Object fieldValue(Object entity)
     {
         return (Calendar) unsafe.getObject(entity, offset);
     }
