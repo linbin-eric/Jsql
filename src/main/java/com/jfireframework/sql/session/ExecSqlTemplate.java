@@ -23,7 +23,6 @@ public class ExecSqlTemplate
     public static int[] batchInsert(SqlInterceptor[] interceptors, Connection connection, String sql, Object... paramArrays)
     {
         PreparedStatement pstat = null;
-        ResultSet resultSet = null;
         try
         {
             if (interceptors.length != 0)
@@ -59,10 +58,6 @@ public class ExecSqlTemplate
         {
             try
             {
-                if (resultSet != null)
-                {
-                    resultSet.close();
-                }
                 if (pstat != null)
                 {
                     pstat.close();

@@ -230,9 +230,10 @@ public class MapperBuilder
         return fieldName;
     }
     
+    @SuppressWarnings("rawtypes")
     private String buildInitStr(Class<?> type)
     {
-        Class<? extends ResultSetTransfer<?>> transfer = TransferFactory.get(type);
+        Class<? extends ResultSetTransfer> transfer = TransferFactory.get(type);
         return "new " + SmcHelper.getTypeName(transfer) + "(" + SmcHelper.getTypeName(type) + ".class)";
     }
     

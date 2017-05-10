@@ -248,12 +248,7 @@ public class SqlTextAnalyse
                 index += 1;
                 continue;
             }
-            else if (c == '(' || c == ')')
-            {
-                index += 1;
-                continue;
-            }
-            else if (c == ' ' || c == ',' || c == '(' || c == '+' || c == '=' || c == '-' || c == '!' || c == '>' || c == '<')
+            else if (c == ' ' || c == ','|| c=='(' || c == ')' || c == '+' || c == '=' || c == '-' || c == '!' || c == '>' || c == '<')
             {
                 index += 1;
                 continue;
@@ -480,7 +475,7 @@ public class SqlTextAnalyse
         {
             char c = sql.charAt(start);
             if (c == '>' || c == '<' || c == '!' || c == '=' || c == ' ' || c == ',' //
-                    || c == '#' || c == '+' || c == '-' || c == '(' || c == ')' || c == ']' || c == '[')
+                    || c == '+' || c == '-' || c == '(' || c == ')' )
             {
                 break;
             }

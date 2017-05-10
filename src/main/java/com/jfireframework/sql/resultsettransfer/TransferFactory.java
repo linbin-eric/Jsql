@@ -48,10 +48,10 @@ public class TransferFactory
         transfers.putIfAbsent(type, transferCkass);
     }
     
-    @SuppressWarnings("unchecked")
-    public static Class<? extends ResultSetTransfer<?>> get(Class<?> type)
+    @SuppressWarnings({ "rawtypes" })
+    public static Class<? extends ResultSetTransfer> get(Class<?> type)
     {
-        Class<? extends ResultSetTransfer<?>> transfer = transfers.get(type);
+        Class<? extends ResultSetTransfer> transfer = transfers.get(type);
         if (transfer != null)
         {
             return transfer;
@@ -62,7 +62,7 @@ public class TransferFactory
         }
         else
         {
-            return (Class<? extends ResultSetTransfer<?>>) BeanTransfer.class;
+            return (Class<? extends ResultSetTransfer>) BeanTransfer.class;
         }
     }
 }

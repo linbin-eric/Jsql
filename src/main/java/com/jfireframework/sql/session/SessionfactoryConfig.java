@@ -81,16 +81,9 @@ public class SessionfactoryConfig
         new DaoBuilder().buildDao();
     }
     
-    private void initMetaContext(Set<Class<?>> set)
+    private void initMetaContext(Set<Class<?>> set) throws ClassNotFoundException, InstantiationException, IllegalAccessException
     {
-        try
-        {
-            metaContext = new MetaContext(set);
-        }
-        catch (Exception e)
-        {
-            throw new JustThrowException(e);
-        }
+        metaContext = new MetaContext(set);
     }
     
     public void setTableMode(String tableMode)
@@ -127,7 +120,7 @@ public class SessionfactoryConfig
         sqlInterceptors = list.toArray(new SqlInterceptor[list.size()]);
     }
     
-    private void detectProductName()
+    private void detectProductName() throws SQLException
     {
         Connection connection = null;
         try
@@ -136,22 +129,11 @@ public class SessionfactoryConfig
             DatabaseMetaData md = connection.getMetaData();
             productName = md.getDatabaseProductName().toLowerCase();
         }
-        catch (SQLException e)
-        {
-            throw new JustThrowException(e);
-        }
         finally
         {
             if (connection != null)
             {
-                try
-                {
-                    connection.close();
-                }
-                catch (SQLException e)
-                {
-                    throw new JustThrowException(e);
-                }
+                connection.close();
             }
         }
     }
@@ -199,29 +181,22 @@ public class SessionfactoryConfig
         return types;
     }
     
-    private void createMappers(Set<Class<?>> set)
+    private void createMappers(Set<Class<?>> set) throws InstantiationException, IllegalAccessException
     {
-        try
+        MapperBuilder mapperBuilder = new MapperBuilder(metaContext);
+        nextSqlInterface: for (Class<?> each : set)
         {
-            MapperBuilder mapperBuilder = new MapperBuilder(metaContext);
-            nextSqlInterface: for (Class<?> each : set)
+            if (each.isInterface())
             {
-                if (each.isInterface())
+                for (Method method : each.getMethods())
                 {
-                    for (Method method : each.getMethods())
+                    if (method.isAnnotationPresent(Sql.class))
                     {
-                        if (method.isAnnotationPresent(Sql.class))
-                        {
-                            mappers.put(each, (Mapper) mapperBuilder.build(each).newInstance());
-                            continue nextSqlInterface;
-                        }
+                        mappers.put(each, (Mapper) mapperBuilder.build(each).newInstance());
+                        continue nextSqlInterface;
                     }
                 }
             }
-        }
-        catch (Exception e1)
-        {
-            throw new JustThrowException(e1);
         }
     }
     
