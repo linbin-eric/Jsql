@@ -2,8 +2,13 @@ package com.jfireframework.sql.test;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.h2.Driver;
@@ -138,6 +143,23 @@ public class CURDTest
         User query = session.get(User.class, 1);
         Assert.assertNotNull(query);
         Assert.assertEquals(1, query.getId().intValue());
+        Assert.assertEquals(new Date(User.now).getTime(), query.getDate().getTime(), 1);
+        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT+8:00"));
+        calendar.setTimeInMillis(User.now);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        Assert.assertEquals(new Time(User.now - calendar.getTimeInMillis() - 8 * 60 * 60 * 1000), query.getTime());
+        Assert.assertEquals(calendar.getTimeInMillis(), query.getSqlDate().getTime());
+        Assert.assertEquals(2.53d, query.getD1(), 0.001);
+        Assert.assertEquals(5.36f, query.getF1(), 0.001);
+        Assert.assertEquals(23l, query.getL1());
+        Assert.assertEquals(new Timestamp(User.now), query.getTimestamp());
+        Assert.assertEquals(Boolean.FALSE, query.getB11());
+        Assert.assertEquals(6.32d, query.getD11(), 0.001);
+        Assert.assertEquals(5.69f, query.getF11(), 0.001);
+        Assert.assertEquals(Long.valueOf(5625l), query.getL11());
         session.close();
     }
     

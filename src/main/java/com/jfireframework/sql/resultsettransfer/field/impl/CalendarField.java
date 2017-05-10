@@ -34,7 +34,7 @@ public class CalendarField extends AbstractMapField
     @Override
     public Object fieldValue(Object entity)
     {
-        return (Calendar) unsafe.getObject(entity, offset);
+        return ((Calendar) unsafe.getObject(entity, offset)).getTime();
     }
     
 }

@@ -13,6 +13,7 @@ import com.jfireframework.sql.session.SessionfactoryConfig;
 import com.jfireframework.sql.session.SqlSession;
 import com.jfireframework.sql.test.vo.User;
 import com.jfireframework.sql.test.vo.User.State;
+import com.jfireframework.sql.test.vo.User.StringEnum;
 import com.zaxxer.hikari.HikariDataSource;
 
 public class MapperTest
@@ -79,6 +80,9 @@ public class MapperTest
         @Sql(sql = "select * from User where state =$s", paramNames = "s")
         public User find(State s);
         
+        @Sql(sql = "select * from User where stringEnum = $v", paramNames = "v")
+        User find(StringEnum v);
+        
         @Sql(sql = "select state from User where name=$name", paramNames = "name")
         public State findState(String name);
         
@@ -125,10 +129,12 @@ public class MapperTest
         user.setName("lin");
         user.setLength(18);
         user.setState(State.off);
+        user.setStringEnum(StringEnum.v1);
         session.save(user);
         user.setId(null);
         user.setState(null);
         user.setName("linbin");
+        user.setStringEnum(StringEnum.v2);
         session.save(user);
         session.close();
         testOp = sessionFactory.getMapper(TestOp.class);
@@ -208,6 +214,7 @@ public class MapperTest
         List<State> list = testOp.findListState("lin");
         Assert.assertEquals(2, list.size());
         Assert.assertEquals(State.off, list.get(0));
+        Assert.assertEquals("lin", testOp.find(StringEnum.v1).getName());
         sessionFactory.getCurrentSession().close();
     }
     

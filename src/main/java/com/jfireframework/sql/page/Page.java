@@ -14,11 +14,6 @@ public class Page
         return total;
     }
     
-    public int getPage()
-    {
-        return page;
-    }
-    
     public int getStart()
     {
         return (page - 1) * pageSize;

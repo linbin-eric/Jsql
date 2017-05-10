@@ -3,9 +3,7 @@ package com.jfireframework.sql.page.impl;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
-import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.page.PageParse;
 import com.jfireframework.sql.page.PageSqlCache;
@@ -42,7 +40,7 @@ public class StandardParse implements PageParse
     }
     
     @Override
-    public void doQuery(Object[] params, Connection connection, String sql, ResultSetTransfer<?> transfer, Page page) throws SQLException
+    public void doQuery(Object[] params, Connection connection, String sql, ResultSetTransfer<?> transfer, Page page) throws Exception
     {
         PreparedStatement pstat = null;
         ResultSet resultSet = null;
@@ -73,26 +71,15 @@ public class StandardParse implements PageParse
             resultSet.next();
             page.setTotal(resultSet.getInt(1));
         }
-        catch (Exception e)
-        {
-            throw new JustThrowException(e);
-        }
         finally
         {
-            try
+            if (resultSet != null)
             {
-                if (resultSet != null)
-                {
-                    resultSet.close();
-                }
-                if (pstat != null)
-                {
-                    pstat.close();
-                }
+                resultSet.close();
             }
-            catch (SQLException e)
+            if (pstat != null)
             {
-                throw new JustThrowException(e);
+                pstat.close();
             }
         }
     }

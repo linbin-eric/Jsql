@@ -1,10 +1,10 @@
 package com.jfireframework.sql.resultsettransfer.field.impl;
 
 import java.lang.reflect.Field;
-import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.Date;
 import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 
 public class DateField extends AbstractMapField

@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
 import javax.sql.DataSource;
@@ -35,8 +36,9 @@ public class H2DBStructure implements Structure
         dbTypeMap.put(Integer.class, new TypeAndLength("integer", 0));
         dbTypeMap.put(Long.class, new TypeAndLength("bigint", 0));
         dbTypeMap.put(String.class, new TypeAndLength("varchar", 255));
-        dbTypeMap.put(Date.class, new TypeAndLength("date", 0));
+        dbTypeMap.put(Date.class, new TypeAndLength("datetime", 0));
         dbTypeMap.put(java.util.Date.class, new TypeAndLength("datetime", 0));
+        dbTypeMap.put(Calendar.class, new TypeAndLength("datetime", 0));
         dbTypeMap.put(Timestamp.class, new TypeAndLength("datetime", 0));
         dbTypeMap.put(float.class, new TypeAndLength("float", 0));
         dbTypeMap.put(Float.class, new TypeAndLength("float", 0));
@@ -107,7 +109,8 @@ public class H2DBStructure implements Structure
             }
             catch (Exception e)
             {
-                e.printStackTrace();
+                logger.error("{}类型不能识别，无法创建对应的建表语句.检查字段:{}", each.getField().getType().getName(), each.getField().toGenericString(), e);
+                throw new JustThrowException(e);
             }
         }
         cache.deleteLast().append(")");

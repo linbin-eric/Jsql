@@ -23,6 +23,7 @@ import com.jfireframework.sql.resultsettransfer.field.impl.HeapByteBufField;
 import com.jfireframework.sql.resultsettransfer.field.impl.IntField;
 import com.jfireframework.sql.resultsettransfer.field.impl.IntegerField;
 import com.jfireframework.sql.resultsettransfer.field.impl.LongField;
+import com.jfireframework.sql.resultsettransfer.field.impl.SqlDateField;
 import com.jfireframework.sql.resultsettransfer.field.impl.StringField;
 import com.jfireframework.sql.resultsettransfer.field.impl.TimeField;
 import com.jfireframework.sql.resultsettransfer.field.impl.TimestampField;
@@ -41,7 +42,7 @@ public class MapFieldFactory
             fieldMap.put(boolean.class, BooleanField.class.getConstructor(Field.class, ColNameStrategy.class));
             fieldMap.put(Calendar.class, CalendarField.class.getConstructor(Field.class, ColNameStrategy.class));
             fieldMap.put(java.util.Date.class, DateField.class.getConstructor(Field.class, ColNameStrategy.class));
-            fieldMap.put(Date.class, DateField.class.getConstructor(Field.class, ColNameStrategy.class));
+            fieldMap.put(Date.class, SqlDateField.class.getConstructor(Field.class, ColNameStrategy.class));
             fieldMap.put(double.class, DoubleField.class.getConstructor(Field.class, ColNameStrategy.class));
             fieldMap.put(float.class, FloatField.class.getConstructor(Field.class, ColNameStrategy.class));
             fieldMap.put(long.class, LongField.class.getConstructor(Field.class, ColNameStrategy.class));
