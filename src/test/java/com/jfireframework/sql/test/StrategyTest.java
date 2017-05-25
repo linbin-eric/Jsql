@@ -89,6 +89,7 @@ public class StrategyTest
         Page page = new Page();
         page.setPageSize(1);
         page.setPage(1);
+        page.setFetchSum(true);
         list = session.findPage(User.class, page, "age;name", "ll");
         Assert.assertEquals(1, list.size());
         Assert.assertEquals(2, page.getTotal());

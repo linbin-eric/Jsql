@@ -78,4 +78,39 @@ public class OracleParse implements PageParse
         }
     }
     
+    @Override
+    public void queryWithoutCount(Object[] params, Connection connection, String sql, ResultSetTransfer<?> transfer, Page page) throws Exception
+    {
+        PreparedStatement pstat = null;
+        ResultSet resultSet = null;
+        try
+        {
+            String querySql = parseQuerySql(sql);
+            pstat = connection.prepareStatement(querySql);
+            int index = 1;
+            for (Object param : params)
+            {
+                pstat.setObject(index++, param);
+            }
+            pstat.setInt(index++, page.getStart() + page.getPageSize());
+            pstat.setInt(index, page.getStart());
+            resultSet = pstat.executeQuery();
+            List<?> list = transfer.transferList(resultSet, querySql);
+            page.setData(list);
+            resultSet.close();
+            pstat.close();
+        }
+        finally
+        {
+            if (resultSet != null)
+            {
+                resultSet.close();
+            }
+            if (pstat != null)
+            {
+                pstat.close();
+            }
+        }
+    }
+    
 }

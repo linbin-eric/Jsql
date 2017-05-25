@@ -179,27 +179,27 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> T query(ResultSetTransfer<T> transfer, String sql, Object... params)
     {
-        return (T) ExecSqlTemplate.exec(ExecSqlTemplate.query, sqlInterceptors, pageParse, null, transfer, connection, sql, params);
+        return (T) ExecSqlTemplate.exec(ExecSqlTemplate.query, sqlInterceptors, transfer, connection, sql, params);
     }
     
     @SuppressWarnings("unchecked")
     @Override
     public <T> List<T> queryList(ResultSetTransfer<T> transfer, String sql, Object... params)
     {
-        return (List<T>) ExecSqlTemplate.exec(ExecSqlTemplate.queryList, sqlInterceptors, pageParse, null, transfer, connection, sql, params);
+        return (List<T>) ExecSqlTemplate.exec(ExecSqlTemplate.queryList, sqlInterceptors, transfer, connection, sql, params);
     }
     
     @SuppressWarnings("unchecked")
     @Override
     public <T> List<T> queryList(ResultSetTransfer<T> transfer, String sql, Page page, Object... params)
     {
-        return (List<T>) ExecSqlTemplate.exec(ExecSqlTemplate.page, sqlInterceptors, pageParse, page, transfer, connection, sql, params);
+        return (List<T>) ExecSqlTemplate.exec(sqlInterceptors, pageParse, page, transfer, connection, sql, params);
     }
     
     @Override
     public int update(String sql, Object... params)
     {
-        return (Integer) ExecSqlTemplate.exec(ExecSqlTemplate.update, sqlInterceptors, null, null, null, connection, sql, params);
+        return (Integer) ExecSqlTemplate.exec(ExecSqlTemplate.update, sqlInterceptors, null, connection, sql, params);
     }
     
     @Override

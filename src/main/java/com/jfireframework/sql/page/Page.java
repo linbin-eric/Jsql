@@ -8,6 +8,10 @@ public class Page
     protected int     page;
     protected int     pageSize;
     protected List<?> data;
+    /**
+     * 是否需要查询总数
+     */
+    protected boolean fetchSum = false;
     
     public int getTotal()
     {
@@ -47,6 +51,16 @@ public class Page
     public void setData(List<?> data)
     {
         this.data = data;
+    }
+    
+    public boolean isFetchSum()
+    {
+        return fetchSum;
+    }
+    
+    public void setFetchSum(boolean fetchSum)
+    {
+        this.fetchSum = fetchSum;
     }
     
 }

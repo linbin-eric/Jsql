@@ -18,7 +18,6 @@ public class ExecSqlTemplate
     public static final int query     = 1;
     public static final int queryList = 2;
     public static final int update    = 3;
-    public static final int page      = 4;
     
     public static int[] batchInsert(SqlInterceptor[] interceptors, Connection connection, String sql, Object... paramArrays)
     {
@@ -28,10 +27,10 @@ public class ExecSqlTemplate
             if (interceptors.length != 0)
             {
                 InterceptorChain chain = new InterceptorChain(interceptors);
-                if (chain.intercept(connection, sql,  paramArrays))
+                if (chain.intercept(connection, sql, paramArrays))
                 {
                     sql = chain.getSql();
-                    paramArrays =  chain.getParams();
+                    paramArrays = chain.getParams();
                 }
                 else
                 {
@@ -140,7 +139,7 @@ public class ExecSqlTemplate
         }
     }
     
-    public static Object exec(int mode, SqlInterceptor[] interceptors, PageParse parse, Page pageStore, ResultSetTransfer<?> transfer, Connection connection, String sql, Object... params)
+    public static Object exec(SqlInterceptor[] interceptors, PageParse parse, Page pageStore, ResultSetTransfer<?> transfer, Connection connection, String sql, Object... params)
     {
         PreparedStatement pstat = null;
         ResultSet resultSet = null;
@@ -159,39 +158,15 @@ public class ExecSqlTemplate
                     return chain.getResult();
                 }
             }
-            if (mode == page)
+            if (pageStore.isFetchSum())
             {
                 parse.doQuery(params, connection, sql, transfer, pageStore);
-                return pageStore.getData();
             }
             else
             {
-                pstat = connection.prepareStatement(sql);
-                int index = 1;
-                for (Object each : params)
-                {
-                    pstat.setObject(index++, each);
-                }
-                switch (mode)
-                {
-                    case query:
-                    {
-                        resultSet = pstat.executeQuery();
-                        return transfer.transfer(resultSet, sql);
-                    }
-                    case queryList:
-                    {
-                        resultSet = pstat.executeQuery();
-                        return transfer.transferList(resultSet, sql);
-                    }
-                    case update:
-                    {
-                        return pstat.executeUpdate();
-                    }
-                    default:
-                        throw new UnsupportedOperationException();
-                }
+                parse.queryWithoutCount(params, connection, sql, transfer, pageStore);
             }
+            return pageStore.getData();
         }
         catch (Exception e)
         {
@@ -216,6 +191,76 @@ public class ExecSqlTemplate
             }
         }
         
+    }
+    
+    public static Object exec(int mode, SqlInterceptor[] interceptors, ResultSetTransfer<?> transfer, Connection connection, String sql, Object... params)
+    {
+        PreparedStatement pstat = null;
+        ResultSet resultSet = null;
+        try
+        {
+            if (interceptors.length != 0)
+            {
+                InterceptorChain chain = new InterceptorChain(interceptors);
+                if (chain.intercept(connection, sql, params))
+                {
+                    sql = chain.getSql();
+                    params = chain.getParams();
+                }
+                else
+                {
+                    return chain.getResult();
+                }
+            }
+            
+            pstat = connection.prepareStatement(sql);
+            int index = 1;
+            for (Object each : params)
+            {
+                pstat.setObject(index++, each);
+            }
+            switch (mode)
+            {
+                case query:
+                {
+                    resultSet = pstat.executeQuery();
+                    return transfer.transfer(resultSet, sql);
+                }
+                case queryList:
+                {
+                    resultSet = pstat.executeQuery();
+                    return transfer.transferList(resultSet, sql);
+                }
+                case update:
+                {
+                    return pstat.executeUpdate();
+                }
+                default:
+                    throw new UnsupportedOperationException();
+            }
+        }
+        catch (Exception e)
+        {
+            throw new JustThrowException(e);
+        }
+        finally
+        {
+            try
+            {
+                if (resultSet != null)
+                {
+                    resultSet.close();
+                }
+                if (pstat != null)
+                {
+                    pstat.close();
+                }
+            }
+            catch (SQLException e)
+            {
+                throw new JustThrowException(e);
+            }
+        }
     }
     
 }
