@@ -113,4 +113,23 @@ public class StrategyTest
         Assert.assertEquals(12, query.getAge());
     }
     
+    /**
+     * 测试策略获取中的排序功能
+     */
+    @Test
+    public void test_3()
+    {
+        User user = new User();
+        user.setName("aa1");
+        user.setAge(10);
+        SqlSession session = sessionFactory.openSession();
+        session.save(user);
+        user.setId(null);
+        user.setAge(12);
+        user.setName("aa2");
+        session.save(user);
+        List<User> result = session.findAll(User.class, "name;;age:desc");
+        Assert.assertEquals("aa2", result.get(0).getName());
+        Assert.assertEquals("aa1", result.get(1).getName());
+    }
 }

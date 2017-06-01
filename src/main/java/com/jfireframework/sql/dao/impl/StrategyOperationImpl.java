@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.annotation.TableEntity;
@@ -100,7 +101,8 @@ public class StrategyOperationImpl<T> implements StrategyOperation<T>
         cache.append("select ");
         String[] tmp = fields.split(";");
         String valueFields = tmp[0];
-        String whereFields = tmp[1];
+        String whereFields = tmp.length > 1 ? tmp[1] : null;
+        String orderFields = tmp.length > 2 ? tmp[2] : null;
         if (valueFields.equals("*"))
         {
             for (MapField each : mapFields.values())
@@ -112,22 +114,60 @@ public class StrategyOperationImpl<T> implements StrategyOperation<T>
         {
             for (String selectField : valueFields.split(","))
             {
+                if (StringUtil.isNotBlank(selectField) == false)
+                {
+                    continue;
+                }
                 Verify.notNull(mapFields.get(selectField), "策略:{}中的字段:{}不存在", fields, selectField);
                 cache.append(mapFields.get(selectField).getColName()).appendComma();
             }
+            if (StringUtil.isNotBlank(whereFields))
+            {
+                for (String whereField : whereFields.split(","))
+                {
+                    Verify.notNull(mapFields.get(whereField), "策略:{}中的字段:{}不存在", fields, whereField);
+                    cache.append(mapFields.get(whereField).getColName()).appendComma();
+                }
+            }
+        }
+        cache.deleteLast().append(" from ").append(tableName);
+        if (StringUtil.isNotBlank(whereFields))
+        {
+            cache.append(" where ");
             for (String whereField : whereFields.split(","))
             {
                 Verify.notNull(mapFields.get(whereField), "策略:{}中的字段:{}不存在", fields, whereField);
-                cache.append(mapFields.get(whereField).getColName()).appendComma();
+                cache.append(mapFields.get(whereField).getColName()).append("=? and ");
             }
+            cache.deleteEnds(4);
         }
-        cache.deleteLast().append(" from ").append(tableName).append(" where ");
-        for (String whereField : whereFields.split(","))
+        if (StringUtil.isNotBlank(orderFields))
         {
-            Verify.notNull(mapFields.get(whereField), "策略:{}中的字段:{}不存在", fields, whereField);
-            cache.append(mapFields.get(whereField).getColName()).append("=? and ");
+            cache.append(" order by ");
+            for (String each : orderFields.split(","))
+            {
+                if (each.contains(":"))
+                {
+                    String[] orderRule = each.split(":");
+                    Verify.notNull(mapFields.get(orderRule[0]).getColName(), "策略:{}中的字段:{}不存在", fields, orderRule[0]);
+                    cache.append(mapFields.get(orderRule[0]).getColName()).append(" ").append(orderRule[1]).append(",");
+                    if ("aes".equals(orderRule[1]) || "desc".equals(orderRule[1]))
+                    {
+                        ;
+                    }
+                    else
+                    {
+                        throw new UnsupportedOperationException(StringUtil.format("策略:{}中排序内容:{} 错误", fields, orderRule[1]));
+                    }
+                }
+                else
+                {
+                    Verify.notNull(mapFields.get(each), "策略:{}中的字段:{}不存在", fields, each);
+                    cache.append(mapFields.get(each)).append(",");
+                }
+            }
+            cache.deleteLast();
         }
-        cache.deleteEnds(4);
         FindStrategySql findStrategySql = new FindStrategySql();
         findStrategySql.sql = cache.toString();
         findStrategySql.transfer = new BeanTransfer<T>(ckass);
