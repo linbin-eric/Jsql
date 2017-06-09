@@ -238,8 +238,8 @@ public class MapperTest
     public void test_7()
     {
         Page page = new Page();
-        page.setPageSize(1);
-        page.setPage(1);
+        page.setOffset(0);
+        page.setSize(1);
         page.setFetchSum(true);
         List<User> users = testOp.find("lin", page);
         Assert.assertEquals(2, page.getTotal());

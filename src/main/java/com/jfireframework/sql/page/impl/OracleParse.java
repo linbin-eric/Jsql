@@ -48,8 +48,8 @@ public class OracleParse implements PageParse
             {
                 pstat.setObject(index++, param);
             }
-            pstat.setInt(index++, page.getStart() + page.getPageSize());
-            pstat.setInt(index, page.getStart());
+            pstat.setInt(index++, page.getOffset() + page.getSize());
+            pstat.setInt(index, page.getOffset());
             resultSet = pstat.executeQuery();
             List<?> list = transfer.transferList(resultSet, querySql);
             page.setData(list);
@@ -92,8 +92,8 @@ public class OracleParse implements PageParse
             {
                 pstat.setObject(index++, param);
             }
-            pstat.setInt(index++, page.getStart() + page.getPageSize());
-            pstat.setInt(index, page.getStart());
+            pstat.setInt(index++, page.getOffset() + page.getSize());
+            pstat.setInt(index, page.getOffset());
             resultSet = pstat.executeQuery();
             List<?> list = transfer.transferList(resultSet, querySql);
             page.setData(list);

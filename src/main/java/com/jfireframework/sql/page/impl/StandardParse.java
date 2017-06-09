@@ -54,8 +54,8 @@ public class StandardParse implements PageParse
             {
                 pstat.setObject(index++, param);
             }
-            pstat.setInt(index++, page.getStart());
-            pstat.setInt(index, page.getPageSize());
+            pstat.setInt(index++, page.getOffset());
+            pstat.setInt(index, page.getSize());
             resultSet = pstat.executeQuery();
             List<?> list = transfer.transferList(resultSet, querySql);
             page.setData(list);
@@ -98,8 +98,8 @@ public class StandardParse implements PageParse
             {
                 pstat.setObject(index++, param);
             }
-            pstat.setInt(index++, page.getStart());
-            pstat.setInt(index, page.getPageSize());
+            pstat.setInt(index++, page.getOffset());
+            pstat.setInt(index, page.getSize());
             resultSet = pstat.executeQuery();
             List<?> list = transfer.transferList(resultSet, querySql);
             page.setData(list);

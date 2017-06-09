@@ -5,8 +5,8 @@ import java.util.List;
 public class Page
 {
     protected int     total;
-    protected int     page;
-    protected int     pageSize;
+    protected int     offset;
+    protected int     size;
     protected List<?> data;
     /**
      * 是否需要查询总数
@@ -18,14 +18,14 @@ public class Page
         return total;
     }
     
-    public int getStart()
+    public int getOffset()
     {
-        return (page - 1) * pageSize;
+        return offset;
     }
     
-    public int getPageSize()
+    public int getSize()
     {
-        return pageSize;
+        return size;
     }
     
     public List<?> getData()
@@ -38,14 +38,14 @@ public class Page
         this.total = total;
     }
     
-    public void setPage(int page)
+    public void setOffset(int offset)
     {
-        this.page = page;
+        this.offset = offset;
     }
     
-    public void setPageSize(int pageSize)
+    public void setSize(int size)
     {
-        this.pageSize = pageSize;
+        this.size = size;
     }
     
     public void setData(List<?> data)

@@ -87,8 +87,8 @@ public class StrategyTest
         Assert.assertEquals(12 + 19, list.get(0).getAge() + list.get(1).getAge());
         Assert.assertEquals(2, session.count(User.class, "name", "ll"));
         Page page = new Page();
-        page.setPageSize(1);
-        page.setPage(1);
+        page.setOffset(0);
+        page.setSize(1);
         page.setFetchSum(true);
         list = session.findPage(User.class, page, "age;name", "ll");
         Assert.assertEquals(1, list.size());
