@@ -13,7 +13,7 @@ public class MysqlDAO<T> extends BaseDAO<T>
 {
     protected SqlAndFields insertInfo;
     
-    public MysqlDAO(TableMetaData metaData, SqlInterceptor[] sqlInterceptors)
+    public MysqlDAO(TableMetaData<?> metaData, SqlInterceptor[] sqlInterceptors)
     {
         super(metaData, sqlInterceptors);
     }

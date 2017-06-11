@@ -10,21 +10,17 @@ import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 import javax.sql.DataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.collection.buffer.HeapByteBuf;
-import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.sql.annotation.Column;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
 import com.jfireframework.sql.util.enumhandler.AbstractEnumHandler;
 import com.jfireframework.sql.util.enumhandler.EnumHandler;
 
-public class MariaDBStructure implements Structure
+public class MariaDBStructure extends AbstractDBStructure
 {
-    private static final Logger                   logger    = LoggerFactory.getLogger(MariaDBStructure.class);
     
     protected static Map<Class<?>, TypeAndLength> dbTypeMap = new HashMap<Class<?>, TypeAndLength>();
     
@@ -49,39 +45,7 @@ public class MariaDBStructure implements Structure
         dbTypeMap.put(HeapByteBuf.class, new TypeAndLength("blob", 0));
     }
     
-    @Override
-    public void createTable(DataSource dataSource, TableMetaData[] metaDatas) throws SQLException
-    {
-        Connection connection = null;
-        try
-        {
-            connection = dataSource.getConnection();
-            connection.setAutoCommit(false);
-            for (TableMetaData metaData : metaDatas)
-            {
-                if (metaData.getIdInfo() == null)
-                {
-                    continue;
-                }
-                _createTable(connection, metaData);
-            }
-            connection.commit();
-        }
-        catch (Exception e)
-        {
-            throw new JustThrowException(e);
-        }
-        finally
-        {
-            if (connection != null)
-            {
-                connection.close();
-            }
-        }
-        
-    }
-    
-    private void _createTable(Connection connection, TableMetaData tableMetaData) throws SQLException
+    protected void _createTable(Connection connection, TableMetaData<?> tableMetaData) throws SQLException
     {
         String tableName = tableMetaData.getTableName();
         FieldInfo idInfo = tableMetaData.getIdInfo();
@@ -173,14 +137,14 @@ public class MariaDBStructure implements Structure
     }
     
     @Override
-    public void updateTable(DataSource dataSource, TableMetaData[] metaDatas) throws SQLException
+    public void updateTable(DataSource dataSource, TableMetaData<?>[] metaDatas) throws SQLException
     {
         Connection connection = null;
         try
         {
             connection = dataSource.getConnection();
             connection.setAutoCommit(false);
-            for (TableMetaData metaData : metaDatas)
+            for (TableMetaData<?> metaData : metaDatas)
             {
                 try
                 {
@@ -202,7 +166,7 @@ public class MariaDBStructure implements Structure
         }
     }
     
-    private void _updateTable(Connection connection, TableMetaData tableMetaData) throws SQLException
+    private void _updateTable(Connection connection, TableMetaData<?> tableMetaData) throws SQLException
     {
         String tableName = tableMetaData.getTableName();
         String addColSql = "alter table " + tableName + " add ";

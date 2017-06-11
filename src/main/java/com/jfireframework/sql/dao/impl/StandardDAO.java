@@ -14,7 +14,7 @@ public class StandardDAO<T> extends BaseDAO<T>
     protected SqlAndFields insertInfo;
     private SqlAndFields   identityInsertInfo;
     
-    public StandardDAO(TableMetaData metaData, SqlInterceptor[] sqlInterceptors)
+    public StandardDAO(TableMetaData<?> metaData, SqlInterceptor[] sqlInterceptors)
     {
         super(metaData, sqlInterceptors);
     }

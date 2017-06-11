@@ -10,6 +10,7 @@ import com.jfireframework.sql.session.SessionFactory;
 import com.jfireframework.sql.session.SessionfactoryConfig;
 import com.jfireframework.sql.session.SqlSession;
 import com.jfireframework.sql.test.vo.User;
+import com.jfireframework.sql.test.vo.User2;
 import com.zaxxer.hikari.HikariDataSource;
 
 public class DbCreateTest
@@ -46,5 +47,11 @@ public class DbCreateTest
         ResultSet resultSet = connection.prepareStatement("select count(*) from user where name2 ='1221'").executeQuery();
         Assert.assertTrue(resultSet.next());
         Assert.assertEquals(1, resultSet.getInt(1));
+        User2 user2 = new User2();
+        user2.setName("ssadasd");
+        session = sessionFactory.openSession();
+        session.save(user2);
+        User2 query2 = session.get(User2.class, 2);
+        Assert.assertEquals(user2.getName(), query2.getName());
     }
 }

@@ -17,7 +17,7 @@ public class OracleDAO<T> extends BaseDAO<T>
     private final boolean useSeq;
     private String[]      returnKey;
     
-    public OracleDAO(TableMetaData metaData, SqlInterceptor[] sqlInterceptors)
+    public OracleDAO(TableMetaData<?> metaData, SqlInterceptor[] sqlInterceptors)
     {
         super(metaData, sqlInterceptors);
         useSeq = idField.getField().isAnnotationPresent(SeqId.class) ? true : false;

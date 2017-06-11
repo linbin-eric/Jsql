@@ -14,16 +14,17 @@ import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 
-public class TableMetaData
+public class TableMetaData<T>
 {
     private final String              tableName;
     private final FieldInfo[]         fieldInfos;
     private final FieldInfo           idInfo;
-    private final Class<?>            ckass;
+    private final Class<T>            ckass;
     private final Map<String, String> fieldNameMap   = new HashMap<String, String>();
     private final ColNameStrategy     colNameStrategy;
     private final Map<String, Field>  staticFieldMap = new HashMap<String, Field>();
     private final Map<String, Field>  enumFieldMap   = new HashMap<String, Field>();
+    private final boolean             editable;
     
     public static class FieldInfo
     {
@@ -86,11 +87,12 @@ public class TableMetaData
         
     }
     
-    public TableMetaData(Class<?> ckass, ColNameStrategy nameStrategy)
+    public TableMetaData(Class<T> ckass, ColNameStrategy nameStrategy)
     {
         this.ckass = ckass;
         this.colNameStrategy = nameStrategy;
         TableEntity entity = ckass.getAnnotation(TableEntity.class);
+        editable = entity.editable();
         tableName = entity.name();
         List<FieldInfo> list = new LinkedList<FieldInfo>();
         Field t_idField = null;
@@ -131,6 +133,11 @@ public class TableMetaData
         {
             idInfo = null;
         }
+    }
+    
+    public boolean editable()
+    {
+        return editable;
     }
     
     private boolean notTableField(Field field)

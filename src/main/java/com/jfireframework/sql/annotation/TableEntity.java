@@ -8,13 +8,18 @@ import java.lang.annotation.Target;
 /**
  * 该注解表明该类是一个数据库表的映射类
  * 
- * @author 林斌（windfire@zailanghua.com）
  * 
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface TableEntity
 {
-    public String name();
+    String name();
     
+    /**
+     * 该对象可以编辑表结构。如果为true，则意味着该对象参与表结构的修改流程
+     * 
+     * @return
+     */
+    boolean editable() default true;
 }

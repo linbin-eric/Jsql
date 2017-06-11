@@ -285,7 +285,7 @@ public class MapperBuilder
     public static class SqlContext
     {
         private List<String>          injectNames      = new LinkedList<String>();
-        private Set<TableMetaData>    metaContexts     = new HashSet<TableMetaData>();
+        private Set<TableMetaData<?>> metaContexts     = new HashSet<TableMetaData<?>>();
         private Map<String, String>   dbColNameMap     = new HashMap<String, String>();
         private Map<String, String>   fieldNameMap     = new HashMap<String, String>();
         private Map<String, Object>   staticValueMap   = new HashMap<String, Object>();
@@ -324,7 +324,7 @@ public class MapperBuilder
         }
         
         @SuppressWarnings("unchecked")
-        public void addMetaData(TableMetaData metaData)
+        public void addMetaData(TableMetaData<?> metaData)
         {
             if (metaData == null)
             {
@@ -377,7 +377,7 @@ public class MapperBuilder
         }
         
         @SuppressWarnings("unchecked")
-        public void addAliasName(String name, TableMetaData metaData)
+        public void addAliasName(String name, TableMetaData<?> metaData)
         {
             if (metaData == null)
             {

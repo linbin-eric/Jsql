@@ -248,7 +248,7 @@ public class SqlTextAnalyse
                 index += 1;
                 continue;
             }
-            else if (c == ' ' || c == ','|| c=='(' || c == ')' || c == '+' || c == '=' || c == '-' || c == '!' || c == '>' || c == '<')
+            else if (c == ' ' || c == ',' || c == '(' || c == ')' || c == '+' || c == '=' || c == '-' || c == '!' || c == '>' || c == '<')
             {
                 index += 1;
                 continue;
@@ -266,7 +266,7 @@ public class SqlTextAnalyse
                 if (tmp.indexOf('.') == -1)
                 {
                     simpleClassName = tmp;
-                    TableMetaData tableMetaData = metaContext.get(simpleClassName);
+                    TableMetaData<?> tableMetaData = metaContext.get(simpleClassName);
                     if (tableMetaData == null)
                     {
                         throw new NullPointerException("无法识别" + simpleClassName);
@@ -475,7 +475,7 @@ public class SqlTextAnalyse
         {
             char c = sql.charAt(start);
             if (c == '>' || c == '<' || c == '!' || c == '=' || c == ' ' || c == ',' //
-                    || c == '+' || c == '-' || c == '(' || c == ')' )
+                    || c == '+' || c == '-' || c == '(' || c == ')')
             {
                 break;
             }

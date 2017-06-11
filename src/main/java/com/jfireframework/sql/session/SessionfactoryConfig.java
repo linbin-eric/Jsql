@@ -3,7 +3,6 @@ package com.jfireframework.sql.session;
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -43,6 +42,7 @@ public class SessionfactoryConfig
     private String                            scanPackage;
     // 如果值是create，则会创建表。
     private String                            tableMode   = "none";
+    private Set<Class<?>>                     ckasses;
     private IdentityHashMap<Class<?>, Mapper> mappers     = new IdentityHashMap<Class<?>, Mapper>(128);
     private IdentityHashMap<Class<?>, Dao<?>> daos        = new IdentityHashMap<Class<?>, Dao<?>>();
     private MetaContext                       metaContext;
@@ -55,19 +55,22 @@ public class SessionfactoryConfig
     {
         try
         {
-            if (dataSource == null)
-            {
-                throw new NullPointerException("no dataSource set");
-            }
+            Verify.notNull(dataSource, "no dataSource set");
             Verify.notNull(scanPackage, "sql的扫描路径不能为空");
-            Set<Class<?>> set = buildClassNameSet(classLoader);
-            initSqlInterceptor(set);
-            detectProductName();
-            buildPageParse();
-            initMetaContext(set);
-            createOrUpdateDatabase();
-            createMappers(set);
-            buildDao();
+            Processor[] processors = new Processor[] { //
+                    new buildClassSet(), //
+                    new initSqlInterceptor(), //
+                    new detectProductName(), //
+                    new buildPageParse(), //
+                    new initMetaContext(), //
+                    new createOrUpdateDatabase(), //
+                    new CreateMappers(), //
+                    new BuildDao()//
+            };
+            for (Processor each : processors)
+            {
+                each.process();
+            }
             return new SessionFactoryImpl(mappers, daos, sqlInterceptors, pageParse, dataSource);
         }
         catch (Exception e)
@@ -76,187 +79,209 @@ public class SessionfactoryConfig
         }
     }
     
-    private void buildDao()
+    interface Processor
     {
-        new DaoBuilder().buildDao();
+        void process() throws Exception;
     }
     
-    private void initMetaContext(Set<Class<?>> set) throws ClassNotFoundException, InstantiationException, IllegalAccessException
+    class buildClassSet implements Processor
     {
-        metaContext = new MetaContext(set);
-    }
-    
-    public void setTableMode(String tableMode)
-    {
-        this.tableMode = tableMode;
-    }
-    
-    public void setDataSource(DataSource dataSource)
-    {
-        this.dataSource = dataSource;
-    }
-    
-    public void setClassLoader(ClassLoader classLoader)
-    {
-        this.classLoader = classLoader;
-    }
-    
-    public void setScanPackage(String scanPackage)
-    {
-        this.scanPackage = scanPackage;
-    }
-    
-    private void initSqlInterceptor(Set<Class<?>> set) throws InstantiationException, IllegalAccessException
-    {
-        List<SqlInterceptor> list = new LinkedList<SqlInterceptor>();
-        for (Class<?> each : set)
+        
+        @Override
+        public void process() throws Exception
         {
-            if (SqlInterceptor.class.isAssignableFrom(each) && each.isInterface() == false)
+            Set<String> set = new HashSet<String>();
+            String[] packageNames = scanPackage.split(";");
+            for (String packageName : packageNames)
             {
-                list.add((SqlInterceptor) each.newInstance());
-            }
-        }
-        Collections.sort(list, new AescComparator());
-        sqlInterceptors = list.toArray(new SqlInterceptor[list.size()]);
-    }
-    
-    private void detectProductName() throws SQLException
-    {
-        Connection connection = null;
-        try
-        {
-            connection = dataSource.getConnection();
-            DatabaseMetaData md = connection.getMetaData();
-            productName = md.getDatabaseProductName().toLowerCase();
-        }
-        finally
-        {
-            if (connection != null)
-            {
-                connection.close();
-            }
-        }
-    }
-    
-    private void buildPageParse()
-    {
-        if (productName.equals("mariadb") || "mysql".equals(productName))
-        {
-            pageParse = new StandardParse();
-        }
-        else if (productName.equals("oracle"))
-        {
-            pageParse = new OracleParse();
-        }
-        else if (productName.contains("hsql"))
-        {
-            pageParse = new StandardParse();
-        }
-        else if (productName.equals("h2"))
-        {
-            pageParse = new StandardParse();
-        }
-        else
-        {
-            logger.error("不支持分页的数据库类型：{}", productName);
-        }
-    }
-    
-    private Set<Class<?>> buildClassNameSet(ClassLoader classLoader) throws ClassNotFoundException
-    {
-        Set<String> set = new HashSet<String>();
-        String[] packageNames = scanPackage.split(";");
-        for (String packageName : packageNames)
-        {
-            for (String each : PackageScan.scan(packageName))
-            {
-                set.add(each);
-            }
-        }
-        Set<Class<?>> types = new HashSet<Class<?>>();
-        for (String each : set)
-        {
-            types.add(classLoader.loadClass(each));
-        }
-        return types;
-    }
-    
-    private void createMappers(Set<Class<?>> set) throws InstantiationException, IllegalAccessException
-    {
-        MapperBuilder mapperBuilder = new MapperBuilder(metaContext);
-        nextSqlInterface: for (Class<?> each : set)
-        {
-            if (each.isInterface())
-            {
-                for (Method method : each.getMethods())
+                for (String each : PackageScan.scan(packageName))
                 {
-                    if (method.isAnnotationPresent(Sql.class))
+                    set.add(each);
+                }
+            }
+            Set<Class<?>> types = new HashSet<Class<?>>();
+            for (String each : set)
+            {
+                types.add(classLoader.loadClass(each));
+            }
+            ckasses = types;
+        }
+        
+    }
+    
+    class initSqlInterceptor implements Processor
+    {
+        
+        @Override
+        public void process() throws Exception
+        {
+            List<SqlInterceptor> list = new LinkedList<SqlInterceptor>();
+            for (Class<?> each : ckasses)
+            {
+                if (SqlInterceptor.class.isAssignableFrom(each) && each.isInterface() == false)
+                {
+                    list.add((SqlInterceptor) each.newInstance());
+                }
+            }
+            Collections.sort(list, new AescComparator());
+            sqlInterceptors = list.toArray(new SqlInterceptor[list.size()]);
+        }
+    }
+    
+    class detectProductName implements Processor
+    {
+        
+        @Override
+        public void process() throws Exception
+        {
+            Connection connection = null;
+            try
+            {
+                connection = dataSource.getConnection();
+                DatabaseMetaData md = connection.getMetaData();
+                productName = md.getDatabaseProductName().toLowerCase();
+            }
+            finally
+            {
+                if (connection != null)
+                {
+                    connection.close();
+                }
+            }
+        }
+        
+    }
+    
+    class buildPageParse implements Processor
+    {
+        
+        @Override
+        public void process() throws Exception
+        {
+            if (productName.equals("mariadb") || "mysql".equals(productName))
+            {
+                pageParse = new StandardParse();
+            }
+            else if (productName.equals("oracle"))
+            {
+                pageParse = new OracleParse();
+            }
+            else if (productName.contains("hsql"))
+            {
+                pageParse = new StandardParse();
+            }
+            else if (productName.equals("h2"))
+            {
+                pageParse = new StandardParse();
+            }
+            else
+            {
+                logger.error("不支持分页的数据库类型：{}", productName);
+            }
+        }
+        
+    }
+    
+    class initMetaContext implements Processor
+    {
+        
+        @Override
+        public void process() throws Exception
+        {
+            metaContext = new MetaContext(ckasses);
+        }
+        
+    }
+    
+    class createOrUpdateDatabase implements Processor
+    {
+        private static final String CREATE = "create";
+        private static final String UPDATE = "update";
+        private static final String NONE   = "none";
+        
+        Structure buildStructure()
+        {
+            if (productName.equals("mysql"))
+            {
+                return new MariaDBStructure();
+            }
+            else if (productName.equals("mariadb"))
+            {
+                return new MariaDBStructure();
+            }
+            else if (productName.contains("hsql"))
+            {
+                return new HsqlDBStructure();
+            }
+            else if (productName.equals("h2"))
+            {
+                return new H2DBStructure();
+            }
+            else
+            {
+                throw new IllegalArgumentException("暂不支持" + productName + "数据库结构类型新建或者修改,当前支持：mysql,MariaDB");
+            }
+        }
+        
+        @Override
+        public void process() throws Exception
+        {
+            if (NONE.equals(tableMode))
+            {
+                return;
+            }
+            else if (CREATE.equals(tableMode))
+            {
+                Structure structure = buildStructure();
+                structure.createTable(dataSource, metaContext.metaDatas());
+                
+            }
+            else if (UPDATE.equals(tableMode))
+            {
+                Structure structure = buildStructure();
+                structure.updateTable(dataSource, metaContext.metaDatas());
+            }
+            else
+            {
+                throw new UnsupportedOperationException();
+            }
+        }
+        
+    }
+    
+    class CreateMappers implements Processor
+    {
+        
+        @Override
+        public void process() throws Exception
+        {
+            MapperBuilder mapperBuilder = new MapperBuilder(metaContext);
+            nextSqlInterface: for (Class<?> each : ckasses)
+            {
+                if (each.isInterface())
+                {
+                    for (Method method : each.getMethods())
                     {
-                        mappers.put(each, (Mapper) mapperBuilder.build(each).newInstance());
-                        continue nextSqlInterface;
+                        if (method.isAnnotationPresent(Sql.class))
+                        {
+                            mappers.put(each, (Mapper) mapperBuilder.build(each).newInstance());
+                            continue nextSqlInterface;
+                        }
                     }
                 }
             }
         }
+        
     }
     
-    private Structure buildStructure()
+    class BuildDao implements Processor
     {
-        if (productName.equals("mysql"))
+        
+        @SuppressWarnings({ "rawtypes", "unchecked" })
+        @Override
+        public void process() throws Exception
         {
-            return new MariaDBStructure();
-        }
-        else if (productName.equals("mariadb"))
-        {
-            return new MariaDBStructure();
-        }
-        else if (productName.contains("hsql"))
-        {
-            return new HsqlDBStructure();
-        }
-        else if (productName.equals("h2"))
-        {
-            return new H2DBStructure();
-        }
-        else
-        {
-            throw new IllegalArgumentException("暂不支持" + productName + "数据库结构类型新建或者修改,当前支持：mysql,MariaDB");
-        }
-    }
-    
-    enum TableMode
-    {
-        create, update, none
-    }
-    
-    private void createOrUpdateDatabase() throws Exception
-    {
-        TableMode type = TableMode.valueOf(tableMode);
-        switch (type)
-        {
-            case none:
-                return;
-            case create:
-            {
-                Structure structure = buildStructure();
-                structure.createTable(dataSource, metaContext.metaDatas());
-                return;
-            }
-            case update:
-            {
-                Structure structure = buildStructure();
-                structure.updateTable(dataSource, metaContext.metaDatas());
-                return;
-            }
-        }
-    }
-    
-    class DaoBuilder
-    {
-        @SuppressWarnings("rawtypes")
-        public void buildDao()
-        {
-            for (TableMetaData each : metaContext.metaDatas())
+            for (TableMetaData<?> each : metaContext.metaDatas())
             {
                 if (each.getIdInfo() != null)
                 {
@@ -285,4 +310,25 @@ public class SessionfactoryConfig
         }
         
     }
+    
+    public void setTableMode(String tableMode)
+    {
+        this.tableMode = tableMode;
+    }
+    
+    public void setDataSource(DataSource dataSource)
+    {
+        this.dataSource = dataSource;
+    }
+    
+    public void setClassLoader(ClassLoader classLoader)
+    {
+        this.classLoader = classLoader;
+    }
+    
+    public void setScanPackage(String scanPackage)
+    {
+        this.scanPackage = scanPackage;
+    }
+    
 }
