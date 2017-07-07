@@ -9,8 +9,8 @@
 		<version>1.0.1</version>
 	</parent>
 	<version>1.0-SNAPSHOT</version>
-	<artifactId>sql</artifactId>
-	<name>sql</name>
+	<artifactId>allSql</artifactId>
+	<name>allSql</name>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
