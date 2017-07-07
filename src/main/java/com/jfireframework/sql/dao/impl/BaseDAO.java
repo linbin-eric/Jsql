@@ -15,12 +15,12 @@ import com.jfireframework.sql.dao.LockMode;
 import com.jfireframework.sql.dao.StrategyOperation;
 import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
+import com.jfireframework.sql.mapfield.MapField;
+import com.jfireframework.sql.mapfield.MapFieldFactory;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
-import com.jfireframework.sql.resultsettransfer.field.MapField;
-import com.jfireframework.sql.resultsettransfer.field.MapFieldFactory;
 import com.jfireframework.sql.resultsettransfer.impl.BeanTransfer;
 import com.jfireframework.sql.session.SqlSession;
 import com.jfireframework.sql.util.IdType;
@@ -208,7 +208,7 @@ public abstract class BaseDAO<T> implements Dao<T>
         List<MapField> list = new ArrayList<MapField>(infos.length);
         for (FieldInfo each : infos)
         {
-            list.add(MapFieldFactory.buildMapField(each.getField(), colNameStrategy));
+            list.add(MapFieldFactory.getInstance(each.getField(), colNameStrategy));
         }
         return list.toArray(new MapField[list.size()]);
     }

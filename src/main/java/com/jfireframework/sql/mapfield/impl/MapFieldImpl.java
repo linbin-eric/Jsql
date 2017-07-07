@@ -1,11 +1,14 @@
-package com.jfireframework.sql.resultsettransfer.field.impl;
+package com.jfireframework.sql.mapfield.impl;
 
 import java.lang.reflect.Field;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.annotation.Column;
 import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
-import com.jfireframework.sql.resultsettransfer.field.MapField;
+import com.jfireframework.sql.mapfield.MapField;
+import com.jfireframework.sql.mapfield.FieldOperator;
 import sun.misc.Unsafe;
 
 /**
@@ -14,7 +17,7 @@ import sun.misc.Unsafe;
  * @author linbin
  * 
  */
-public abstract class AbstractMapField implements MapField
+public class MapFieldImpl implements MapField
 {
     protected final static Unsafe unsafe = ReflectUtil.getUnsafe();
     protected final long          offset;
@@ -22,9 +25,11 @@ public abstract class AbstractMapField implements MapField
     protected final boolean       saveIgnore;
     protected final boolean       loadIgnore;
     protected final Field         field;
+    protected FieldOperator        valueFetcher;
     
-    public AbstractMapField(Field field, ColNameStrategy colNameStrategy)
+    public MapFieldImpl(Field field, ColNameStrategy colNameStrategy, FieldOperator valueFetcher)
     {
+        this.valueFetcher = valueFetcher;
         offset = unsafe.objectFieldOffset(field);
         this.field = field;
         if (field.isAnnotationPresent(Column.class))
@@ -94,6 +99,24 @@ public abstract class AbstractMapField implements MapField
     public boolean equals(Object o)
     {
         return field.equals(o);
+    }
+    
+    @Override
+    public FieldOperator valueFetcher()
+    {
+        return valueFetcher;
+    }
+    
+    @Override
+    public void setEntityValue(Object entity, ResultSet resultSet) throws SQLException
+    {
+        valueFetcher.setEntityValue(entity, field, dbColName, offset, resultSet);
+    }
+    
+    @Override
+    public Object fieldValue(Object entity)
+    {
+        return valueFetcher.fieldValue(entity, field, offset);
     }
     
 }

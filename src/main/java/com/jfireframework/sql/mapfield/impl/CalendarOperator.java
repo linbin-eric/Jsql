@@ -1,22 +1,16 @@
-package com.jfireframework.sql.resultsettransfer.field.impl;
+package com.jfireframework.sql.mapfield.impl;
 
 import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Calendar;
-import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 
-public class CalendarField extends AbstractMapField
+public class CalendarOperator extends AbstractFieldOperator
 {
     
-    public CalendarField(Field field, ColNameStrategy colNameStrategy)
-    {
-        super(field, colNameStrategy);
-    }
-    
     @Override
-    public void setEntityValue(Object entity, ResultSet resultSet) throws SQLException
+    public void setEntityValue(Object entity, Field field, String dbColName, long offset, ResultSet resultSet) throws SQLException
     {
         Timestamp timestamp = resultSet.getTimestamp(dbColName);
         if (resultSet.wasNull())
@@ -32,7 +26,7 @@ public class CalendarField extends AbstractMapField
     }
     
     @Override
-    public Object fieldValue(Object entity)
+    public Object fieldValue(Object entity, Field field, long offset)
     {
         return ((Calendar) unsafe.getObject(entity, offset)).getTime();
     }

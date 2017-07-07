@@ -5,8 +5,8 @@ import java.util.List;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.sql.annotation.SeqId;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
+import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.metadata.TableMetaData;
-import com.jfireframework.sql.resultsettransfer.field.MapField;
 import com.jfireframework.sql.session.ExecSqlTemplate;
 import com.jfireframework.sql.session.SqlSession;
 

@@ -17,8 +17,8 @@ import com.jfireframework.sql.annotation.NameStrategy;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 import com.jfireframework.sql.dbstructure.name.DefaultNameStrategy;
-import com.jfireframework.sql.resultsettransfer.field.MapField;
-import com.jfireframework.sql.resultsettransfer.field.MapFieldFactory;
+import com.jfireframework.sql.mapfield.MapField;
+import com.jfireframework.sql.mapfield.MapFieldFactory;
 
 public class BeanTransfer<T> extends AbstractResultsetTransfer<T>
 {
@@ -47,7 +47,7 @@ public class BeanTransfer<T> extends AbstractResultsetTransfer<T>
             {
                 continue;
             }
-            list.add(MapFieldFactory.buildMapField(each, colNameStrategy));
+            list.add(MapFieldFactory.getInstance(each, colNameStrategy));
         }
         mapFields = new HashMap<String, MapField[]>();
         for (MapField each : list)

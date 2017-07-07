@@ -19,7 +19,7 @@ import com.jfireframework.sql.resultsettransfer.impl.TimeStampTransfer;
 import com.jfireframework.sql.resultsettransfer.impl.TimeTransfer;
 import com.jfireframework.sql.resultsettransfer.impl.UtilDateTransfer;
 
-public class TransferFactory
+public class ResultSetTransferUtil
 {
     private static final ConcurrentMap<Class<?>, Class<? extends ResultSetTransfer<?>>> transfers = new ConcurrentHashMap<Class<?>, Class<? extends ResultSetTransfer<?>>>();
     static

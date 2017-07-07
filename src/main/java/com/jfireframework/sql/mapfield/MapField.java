@@ -1,4 +1,4 @@
-package com.jfireframework.sql.resultsettransfer.field;
+package com.jfireframework.sql.mapfield;
 
 import java.lang.reflect.Field;
 import java.sql.ResultSet;
@@ -6,6 +6,8 @@ import java.sql.SQLException;
 
 public interface MapField
 {
+    FieldOperator valueFetcher();
+    
     /**
      * 从resultset通过名称获取值，并且设置到对象中
      * 

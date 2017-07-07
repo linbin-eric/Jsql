@@ -32,7 +32,7 @@ import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
-import com.jfireframework.sql.resultsettransfer.TransferFactory;
+import com.jfireframework.sql.resultsettransfer.ResultSetTransferUtil;
 import com.jfireframework.sql.util.enumhandler.EnumHandler;
 import com.jfireframework.sql.util.enumhandler.EnumStringHandler;
 
@@ -233,7 +233,7 @@ public class MapperBuilder
     @SuppressWarnings("rawtypes")
     private String buildInitStr(Class<?> type)
     {
-        Class<? extends ResultSetTransfer> transfer = TransferFactory.get(type);
+        Class<? extends ResultSetTransfer> transfer = ResultSetTransferUtil.get(type);
         return "new " + SmcHelper.getTypeName(transfer) + "(" + SmcHelper.getTypeName(type) + ".class)";
     }
     

@@ -1,20 +1,14 @@
-package com.jfireframework.sql.resultsettransfer.field.impl;
+package com.jfireframework.sql.mapfield.impl;
 
 import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 
-public class StringField extends AbstractMapField
+public class StringOperator extends AbstractFieldOperator
 {
     
-    public StringField(Field field, ColNameStrategy colNameStrategy)
-    {
-        super(field, colNameStrategy);
-    }
-    
     @Override
-    public void setEntityValue(Object entity, ResultSet resultSet) throws SQLException
+    public void setEntityValue(Object entity, Field field, String dbColName, long offset, ResultSet resultSet) throws SQLException
     {
         String value = resultSet.getString(dbColName);
         if (resultSet.wasNull())
@@ -28,7 +22,7 @@ public class StringField extends AbstractMapField
     }
     
     @Override
-    public Object fieldValue(Object entity)
+    public Object fieldValue(Object entity, Field field, long offset)
     {
         return unsafe.getObject(entity, offset);
     }
