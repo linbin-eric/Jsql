@@ -139,7 +139,7 @@ public class ExecSqlTemplate
         }
     }
     
-    public static Object exec(SqlInterceptor[] interceptors, PageParse parse, Page pageStore, ResultSetTransfer<?> transfer, Connection connection, String sql, Object... params)
+    public static Object exec(SqlInterceptor[] interceptors, PageParse parse, Page pageStore, ResultSetTransfer transfer, Connection connection, String sql, Object... params)
     {
         PreparedStatement pstat = null;
         ResultSet resultSet = null;
@@ -193,7 +193,7 @@ public class ExecSqlTemplate
         
     }
     
-    public static Object exec(int mode, SqlInterceptor[] interceptors, ResultSetTransfer<?> transfer, Connection connection, String sql, Object... params)
+    public static Object exec(int mode, SqlInterceptor[] interceptors, ResultSetTransfer transfer, Connection connection, String sql, Object... params)
     {
         PreparedStatement pstat = null;
         ResultSet resultSet = null;

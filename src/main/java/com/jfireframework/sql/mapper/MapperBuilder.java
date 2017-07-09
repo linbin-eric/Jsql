@@ -1,6 +1,5 @@
 package com.jfireframework.sql.mapper;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -10,41 +9,34 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.exception.JustThrowException;
-import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.smc.SmcHelper;
 import com.jfireframework.baseutil.smc.compiler.JavaStringCompiler;
 import com.jfireframework.baseutil.smc.model.CompilerModel;
-import com.jfireframework.baseutil.smc.model.FieldModel;
 import com.jfireframework.baseutil.smc.model.MethodModel;
 import com.jfireframework.baseutil.verify.Verify;
-import com.jfireframework.sql.annotation.EnumBoundHandler;
 import com.jfireframework.sql.annotation.Sql;
-import com.jfireframework.sql.mapper.MapperBuilder.SqlContext.EnumHandlerInfo;
 import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
 import com.jfireframework.sql.page.Page;
-import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
-import com.jfireframework.sql.resultsettransfer.ResultSetTransferUtil;
-import com.jfireframework.sql.util.enumhandler.EnumHandler;
-import com.jfireframework.sql.util.enumhandler.EnumStringHandler;
+import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore;
 
 public class MapperBuilder
 {
-    private final MetaContext   metaContext;
-    private int                 fieldNo = 1;
-    private static final Logger logger  = LoggerFactory.getLogger(MapperBuilder.class);
+    private final MetaContext            metaContext;
+    private final ResultsetTransferStore resultsetTransferStore;
+    private static final Logger          logger = LoggerFactory.getLogger(MapperBuilder.class);
     
-    public MapperBuilder(MetaContext metaContext)
+    public MapperBuilder(MetaContext metaContext, ResultsetTransferStore resultsetTransferStore)
     {
         this.metaContext = metaContext;
+        this.resultsetTransferStore = resultsetTransferStore;
     }
     
     /**
@@ -137,14 +129,13 @@ public class MapperBuilder
             methodBody.append(SqlTextAnalyse.analyseDynamicText(sql, paramNames, method.getParameterTypes(), metaContext, sqlContext));
             if (isList)
             {
-                Type returnParamType = ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0];
-                String fieldName = addResultsetTransferField(compilerModel, (Class<?>) returnParamType);
+                int sn = resultsetTransferStore.registerTransfer(method);
                 if (isPage)
                 {
                     String pageParamName = "$" + (method.getParameterTypes().length - 1);
                     methodBody//
-                            .append("return session.queryList(")//
-                            .append(fieldName).appendComma()//
+                            .append("return session.queryList(sessionFactory.getResultSetTransferStore().get(")//
+                            .append(sn).append(')').appendComma()//
                             .append("sql").appendComma()//
                             .append(pageParamName)//
                             .appendComma().append("list.toArray()")//
@@ -152,8 +143,8 @@ public class MapperBuilder
                 }
                 else
                 {
-                    methodBody.append("return session.queryList(")//
-                            .append(fieldName).appendComma()//
+                    methodBody.append("return session.queryList(sessionFactory.getResultSetTransferStore().get(")//
+                            .append(sn).append(')').appendComma()//
                             .append("sql").appendComma()//
                             .append("list.toArray()")//
                             .append(");");
@@ -162,9 +153,9 @@ public class MapperBuilder
             else
             {
                 Class<?> returnType = method.getReturnType();
-                String fieldName = addResultsetTransferField(compilerModel, returnType);
-                methodBody.append("return (" + SmcHelper.getTypeName(returnType) + ")session.query(")//
-                        .append(fieldName).append(",sql,list.toArray());");
+                int sn = resultsetTransferStore.registerTransfer(method);
+                methodBody.append("return (" + SmcHelper.getTypeName(returnType) + ")session.query(sessionFactory.getResultSetTransferStore().get(")//
+                        .append(sn).append(')').append(",sql,list.toArray());");
             }
         }
         else
@@ -172,34 +163,33 @@ public class MapperBuilder
             SqlTextAnalyse.analyseStaticText(sql, paramNames, method.getParameterTypes(), metaContext, sqlContext);
             if (isList)
             {
-                Type returnParamType = ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0];
-                String fieldName = addResultsetTransferField(compilerModel, (Class<?>) returnParamType);
+                int sn = resultsetTransferStore.registerTransfer(method);
                 if (isPage)
                 {
-                    methodBody.append("return session.queryList(").append(fieldName).append(",\"")//
+                    methodBody.append("return session.queryList(sessionFactory.getResultSetTransferStore().get(").append(sn).append(')').append(",\"")//
                             .append(sqlContext.getSql()).append("\",$").append(method.getParameterTypes().length - 1).append(",");
                 }
                 else
                 {
-                    methodBody.append("return session.queryList(").append(fieldName).append(",\"")//
+                    methodBody.append("return session.queryList(sessionFactory.getResultSetTransferStore().get(").append(sn).append(')').append(",\"")//
                             .append(sqlContext.getSql()).append("\",");
                 }
             }
             else
             {
                 Class<?> returnType = method.getReturnType();
-                String fieldName = addResultsetTransferField(compilerModel, returnType);
-                methodBody.append("return (" + SmcHelper.getTypeName(returnType) + ")session.query(").append(fieldName).append(",\"")//
+                int sn = resultsetTransferStore.registerTransfer(method);
+                methodBody.append("return (" + SmcHelper.getTypeName(returnType) + ")session.query(sessionFactory.getResultSetTransferStore().get(").append(sn).append(')').append(",\"")//
                         .append(sqlContext.getSql()).append("\",");
             }
-            if (sqlContext.getQueryParams().size() == 0)
+            if (sqlContext.getParams().size() == 0)
             {
                 methodBody.append("emptyParams);");
             }
             else
             {
                 methodBody.append("new Object[]{");
-                for (String each : sqlContext.getQueryParams())
+                for (String each : sqlContext.getParams())
                 {
                     methodBody.append(each).appendComma();
                 }
@@ -209,32 +199,6 @@ public class MapperBuilder
         MethodModel methodModel = new MethodModel(method);
         methodModel.setBody(methodBody.toString());
         compilerModel.putMethod(method, methodModel);
-        createEnumBoundHandlerField(sqlContext, compilerModel);
-    }
-    
-    private void createEnumBoundHandlerField(SqlContext sqlContext, CompilerModel compilerModel)
-    {
-        for (EnumHandlerInfo each : sqlContext.enumHandlerInfos)
-        {
-            FieldModel fieldModel = new FieldModel(each.getName(), each.getHandlerType(), StringUtil.format("new {}({}.class)", each.getHandlerType().getName(), SmcHelper.getTypeName(each.getType())));
-            compilerModel.addField(fieldModel);
-        }
-    }
-    
-    private String addResultsetTransferField(CompilerModel compilerModel, Class<?> type)
-    {
-        String fieldName = "transferField_" + fieldNo;
-        fieldNo++;
-        String initStr = buildInitStr(type);
-        compilerModel.addField(new FieldModel(fieldName, ResultSetTransfer.class, initStr));
-        return fieldName;
-    }
-    
-    @SuppressWarnings("rawtypes")
-    private String buildInitStr(Class<?> type)
-    {
-        Class<? extends ResultSetTransfer> transfer = ResultSetTransferUtil.get(type);
-        return "new " + SmcHelper.getTypeName(transfer) + "(" + SmcHelper.getTypeName(type) + ".class)";
     }
     
     private void createUpdateMethod(CompilerModel compilerModel, Method method, String sql, String[] paramNames) throws Exception
@@ -253,14 +217,14 @@ public class MapperBuilder
         {
             SqlTextAnalyse.analyseStaticText(sql, paramNames, method.getParameterTypes(), metaContext, sqlContext);
             cache.append("int updateRows = session.update(\"").append(sqlContext.getSql()).append("\",");
-            if (sqlContext.getQueryParams().isEmpty())
+            if (sqlContext.getParams().isEmpty())
             {
                 cache.append("emptyParams);");
             }
             else
             {
                 cache.append("new Object[]{");
-                for (String each : sqlContext.getQueryParams())
+                for (String each : sqlContext.getParams())
                 {
                     cache.append(each).appendComma();
                 }
@@ -279,38 +243,24 @@ public class MapperBuilder
         MethodModel methodModel = new MethodModel(method);
         methodModel.setBody(cache.toString());
         compilerModel.putMethod(method, methodModel);
-        createEnumBoundHandlerField(sqlContext, compilerModel);
     }
     
     public static class SqlContext
     {
-        private List<String>          injectNames      = new LinkedList<String>();
-        private Set<TableMetaData<?>> metaContexts     = new HashSet<TableMetaData<?>>();
-        private Map<String, String>   dbColNameMap     = new HashMap<String, String>();
-        private Map<String, String>   fieldNameMap     = new HashMap<String, String>();
-        private Map<String, Object>   staticValueMap   = new HashMap<String, Object>();
+        private Set<TableMetaData<?>> metaContexts = new HashSet<TableMetaData<?>>();
+        private Map<String, String>   dbColNameMap = new HashMap<String, String>();
+        private Map<String, String>   fieldNameMap = new HashMap<String, String>();
         private String                sql;
-        private List<String>          queryParams      = new LinkedList<String>();
-        private List<EnumHandlerInfo> enumHandlerInfos = new LinkedList<MapperBuilder.SqlContext.EnumHandlerInfo>();
+        private List<String>          params       = new LinkedList<String>();
         
-        public List<String> getInjectNames()
+        public List<String> getParams()
         {
-            return injectNames;
+            return params;
         }
         
-        public void addInjectName(String inject)
+        public void addParams(String param)
         {
-            injectNames.add(inject);
-        }
-        
-        public List<String> getQueryParams()
-        {
-            return queryParams;
-        }
-        
-        public void setQueryParams(List<String> queryParams)
-        {
-            this.queryParams = queryParams;
+            params.add(param);
         }
         
         public String getSql()
@@ -323,7 +273,6 @@ public class MapperBuilder
             this.sql = sql;
         }
         
-        @SuppressWarnings("unchecked")
         public void addMetaData(TableMetaData<?> metaData)
         {
             if (metaData == null)
@@ -343,40 +292,8 @@ public class MapperBuilder
                 dbColNameMap.put(prefix + each.getFieldName(), tablePrefix + each.getDbColName());
                 fieldNameMap.put(tablePrefix + each.getDbColName(), each.getFieldName());
             }
-            try
-            {
-                for (Entry<String, Field> each : metaData.staticFieldMap().entrySet())
-                {
-                    staticValueMap.put(prefix + each.getKey(), each.getValue().get(null));
-                    staticValueMap.put(each.getKey(), each.getValue().get(null));
-                }
-                for (Entry<String, Field> each : metaData.enumFieldMap().entrySet())
-                {
-                    Class<? extends Enum<?>> fieldType = (Class<? extends Enum<?>>) each.getValue().getType();
-                    Class<? extends EnumHandler<?>> ckass = null;
-                    if (fieldType.isAnnotationPresent(EnumBoundHandler.class))
-                    {
-                        ckass = fieldType.getAnnotation(EnumBoundHandler.class).value();
-                    }
-                    else
-                    {
-                        ckass = EnumStringHandler.class;
-                    }
-                    EnumHandler<?> enumHandler = ckass.getConstructor(Class.class).newInstance(fieldType);
-                    for (Enum<?> enumInstance : ReflectUtil.getAllEnumInstances(fieldType).values())
-                    {
-                        staticValueMap.put(fieldType.getSimpleName() + "." + enumInstance.name(), enumHandler.getValue(enumInstance));
-                        staticValueMap.put(enumInstance.name(), enumHandler.getValue(enumInstance));
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                throw new JustThrowException(e);
-            }
         }
         
-        @SuppressWarnings("unchecked")
         public void addAliasName(String name, TableMetaData<?> metaData)
         {
             if (metaData == null)
@@ -390,84 +307,12 @@ public class MapperBuilder
                 dbColNameMap.put(prefix + each.getFieldName(), prefix + each.getDbColName());
                 fieldNameMap.put(prefix + each.getDbColName(), each.getFieldName());
             }
-            try
-            {
-                for (Entry<String, Field> each : metaData.staticFieldMap().entrySet())
-                {
-                    staticValueMap.put(prefix + each.getKey(), each.getValue().get(null));
-                    staticValueMap.put(each.getKey(), each.getValue().get(null));
-                }
-                for (Entry<String, Field> each : metaData.enumFieldMap().entrySet())
-                {
-                    Class<? extends Enum<?>> fieldType = (Class<? extends Enum<?>>) each.getValue().getType();
-                    Class<? extends EnumHandler<?>> ckass = null;
-                    if (fieldType.isAnnotationPresent(EnumBoundHandler.class))
-                    {
-                        ckass = fieldType.getAnnotation(EnumBoundHandler.class).value();
-                    }
-                    else
-                    {
-                        ckass = EnumStringHandler.class;
-                    }
-                    EnumHandler<?> enumHandler = ckass.getConstructor(Class.class).newInstance(fieldType);
-                    for (Enum<?> enumInstance : ReflectUtil.getAllEnumInstances(fieldType).values())
-                    {
-                        staticValueMap.put(fieldType.getSimpleName() + "." + enumInstance.name(), enumHandler.getValue(enumInstance));
-                        staticValueMap.put(enumInstance.name(), enumHandler.getValue(enumInstance));
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                throw new JustThrowException(e);
-            }
-        }
-        
-        public static class EnumHandlerInfo
-        {
-            private final Class<? extends Enum<?>>        type;
-            private final Class<? extends EnumHandler<?>> handlerType;
-            private final String                          name;
-            
-            public EnumHandlerInfo(String name, Class<? extends Enum<?>> type, Class<? extends EnumHandler<?>> handlerType)
-            {
-                this.name = name;
-                this.type = type;
-                this.handlerType = handlerType;
-            }
-            
-            public Class<? extends Enum<?>> getType()
-            {
-                return type;
-            }
-            
-            public Class<? extends EnumHandler<?>> getHandlerType()
-            {
-                return handlerType;
-            }
-            
-            public String getName()
-            {
-                return name;
-            }
-            
-        }
-        
-        public void addEnumHandler(String name, Class<? extends Enum<?>> enumType, Class<? extends EnumHandler<?>> handleType)
-        {
-            enumHandlerInfos.add(new EnumHandlerInfo(name, enumType, handleType));
         }
         
         public String getDbColName(String fieldName)
         {
             return dbColNameMap.get(fieldName);
         }
-        
-        public Object getStaticValue(String name)
-        {
-            return staticValueMap.get(name);
-        }
-        
     }
     
 }

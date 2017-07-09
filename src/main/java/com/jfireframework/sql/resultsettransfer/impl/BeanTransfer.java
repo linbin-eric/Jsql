@@ -18,57 +18,16 @@ import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 import com.jfireframework.sql.dbstructure.name.DefaultNameStrategy;
 import com.jfireframework.sql.mapfield.MapField;
-import com.jfireframework.sql.mapfield.MapFieldFactory;
+import com.jfireframework.sql.mapfield.MapFieldUtil;
 
-public class BeanTransfer<T> extends AbstractResultsetTransfer<T>
+public class BeanTransfer extends AbstractResultsetTransfer
 {
-    protected final Map<String, MapField[]>             mapFields;
-    protected final Class<T>                            type;
+    protected Map<String, MapField[]>                   mapFields;
+    protected Class<?>                                  type;
     private final ConcurrentHashMap<String, MapField[]> fieldCache = new ConcurrentHashMap<String, MapField[]>();
     
-    public BeanTransfer(Class<T> type)
-    {
-        super(type);
-        this.type = type;
-        ColNameStrategy colNameStrategy;
-        try
-        {
-            Class<? extends ColNameStrategy> ckass = type.isAnnotationPresent(NameStrategy.class) ? type.getAnnotation(NameStrategy.class).value() : DefaultNameStrategy.class;
-            colNameStrategy = ckass.newInstance();
-        }
-        catch (Exception e)
-        {
-            throw new JustThrowException(e);
-        }
-        List<MapField> list = new ArrayList<MapField>();
-        for (Field each : ReflectUtil.getAllFields(type))
-        {
-            if (each.isAnnotationPresent(SqlIgnore.class) || Map.class.isAssignableFrom(each.getType()) || List.class.isAssignableFrom(each.getType()) || each.getType().isInterface() || Modifier.isStatic(each.getModifiers()))
-            {
-                continue;
-            }
-            list.add(MapFieldFactory.getInstance(each, colNameStrategy));
-        }
-        mapFields = new HashMap<String, MapField[]>();
-        for (MapField each : list)
-        {
-            if (mapFields.containsKey(each.getColName().toLowerCase()) == false)
-            {
-                mapFields.put(each.getColName().toLowerCase(), new MapField[] { each });
-            }
-            else
-            {
-                MapField[] exists = mapFields.get(each.getColName().toLowerCase());
-                MapField[] newPut = new MapField[exists.length + 1];
-                System.arraycopy(exists, 0, newPut, 0, exists.length);
-                newPut[exists.length] = each;
-                mapFields.put(each.getColName().toLowerCase(), newPut);
-            }
-        }
-    }
-    
     @Override
-    protected T valueOf(ResultSet resultSet, String sql) throws Exception
+    protected Object valueOf(ResultSet resultSet, String sql) throws Exception
     {
         MapField[] fields = fieldCache.get(sql);
         if (fields == null)
@@ -76,7 +35,7 @@ public class BeanTransfer<T> extends AbstractResultsetTransfer<T>
             fields = buildFieldsFromMetadata(resultSet.getMetaData());
             fieldCache.put(sql, fields);
         }
-        T entity = type.newInstance();
+        Object entity = type.newInstance();
         for (MapField each : fields)
         {
             each.setEntityValue(entity, resultSet);
@@ -101,5 +60,46 @@ public class BeanTransfer<T> extends AbstractResultsetTransfer<T>
         }
         MapField[] fields = resultFields.toArray(new MapField[resultFields.size()]);
         return fields;
+    }
+    
+    @Override
+    public void initialize(Class<?> type)
+    {
+        this.type = type;
+        ColNameStrategy colNameStrategy;
+        try
+        {
+            Class<? extends ColNameStrategy> ckass = type.isAnnotationPresent(NameStrategy.class) ? type.getAnnotation(NameStrategy.class).value() : DefaultNameStrategy.class;
+            colNameStrategy = ckass.newInstance();
+        }
+        catch (Exception e)
+        {
+            throw new JustThrowException(e);
+        }
+        List<MapField> list = new ArrayList<MapField>();
+        for (Field each : ReflectUtil.getAllFields(type))
+        {
+            if (each.isAnnotationPresent(SqlIgnore.class) || Map.class.isAssignableFrom(each.getType()) || List.class.isAssignableFrom(each.getType()) || each.getType().isInterface() || Modifier.isStatic(each.getModifiers()))
+            {
+                continue;
+            }
+            list.add(MapFieldUtil.getInstance(each, colNameStrategy));
+        }
+        mapFields = new HashMap<String, MapField[]>();
+        for (MapField each : list)
+        {
+            if (mapFields.containsKey(each.getColName().toLowerCase()) == false)
+            {
+                mapFields.put(each.getColName().toLowerCase(), new MapField[] { each });
+            }
+            else
+            {
+                MapField[] exists = mapFields.get(each.getColName().toLowerCase());
+                MapField[] newPut = new MapField[exists.length + 1];
+                System.arraycopy(exists, 0, newPut, 0, exists.length);
+                newPut[exists.length] = each;
+                mapFields.put(each.getColName().toLowerCase(), newPut);
+            }
+        }
     }
 }

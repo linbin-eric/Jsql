@@ -8,6 +8,7 @@ import com.jfireframework.sql.dao.Dao;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.mapper.Mapper;
 import com.jfireframework.sql.page.PageParse;
+import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore;
 import com.jfireframework.sql.session.SessionFactory;
 import com.jfireframework.sql.session.SqlSession;
 
@@ -18,9 +19,11 @@ public class SessionFactoryImpl implements SessionFactory
     private final SqlInterceptor[]                  sqlInterceptors;
     private final PageParse                         pageParse;
     private final DataSource                        dataSource;
+    private final ResultsetTransferStore            resultsetTransferStore;
     
-    public SessionFactoryImpl(IdentityHashMap<Class<?>, Mapper> mappers, IdentityHashMap<Class<?>, Dao<?>> daos, SqlInterceptor[] sqlInterceptors, PageParse pageParse, DataSource dataSource)
+    public SessionFactoryImpl(IdentityHashMap<Class<?>, Mapper> mappers, IdentityHashMap<Class<?>, Dao<?>> daos, SqlInterceptor[] sqlInterceptors, PageParse pageParse, DataSource dataSource, ResultsetTransferStore resultsetTransferStore)
     {
+        this.resultsetTransferStore = resultsetTransferStore;
         this.mappers = mappers;
         this.daos = daos;
         this.sqlInterceptors = sqlInterceptors;
@@ -94,6 +97,12 @@ public class SessionFactoryImpl implements SessionFactory
             dao.deleteAll(session);
         }
         session.commit();
+    }
+    
+    @Override
+    public ResultsetTransferStore getResultSetTransferStore()
+    {
+        return resultsetTransferStore;
     }
     
 }

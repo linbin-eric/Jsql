@@ -4,7 +4,7 @@ import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class IntFetcher extends AbstractFieldOperator
+public class IntOperator extends AbstractFieldOperator
 {
     
     @Override

@@ -33,6 +33,8 @@ import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.page.PageParse;
 import com.jfireframework.sql.page.impl.OracleParse;
 import com.jfireframework.sql.page.impl.StandardParse;
+import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore;
+import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore.DefaultResultSetTransferStore;
 import com.jfireframework.sql.session.impl.SessionFactoryImpl;
 
 public class SessionfactoryConfig
@@ -42,6 +44,7 @@ public class SessionfactoryConfig
     private String                            scanPackage;
     // 如果值是create，则会创建表。
     private String                            tableMode   = "none";
+    private ResultsetTransferStore            resultsetTransferStore;
     private Set<Class<?>>                     ckasses;
     private IdentityHashMap<Class<?>, Mapper> mappers     = new IdentityHashMap<Class<?>, Mapper>(128);
     private IdentityHashMap<Class<?>, Dao<?>> daos        = new IdentityHashMap<Class<?>, Dao<?>>();
@@ -57,6 +60,7 @@ public class SessionfactoryConfig
         {
             Verify.notNull(dataSource, "no dataSource set");
             Verify.notNull(scanPackage, "sql的扫描路径不能为空");
+            resultsetTransferStore = resultsetTransferStore == null ? new DefaultResultSetTransferStore() : resultsetTransferStore;
             Processor[] processors = new Processor[] { //
                     new buildClassSet(), //
                     new initSqlInterceptor(), //
@@ -71,7 +75,7 @@ public class SessionfactoryConfig
             {
                 each.process();
             }
-            return new SessionFactoryImpl(mappers, daos, sqlInterceptors, pageParse, dataSource);
+            return new SessionFactoryImpl(mappers, daos, sqlInterceptors, pageParse, dataSource, resultsetTransferStore);
         }
         catch (Exception e)
         {
@@ -255,7 +259,7 @@ public class SessionfactoryConfig
         @Override
         public void process() throws Exception
         {
-            MapperBuilder mapperBuilder = new MapperBuilder(metaContext);
+            MapperBuilder mapperBuilder = new MapperBuilder(metaContext, resultsetTransferStore);
             nextSqlInterface: for (Class<?> each : ckasses)
             {
                 if (each.isInterface())

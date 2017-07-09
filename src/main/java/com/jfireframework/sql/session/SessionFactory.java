@@ -1,6 +1,7 @@
 package com.jfireframework.sql.session;
 
 import com.jfireframework.sql.dao.Dao;
+import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore;
 
 public interface SessionFactory
 {
@@ -43,6 +44,8 @@ public interface SessionFactory
      * @return
      */
     SqlSession openSession();
+    
+    ResultsetTransferStore getResultSetTransferStore();
     
     /**
      * 删除所有的数据

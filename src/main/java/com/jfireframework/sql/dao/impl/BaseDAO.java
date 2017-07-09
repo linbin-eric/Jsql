@@ -16,7 +16,7 @@ import com.jfireframework.sql.dao.StrategyOperation;
 import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.mapfield.MapField;
-import com.jfireframework.sql.mapfield.MapFieldFactory;
+import com.jfireframework.sql.mapfield.MapFieldUtil;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
 import com.jfireframework.sql.page.Page;
@@ -65,16 +65,17 @@ public abstract class BaseDAO<T> implements Dao<T>
     protected final String               deleteSql;
     protected static final Logger        LOGGER = LoggerFactory.getLogger(BaseDAO.class);
     protected final StrategyOperation<T> strategyOperation;
-    protected final ResultSetTransfer<T> transfer;
+    protected final ResultSetTransfer    transfer;
     protected final String[]             pkName;
     protected final SqlInterceptor[]     sqlInterceptors;
     
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public BaseDAO(TableMetaData metaData, SqlInterceptor[] sqlInterceptors)
     {
-        this.entityClass = (Class<T>) metaData.getEntityClass();
+        this.entityClass = metaData.getEntityClass();
         this.sqlInterceptors = sqlInterceptors;
-        transfer = new BeanTransfer(entityClass);
+        transfer = new BeanTransfer();
+        transfer.initialize(entityClass);
         ColNameStrategy nameStrategy = metaData.getColNameStrategy();
         tableName = entityClass.getAnnotation(TableEntity.class).name();
         MapField[] allMapFields = buildMapfields(metaData.getFieldInfos(), nameStrategy);
@@ -208,7 +209,7 @@ public abstract class BaseDAO<T> implements Dao<T>
         List<MapField> list = new ArrayList<MapField>(infos.length);
         for (FieldInfo each : infos)
         {
-            list.add(MapFieldFactory.getInstance(each.getField(), colNameStrategy));
+            list.add(MapFieldUtil.getInstance(each.getField(), colNameStrategy));
         }
         return list.toArray(new MapField[list.size()]);
     }
@@ -308,6 +309,7 @@ public abstract class BaseDAO<T> implements Dao<T>
         return strategyOperation.findPage(session, page, strategy, params);
     }
     
+    @Override
     public int count(SqlSession session, String strategy, Object... params)
     {
         return strategyOperation.count(session, strategy, params);

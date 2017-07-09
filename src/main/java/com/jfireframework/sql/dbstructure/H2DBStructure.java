@@ -16,10 +16,9 @@ import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.collection.buffer.HeapByteBuf;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.sql.annotation.Column;
+import com.jfireframework.sql.annotation.EnumFieldType;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
-import com.jfireframework.sql.util.enumhandler.AbstractEnumHandler;
-import com.jfireframework.sql.util.enumhandler.EnumHandler;
 
 public class H2DBStructure extends AbstractDBStructure
 {
@@ -47,6 +46,7 @@ public class H2DBStructure extends AbstractDBStructure
         dbTypeMap.put(HeapByteBuf.class, new TypeAndLength("blob", 0));
     }
     
+    @Override
     protected void _createTable(Connection connection, TableMetaData<?> tableMetaData) throws SQLException
     {
         String tableName = tableMetaData.getTableName();
@@ -83,17 +83,14 @@ public class H2DBStructure extends AbstractDBStructure
         connection.prepareStatement(cache.toString()).execute();
     }
     
-    @SuppressWarnings("unchecked")
     private TypeAndLength getTypeAndLength(Field field)
     {
         try
         {
             TypeAndLength result;
-            if (Enum.class.isAssignableFrom(field.getType()))
+            if (field.getType().isEnum())
             {
-                Class<?> fieldType = field.getType();
-                Class<? extends EnumHandler<?>> handlerClass = AbstractEnumHandler.getEnumBoundHandler((Class<? extends Enum<?>>) fieldType);
-                Class<?> returnType = handlerClass.getDeclaredMethod("getValue", Enum.class).getReturnType();
+                Class<?> returnType = field.isAnnotationPresent(EnumFieldType.class) ? field.getAnnotation(EnumFieldType.class).value() : String.class;
                 if (returnType == Integer.class || returnType == Long.class || returnType == Short.class)
                 {
                     return new TypeAndLength("integer", 0);

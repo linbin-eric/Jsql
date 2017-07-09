@@ -121,11 +121,11 @@ interface SqlOp
 {
     int update(String sql, Object... params);
     
-    <T> T query(ResultSetTransfer<T> transfer, String sql, Object... params);
+    <T> T query(ResultSetTransfer transfer, String sql, Object... params);
     
-    <T> List<T> queryList(ResultSetTransfer<T> transfer, String sql, Object... params);
+    <T> List<T> queryList(ResultSetTransfer transfer, String sql, Object... params);
     
-    <T> List<T> queryList(ResultSetTransfer<T> transfer, String sql, Page page, Object... params);
+    <T> List<T> queryList(ResultSetTransfer transfer, String sql, Page page, Object... params);
 }
 
 /**

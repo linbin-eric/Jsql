@@ -6,19 +6,15 @@ import java.util.List;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
 
-public abstract class AbstractResultsetTransfer<T> implements ResultSetTransfer<T>
+public abstract class AbstractResultsetTransfer implements ResultSetTransfer
 {
     
-    public AbstractResultsetTransfer(Class<?> ckass)
-    {
-    }
-    
     @Override
-    public T transfer(ResultSet resultSet, String sql) throws Exception
+    public Object transfer(ResultSet resultSet, String sql) throws Exception
     {
         if (resultSet.next())
         {
-            T result = valueOf(resultSet, sql);
+            Object result = valueOf(resultSet, sql);
             if (resultSet.next())
             {
                 throw new IllegalArgumentException(StringUtil.format("存在2行数据，不符合返回值要求。"));
@@ -35,9 +31,9 @@ public abstract class AbstractResultsetTransfer<T> implements ResultSetTransfer<
     }
     
     @Override
-    public List<T> transferList(ResultSet resultSet, String sql) throws Exception
+    public List<Object> transferList(ResultSet resultSet, String sql) throws Exception
     {
-        List<T> list = new LinkedList<T>();
+        List<Object> list = new LinkedList<Object>();
         while (resultSet.next())
         {
             list.add(valueOf(resultSet, sql));
@@ -45,5 +41,5 @@ public abstract class AbstractResultsetTransfer<T> implements ResultSetTransfer<
         return list;
     }
     
-    protected abstract T valueOf(ResultSet resultSet, String sql) throws Exception;
+    protected abstract Object valueOf(ResultSet resultSet, String sql) throws Exception;
 }

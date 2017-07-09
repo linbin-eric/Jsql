@@ -8,6 +8,8 @@ import org.junit.Before;
 import org.junit.Test;
 import com.jfireframework.sql.annotation.Sql;
 import com.jfireframework.sql.page.Page;
+import com.jfireframework.sql.resultsettransfer.ResultSetTransfer.CustomTransfer;
+import com.jfireframework.sql.resultsettransfer.impl.EnumOrdinalTransfer;
 import com.jfireframework.sql.session.SessionFactory;
 import com.jfireframework.sql.session.SessionfactoryConfig;
 import com.jfireframework.sql.session.SqlSession;
@@ -77,15 +79,17 @@ public class MapperTest
         
         /** 测试as类别名 **/
         /** 测试Enum */
-        @Sql(sql = "select * from User where state =$s", paramNames = "s")
+        @Sql(sql = "select * from User where state =$s.ordinal()", paramNames = "s")
         public User find(State s);
         
-        @Sql(sql = "select * from User where stringEnum = $v", paramNames = "v")
+        @Sql(sql = "select * from User where stringEnum = $v.name()", paramNames = "v")
         User find(StringEnum v);
         
+        @CustomTransfer(EnumOrdinalTransfer.class)
         @Sql(sql = "select state from User where name=$name", paramNames = "name")
         public State findState(String name);
         
+        @CustomTransfer(EnumOrdinalTransfer.class)
         @Sql(sql = "select state from User where name like $%name%", paramNames = "name")
         public List<State> findListState(String name);
         
@@ -102,7 +106,13 @@ public class MapperTest
         
         @Sql(sql = "select * from User where name like $%name%", paramNames = "name")
         public List<User> find2(String name, Page page);
+        
         /* 测试page */
+        /* 静态常量 */
+        @Sql(sql = "select * from User where name = @com.jfireframework.sql.test.vo.User.customName", paramNames = "")
+        User find3();
+        /* 静态常量 */
+        
     }
     
     private SessionFactory       sessionFactory;
@@ -248,5 +258,17 @@ public class MapperTest
         Assert.assertEquals(2, page.getTotal());
         Assert.assertEquals(1, users.size());
         sessionFactory.getCurrentSession().close();
+    }
+    
+    /**
+     * 测试静态常量
+     */
+    @Test
+    public void test_8()
+    {
+        User user = new User();
+        user.setName(User.customName);
+        sessionFactory.getCurrentSession().save(user);
+        Assert.assertEquals(user.getId(), testOp.find3().getId());
     }
 }

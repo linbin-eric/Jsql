@@ -33,7 +33,8 @@ public class EnumOrdinalOperator extends AbstractFieldOperator
     @Override
     public Object fieldValue(Object entity, Field field, long offset)
     {
-        return unsafe.getObject(entity, offset);
+        Enum<?> value = ((Enum<?>) unsafe.getObject(entity, offset));
+        return value == null ? null : value.ordinal();
     }
     
 }

@@ -21,8 +21,8 @@ public class StrategyOperationImpl<T> implements StrategyOperation<T>
 {
     class FindStrategySql
     {
-        String          sql;
-        BeanTransfer<T> transfer;
+        String       sql;
+        BeanTransfer transfer;
     }
     
     private final Class<T>                               ckass;
@@ -170,7 +170,8 @@ public class StrategyOperationImpl<T> implements StrategyOperation<T>
         }
         FindStrategySql findStrategySql = new FindStrategySql();
         findStrategySql.sql = cache.toString();
-        findStrategySql.transfer = new BeanTransfer<T>(ckass);
+        findStrategySql.transfer = new BeanTransfer();
+        findStrategySql.transfer.initialize(ckass);
         return findStrategySql;
     }
     
@@ -230,7 +231,7 @@ public class StrategyOperationImpl<T> implements StrategyOperation<T>
         return session.update(delete, params);
     }
     
-    private static final ResultSetTransfer<Integer> countTransfer = new IntegerTransfer(int.class);
+    private static final ResultSetTransfer countTransfer = new IntegerTransfer();
     
     @Override
     public int count(SqlSession session, String strategy, Object... params)

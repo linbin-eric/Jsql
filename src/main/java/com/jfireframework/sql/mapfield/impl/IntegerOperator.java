@@ -24,7 +24,6 @@ public class IntegerOperator extends AbstractFieldOperator
     @Override
     public Object fieldValue(Object entity, Field field, long offset)
     {
-        
         return unsafe.getObject(entity, offset);
     }
     

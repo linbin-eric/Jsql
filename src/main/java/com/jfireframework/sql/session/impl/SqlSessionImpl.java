@@ -177,21 +177,21 @@ public class SqlSessionImpl implements SqlSession
     
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T query(ResultSetTransfer<T> transfer, String sql, Object... params)
+    public <T> T query(ResultSetTransfer transfer, String sql, Object... params)
     {
         return (T) ExecSqlTemplate.exec(ExecSqlTemplate.query, sqlInterceptors, transfer, connection, sql, params);
     }
     
     @SuppressWarnings("unchecked")
     @Override
-    public <T> List<T> queryList(ResultSetTransfer<T> transfer, String sql, Object... params)
+    public <T> List<T> queryList(ResultSetTransfer transfer, String sql, Object... params)
     {
         return (List<T>) ExecSqlTemplate.exec(ExecSqlTemplate.queryList, sqlInterceptors, transfer, connection, sql, params);
     }
     
     @SuppressWarnings("unchecked")
     @Override
-    public <T> List<T> queryList(ResultSetTransfer<T> transfer, String sql, Page page, Object... params)
+    public <T> List<T> queryList(ResultSetTransfer transfer, String sql, Page page, Object... params)
     {
         return (List<T>) ExecSqlTemplate.exec(sqlInterceptors, pageParse, page, transfer, connection, sql, params);
     }

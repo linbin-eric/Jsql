@@ -17,9 +17,10 @@ import com.jfireframework.sql.mapfield.impl.ByteArrayOperator;
 import com.jfireframework.sql.mapfield.impl.CalendarOperator;
 import com.jfireframework.sql.mapfield.impl.DateOperator;
 import com.jfireframework.sql.mapfield.impl.DoubleOperator;
-import com.jfireframework.sql.mapfield.impl.EnumNameFetcher;
+import com.jfireframework.sql.mapfield.impl.EnumNameOperator;
 import com.jfireframework.sql.mapfield.impl.FloatOperator;
 import com.jfireframework.sql.mapfield.impl.HeapByteBufOperator;
+import com.jfireframework.sql.mapfield.impl.IntOperator;
 import com.jfireframework.sql.mapfield.impl.IntegerOperator;
 import com.jfireframework.sql.mapfield.impl.LongOperator;
 import com.jfireframework.sql.mapfield.impl.MapFieldImpl;
@@ -32,7 +33,7 @@ import com.jfireframework.sql.mapfield.impl.WDoubleOperator;
 import com.jfireframework.sql.mapfield.impl.WFloatOperator;
 import com.jfireframework.sql.mapfield.impl.WLongOperator;
 
-public class MapFieldFactory
+public class MapFieldUtil
 {
     private static final Map<Class<?>, FieldOperator> operators = new HashMap<Class<?>, FieldOperator>();
     static
@@ -44,7 +45,7 @@ public class MapFieldFactory
         operators.put(double.class, new DoubleOperator());
         operators.put(float.class, new FloatOperator());
         operators.put(long.class, new LongOperator());
-        operators.put(int.class, new IntegerOperator());
+        operators.put(int.class, new IntOperator());
         operators.put(String.class, new StringOperator());
         operators.put(Time.class, new TimeOperator());
         operators.put(Timestamp.class, new TimestampOperator());
@@ -59,28 +60,33 @@ public class MapFieldFactory
     
     public static MapField getInstance(Field field, ColNameStrategy colNameStrategy)
     {
-        Class<?> fieldType = field.getType();
+        FieldOperator operator = null;
         if (field.isAnnotationPresent(CustomFieldOperator.class))
         {
             try
             {
-                FieldOperator operator = field.getAnnotation(CustomFieldOperator.class).value().newInstance();
-                operator.initialize(field);
-                return new MapFieldImpl(field, colNameStrategy, operator);
+                operator = field.getAnnotation(CustomFieldOperator.class).value().newInstance();
             }
             catch (Exception e)
             {
                 throw new JustThrowException(e);
             }
         }
-        FieldOperator fieldOperator = operators.get(fieldType);
-        if (fieldOperator != null)
+        Class<?> fieldType = field.getType();
+        if (operator == null)
         {
-            return new MapFieldImpl(field, colNameStrategy, fieldOperator);
+            operator = operators.get(fieldType);
+        }
+        if (operator != null)
+        {
+            operator.initialize(field);
+            return new MapFieldImpl(field, colNameStrategy, operator);
         }
         else if (fieldType.isEnum())
         {
-            return new MapFieldImpl(field, colNameStrategy, new EnumNameFetcher());
+            operator = new EnumNameOperator();
+            operator.initialize(field);
+            return new MapFieldImpl(field, colNameStrategy, operator);
         }
         else
         {

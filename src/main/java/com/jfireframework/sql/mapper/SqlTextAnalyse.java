@@ -1,8 +1,6 @@
 package com.jfireframework.sql.mapper;
 
-import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.smc.SmcHelper;
@@ -11,14 +9,10 @@ import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.mapper.MapperBuilder.SqlContext;
 import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.metadata.TableMetaData;
-import com.jfireframework.sql.util.enumhandler.AbstractEnumHandler;
-import com.jfireframework.sql.util.enumhandler.EnumHandler;
 
 public class SqlTextAnalyse
 {
-    private static final AtomicInteger count = new AtomicInteger(0);
     
-    @SuppressWarnings("unchecked")
     private static String buildParam(String inject, String[] paramNames, Class<?>[] paramTypes, SqlContext sqlContext)
     {
         boolean before = false;
@@ -33,23 +27,12 @@ public class SqlTextAnalyse
             inject = inject.substring(0, inject.length() - 1);
             after = true;
         }
-        Class<?> type = SmcHelper.getType(inject, paramNames, paramTypes);
         String result = "";
         if (before)
         {
             result += "\"%\"+";
         }
-        if (Enum.class.isAssignableFrom(type))
-        {
-            Class<? extends EnumHandler<?>> handlerType = AbstractEnumHandler.getEnumBoundHandler((Class<? extends Enum<?>>) type);
-            String fieldName = "enumHandler_" + count.incrementAndGet();
-            sqlContext.addEnumHandler(fieldName, (Class<? extends Enum<?>>) type, handlerType);
-            result += fieldName + ".getValue(" + SmcHelper.buildInvoke(inject, paramNames, paramTypes) + ")";
-        }
-        else
-        {
-            result += SmcHelper.buildInvoke(inject, paramNames, paramTypes);
-        }
+        result += SmcHelper.buildInvoke(inject, paramNames, paramTypes);
         if (after)
         {
             result += "+\"%\"";
@@ -144,6 +127,18 @@ public class SqlTextAnalyse
                 context += "}\r\n";
                 now += 5;
                 pre = now;
+            }
+            else if (c == '@')
+            {
+                section = sql.substring(pre, now);
+                context += "builder.append(\"" + section + "\").append('?');\r\n";
+                pre = now + 1;
+                now++;
+                now = getEndFlag(sql, now);
+                section = sql.substring(pre, now);
+                context += "list.add(" + section + ");\r\n";
+                pre = now;
+                continue;
             }
             else if (c == '$')
             {
@@ -384,27 +379,6 @@ public class SqlTextAnalyse
                     simpleClassName = tmp;
                     cache.append(metaContext.get(simpleClassName).getTableName());
                 }
-                else
-                {
-                    Object staticValue = sqlContext.getStaticValue(tmp);
-                    if (staticValue == null)
-                    {
-                        throw new NullPointerException(StringUtil.format("無法识别:{},请检查sql:{}", tmp, sql));
-                    }
-                    if (staticValue instanceof Integer || //
-                            staticValue instanceof Short || //
-                            staticValue instanceof Long || //
-                            staticValue instanceof Float || //
-                            staticValue instanceof Boolean || //
-                            staticValue instanceof Double)
-                    {
-                        cache.append(sqlContext.getStaticValue(tmp));
-                    }
-                    else if (staticValue instanceof String)
-                    {
-                        cache.append('\'').append(staticValue).append('\'');
-                    }
-                }
                 index = end;
                 continue;
             }
@@ -474,6 +448,11 @@ public class SqlTextAnalyse
         while (start < sql.length())
         {
             char c = sql.charAt(start);
+            if (c == '(' && start + 1 < sql.length() && sql.charAt(start + 1) == ')')
+            {
+                start += 2;
+                continue;
+            }
             if (c == '>' || c == '<' || c == '!' || c == '=' || c == ' ' || c == ',' //
                     || c == '+' || c == '-' || c == '(' || c == ')')
             {
@@ -495,21 +474,7 @@ public class SqlTextAnalyse
      */
     public static void analyseStaticText(String originalSql, String[] paramNames, Class<?>[] paramTypes, MetaContext metaContext, SqlContext sqlContext) throws NoSuchFieldException, SecurityException
     {
-        getFormatSql(originalSql, metaContext, sqlContext);
-        List<String> invokeNameAndTypes = buildParams(sqlContext.getInjectNames(), paramNames, paramTypes, sqlContext);
-        sqlContext.setQueryParams(invokeNameAndTypes);
-    }
-    
-    /**
-     * 将给定的sql语句转换为格式化的sql语句。将其中的{变量名}替换为?。并且将{}中的内容增加到paramNames中 返回格式化后的sql语句
-     * 
-     * @param sql
-     * @param paramNames
-     * @return
-     */
-    public static void getFormatSql(String sql, MetaContext metaContext, SqlContext sqlContext)
-    {
-        sql = transMapSql(sql, sqlContext, metaContext);
+        String sql = transMapSql(originalSql, sqlContext, metaContext);
         StringCache formatSql = new StringCache();
         int length = sql.length();
         char c;
@@ -524,7 +489,15 @@ public class SqlTextAnalyse
                     variateStart = now + 1;
                     now = getEndFlag(sql, now);
                     formatSql.append('?');
-                    sqlContext.addInjectName(sql.substring(variateStart, now));
+                    String inject = sql.substring(variateStart, now);
+                    String param = buildParam(inject, paramNames, paramTypes, sqlContext);
+                    sqlContext.addParams(param);
+                    break;
+                case '@':
+                    variateStart = now + 1;
+                    now = getEndFlag(sql, now);
+                    formatSql.append('?');
+                    sqlContext.addParams(sql.substring(variateStart, now));
                     break;
                 default:
                     formatSql.append(c);
@@ -533,32 +506,6 @@ public class SqlTextAnalyse
             }
         }
         sqlContext.setSql(formatSql.toString());
-    }
-    
-    /**
-     * 根据格式化sql中的注入字段，和方法形参名称数组，返回解析后的List<InvokeNameAndType>内容
-     * 
-     * @param originalSql
-     * @param length
-     * @param injects
-     * @param paramNames
-     * @return
-     * @throws SecurityException
-     * @throws NoSuchFieldException
-     */
-    private static List<String> buildParams(List<String> injects, String[] paramNames, Class<?>[] paramTypes, SqlContext sqlContext) throws NoSuchFieldException, SecurityException
-    {
-        List<String> list = new LinkedList<String>();
-        int length = injects.size();
-        if (length == 0)
-        {
-            return list;
-        }
-        for (String inject : injects)
-        {
-            list.add(buildParam(inject, paramNames, paramTypes, sqlContext));
-        }
-        return list;
     }
     
     /**

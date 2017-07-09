@@ -40,7 +40,7 @@ public class StandardParse implements PageParse
     }
     
     @Override
-    public void doQuery(Object[] params, Connection connection, String sql, ResultSetTransfer<?> transfer, Page page) throws Exception
+    public void doQuery(Object[] params, Connection connection, String sql, ResultSetTransfer transfer, Page page) throws Exception
     {
         PreparedStatement pstat = null;
         ResultSet resultSet = null;
@@ -85,7 +85,7 @@ public class StandardParse implements PageParse
     }
     
     @Override
-    public void queryWithoutCount(Object[] params, Connection connection, String sql, ResultSetTransfer<?> transfer, Page page) throws Exception
+    public void queryWithoutCount(Object[] params, Connection connection, String sql, ResultSetTransfer transfer, Page page) throws Exception
     {
         PreparedStatement pstat = null;
         ResultSet resultSet = null;

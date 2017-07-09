@@ -6,7 +6,7 @@ import java.sql.SQLException;
 import java.util.Map;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 
-public class EnumNameFetcher extends AbstractFieldOperator
+public class EnumNameOperator extends AbstractFieldOperator
 {
     Map<String, ? extends Enum<?>> allEnumInstances;
     
@@ -28,7 +28,8 @@ public class EnumNameFetcher extends AbstractFieldOperator
     @Override
     public Object fieldValue(Object entity, Field field, long offset)
     {
-        return unsafe.getObject(entity, offset);
+        Enum<?> value = ((Enum<?>) unsafe.getObject(entity, offset));
+        return value == null ? null : value.name();
     }
     
 }

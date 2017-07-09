@@ -4,11 +4,15 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import com.jfireframework.sql.util.enumhandler.EnumHandler;
 
+@Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface EnumBoundHandler
+public @interface EnumFieldType
 {
-    public Class<? extends EnumHandler<?>> value();
+    /**
+     * 指明该Enum类型的field在数据库的映射类型
+     * 
+     * @return
+     */
+    Class<?> value();
 }

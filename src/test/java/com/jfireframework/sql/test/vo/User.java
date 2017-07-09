@@ -5,54 +5,55 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
 import com.jfireframework.sql.annotation.Column;
-import com.jfireframework.sql.annotation.EnumBoundHandler;
+import com.jfireframework.sql.annotation.EnumFieldType;
 import com.jfireframework.sql.annotation.Id;
 import com.jfireframework.sql.annotation.TableEntity;
-import com.jfireframework.sql.util.enumhandler.EnumOrdinalHandler;
-import com.jfireframework.sql.util.enumhandler.EnumStringHandler;
+import com.jfireframework.sql.mapfield.FieldOperator.CustomFieldOperator;
+import com.jfireframework.sql.mapfield.impl.EnumOrdinalOperator;
 
 @TableEntity(name = "user")
 public class User
 {
     public static final long now = System.currentTimeMillis();
     
-    @EnumBoundHandler(EnumOrdinalHandler.class)
     public static enum State
     {
         off, on;
     }
     
-    @EnumBoundHandler(EnumStringHandler.class)
     public static enum StringEnum
     {
         v1, v2
     }
     
+    public static String  customName = "12asdaseda";
     @Id
     private Integer       id;
     @Column(name = "name2")
     private String        name;
     private int           age;
-    private State         state;
     @Column(loadIgnore = true)
     private Integer       length;
     @Column(name = "age", saveIgnore = true)
     private int           age2;
+    @EnumFieldType(Integer.class)
+    @CustomFieldOperator(EnumOrdinalOperator.class)
+    private State         state;
     private StringEnum    stringEnum;
-    private boolean       b         = false;
-    private byte[]        barray    = new byte[] { 1, 2 };
-    private Calendar      calendar  = Calendar.getInstance();
-    private Date          date      = new Date();
-    private double        d1        = 2.53d;
-    private float         f1        = 5.36f;
-    private long          l1        = 23l;
-    private java.sql.Date sqlDate   = new java.sql.Date(now);
-    private Time          time      = new Time(now);
-    private Timestamp     timestamp = new Timestamp(now);
-    private Boolean       B11       = false;
-    private Double        D11       = 6.32d;
-    private Float         F11       = 5.69f;
-    private Long          L11       = 5625l;
+    private boolean       b          = false;
+    private byte[]        barray     = new byte[] { 1, 2 };
+    private Calendar      calendar   = Calendar.getInstance();
+    private Date          date       = new Date();
+    private double        d1         = 2.53d;
+    private float         f1         = 5.36f;
+    private long          l1         = 23l;
+    private java.sql.Date sqlDate    = new java.sql.Date(now);
+    private Time          time       = new Time(now);
+    private Timestamp     timestamp  = new Timestamp(now);
+    private Boolean       B11        = false;
+    private Double        D11        = 6.32d;
+    private Float         F11        = 5.69f;
+    private Long          L11        = 5625l;
     
     public double getD1()
     {

@@ -71,37 +71,47 @@ public class InterfaceGenerateTest
     
     /**
      * 测试DO中的静态值
+     * 
+     * @throws SecurityException
+     * @throws NoSuchFieldException
      */
     @Test
-    public void test_2()
+    public void test_2() throws NoSuchFieldException, SecurityException
     {
-        String result = SqlTextAnalyse.transMapSql("select * from User where name = User.xx", new SqlContext(), metaContext);
-        Assert.assertEquals("select * from user where user.name2 = 'ssss'", result);
-        result = SqlTextAnalyse.transMapSql("update User set name = User.xx", new SqlContext(), metaContext);
-        Assert.assertEquals("update user set user.name2 = 'ssss'", result);
+        SqlContext sqlContext = new SqlContext();
+        SqlTextAnalyse.analyseStaticText("select * from User where name = @User.xx", null, null, metaContext, sqlContext);
+        Assert.assertEquals("select * from user where user.name2 = ?", sqlContext.getSql());
+        sqlContext = new SqlContext();
+        SqlTextAnalyse.analyseStaticText("update User set name = @User.xx", null, null, metaContext, sqlContext);
+        Assert.assertEquals("update user set user.name2 = ?", sqlContext.getSql());
         build("com.jfireframework.sql.test:in~*$test_2;com.jfireframework.sql.test.vo");
     }
     
     public static interface test_3
     {
-        @Sql(sql = "select * from User as u where u.name = User.xx", paramNames = "")
+        @Sql(sql = "select * from User as u where u.name = @com.jfireframework.sql.test.vo.User.xx", paramNames = "")
         public List<User> query();
         
-        @Sql(sql = "update User as u set u.name = User.xx", paramNames = "")
+        @Sql(sql = "update User as u set u.name = @com.jfireframework.sql.test.vo.User.xx", paramNames = "")
         public int update();
     }
     
     /**
      * 测试类的别名
+     * 
+     * @throws SecurityException
+     * @throws NoSuchFieldException
      */
     @Test
-    public void test_3()
+    public void test_3() throws NoSuchFieldException, SecurityException
     {
         build("com.jfireframework.sql.test:in~*$test_3;com.jfireframework.sql.test.vo");
-        String result = SqlTextAnalyse.transMapSql("select * from User as u where u.name = User.xx", new SqlContext(), metaContext);
-        Assert.assertEquals("select * from user as u where u.name2 = 'ssss'", result);
-        result = SqlTextAnalyse.transMapSql("update User as u set u.name = User.xx", new SqlContext(), metaContext);
-        Assert.assertEquals("update user as u set u.name2 = 'ssss'", result);
+        SqlContext sqlContext = new SqlContext();
+        SqlTextAnalyse.analyseStaticText("select * from User as u where u.name = @User.xx", null, null, metaContext, sqlContext);
+        Assert.assertEquals("select * from user as u where u.name2 = ?", sqlContext.getSql());
+        sqlContext = new SqlContext();
+        SqlTextAnalyse.analyseStaticText("update User as u set u.name = @User.xx", null, null, metaContext, sqlContext);
+        Assert.assertEquals("update user as u set u.name2 = ?", sqlContext.getSql());
     }
     
     public static interface test_4
