@@ -27,7 +27,9 @@ public class HeapByteBufOperator extends AbstractFieldOperator
     @Override
     public Object fieldValue(Object entity, Field field, long offset)
     {
-        return unsafe.getObject(entity, offset);
+        HeapByteBuf buf = (HeapByteBuf) unsafe.getObject(entity, offset);
+        byte[] array = buf.toArray();
+        return array;
     }
     
 }
