@@ -8,7 +8,7 @@
 		<artifactId>parent</artifactId>
 		<version>1.0.1</version>
 	</parent>
-	<version>1.0.1-SNAPSHOT</version>
+	<version>1.0.1.M1</version>
 	<artifactId>allSql</artifactId>
 	<name>allSql</name>
 	<properties>
@@ -53,7 +53,7 @@
 		<dependency>
 			<groupId>com.jfireframework</groupId>
 			<artifactId>baseutil</artifactId>
-			<version>1.1</version>
+			<version>1.2</version>
 		</dependency>
 		<dependency>
 			<groupId>com.zaxxer</groupId>
