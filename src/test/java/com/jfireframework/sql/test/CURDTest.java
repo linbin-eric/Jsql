@@ -183,27 +183,6 @@ public class CURDTest
     }
     
     /**
-     * 测试载入忽略
-     * 
-     * @throws SQLException
-     */
-    @Test
-    public void test_loadIgnore() throws SQLException
-    {
-        User user = new User();
-        user.setAge(12);
-        user.setLength(12);
-        SqlSession session = sessionFactory.openSession();
-        session.save(user);
-        ResultSet resultSet = session.getConnection().prepareStatement("select count(*) from user where length = 12").executeQuery();
-        resultSet.next();
-        Assert.assertEquals(1, resultSet.getInt(1));
-        User query = session.get(User.class, 1);
-        Assert.assertNull(query.getLength());
-        session.close();
-    }
-    
-    /**
      * 测试保存忽略
      * 
      * @throws SQLException
@@ -220,7 +199,7 @@ public class CURDTest
         resultSet.next();
         System.out.println(resultSet.getInt(1));
         User query = session.get(User.class, user.getId());
-        Assert.assertEquals(12, query.getAge2());
+        Assert.assertEquals(0, query.getAge2());
         Assert.assertEquals(12, query.getAge());
         session.close();
     }

@@ -9,6 +9,7 @@ import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.session.ExecSqlTemplate;
 import com.jfireframework.sql.session.SqlSession;
+import com.jfireframework.sql.util.JdbcTypeDictionary;
 
 public class OracleDAO<T> extends BaseDAO<T>
 {
@@ -17,9 +18,9 @@ public class OracleDAO<T> extends BaseDAO<T>
     private final boolean useSeq;
     private String[]      returnKey;
     
-    public OracleDAO(TableMetaData<?> metaData, SqlInterceptor[] sqlInterceptors)
+    public OracleDAO(TableMetaData metaData, SqlInterceptor[] sqlInterceptors, JdbcTypeDictionary jdbcTypeDictionary)
     {
-        super(metaData, sqlInterceptors);
+        super(metaData, sqlInterceptors, jdbcTypeDictionary);
         useSeq = idField.getField().isAnnotationPresent(SeqId.class) ? true : false;
     }
     
@@ -55,7 +56,7 @@ public class OracleDAO<T> extends BaseDAO<T>
         int count = 1;
         for (MapField each : fields)
         {
-            if (each == idField || each.saveIgnore())
+            if (each == idField)
             {
                 continue;
             }
@@ -78,7 +79,7 @@ public class OracleDAO<T> extends BaseDAO<T>
             count = 0;
             for (MapField each : fields)
             {
-                if (each == idField || each.saveIgnore())
+                if (each == idField)
                 {
                     continue;
                 }

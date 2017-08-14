@@ -1,7 +1,6 @@
 package com.jfireframework.sql.dao.impl;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import org.slf4j.Logger;
@@ -13,17 +12,15 @@ import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.dao.Dao;
 import com.jfireframework.sql.dao.LockMode;
 import com.jfireframework.sql.dao.StrategyOperation;
-import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.mapfield.MapField;
-import com.jfireframework.sql.mapfield.MapFieldUtil;
 import com.jfireframework.sql.metadata.TableMetaData;
-import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
 import com.jfireframework.sql.resultsettransfer.impl.BeanTransfer;
 import com.jfireframework.sql.session.SqlSession;
 import com.jfireframework.sql.util.IdType;
+import com.jfireframework.sql.util.JdbcTypeDictionary;
 import sun.misc.Unsafe;
 
 public abstract class BaseDAO<T> implements Dao<T>
@@ -69,16 +66,15 @@ public abstract class BaseDAO<T> implements Dao<T>
     protected final String[]             pkName;
     protected final SqlInterceptor[]     sqlInterceptors;
     
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    public BaseDAO(TableMetaData metaData, SqlInterceptor[] sqlInterceptors)
+    @SuppressWarnings({ "unchecked" })
+    public BaseDAO(TableMetaData metaData, SqlInterceptor[] sqlInterceptors, JdbcTypeDictionary jdbcTypeDictionary)
     {
-        this.entityClass = metaData.getEntityClass();
+        this.entityClass = (Class<T>) metaData.getEntityClass();
         this.sqlInterceptors = sqlInterceptors;
         transfer = new BeanTransfer();
-        transfer.initialize(entityClass);
-        ColNameStrategy nameStrategy = metaData.getColNameStrategy();
+        transfer.initialize(entityClass, jdbcTypeDictionary);
         tableName = entityClass.getAnnotation(TableEntity.class).name();
-        MapField[] allMapFields = buildMapfields(metaData.getFieldInfos(), nameStrategy);
+        MapField[] allMapFields = metaData.getFieldInfos();
         MapField t_id = null;
         for (MapField mapField : allMapFields)
         {
@@ -98,7 +94,7 @@ public abstract class BaseDAO<T> implements Dao<T>
         getInShareInfo = buildGetInShare(allMapFields, idField);
         useForSelf(allMapFields, idField);
         deleteSql = "delete from " + tableName + " where " + idField.getColName() + "=?";
-        strategyOperation = new StrategyOperationImpl<T>(entityClass, allMapFields);
+        strategyOperation = new StrategyOperationImpl<T>(entityClass, allMapFields, jdbcTypeDictionary);
     }
     
     protected abstract void useForSelf(MapField[] fields, MapField idField);
@@ -112,10 +108,6 @@ public abstract class BaseDAO<T> implements Dao<T>
         cache.append("select ");
         for (MapField each : fields)
         {
-            if (each.loadIgnore())
-            {
-                continue;
-            }
             getFields.add(each);
             cache.append(each.getColName()).append(",");
         }
@@ -130,7 +122,7 @@ public abstract class BaseDAO<T> implements Dao<T>
         cache.append("update ").append(tableName).append(" set ");
         for (MapField each : fields)
         {
-            if (each == idField || each.saveIgnore())
+            if (each == idField)
             {
                 continue;
             }
@@ -151,10 +143,6 @@ public abstract class BaseDAO<T> implements Dao<T>
         List<MapField> getForUpdateFields = new LinkedList<MapField>();
         for (MapField each : fields)
         {
-            if (each.loadIgnore())
-            {
-                continue;
-            }
             getForUpdateFields.add(each);
             cache.append(each.getColName()).append(",");
         }
@@ -171,10 +159,6 @@ public abstract class BaseDAO<T> implements Dao<T>
         List<MapField> getInSahreFields = new LinkedList<MapField>();
         for (MapField each : fields)
         {
-            if (each.loadIgnore())
-            {
-                continue;
-            }
             getInSahreFields.add(each);
             cache.append(each.getColName()).append(",");
         }
@@ -202,16 +186,6 @@ public abstract class BaseDAO<T> implements Dao<T>
             throw new UnsupportedOperationException("id字段只支持Integer，Long，String");
         }
         
-    }
-    
-    protected MapField[] buildMapfields(FieldInfo[] infos, ColNameStrategy colNameStrategy)
-    {
-        List<MapField> list = new ArrayList<MapField>(infos.length);
-        for (FieldInfo each : infos)
-        {
-            list.add(MapFieldUtil.getInstance(each.getField(), colNameStrategy));
-        }
-        return list.toArray(new MapField[list.size()]);
     }
     
     @Override

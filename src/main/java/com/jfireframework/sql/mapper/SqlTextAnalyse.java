@@ -261,7 +261,7 @@ public class SqlTextAnalyse
                 if (tmp.indexOf('.') == -1)
                 {
                     simpleClassName = tmp;
-                    TableMetaData<?> tableMetaData = metaContext.get(simpleClassName);
+                    TableMetaData tableMetaData = metaContext.get(simpleClassName);
                     if (tableMetaData == null)
                     {
                         throw new NullPointerException("无法识别" + simpleClassName);

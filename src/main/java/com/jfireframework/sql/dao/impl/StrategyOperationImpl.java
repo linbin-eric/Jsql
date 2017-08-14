@@ -16,6 +16,7 @@ import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
 import com.jfireframework.sql.resultsettransfer.impl.BeanTransfer;
 import com.jfireframework.sql.resultsettransfer.impl.IntegerTransfer;
 import com.jfireframework.sql.session.SqlSession;
+import com.jfireframework.sql.util.JdbcTypeDictionary;
 
 public class StrategyOperationImpl<T> implements StrategyOperation<T>
 {
@@ -32,10 +33,12 @@ public class StrategyOperationImpl<T> implements StrategyOperation<T>
     private final ConcurrentMap<String, String>          deleteMap = new ConcurrentHashMap<String, String>();
     private final ConcurrentMap<String, String>          countMap  = new ConcurrentHashMap<String, String>();
     private final String                                 tableName;
+    private final JdbcTypeDictionary                     jdbcTypeDictionary;
     
-    public StrategyOperationImpl(Class<T> ckass, MapField[] mapFields)
+    public StrategyOperationImpl(Class<T> ckass, MapField[] mapFields, JdbcTypeDictionary jdbcTypeDictionary)
     {
         this.ckass = ckass;
+        this.jdbcTypeDictionary = jdbcTypeDictionary;
         this.mapFields = parse(mapFields);
         tableName = ckass.getAnnotation(TableEntity.class).name();
     }
@@ -171,7 +174,7 @@ public class StrategyOperationImpl<T> implements StrategyOperation<T>
         FindStrategySql findStrategySql = new FindStrategySql();
         findStrategySql.sql = cache.toString();
         findStrategySql.transfer = new BeanTransfer();
-        findStrategySql.transfer.initialize(ckass);
+        findStrategySql.transfer.initialize(ckass, jdbcTypeDictionary);
         return findStrategySql;
     }
     

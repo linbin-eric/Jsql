@@ -2,132 +2,57 @@ package com.jfireframework.sql.metadata;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
-import com.jfireframework.sql.annotation.Column;
 import com.jfireframework.sql.annotation.Id;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
+import com.jfireframework.sql.mapfield.MapField;
+import com.jfireframework.sql.mapfield.impl.MapFieldImpl;
+import com.jfireframework.sql.util.JdbcTypeDictionary;
 
-public class TableMetaData<T>
+public class TableMetaData
 {
-    private final String              tableName;
-    private final FieldInfo[]         fieldInfos;
-    private final FieldInfo           idInfo;
-    private final Class<T>            ckass;
-    private final Map<String, String> fieldNameMap   = new HashMap<String, String>();
-    private final ColNameStrategy     colNameStrategy;
-    private final Map<String, Field>  staticFieldMap = new HashMap<String, Field>();
-    private final Map<String, Field>  enumFieldMap   = new HashMap<String, Field>();
-    private final boolean             editable;
+    private final String          tableName;
+    private final MapField[]      fieldInfos;
+    private final MapField        idInfo;
+    private final Class<?>        ckass;
+    private final ColNameStrategy colNameStrategy;
+    private final boolean         editable;
     
-    public static class FieldInfo
-    {
-        private final String  dbColName;
-        private final String  fieldName;
-        private final Field   field;
-        private final int     length;
-        private final boolean saveIgnore;
-        
-        public FieldInfo(Field field, ColNameStrategy colNameStrategy)
-        {
-            fieldName = field.getName();
-            this.field = field;
-            if (field.isAnnotationPresent(Column.class))
-            {
-                Column column = field.getAnnotation(Column.class);
-                if (StringUtil.isNotBlank(column.name()))
-                {
-                    dbColName = field.getAnnotation(Column.class).name();
-                }
-                else
-                {
-                    dbColName = colNameStrategy.toDbName(field.getName());
-                }
-                length = field.getAnnotation(Column.class).length();
-                saveIgnore = column.saveIgnore();
-            }
-            else
-            {
-                dbColName = colNameStrategy.toDbName(field.getName());
-                length = -1;
-                saveIgnore = false;
-            }
-        }
-        
-        public boolean isSaveIgnore()
-        {
-            return saveIgnore;
-        }
-        
-        public String getDbColName()
-        {
-            return dbColName;
-        }
-        
-        public String getFieldName()
-        {
-            return fieldName;
-        }
-        
-        public Field getField()
-        {
-            return field;
-        }
-        
-        public int getLength()
-        {
-            return length;
-        }
-        
-    }
-    
-    public TableMetaData(Class<T> ckass, ColNameStrategy nameStrategy)
+    public TableMetaData(Class<?> ckass, ColNameStrategy nameStrategy, JdbcTypeDictionary jdbcTypeDictionary)
     {
         this.ckass = ckass;
         this.colNameStrategy = nameStrategy;
         TableEntity entity = ckass.getAnnotation(TableEntity.class);
         editable = entity.editable();
         tableName = entity.name();
-        List<FieldInfo> list = new LinkedList<FieldInfo>();
+        List<MapField> list = new LinkedList<MapField>();
         Field t_idField = null;
-        String prefix = tableName + '.';
         for (Field each : ReflectUtil.getAllFields(ckass))
         {
             if (notTableField(each))
             {
-                if (Modifier.isStatic(each.getModifiers()))
-                {
-                    each.setAccessible(true);
-                    staticFieldMap.put(each.getName(), each);
-                }
                 continue;
             }
-            FieldInfo info = new FieldInfo(each, nameStrategy);
-            fieldNameMap.put(prefix + info.getDbColName(), each.getName());
+            MapField info = new MapFieldImpl(each, nameStrategy, jdbcTypeDictionary);
             list.add(info);
             if (each.isAnnotationPresent(Id.class))
             {
                 t_idField = each;
             }
-            if (Enum.class.isAssignableFrom(each.getType()))
-            {
-                enumFieldMap.put(each.getName(), each);
-            }
         }
-        fieldInfos = list.toArray(new FieldInfo[list.size()]);
+        fieldInfos = list.toArray(new MapField[list.size()]);
         if (t_idField != null)
         {
             if (t_idField.getType().isPrimitive())
             {
                 throw new IllegalArgumentException("作为主键的属性不可以使用基本类型，必须使用包装类。请检查" + t_idField.getDeclaringClass().getName() + "." + t_idField.getName());
             }
-            idInfo = new FieldInfo(t_idField, nameStrategy);
+            idInfo = new MapFieldImpl(t_idField, nameStrategy, jdbcTypeDictionary);
         }
         else
         {
@@ -166,12 +91,12 @@ public class TableMetaData<T>
         return tableName;
     }
     
-    public FieldInfo[] getFieldInfos()
+    public MapField[] getFieldInfos()
     {
         return fieldInfos;
     }
     
-    public FieldInfo getIdInfo()
+    public MapField getIdInfo()
     {
         return idInfo;
     }
@@ -181,18 +106,4 @@ public class TableMetaData<T>
         return ckass;
     }
     
-    public Map<String, Field> staticFieldMap()
-    {
-        return staticFieldMap;
-    }
-    
-    public Map<String, Field> enumFieldMap()
-    {
-        return enumFieldMap;
-    }
-    
-    public String getFieldName(String dbColName)
-    {
-        return fieldNameMap.get(dbColName);
-    }
 }

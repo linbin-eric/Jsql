@@ -24,6 +24,7 @@ import com.jfireframework.sql.resultsettransfer.impl.StringTransfer;
 import com.jfireframework.sql.resultsettransfer.impl.TimeStampTransfer;
 import com.jfireframework.sql.resultsettransfer.impl.TimeTransfer;
 import com.jfireframework.sql.resultsettransfer.impl.UtilDateTransfer;
+import com.jfireframework.sql.util.JdbcTypeDictionary;
 
 public interface ResultsetTransferStore
 {
@@ -33,7 +34,7 @@ public interface ResultsetTransferStore
      * @param method
      * @return 返回该transfer的编号
      */
-    int registerTransfer(Method method);
+    int registerTransfer(Method method, JdbcTypeDictionary jdbcTypeDictionary);
     
     /**
      * 使用编号查找对应的ResultSetTransfer
@@ -72,7 +73,7 @@ public interface ResultsetTransferStore
         private int                     index = 0;
         
         @Override
-        public int registerTransfer(Method method)
+        public int registerTransfer(Method method, JdbcTypeDictionary jdbcTypeDictionary)
         {
             ResultSetTransfer resultSetTransfer;
             Class<? extends ResultSetTransfer> type;
@@ -112,7 +113,7 @@ public interface ResultsetTransferStore
             {
                 resultSetTransfer = new BeanTransfer();
             }
-            resultSetTransfer.initialize(returnType);
+            resultSetTransfer.initialize(returnType, jdbcTypeDictionary);
             list.add(resultSetTransfer);
             int sn = index;
             index += 1;

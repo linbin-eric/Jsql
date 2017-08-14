@@ -36,6 +36,7 @@ import com.jfireframework.sql.page.impl.StandardParse;
 import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore;
 import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore.DefaultResultSetTransferStore;
 import com.jfireframework.sql.session.impl.SessionFactoryImpl;
+import com.jfireframework.sql.util.JdbcTypeDictionary;
 
 public class SessionfactoryConfig
 {
@@ -52,6 +53,7 @@ public class SessionfactoryConfig
     private SqlInterceptor[]                  sqlInterceptors;
     private PageParse                         pageParse;
     private String                            productName;
+    private JdbcTypeDictionary                jdbcTypeDictionary;
     protected static final Logger             logger      = LoggerFactory.getLogger(SessionfactoryConfig.class);
     
     public SessionFactory build()
@@ -65,7 +67,6 @@ public class SessionfactoryConfig
                     new buildClassSet(), //
                     new initSqlInterceptor(), //
                     new detectProductName(), //
-                    new buildPageParse(), //
                     new initMetaContext(), //
                     new createOrUpdateDatabase(), //
                     new CreateMappers(), //
@@ -144,6 +145,30 @@ public class SessionfactoryConfig
                 connection = dataSource.getConnection();
                 DatabaseMetaData md = connection.getMetaData();
                 productName = md.getDatabaseProductName().toLowerCase();
+                if (productName.equals("mariadb") || "mysql".equals(productName))
+                {
+                    pageParse = new StandardParse();
+                    jdbcTypeDictionary = new JdbcTypeDictionary.MysqlJdbcTypes();
+                }
+                else if (productName.equals("oracle"))
+                {
+                    pageParse = new OracleParse();
+                    jdbcTypeDictionary = new JdbcTypeDictionary.MysqlJdbcTypes();
+                }
+                else if (productName.contains("hsql"))
+                {
+                    pageParse = new StandardParse();
+                    jdbcTypeDictionary = new JdbcTypeDictionary.MysqlJdbcTypes();
+                }
+                else if (productName.equals("h2"))
+                {
+                    pageParse = new StandardParse();
+                    jdbcTypeDictionary = new JdbcTypeDictionary.MysqlJdbcTypes();
+                }
+                else
+                {
+                    logger.error("不支持分页的数据库类型：{}", productName);
+                }
             }
             finally
             {
@@ -156,43 +181,13 @@ public class SessionfactoryConfig
         
     }
     
-    class buildPageParse implements Processor
-    {
-        
-        @Override
-        public void process() throws Exception
-        {
-            if (productName.equals("mariadb") || "mysql".equals(productName))
-            {
-                pageParse = new StandardParse();
-            }
-            else if (productName.equals("oracle"))
-            {
-                pageParse = new OracleParse();
-            }
-            else if (productName.contains("hsql"))
-            {
-                pageParse = new StandardParse();
-            }
-            else if (productName.equals("h2"))
-            {
-                pageParse = new StandardParse();
-            }
-            else
-            {
-                logger.error("不支持分页的数据库类型：{}", productName);
-            }
-        }
-        
-    }
-    
     class initMetaContext implements Processor
     {
         
         @Override
         public void process() throws Exception
         {
-            metaContext = new MetaContext(ckasses);
+            metaContext = new MetaContext(ckasses, jdbcTypeDictionary);
         }
         
     }
@@ -259,7 +254,7 @@ public class SessionfactoryConfig
         @Override
         public void process() throws Exception
         {
-            MapperBuilder mapperBuilder = new MapperBuilder(metaContext, resultsetTransferStore);
+            MapperBuilder mapperBuilder = new MapperBuilder(metaContext, resultsetTransferStore, jdbcTypeDictionary);
             nextSqlInterface: for (Class<?> each : ckasses)
             {
                 if (each.isInterface())
@@ -281,29 +276,29 @@ public class SessionfactoryConfig
     class BuildDao implements Processor
     {
         
-        @SuppressWarnings({ "rawtypes", "unchecked" })
+        @SuppressWarnings({ "rawtypes" })
         @Override
         public void process() throws Exception
         {
-            for (TableMetaData<?> each : metaContext.metaDatas())
+            for (TableMetaData each : metaContext.metaDatas())
             {
                 if (each.getIdInfo() != null)
                 {
                     if (productName.equals("mysql") || productName.equals("marridb"))
                     {
-                        daos.put(each.getEntityClass(), new MysqlDAO(each, sqlInterceptors));
+                        daos.put(each.getEntityClass(), new MysqlDAO(each, sqlInterceptors, jdbcTypeDictionary));
                     }
                     else if (productName.equals("oracle"))
                     {
-                        daos.put(each.getEntityClass(), new OracleDAO(each, sqlInterceptors));
+                        daos.put(each.getEntityClass(), new OracleDAO(each, sqlInterceptors, jdbcTypeDictionary));
                     }
                     else if (productName.contains("hsql"))
                     {
-                        daos.put(each.getEntityClass(), new StandardDAO(each, sqlInterceptors));
+                        daos.put(each.getEntityClass(), new StandardDAO(each, sqlInterceptors, jdbcTypeDictionary));
                     }
                     else if (productName.equals("h2"))
                     {
-                        daos.put(each.getEntityClass(), new StandardDAO(each, sqlInterceptors));
+                        daos.put(each.getEntityClass(), new StandardDAO(each, sqlInterceptors, jdbcTypeDictionary));
                     }
                     else
                     {

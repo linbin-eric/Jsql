@@ -5,7 +5,9 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.metadata.TableMetaData;
 
 public abstract class AbstractDBStructure implements Structure
@@ -13,14 +15,14 @@ public abstract class AbstractDBStructure implements Structure
     protected static final Logger logger = LoggerFactory.getLogger(Structure.class);
     
     @Override
-    public void createTable(DataSource dataSource, TableMetaData<?>[] metaDatas) throws SQLException
+    public void createTable(DataSource dataSource, TableMetaData[] metaDatas) throws SQLException
     {
         Connection connection = null;
         try
         {
             connection = dataSource.getConnection();
             connection.setAutoCommit(false);
-            for (TableMetaData<?> metaData : metaDatas)
+            for (TableMetaData metaData : metaDatas)
             {
                 if (metaData.getIdInfo() == null || metaData.editable() == false)
                 {
@@ -44,6 +46,18 @@ public abstract class AbstractDBStructure implements Structure
         
     }
     
-    protected abstract void _createTable(Connection connection, TableMetaData<?> tableMetaData) throws SQLException;
+    protected String getDesc(MapField fieldInfo)
+    {
+        if (StringUtil.isNotBlank(fieldInfo.getDesc()))
+        {
+            return fieldInfo.getJdbcType().name() + "(" + fieldInfo.getDesc() + ")";
+        }
+        else
+        {
+            return fieldInfo.getJdbcType().name();
+        }
+    }
+    
+    protected abstract void _createTable(Connection connection, TableMetaData tableMetaData) throws SQLException;
     
 }

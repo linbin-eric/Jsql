@@ -5,11 +5,12 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
 import com.jfireframework.sql.annotation.Column;
-import com.jfireframework.sql.annotation.EnumFieldType;
 import com.jfireframework.sql.annotation.Id;
+import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.mapfield.FieldOperator.CustomFieldOperator;
 import com.jfireframework.sql.mapfield.impl.EnumOrdinalOperator;
+import com.jfireframework.sql.util.JdbcType;
 
 @TableEntity(name = "user")
 public class User
@@ -32,12 +33,12 @@ public class User
     @Column(name = "name2")
     private String        name;
     private int           age;
-    @Column(loadIgnore = true)
+    @SqlIgnore
     private Integer       length;
-    @Column(name = "age", saveIgnore = true)
+    @SqlIgnore
     private int           age2;
-    @EnumFieldType(Integer.class)
     @CustomFieldOperator(EnumOrdinalOperator.class)
+    @Column(jdbcType = JdbcType.INTEGER)
     private State         state;
     private StringEnum    stringEnum;
     private boolean       b          = false;

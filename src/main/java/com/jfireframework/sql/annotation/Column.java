@@ -4,11 +4,11 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import com.jfireframework.sql.util.JdbcType;
 
 /**
  * 表明该字段是一个数据库的映射列
  * 
- * @author 林斌（windfire@zailanghua.com）
  * 
  */
 @Retention(RetentionPolicy.RUNTIME)
@@ -22,22 +22,12 @@ public @interface Column
      */
     public String name() default "";
     
+    JdbcType jdbcType() default JdbcType.ADAPTIVE;
+    
     /**
-     * 表示这个属性在保存的时候会被忽略.
-     * 也就是说在生成的dao的curd操作中，读取操作时该属性会生效，也会从数据库拿到对应的值。但是更新操作和插入操作则不会有该属性的参与。
+     * 字段描述。用于表达长度信息
      * 
      * @return
      */
-    public boolean saveIgnore() default false;
-    
-    /**
-     * 表示这个属性在dao操作的读取操作会被忽略。
-     * 
-     * @return
-     */
-    public boolean loadIgnore() default false;
-    
-    public String type() default "";
-    
-    public int length() default -1;
+    String desc() default "";
 }

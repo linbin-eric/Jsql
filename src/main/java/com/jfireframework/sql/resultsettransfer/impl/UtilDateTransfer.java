@@ -3,6 +3,7 @@ package com.jfireframework.sql.resultsettransfer.impl;
 import java.sql.ResultSet;
 import java.sql.Timestamp;
 import java.util.Date;
+import com.jfireframework.sql.util.JdbcTypeDictionary;
 
 public class UtilDateTransfer extends AbstractResultsetTransfer
 {
@@ -15,7 +16,7 @@ public class UtilDateTransfer extends AbstractResultsetTransfer
     }
     
     @Override
-    public void initialize(Class<?> type)
+    public void initialize(Class<?> type, JdbcTypeDictionary jdbcTypeDictionary)
     {
     }
     

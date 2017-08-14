@@ -6,6 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.sql.ResultSet;
 import java.util.List;
+import com.jfireframework.sql.util.JdbcTypeDictionary;
 
 public interface ResultSetTransfer
 {
@@ -16,7 +17,7 @@ public interface ResultSetTransfer
         Class<? extends ResultSetTransfer> value();
     }
     
-    void initialize(Class<?> type);
+    void initialize(Class<?> type, JdbcTypeDictionary jdbcTypeDictionary);
     
     public Object transfer(ResultSet resultSet, String sql) throws Exception;
     

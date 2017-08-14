@@ -21,22 +21,25 @@ import com.jfireframework.baseutil.smc.model.CompilerModel;
 import com.jfireframework.baseutil.smc.model.MethodModel;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.annotation.Sql;
+import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.metadata.TableMetaData;
-import com.jfireframework.sql.metadata.TableMetaData.FieldInfo;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore;
+import com.jfireframework.sql.util.JdbcTypeDictionary;
 
 public class MapperBuilder
 {
+    private final JdbcTypeDictionary     jdbcTypeDictionary;
     private final MetaContext            metaContext;
     private final ResultsetTransferStore resultsetTransferStore;
     private static final Logger          logger = LoggerFactory.getLogger(MapperBuilder.class);
     
-    public MapperBuilder(MetaContext metaContext, ResultsetTransferStore resultsetTransferStore)
+    public MapperBuilder(MetaContext metaContext, ResultsetTransferStore resultsetTransferStore, JdbcTypeDictionary jdbcTypeDictionary)
     {
         this.metaContext = metaContext;
         this.resultsetTransferStore = resultsetTransferStore;
+        this.jdbcTypeDictionary = jdbcTypeDictionary;
     }
     
     /**
@@ -129,7 +132,7 @@ public class MapperBuilder
             methodBody.append(SqlTextAnalyse.analyseDynamicText(sql, paramNames, method.getParameterTypes(), metaContext, sqlContext));
             if (isList)
             {
-                int sn = resultsetTransferStore.registerTransfer(method);
+                int sn = resultsetTransferStore.registerTransfer(method, jdbcTypeDictionary);
                 if (isPage)
                 {
                     String pageParamName = "$" + (method.getParameterTypes().length - 1);
@@ -153,7 +156,7 @@ public class MapperBuilder
             else
             {
                 Class<?> returnType = method.getReturnType();
-                int sn = resultsetTransferStore.registerTransfer(method);
+                int sn = resultsetTransferStore.registerTransfer(method, jdbcTypeDictionary);
                 methodBody.append("return (" + SmcHelper.getTypeName(returnType) + ")session.query(sessionFactory.getResultSetTransferStore().get(")//
                         .append(sn).append(')').append(",sql,list.toArray());");
             }
@@ -163,7 +166,7 @@ public class MapperBuilder
             SqlTextAnalyse.analyseStaticText(sql, paramNames, method.getParameterTypes(), metaContext, sqlContext);
             if (isList)
             {
-                int sn = resultsetTransferStore.registerTransfer(method);
+                int sn = resultsetTransferStore.registerTransfer(method, jdbcTypeDictionary);
                 if (isPage)
                 {
                     methodBody.append("return session.queryList(sessionFactory.getResultSetTransferStore().get(").append(sn).append(')').append(",\"")//
@@ -178,7 +181,7 @@ public class MapperBuilder
             else
             {
                 Class<?> returnType = method.getReturnType();
-                int sn = resultsetTransferStore.registerTransfer(method);
+                int sn = resultsetTransferStore.registerTransfer(method, jdbcTypeDictionary);
                 methodBody.append("return (" + SmcHelper.getTypeName(returnType) + ")session.query(sessionFactory.getResultSetTransferStore().get(").append(sn).append(')').append(",\"")//
                         .append(sqlContext.getSql()).append("\",");
             }
@@ -247,11 +250,11 @@ public class MapperBuilder
     
     public static class SqlContext
     {
-        private Set<TableMetaData<?>> metaContexts = new HashSet<TableMetaData<?>>();
-        private Map<String, String>   dbColNameMap = new HashMap<String, String>();
-        private Map<String, String>   fieldNameMap = new HashMap<String, String>();
-        private String                sql;
-        private List<String>          params       = new LinkedList<String>();
+        private Set<TableMetaData>  metaContexts = new HashSet<TableMetaData>();
+        private Map<String, String> dbColNameMap = new HashMap<String, String>();
+        private Map<String, String> fieldNameMap = new HashMap<String, String>();
+        private String              sql;
+        private List<String>        params       = new LinkedList<String>();
         
         public List<String> getParams()
         {
@@ -273,7 +276,7 @@ public class MapperBuilder
             this.sql = sql;
         }
         
-        public void addMetaData(TableMetaData<?> metaData)
+        public void addMetaData(TableMetaData metaData)
         {
             if (metaData == null)
             {
@@ -286,26 +289,26 @@ public class MapperBuilder
             Class<?> type = metaData.getEntityClass();
             String prefix = type.getSimpleName() + '.';
             String tablePrefix = metaData.getTableName() + ".";
-            for (FieldInfo each : metaData.getFieldInfos())
+            for (MapField each : metaData.getFieldInfos())
             {
-                dbColNameMap.put(each.getFieldName(), tablePrefix + each.getDbColName());
-                dbColNameMap.put(prefix + each.getFieldName(), tablePrefix + each.getDbColName());
-                fieldNameMap.put(tablePrefix + each.getDbColName(), each.getFieldName());
+                dbColNameMap.put(each.getFieldName(), tablePrefix + each.getColName());
+                dbColNameMap.put(prefix + each.getFieldName(), tablePrefix + each.getColName());
+                fieldNameMap.put(tablePrefix + each.getColName(), each.getFieldName());
             }
         }
         
-        public void addAliasName(String name, TableMetaData<?> metaData)
+        public void addAliasName(String name, TableMetaData metaData)
         {
             if (metaData == null)
             {
                 throw new NullPointerException();
             }
             String prefix = name + '.';
-            for (FieldInfo each : metaData.getFieldInfos())
+            for (MapField each : metaData.getFieldInfos())
             {
-                dbColNameMap.put(each.getFieldName(), prefix + each.getDbColName());
-                dbColNameMap.put(prefix + each.getFieldName(), prefix + each.getDbColName());
-                fieldNameMap.put(prefix + each.getDbColName(), each.getFieldName());
+                dbColNameMap.put(each.getFieldName(), prefix + each.getColName());
+                dbColNameMap.put(prefix + each.getFieldName(), prefix + each.getColName());
+                fieldNameMap.put(prefix + each.getColName(), each.getFieldName());
             }
         }
         

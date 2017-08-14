@@ -96,10 +96,6 @@ public class MapperTest
         /** 测试Enum */
         
         /* 测试对POJO属性的提取 */
-        @Sql(sql = "select length from User where name=$user.name and age = $user.age", paramNames = "user")
-        public int findLength(User user);
-        
-        /* 测试对POJO属性的提取 */
         /* 测试page */
         @Sql(sql = "select * from User <if( $name == \"lin\")> where name like $%name% </if>", paramNames = "name")
         public List<User> find(String name, Page page);
@@ -225,19 +221,6 @@ public class MapperTest
         Assert.assertEquals(2, list.size());
         Assert.assertEquals(State.off, list.get(0));
         Assert.assertEquals("lin", testOp.find(StringEnum.v1).getName());
-        sessionFactory.getCurrentSession().close();
-    }
-    
-    /**
-     * 测试对pojo属性的提取
-     */
-    @Test
-    public void test_6()
-    {
-        User query = new User();
-        query.setName("lin");
-        query.setAge(12);
-        Assert.assertEquals(18, testOp.findLength(query));
         sessionFactory.getCurrentSession().close();
     }
     

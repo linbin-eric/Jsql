@@ -18,11 +18,12 @@ import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 import com.jfireframework.sql.dbstructure.name.DefaultNameStrategy;
 import com.jfireframework.sql.mapfield.MapField;
-import com.jfireframework.sql.mapfield.MapFieldUtil;
+import com.jfireframework.sql.mapfield.impl.MapFieldImpl;
+import com.jfireframework.sql.util.JdbcTypeDictionary;
 
 public class BeanTransfer extends AbstractResultsetTransfer
 {
-    protected Map<String, MapField[]>                   mapFields;
+    protected Map<String, MapField>                     mapFields;
     protected Class<?>                                  type;
     private final ConcurrentHashMap<String, MapField[]> fieldCache = new ConcurrentHashMap<String, MapField[]>();
     
@@ -49,13 +50,10 @@ public class BeanTransfer extends AbstractResultsetTransfer
         List<MapField> resultFields = new LinkedList<MapField>();
         for (int i = 0; i < colCount; i++)
         {
-            MapField[] fit = mapFields.get(metaData.getColumnName(i + 1).toLowerCase());
+            MapField fit = mapFields.get(metaData.getColumnName(i + 1).toLowerCase());
             if (fit != null)
             {
-                for (MapField each : fit)
-                {
-                    resultFields.add(each);
-                }
+                resultFields.add(fit);
             }
         }
         MapField[] fields = resultFields.toArray(new MapField[resultFields.size()]);
@@ -63,7 +61,7 @@ public class BeanTransfer extends AbstractResultsetTransfer
     }
     
     @Override
-    public void initialize(Class<?> type)
+    public void initialize(Class<?> type, JdbcTypeDictionary jdbcTypeDictionary)
     {
         this.type = type;
         ColNameStrategy colNameStrategy;
@@ -83,23 +81,12 @@ public class BeanTransfer extends AbstractResultsetTransfer
             {
                 continue;
             }
-            list.add(MapFieldUtil.getInstance(each, colNameStrategy));
+            list.add(new MapFieldImpl(each, colNameStrategy, jdbcTypeDictionary));
         }
-        mapFields = new HashMap<String, MapField[]>();
+        mapFields = new HashMap<String, MapField>();
         for (MapField each : list)
         {
-            if (mapFields.containsKey(each.getColName().toLowerCase()) == false)
-            {
-                mapFields.put(each.getColName().toLowerCase(), new MapField[] { each });
-            }
-            else
-            {
-                MapField[] exists = mapFields.get(each.getColName().toLowerCase());
-                MapField[] newPut = new MapField[exists.length + 1];
-                System.arraycopy(exists, 0, newPut, 0, exists.length);
-                newPut[exists.length] = each;
-                mapFields.put(each.getColName().toLowerCase(), newPut);
-            }
+            mapFields.put(each.getColName().toLowerCase(), each);
         }
     }
 }

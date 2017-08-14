@@ -7,10 +7,9 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
+import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.buffer.HeapByteBuf;
 import com.jfireframework.baseutil.exception.JustThrowException;
-import com.jfireframework.baseutil.verify.Verify;
-import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 import com.jfireframework.sql.mapfield.FieldOperator.CustomFieldOperator;
 import com.jfireframework.sql.mapfield.impl.BooleanOperator;
 import com.jfireframework.sql.mapfield.impl.ByteArrayOperator;
@@ -23,7 +22,6 @@ import com.jfireframework.sql.mapfield.impl.HeapByteBufOperator;
 import com.jfireframework.sql.mapfield.impl.IntOperator;
 import com.jfireframework.sql.mapfield.impl.IntegerOperator;
 import com.jfireframework.sql.mapfield.impl.LongOperator;
-import com.jfireframework.sql.mapfield.impl.MapFieldImpl;
 import com.jfireframework.sql.mapfield.impl.SqlDateOperator;
 import com.jfireframework.sql.mapfield.impl.StringOperator;
 import com.jfireframework.sql.mapfield.impl.TimeOperator;
@@ -58,7 +56,7 @@ public class MapFieldUtil
         operators.put(HeapByteBuf.class, new HeapByteBufOperator());
     }
     
-    public static MapField getInstance(Field field, ColNameStrategy colNameStrategy)
+    public static FieldOperator getFieldOperator(Field field)
     {
         FieldOperator operator = null;
         if (field.isAnnotationPresent(CustomFieldOperator.class))
@@ -80,18 +78,17 @@ public class MapFieldUtil
         if (operator != null)
         {
             operator.initialize(field);
-            return new MapFieldImpl(field, colNameStrategy, operator);
+            return operator;
         }
         else if (fieldType.isEnum())
         {
             operator = new EnumNameOperator();
             operator.initialize(field);
-            return new MapFieldImpl(field, colNameStrategy, operator);
+            return operator;
         }
         else
         {
-            Verify.error("属性{}.{}的类型尚未支持", field.getDeclaringClass(), field.getName());
-            return null;
+            throw new NullPointerException(StringUtil.format("属性{}.{}的类型尚未支持", field.getDeclaringClass(), field.getName()));
         }
     }
     

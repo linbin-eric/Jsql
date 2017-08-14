@@ -8,14 +8,15 @@ import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.session.ExecSqlTemplate;
 import com.jfireframework.sql.session.SqlSession;
+import com.jfireframework.sql.util.JdbcTypeDictionary;
 
 public class MysqlDAO<T> extends BaseDAO<T>
 {
     protected SqlAndFields insertInfo;
     
-    public MysqlDAO(TableMetaData<?> metaData, SqlInterceptor[] sqlInterceptors)
+    public MysqlDAO(TableMetaData metaData, SqlInterceptor[] sqlInterceptors, JdbcTypeDictionary jdbcTypeDictionary)
     {
-        super(metaData, sqlInterceptors);
+        super(metaData, sqlInterceptors, jdbcTypeDictionary);
     }
     
     @Override
@@ -30,7 +31,7 @@ public class MysqlDAO<T> extends BaseDAO<T>
         int count = 1;
         for (MapField each : fields)
         {
-            if (each == idField || each.saveIgnore())
+            if (each == idField)
             {
                 continue;
             }

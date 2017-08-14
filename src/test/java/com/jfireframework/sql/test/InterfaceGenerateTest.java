@@ -13,6 +13,7 @@ import com.jfireframework.sql.mapper.SqlTextAnalyse;
 import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.session.SessionfactoryConfig;
 import com.jfireframework.sql.test.vo.User;
+import com.jfireframework.sql.util.JdbcTypeDictionary;
 import com.zaxxer.hikari.HikariDataSource;
 
 public class InterfaceGenerateTest
@@ -35,7 +36,7 @@ public class InterfaceGenerateTest
         config.setTableMode("create");
         Set<Class<?>> set = new HashSet<Class<?>>();
         set.add(User.class);
-        metaContext = new MetaContext(set);
+        metaContext = new MetaContext(set, new JdbcTypeDictionary.MysqlJdbcTypes());
     }
     
     protected void build(String packageName)
