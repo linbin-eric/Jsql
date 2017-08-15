@@ -9,7 +9,7 @@ import com.jfireframework.sql.annotation.Column;
 import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 import com.jfireframework.sql.mapfield.FieldOperator;
 import com.jfireframework.sql.mapfield.MapField;
-import com.jfireframework.sql.mapfield.MapFieldUtil;
+import com.jfireframework.sql.mapfield.FieldOperatorUtil;
 import com.jfireframework.sql.util.JdbcType;
 import com.jfireframework.sql.util.JdbcTypeDictionary;
 import sun.misc.Unsafe;
@@ -33,7 +33,7 @@ public class MapFieldImpl implements MapField
     public MapFieldImpl(Field field, ColNameStrategy colNameStrategy, JdbcTypeDictionary jdbcTypeDictionary)
     {
         offset = unsafe.objectFieldOffset(field);
-        valueFetcher = MapFieldUtil.getFieldOperator(field);
+        valueFetcher = FieldOperatorUtil.getFieldOperator(field);
         this.field = field;
         if (field.isAnnotationPresent(Column.class))
         {

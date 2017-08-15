@@ -4,13 +4,13 @@ import java.sql.SQLException;
 import java.util.IdentityHashMap;
 import javax.sql.DataSource;
 import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.sql.SessionFactory;
+import com.jfireframework.sql.SqlSession;
 import com.jfireframework.sql.dao.Dao;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.mapper.Mapper;
 import com.jfireframework.sql.page.PageParse;
 import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore;
-import com.jfireframework.sql.session.SessionFactory;
-import com.jfireframework.sql.session.SqlSession;
 
 public class SessionFactoryImpl implements SessionFactory
 {

@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentMap;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.verify.Verify;
+import com.jfireframework.sql.SqlSession;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.dao.StrategyOperation;
 import com.jfireframework.sql.mapfield.MapField;
@@ -15,7 +16,6 @@ import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
 import com.jfireframework.sql.resultsettransfer.impl.BeanTransfer;
 import com.jfireframework.sql.resultsettransfer.impl.IntegerTransfer;
-import com.jfireframework.sql.session.SqlSession;
 import com.jfireframework.sql.util.JdbcTypeDictionary;
 
 public class StrategyOperationImpl<T> implements StrategyOperation<T>

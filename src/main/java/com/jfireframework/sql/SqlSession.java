@@ -1,4 +1,4 @@
-package com.jfireframework.sql.session;
+package com.jfireframework.sql;
 
 import java.sql.Connection;
 import java.util.List;

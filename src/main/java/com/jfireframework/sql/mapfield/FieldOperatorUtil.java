@@ -10,7 +10,6 @@ import java.util.Map;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.buffer.HeapByteBuf;
 import com.jfireframework.baseutil.exception.JustThrowException;
-import com.jfireframework.sql.mapfield.FieldOperator.CustomFieldOperator;
 import com.jfireframework.sql.mapfield.impl.BooleanOperator;
 import com.jfireframework.sql.mapfield.impl.ByteArrayOperator;
 import com.jfireframework.sql.mapfield.impl.CalendarOperator;
@@ -31,7 +30,7 @@ import com.jfireframework.sql.mapfield.impl.WDoubleOperator;
 import com.jfireframework.sql.mapfield.impl.WFloatOperator;
 import com.jfireframework.sql.mapfield.impl.WLongOperator;
 
-public class MapFieldUtil
+public class FieldOperatorUtil
 {
     private static final Map<Class<?>, FieldOperator> operators = new HashMap<Class<?>, FieldOperator>();
     static
@@ -59,11 +58,11 @@ public class MapFieldUtil
     public static FieldOperator getFieldOperator(Field field)
     {
         FieldOperator operator = null;
-        if (field.isAnnotationPresent(CustomFieldOperator.class))
+        if (field.isAnnotationPresent(UserDefinedFieldOperator.class))
         {
             try
             {
-                operator = field.getAnnotation(CustomFieldOperator.class).value().newInstance();
+                operator = field.getAnnotation(UserDefinedFieldOperator.class).value().newInstance();
             }
             catch (Exception e)
             {

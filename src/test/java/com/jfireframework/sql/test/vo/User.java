@@ -8,7 +8,7 @@ import com.jfireframework.sql.annotation.Column;
 import com.jfireframework.sql.annotation.Id;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableEntity;
-import com.jfireframework.sql.mapfield.FieldOperator.CustomFieldOperator;
+import com.jfireframework.sql.mapfield.UserDefinedFieldOperator;
 import com.jfireframework.sql.mapfield.impl.EnumOrdinalOperator;
 import com.jfireframework.sql.util.JdbcType;
 
@@ -37,7 +37,7 @@ public class User
     private Integer       length;
     @SqlIgnore
     private int           age2;
-    @CustomFieldOperator(EnumOrdinalOperator.class)
+    @UserDefinedFieldOperator(EnumOrdinalOperator.class)
     @Column(jdbcType = JdbcType.INTEGER)
     private State         state;
     private StringEnum    stringEnum;

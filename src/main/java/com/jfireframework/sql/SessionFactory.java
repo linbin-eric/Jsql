@@ -1,4 +1,4 @@
-package com.jfireframework.sql.session;
+package com.jfireframework.sql;
 
 import com.jfireframework.sql.dao.Dao;
 import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore;

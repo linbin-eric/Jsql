@@ -7,10 +7,10 @@ import org.h2.Driver;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import com.jfireframework.sql.SessionFactory;
+import com.jfireframework.sql.SessionfactoryConfig;
+import com.jfireframework.sql.SqlSession;
 import com.jfireframework.sql.page.Page;
-import com.jfireframework.sql.session.SessionFactory;
-import com.jfireframework.sql.session.SessionfactoryConfig;
-import com.jfireframework.sql.session.SqlSession;
 import com.jfireframework.sql.test.vo.User;
 import com.zaxxer.hikari.HikariDataSource;
 

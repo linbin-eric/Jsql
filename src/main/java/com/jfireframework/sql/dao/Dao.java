@@ -1,7 +1,7 @@
 package com.jfireframework.sql.dao;
 
 import java.util.List;
-import com.jfireframework.sql.session.SqlSession;
+import com.jfireframework.sql.SqlSession;
 
 public interface Dao<T> extends StrategyOperation<T>
 {

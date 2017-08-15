@@ -1,4 +1,4 @@
-package com.jfireframework.sql.dbstructure;
+package com.jfireframework.sql.dbstructure.impl;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.sql.dbstructure.Structure;
 import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.metadata.TableMetaData;
 

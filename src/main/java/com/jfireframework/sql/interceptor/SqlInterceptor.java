@@ -5,6 +5,5 @@ import com.jfireframework.baseutil.order.Order;
 
 public interface SqlInterceptor extends Order
 {
-    
-    public void intercept(InterceptorChain chain, Connection connection, String sql, Object... params);
+    void intercept(InterceptorChain chain, Connection connection, String sql, Object... params);
 }

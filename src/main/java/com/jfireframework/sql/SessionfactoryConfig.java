@@ -1,4 +1,4 @@
-package com.jfireframework.sql.session;
+package com.jfireframework.sql;
 
 import java.lang.reflect.Method;
 import java.sql.Connection;
@@ -21,10 +21,10 @@ import com.jfireframework.sql.dao.Dao;
 import com.jfireframework.sql.dao.impl.MysqlDAO;
 import com.jfireframework.sql.dao.impl.OracleDAO;
 import com.jfireframework.sql.dao.impl.StandardDAO;
-import com.jfireframework.sql.dbstructure.H2DBStructure;
-import com.jfireframework.sql.dbstructure.HsqlDBStructure;
-import com.jfireframework.sql.dbstructure.MariaDBStructure;
 import com.jfireframework.sql.dbstructure.Structure;
+import com.jfireframework.sql.dbstructure.impl.H2DBStructure;
+import com.jfireframework.sql.dbstructure.impl.HsqlDBStructure;
+import com.jfireframework.sql.dbstructure.impl.MariaDBStructure;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.mapper.Mapper;
 import com.jfireframework.sql.mapper.MapperBuilder;
@@ -34,7 +34,6 @@ import com.jfireframework.sql.page.PageParse;
 import com.jfireframework.sql.page.impl.OracleParse;
 import com.jfireframework.sql.page.impl.StandardParse;
 import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore;
-import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore.DefaultResultSetTransferStore;
 import com.jfireframework.sql.session.impl.SessionFactoryImpl;
 import com.jfireframework.sql.util.JdbcTypeDictionary;
 
@@ -62,8 +61,8 @@ public class SessionfactoryConfig
         {
             Verify.notNull(dataSource, "no dataSource set");
             Verify.notNull(scanPackage, "sql的扫描路径不能为空");
-            resultsetTransferStore = resultsetTransferStore == null ? new DefaultResultSetTransferStore() : resultsetTransferStore;
-            Processor[] processors = new Processor[] { //
+            resultsetTransferStore = resultsetTransferStore == null ? new ResultsetTransferStore() : resultsetTransferStore;
+            Stage[] processors = new Stage[] { //
                     new buildClassSet(), //
                     new initSqlInterceptor(), //
                     new detectProductName(), //
@@ -72,7 +71,7 @@ public class SessionfactoryConfig
                     new CreateMappers(), //
                     new BuildDao()//
             };
-            for (Processor each : processors)
+            for (Stage each : processors)
             {
                 each.process();
             }
@@ -84,12 +83,12 @@ public class SessionfactoryConfig
         }
     }
     
-    interface Processor
+    interface Stage
     {
         void process() throws Exception;
     }
     
-    class buildClassSet implements Processor
+    class buildClassSet implements Stage
     {
         
         @Override
@@ -114,7 +113,7 @@ public class SessionfactoryConfig
         
     }
     
-    class initSqlInterceptor implements Processor
+    class initSqlInterceptor implements Stage
     {
         
         @Override
@@ -133,7 +132,7 @@ public class SessionfactoryConfig
         }
     }
     
-    class detectProductName implements Processor
+    class detectProductName implements Stage
     {
         
         @Override
@@ -181,7 +180,7 @@ public class SessionfactoryConfig
         
     }
     
-    class initMetaContext implements Processor
+    class initMetaContext implements Stage
     {
         
         @Override
@@ -192,7 +191,7 @@ public class SessionfactoryConfig
         
     }
     
-    class createOrUpdateDatabase implements Processor
+    class createOrUpdateDatabase implements Stage
     {
         private static final String CREATE = "create";
         private static final String UPDATE = "update";
@@ -248,7 +247,7 @@ public class SessionfactoryConfig
         
     }
     
-    class CreateMappers implements Processor
+    class CreateMappers implements Stage
     {
         
         @Override
@@ -273,7 +272,7 @@ public class SessionfactoryConfig
         
     }
     
-    class BuildDao implements Processor
+    class BuildDao implements Stage
     {
         
         @SuppressWarnings({ "rawtypes" })

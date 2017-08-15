@@ -6,13 +6,13 @@ import org.h2.Driver;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import com.jfireframework.sql.SessionFactory;
+import com.jfireframework.sql.SessionfactoryConfig;
+import com.jfireframework.sql.SqlSession;
 import com.jfireframework.sql.annotation.Sql;
 import com.jfireframework.sql.page.Page;
-import com.jfireframework.sql.resultsettransfer.ResultSetTransfer.CustomTransfer;
+import com.jfireframework.sql.resultsettransfer.UserDefinedTransfer;
 import com.jfireframework.sql.resultsettransfer.impl.EnumOrdinalTransfer;
-import com.jfireframework.sql.session.SessionFactory;
-import com.jfireframework.sql.session.SessionfactoryConfig;
-import com.jfireframework.sql.session.SqlSession;
 import com.jfireframework.sql.test.vo.User;
 import com.jfireframework.sql.test.vo.User.State;
 import com.jfireframework.sql.test.vo.User.StringEnum;
@@ -85,11 +85,11 @@ public class MapperTest
         @Sql(sql = "select * from User where stringEnum = $v.name()", paramNames = "v")
         User find(StringEnum v);
         
-        @CustomTransfer(EnumOrdinalTransfer.class)
+        @UserDefinedTransfer(EnumOrdinalTransfer.class)
         @Sql(sql = "select state from User where name=$name", paramNames = "name")
         public State findState(String name);
         
-        @CustomTransfer(EnumOrdinalTransfer.class)
+        @UserDefinedTransfer(EnumOrdinalTransfer.class)
         @Sql(sql = "select state from User where name like $%name%", paramNames = "name")
         public List<State> findListState(String name);
         

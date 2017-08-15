@@ -1,6 +1,6 @@
 package com.jfireframework.sql.mapper;
 
-import com.jfireframework.sql.session.SessionFactory;
+import com.jfireframework.sql.SessionFactory;
 
 /**
  * 用来给生成接口对象的类作为继承用 方便在其中设置sqlSession

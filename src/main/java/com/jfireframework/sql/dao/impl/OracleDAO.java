@@ -3,12 +3,12 @@ package com.jfireframework.sql.dao.impl;
 import java.util.LinkedList;
 import java.util.List;
 import com.jfireframework.baseutil.collection.StringCache;
+import com.jfireframework.sql.SqlSession;
 import com.jfireframework.sql.annotation.SeqId;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.session.ExecSqlTemplate;
-import com.jfireframework.sql.session.SqlSession;
 import com.jfireframework.sql.util.JdbcTypeDictionary;
 
 public class OracleDAO<T> extends BaseDAO<T>

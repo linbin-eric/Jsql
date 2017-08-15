@@ -5,14 +5,14 @@ import java.sql.SQLException;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.jfireframework.sql.SessionFactory;
+import com.jfireframework.sql.SqlSession;
 import com.jfireframework.sql.dao.LockMode;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.page.PageParse;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
 import com.jfireframework.sql.session.ExecSqlTemplate;
-import com.jfireframework.sql.session.SessionFactory;
-import com.jfireframework.sql.session.SqlSession;
 
 public class SqlSessionImpl implements SqlSession
 {
@@ -20,9 +20,9 @@ public class SqlSessionImpl implements SqlSession
     private boolean                closed   = false;
     private final Connection       connection;
     private final SessionFactory   sessionFactory;
-    private final static Logger    logger   = LoggerFactory.getLogger(SqlSession.class);
     private final SqlInterceptor[] sqlInterceptors;
     private final PageParse        pageParse;
+    private final static Logger    logger   = LoggerFactory.getLogger(SqlSession.class);
     
     public SqlSessionImpl(Connection connection, SessionFactory sessionFactory, SqlInterceptor[] sqlInterceptors, PageParse pageParse)
     {

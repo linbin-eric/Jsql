@@ -125,7 +125,7 @@ public class MapperBuilder
         boolean isList = detectIsList(method);
         boolean isDynamicSql = SqlTextAnalyse.isDynamic(sql);
         StringCache methodBody = new StringCache(1024);
-        methodBody.append("com.jfireframework.sql.session.SqlSession session = sessionFactory.getCurrentSession();\r\n");
+        methodBody.append("com.jfireframework.sql.SqlSession session = sessionFactory.getCurrentSession();\r\n");
         methodBody.append("if(session==null){throw new java.lang.NullPointerException(\"current session 为空，请检查\");}\r\n");
         if (isDynamicSql)
         {
@@ -208,7 +208,7 @@ public class MapperBuilder
     {
         SqlContext sqlContext = new SqlContext();
         StringCache cache = new StringCache(1024);
-        cache.append("com.jfireframework.sql.session.SqlSession session = sessionFactory.getCurrentSession();\r\n");
+        cache.append("com.jfireframework.sql.SqlSession session = sessionFactory.getCurrentSession();\r\n");
         cache.append("if(session==null){throw new NullPointerException(\"current session 为空，请检查\");}\r\n");
         boolean isDynamicSql = SqlTextAnalyse.isDynamic(sql);
         if (isDynamicSql)

@@ -1,8 +1,8 @@
 package com.jfireframework.sql.dao;
 
 import java.util.List;
+import com.jfireframework.sql.SqlSession;
 import com.jfireframework.sql.page.Page;
-import com.jfireframework.sql.session.SqlSession;
 
 public interface StrategyOperation<T>
 {
