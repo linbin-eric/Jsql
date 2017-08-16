@@ -4,11 +4,13 @@ public class Token
 {
     private final TokenType tokenType;
     private final String    literals;
+    private final int       endPosition;
     
-    public Token(TokenType tokenType, String literals)
+    public Token(TokenType tokenType, String literals, int endPosition)
     {
         this.tokenType = tokenType;
         this.literals = literals;
+        this.endPosition = endPosition;
     }
     
     public TokenType getTokenType()
@@ -19,6 +21,11 @@ public class Token
     public String getLiterals()
     {
         return literals;
+    }
+    
+    public int getEndPosition()
+    {
+        return endPosition;
     }
     
 }

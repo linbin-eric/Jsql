@@ -1,5 +1,8 @@
 package com.jfireframework.sql.parse.lexer.token;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public enum DefaultKeyWord implements KeyWord
 {
     SELECT, //
@@ -118,5 +121,20 @@ public enum DefaultKeyWord implements KeyWord
     IF, //
     GLOBAL, //
     LOCAL, //
-    TEMPORARY
+    TEMPORARY;
+    
+    private static Map<String, DefaultKeyWord> defaultKeeyWords = new HashMap<String, DefaultKeyWord>(128);
+    
+    static
+    {
+        for (DefaultKeyWord each : DefaultKeyWord.values())
+        {
+            defaultKeeyWords.put(each.name().toLowerCase(), each);
+        }
+    }
+    
+    public DefaultKeyWord getDefaultKeyWord(String literals)
+    {
+        return defaultKeeyWords.get(literals);
+    }
 }
