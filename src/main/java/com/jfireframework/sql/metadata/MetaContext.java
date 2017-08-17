@@ -16,7 +16,7 @@ public class MetaContext
     private final TableMetaData[]                                        metaDatas;
     private final Map<Class<? extends ColNameStrategy>, ColNameStrategy> map       = new HashMap<Class<? extends ColNameStrategy>, ColNameStrategy>();
     
-    public MetaContext(Set<Class<?>> set, JdbcTypeDictionary jdbcTypeDictionary) throws ClassNotFoundException, InstantiationException, IllegalAccessException
+    public MetaContext(Set<Class<?>> set, JdbcTypeDictionary jdbcTypeDictionary)
     {
         for (Class<?> each : set)
         {

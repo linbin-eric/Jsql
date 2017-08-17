@@ -1,18 +1,27 @@
 package com.jfireframework.sql.parse.lexer;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import com.jfireframework.baseutil.collection.StringCache;
+import com.jfireframework.sql.mapfield.MapField;
+import com.jfireframework.sql.metadata.MetaContext;
+import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.parse.lexer.analyzer.CharType;
 import com.jfireframework.sql.parse.lexer.analyzer.Tokenizer;
+import com.jfireframework.sql.parse.lexer.token.DefaultKeyWord;
+import com.jfireframework.sql.parse.lexer.token.Literals;
 import com.jfireframework.sql.parse.lexer.token.Token;
 
 public class Lexer
 {
-    private List<Token>  tokens = new ArrayList<Token>();
+    private List<Token>                tokens     = new ArrayList<Token>();
     
-    private final String sql;
-    private int          offset = 0;
+    private final String               sql;
+    private int                        offset     = 0;
+    private Map<String, TableMetaData> entities   = new HashMap<String, TableMetaData>();
+    private Map<String, String>        fieldNames = new HashMap<String, String>();
     
     public Lexer(String sql)
     {
@@ -37,6 +46,58 @@ public class Lexer
             cache.deleteLast();
         }
         return cache.toString();
+    }
+    
+    public Lexer parseEntity(MetaContext metaContext)
+    {
+        for (Token token : tokens)
+        {
+            String entity = token.parseEntity(metaContext);
+            if (entity != null)
+            {
+                TableMetaData tableMetaData = metaContext.get(entity);
+                entities.put(entity, tableMetaData);
+                for (MapField mapField : tableMetaData.getFieldInfos())
+                {
+                    fieldNames.put(entity + '.' + mapField.getFieldName(), tableMetaData.getTableName() + "." + mapField.getColName());
+                    fieldNames.put(mapField.getFieldName(), tableMetaData.getTableName() + "." + mapField.getColName());
+                }
+            }
+        }
+        return this;
+    }
+    
+    public Lexer parseEntityAlias(MetaContext metaContext)
+    {
+        for (int i = 0; i < tokens.size(); i++)
+        {
+            Token token = tokens.get(i);
+            if (token.getTokenType() == DefaultKeyWord.AS && tokens.get(i - 1).getTokenType() == Literals.ENTITY)
+            {
+                Token entityToken = tokens.get(i - 1);
+                Token aliasToken = tokens.get(i + 1);
+                if (aliasToken.getTokenType() == Literals.TEXT)
+                {
+                    String entityAlias = aliasToken.getLiterals();
+                    TableMetaData tableMetaData = metaContext.get(entityToken.getOriginalLiterals());
+                    entities.put(entityAlias, tableMetaData);
+                    for (MapField mapField : tableMetaData.getFieldInfos())
+                    {
+                        fieldNames.put(entityAlias + '.' + mapField.getFieldName(), entityAlias + "." + mapField.getColName());
+                    }
+                }
+            }
+        }
+        return this;
+    }
+    
+    public Lexer parseFieldName()
+    {
+        for (Token token : tokens)
+        {
+            token.parseFieldName(fieldNames);
+        }
+        return this;
     }
     
     Token nextToken()
