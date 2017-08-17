@@ -100,6 +100,14 @@ public class Lexer
         return this;
     }
     
+    public Lexer parseEntityAndField(MetaContext metaContext)
+    {
+        parseEntity(metaContext);
+        parseEntityAlias(metaContext);
+        parseFieldName();
+        return this;
+    }
+    
     Token nextToken()
     {
         skipIgnoredToken();
