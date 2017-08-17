@@ -3,7 +3,7 @@ package com.jfireframework.sql.parse;
 import java.lang.reflect.Method;
 import com.jfireframework.sql.metadata.MetaContext;
 
-public interface SqlParse
+public interface MethodParser
 {
     /**
      * 将sql查询解析为查询单个的动态编译代码

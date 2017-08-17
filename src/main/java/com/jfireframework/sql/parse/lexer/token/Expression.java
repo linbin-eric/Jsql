@@ -12,6 +12,4 @@ public enum Expression implements TokenType
     ENDIF, //
     // 带~的变量
     VARIABLE_WITH_TIDLE, //
-    // 带%的变量
-    VARIABLE_WITH_PERCENT,
 }
