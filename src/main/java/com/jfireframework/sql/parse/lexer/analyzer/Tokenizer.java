@@ -93,6 +93,32 @@ public class Tokenizer
         return length + 1;
     }
     
+    private int getLengthUntilTerminatedChars(final char... terminatedChars)
+    {
+        int length = 1;
+        do
+        {
+            boolean hit = true;
+            for (int i = 0; i < terminatedChars.length; i++)
+            {
+                if (charAt(offset + length + i) != terminatedChars[i])
+                {
+                    hit = false;
+                    break;
+                }
+            }
+            if (hit)
+            {
+                return length + terminatedChars.length;
+            }
+            length += 1;
+            if (offset + length >= input.length())
+            {
+                throw new UnsupportedOperationException(StringUtil.format("输入的sql有问题，从:{}开始没有结束字符串", offset));
+            }
+        } while (true);
+    }
+    
     /**
      * 扫描十六进制数.
      *
@@ -142,24 +168,24 @@ public class Tokenizer
             length++;
         }
         String literals = input.substring(offset, offset + length);
-        if (DefaultKeyWord.valueOf(literals) != null)
+        if (DefaultKeyWord.getDefaultKeyWord(literals) != null)
         {
-            return new Token(DefaultKeyWord.valueOf(literals), literals, offset + length + 1);
+            return new Token(DefaultKeyWord.getDefaultKeyWord(literals), literals, offset + length);
         }
         if (charAt(offset) >= 'A' && charAt(offset) <= 'Z')
         {
             if (literals.contains("."))
             {
-                return new Token(Literals.FIELD, literals, offset + length + 1);
+                return new Token(Literals.FIELD, literals, offset + length);
             }
             else
             {
-                return new Token(Literals.ENTITY, literals, offset + length + 1);
+                return new Token(Literals.ENTITY, literals, offset + length);
             }
         }
         else
         {
-            return new Token(Literals.TEXT, literals, offset + length + 1);
+            return new Token(Literals.TEXT, literals, offset + length);
         }
     }
     
@@ -175,7 +201,12 @@ public class Tokenizer
         if ('~' == charAt(offset + length))
         {
             length += 1;
-            tokenType = Expression.VARIABLE_WITH_VARIABLE;
+            tokenType = Expression.VARIABLE_WITH_TIDLE;
+        }
+        else if ('%' == charAt(offset + length))
+        {
+            length += 1;
+            tokenType = Expression.VARIABLE;
         }
         do
         {
@@ -185,8 +216,26 @@ public class Tokenizer
             {
                 return new Token(tokenType, input.substring(offset, offset + length), offset + length);
             }
+            length += 1;
         } while (offset + length <= input.length());
-        throw new UnsupportedOperationException(StringUtil.format("无法找到终止符号,从{}开始", input.substring(offset)));
+        return new Token(tokenType, input.substring(offset), offset + length);
+    }
+    
+    public Token scanIf()
+    {
+        int length = getLengthUntilTerminatedChars(')', '>');
+        return new Token(Expression.IF, input.substring(offset, offset + length), offset + length + 1);
+    }
+    
+    public Token scanEndIf()
+    {
+        return new Token(Expression.ENDIF, input.substring(offset, offset + 5), offset + 6);
+    }
+    
+    public Token scanBrace()
+    {
+        int length = getLengthUntilTerminatedChar('}');
+        return new Token(Expression.BRACE, input.substring(offset, offset + length), offset + length + 1);
     }
     
     /**

@@ -133,7 +133,7 @@ public enum DefaultKeyWord implements KeyWord
         }
     }
     
-    public DefaultKeyWord getDefaultKeyWord(String literals)
+    public static DefaultKeyWord getDefaultKeyWord(String literals)
     {
         return defaultKeeyWords.get(literals);
     }

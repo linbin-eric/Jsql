@@ -2,6 +2,7 @@ package com.jfireframework.sql.parse.lexer;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.sql.parse.lexer.analyzer.CharType;
 import com.jfireframework.sql.parse.lexer.analyzer.Tokenizer;
 import com.jfireframework.sql.parse.lexer.token.Token;
@@ -16,15 +17,35 @@ public class Lexer
     public Lexer(String sql)
     {
         this.sql = sql;
+        Token currentToken;
+        while ((currentToken = nextToken()) != null)
+        {
+            tokens.add(currentToken);
+        }
+    }
+    
+    @Override
+    public String toString()
+    {
+        StringCache cache = new StringCache();
+        for (Token each : tokens)
+        {
+            cache.append(each.getLiterals()).append(' ');
+        }
+        if (tokens.isEmpty() == false)
+        {
+            cache.deleteLast();
+        }
+        return cache.toString();
     }
     
     Token nextToken()
     {
         skipIgnoredToken();
         Token currentToken = null;
-        if (isLiteralsBegin())
+        if (isLeftBraceBegin())
         {
-            
+            currentToken = new Tokenizer(sql, offset).scanBrace();
         }
         else if (isVariableBegin())
         {
@@ -32,13 +53,17 @@ public class Lexer
         }
         else if (isIfBegin())
         {
-            
+            currentToken = new Tokenizer(sql, offset).scanIf();
+        }
+        else if (isEndIfBegin())
+        {
+            currentToken = new Tokenizer(sql, offset).scanEndIf();
         }
         else if (isIdentifierBegin())
         {
             currentToken = new Tokenizer(sql, offset).scanIdentifier();
         }
-        if (isHexDecimalBegin())
+        else if (isHexDecimalBegin())
         {
             currentToken = new Tokenizer(sql, offset).scanHexDecimal();
         }
@@ -62,7 +87,11 @@ public class Lexer
         return currentToken;
     }
     
-    private boolean isLiteralsBegin()
+    /**
+     * 
+     * @return
+     */
+    private boolean isLeftBraceBegin()
     {
         return getCurrentChar(0) == '{';
     }
@@ -79,7 +108,19 @@ public class Lexer
     
     private boolean isIfBegin()
     {
-        if (getCurrentChar(offset) == '<' && getCurrentChar(1) == 'i' && getCurrentChar(2) == 'f' && getCurrentChar(3) == '(')
+        if (getCurrentChar(0) == '<' && getCurrentChar(1) == 'i' && getCurrentChar(2) == 'f' && getCurrentChar(3) == '(')
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    
+    private boolean isEndIfBegin()
+    {
+        if (getCurrentChar(0) == '<' && getCurrentChar(1) == '/' && getCurrentChar(2) == 'i' && getCurrentChar(3) == 'f' && getCurrentChar(4) == '>')
         {
             return true;
         }
