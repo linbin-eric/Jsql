@@ -19,7 +19,6 @@ import com.jfireframework.sql.parse.lexer.token.TokenType;
 public class Lexer
 {
     private List<Token>                tokens     = new ArrayList<Token>();
-    
     private final String               sql;
     private int                        offset     = 0;
     private Map<String, TableMetaData> entities   = new HashMap<String, TableMetaData>();
@@ -280,5 +279,10 @@ public class Lexer
     private void skipIgnoredToken()
     {
         offset = new Tokenizer(sql, offset).skipWhitespace();
+    }
+    
+    public List<Token> getTokens()
+    {
+        return tokens;
     }
 }
