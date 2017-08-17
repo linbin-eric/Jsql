@@ -194,6 +194,22 @@ public class Tokenizer
         return CharType.isAlphabet(ch) || CharType.isDigital(ch) || ch == '.';
     }
     
+    public Token scanConstant()
+    {
+        int length = 1;
+        do
+        {
+            char c = charAt(offset + length);
+            if (c == '>' || c == '<' || c == '!' || c == '=' || c == ' ' || c == ',' //
+                    || c == '+' || c == '-' || c == '(' || c == ')')
+            {
+                return new Token(Expression.CONSTANT, input.substring(offset, offset + length), offset + length);
+            }
+            length += 1;
+        } while (offset + length <= input.length());
+        return new Token(Expression.CONSTANT, input.substring(offset), offset + length);
+    }
+    
     public Token scanVariable()
     {
         int length = 1;

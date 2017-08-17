@@ -100,7 +100,7 @@ public class Lexer
         return this;
     }
     
-    public Lexer parseEntityAndField(MetaContext metaContext)
+    public Lexer parse(MetaContext metaContext)
     {
         parseEntity(metaContext);
         parseEntityAlias(metaContext);
@@ -115,6 +115,10 @@ public class Lexer
         if (isLeftBraceBegin())
         {
             currentToken = new Tokenizer(sql, offset).scanBrace();
+        }
+        else if (isConstantBegin())
+        {
+            currentToken = new Tokenizer(sql, offset).scanConstant();
         }
         else if (isVariableBegin())
         {
@@ -163,6 +167,11 @@ public class Lexer
     private boolean isLeftBraceBegin()
     {
         return getCurrentChar(0) == '{';
+    }
+    
+    private boolean isConstantBegin()
+    {
+        return getCurrentChar(0) == '@';
     }
     
     private boolean isIdentifierBegin()

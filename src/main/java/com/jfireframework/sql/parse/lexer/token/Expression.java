@@ -6,6 +6,8 @@ public enum Expression implements TokenType
     VARIABLE, //
     // 字面值变量
     BRACE, //
+    // 常量
+    CONSTANT, //
     IF, //
     ENDIF, //
     // 带~的变量
