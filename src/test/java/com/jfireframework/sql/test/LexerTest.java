@@ -56,9 +56,9 @@ public class LexerTest
         Set<Class<?>> set = new HashSet<Class<?>>();
         set.add(User.class);
         MetaContext metaContext = new MetaContext(set, new JdbcTypeDictionary.MysqlJdbcTypes());
-        String sql = "select name from User";
-        Assert.assertEquals("select user.name2 from user", new Lexer(sql).parseEntity(metaContext).parseEntityAlias(metaContext).parseFieldName().toString());
-        sql = "select u.name from User as u";
-        Assert.assertEquals("select u.name2 from user as u", new Lexer(sql).parseEntity(metaContext).parseEntityAlias(metaContext).parseFieldName().toString());
+        String sql = "select name,age from User";
+        Assert.assertEquals("select user.name2 , user.age from user", new Lexer(sql).parseEntity(metaContext).parseEntityAlias(metaContext).parseFieldName().toString());
+        sql = "select u.name,u.age from User as u";
+        Assert.assertEquals("select u.name2 , u.age from user as u", new Lexer(sql).parseEntity(metaContext).parseEntityAlias(metaContext).parseFieldName().toString());
     }
 }
