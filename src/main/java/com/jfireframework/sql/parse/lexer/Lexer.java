@@ -11,8 +11,10 @@ import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.parse.lexer.analyzer.CharType;
 import com.jfireframework.sql.parse.lexer.analyzer.Tokenizer;
 import com.jfireframework.sql.parse.lexer.token.DefaultKeyWord;
+import com.jfireframework.sql.parse.lexer.token.Expression;
 import com.jfireframework.sql.parse.lexer.token.Literals;
 import com.jfireframework.sql.parse.lexer.token.Token;
+import com.jfireframework.sql.parse.lexer.token.TokenType;
 
 public class Lexer
 {
@@ -31,6 +33,24 @@ public class Lexer
         {
             tokens.add(currentToken);
         }
+    }
+    
+    /**
+     * 是否是一个动态的sql
+     * 
+     * @return
+     */
+    public boolean isDynamic()
+    {
+        for (Token token : tokens)
+        {
+            TokenType tokenType = token.getTokenType();
+            if (tokenType == Expression.IF || tokenType == Expression.BRACE || tokenType == Expression.VARIABLE_WITH_TIDLE)
+            {
+                return true;
+            }
+        }
+        return false;
     }
     
     @Override
