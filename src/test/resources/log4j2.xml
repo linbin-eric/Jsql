@@ -33,7 +33,7 @@
 		<Root level="error">
 			<AppenderRef ref="Console" />
 		</Root>
-		<Logger name="com.jfireframework.sql" level="debug">
+		<Logger name="com.jfireframework" level="debug">
 			<AppenderRef ref="Console" />
 			<AppenderRef ref="SerAppFile" />
 		</Logger>

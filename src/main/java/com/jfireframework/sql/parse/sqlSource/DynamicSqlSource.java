@@ -48,7 +48,7 @@ public class DynamicSqlSource extends AbstractSqlSource
             {
                 methodBody += "builder.append(\"" + sqlCache.toString() + "\");\r\n";
                 sqlCache.clear();
-                methodBody += "builder.append(\"? \")\r\n";
+                methodBody += "builder.append(\"? \");\r\n";
                 methodBody += "list.add(" + buildParam(token.getLiterals().substring(1), paramNames, paramTypes) + ");\r\n";
             }
             else if (token.getTokenType() == Expression.VARIABLE_WITH_TIDLE)
@@ -82,7 +82,7 @@ public class DynamicSqlSource extends AbstractSqlSource
                     methodBody += "\tint length = tmp.length;\r\n";
                 }
                 methodBody += "\tfor(int i=0;i<length;i++){builder.append(\"?,\");}\r\n";
-                methodBody += "\tif(builder.isCommaLast()){builder.deleteLast().append(\\\")\\\")}\r\n";
+                methodBody += "\tif(builder.isCommaLast()){builder.deleteLast().append(\")\");}\r\n";
                 if (List.class.isAssignableFrom(paramType))
                 {
                     methodBody += "\tfor(int i=0;i<length;i++){list.add(tmp.get(i));}\r\n";

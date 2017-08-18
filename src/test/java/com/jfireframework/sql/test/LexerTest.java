@@ -26,8 +26,8 @@ public class LexerTest
         Assert.assertEquals("select name , age from user where ( name = 'sada' and sex = 1 ) or age >= 13", new Lexer(sql).toString());
         sql = "select {myname}  from  user";
         Assert.assertEquals("select {myname} from user", new Lexer(sql).toString());
-        sql = "select name from user where <if($name != null)> name = 'sasa' </if>";
-        Assert.assertEquals("select name from user where <if($name != null)> name = 'sasa' </if>", new Lexer(sql).toString());
+        sql = "select name from user where <if($name != null)>   name   = 'sasa' </if> and age =12";
+        Assert.assertEquals("select name from user where <if($name != null)> name = 'sasa' </if> and age = 12", new Lexer(sql).toString());
         sql = "select * from user where id in $~ids";
         Assert.assertEquals("select * from user where id in $~ids", new Lexer(sql).toString());
         sql = "select * from user where name = $%name%";
@@ -38,6 +38,12 @@ public class LexerTest
         Assert.assertEquals("select user.name from user", new Lexer(sql).toString());
         sql = "select user.name from user left join room where   user.id = room.id";
         Assert.assertEquals("select user.name from user left join room where user.id = room.id", new Lexer(sql).toString());
+        sql = "select * from User where name =  @com.jfireframework.context.test.function.validate.User.Constant";
+        Assert.assertEquals("select * from User where name = @com.jfireframework.context.test.function.validate.User.Constant", new Lexer(sql).toString());
+        sql = "select * from User where name =  $n.name()";
+        Assert.assertEquals("select * from User where name = $n.name()", new Lexer(sql).toString());
+        sql = "upadte User set name='x' <if($i>5)>where name ='kx'</if> ";
+        Assert.assertEquals("upadte User set name = 'x' <if($i>5)> where name = 'kx' </if>", new Lexer(sql).toString());
     }
     
     @Test

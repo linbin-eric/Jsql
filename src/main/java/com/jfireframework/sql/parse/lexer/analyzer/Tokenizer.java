@@ -157,7 +157,7 @@ public class Tokenizer
     {
         int length = getLengthUntilTerminatedChar(terminatedChar);
         String content = input.substring(offset, offset + length);
-        return new Token(Literals.CHARS, content, offset + length + 1);
+        return new Token(Literals.CHARS, content, offset + length);
     }
     
     public Token scanIdentifier()
@@ -200,6 +200,10 @@ public class Tokenizer
         do
         {
             char c = charAt(offset + length);
+            if (c == '(' && charAt(offset + length + 1) == ')')
+            {
+                return new Token(Expression.CONSTANT, input.substring(offset, offset + length + 2), offset + length + 2);
+            }
             if (c == '>' || c == '<' || c == '!' || c == '=' || c == ' ' || c == ',' //
                     || c == '+' || c == '-' || c == '(' || c == ')')
             {
@@ -227,6 +231,10 @@ public class Tokenizer
         do
         {
             char c = charAt(offset + length);
+            if (c == '(' && charAt(offset + length + 1) == ')')
+            {
+                return new Token(Expression.CONSTANT, input.substring(offset, offset + length + 2), offset + length + 2);
+            }
             if (c == '>' || c == '<' || c == '!' || c == '=' || c == ' ' || c == ',' //
                     || c == '+' || c == '-' || c == '(' || c == ')')
             {
@@ -240,18 +248,18 @@ public class Tokenizer
     public Token scanIf()
     {
         int length = getLengthUntilTerminatedChars(')', '>');
-        return new Token(Expression.IF, input.substring(offset, offset + length), offset + length + 1);
+        return new Token(Expression.IF, input.substring(offset, offset + length), offset + length);
     }
     
     public Token scanEndIf()
     {
-        return new Token(Expression.ENDIF, input.substring(offset, offset + 5), offset + 6);
+        return new Token(Expression.ENDIF, input.substring(offset, offset + 5), offset + 5);
     }
     
     public Token scanBrace()
     {
         int length = getLengthUntilTerminatedChar('}');
-        return new Token(Expression.BRACE, input.substring(offset, offset + length), offset + length + 1);
+        return new Token(Expression.BRACE, input.substring(offset, offset + length), offset + length);
     }
     
     /**
