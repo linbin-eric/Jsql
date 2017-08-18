@@ -59,6 +59,7 @@ public class TableMetaData
                 throw new IllegalArgumentException("作为主键的属性不可以使用基本类型，必须使用包装类。请检查" + t_idField.getDeclaringClass().getName() + "." + t_idField.getName());
             }
             idInfo = new MapFieldImpl(t_idField, nameStrategy);
+            descMap.put(idInfo, buildFieldDesc(t_idField, jdbcTypeDictionary));
         }
         else
         {

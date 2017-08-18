@@ -10,6 +10,7 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import com.jfireframework.baseutil.collection.buffer.HeapByteBuf;
 
 public interface JdbcTypeDictionary
 {
@@ -46,6 +47,7 @@ public interface JdbcTypeDictionary
             types.put(Clob.class, JdbcType.CLOB);
             types.put(Blob.class, JdbcType.BLOB);
             types.put(Array.class, JdbcType.ARRAY);
+            types.put(HeapByteBuf.class, JdbcType.BLOB);
         }
         
         @Override

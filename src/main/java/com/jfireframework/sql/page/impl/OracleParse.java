@@ -16,7 +16,7 @@ public class OracleParse implements PageParse
         String querySql = PageSqlCache.getQuerySql(originSql);
         if (querySql == null)
         {
-            querySql = "select * from ( select a.*,rownum from(" + originSql + ") a where rownum<=?) where rownum>=?";
+            querySql = "select * from ( select a.*,rownum rn from(" + originSql + ") a where rownum<=?) where rn>=?";
             PageSqlCache.putQuerySql(originSql, querySql);
         }
         return querySql;
@@ -93,7 +93,7 @@ public class OracleParse implements PageParse
                 pstat.setObject(index++, param);
             }
             pstat.setInt(index++, page.getOffset() + page.getSize());
-            pstat.setInt(index, page.getOffset());
+            pstat.setInt(index, page.getOffset() + 1);
             resultSet = pstat.executeQuery();
             List<?> list = transfer.transferList(resultSet, querySql);
             page.setData(list);
