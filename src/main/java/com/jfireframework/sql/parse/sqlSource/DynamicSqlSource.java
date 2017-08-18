@@ -22,8 +22,12 @@ public class DynamicSqlSource extends AbstractSqlSource
         this.resultsetTransferStore = resultsetTransferStore;
     }
     
-    @Override
-    public String parseSingleQuery(Lexer lexer, Method method)
+    interface BuildReturn
+    {
+        String run(String methodBody);
+    }
+    
+    String parse(Lexer lexer, Method method, BuildReturn buildReturn)
     {
         String[] paramNames = method.getAnnotation(Sql.class).paramNames().split(",");
         Class<?>[] paramTypes = method.getParameterTypes();
@@ -119,31 +123,79 @@ public class DynamicSqlSource extends AbstractSqlSource
         methodBody += "builder.append(\"" + sqlCache.toString() + "\");\r\n";
         sqlCache.clear();
         methodBody += "String sql = builder.toString();\r\n";
-        int sn = resultsetTransferStore.registerTransfer(method);
-        methodBody += "return (" + SmcHelper.getTypeName(method.getReturnType()) + ")session.query(sessionFactory.getResultSetTransferStore().get("//
-                + sn + "),sql,list.toArray());\r\n";
+        methodBody = buildReturn.run(methodBody);
         return methodBody;
     }
     
     @Override
-    public String parseListQuery(Lexer lexer, MetaContext metaContext, Method method)
+    public String parseSingleQuery(Lexer lexer, final Method method)
     {
-        // TODO Auto-generated method stub
-        return null;
+        BuildReturn buildReturn = new BuildReturn() {
+            
+            @Override
+            public String run(String methodBody)
+            {
+                int sn = resultsetTransferStore.registerTransfer(method);
+                methodBody += "return (" + SmcHelper.getTypeName(method.getReturnType()) + ")session.query(sessionFactory.getResultSetTransferStore().get("//
+                        + sn + "),sql,list.toArray());\r\n";
+                return methodBody;
+            }
+        };
+        return parse(lexer, method, buildReturn);
     }
     
     @Override
-    public String parsePageQuery(Lexer lexer, MetaContext metaContext, Method method)
+    public String parseListQuery(Lexer lexer, MetaContext metaContext, final Method method)
     {
-        // TODO Auto-generated method stub
-        return null;
+        BuildReturn buildReturn = new BuildReturn() {
+            
+            @Override
+            public String run(String methodBody)
+            {
+                int sn = resultsetTransferStore.registerTransfer(method);
+                methodBody += "return session.queryList(sessionFactory.getResultSetTransferStore().get(" + sn + "),sql,list.toArray());\r\n";
+                return methodBody;
+            }
+        };
+        return parse(lexer, method, buildReturn);
     }
     
     @Override
-    public String parseUpdate(Lexer lexer, MetaContext metaContext, Method method)
+    public String parsePageQuery(Lexer lexer, MetaContext metaContext, final Method method)
     {
-        // TODO Auto-generated method stub
-        return null;
+        BuildReturn buildReturn = new BuildReturn() {
+            
+            @Override
+            public String run(String methodBody)
+            {
+                int sn = resultsetTransferStore.registerTransfer(method);
+                methodBody += "return session.queryList(sessionFactory.getResultSetTransferStore().get(" + sn + "),sql,list.toArray());\r\n";
+                return methodBody;
+            }
+        };
+        return parse(lexer, method, buildReturn);
+    }
+    
+    @Override
+    public String parseUpdate(Lexer lexer, MetaContext metaContext, final Method method)
+    {
+        BuildReturn buildReturn = new BuildReturn() {
+            
+            @Override
+            public String run(String methodBody)
+            {
+                methodBody += "int updateRows=session.update(sql,list.toArray());\r\n";
+                if (method.getReturnType() == Void.class || method.getReturnType() == void.class)
+                {
+                    ;
+                }
+                else
+                {
+                    methodBody += "return updateRows;\r\n";
+                }
+                return methodBody;
+            }
+        };
     }
     
     public String createIf(String el, String[] paramNames, Class<?>[] types)
