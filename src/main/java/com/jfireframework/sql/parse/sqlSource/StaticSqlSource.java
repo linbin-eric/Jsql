@@ -7,7 +7,6 @@ import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.smc.SmcHelper;
 import com.jfireframework.sql.annotation.Sql;
-import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.parse.lexer.Lexer;
 import com.jfireframework.sql.parse.lexer.token.Expression;
 import com.jfireframework.sql.parse.lexer.token.Token;
@@ -90,7 +89,7 @@ public class StaticSqlSource extends AbstractSqlSource
     }
     
     @Override
-    public String parseListQuery(Lexer lexer, MetaContext metaContext, final Method method)
+    public String parseListQuery(Lexer lexer, final Method method)
     {
         BuildReturnSql buildReturnSql = new BuildReturnSql() {
             
@@ -119,7 +118,7 @@ public class StaticSqlSource extends AbstractSqlSource
     }
     
     @Override
-    public String parsePageQuery(Lexer lexer, MetaContext metaContext, final Method method)
+    public String parsePageQuery(Lexer lexer, final Method method)
     {
         BuildReturnSql buildReturnSql = new BuildReturnSql() {
             
@@ -148,7 +147,7 @@ public class StaticSqlSource extends AbstractSqlSource
     }
     
     @Override
-    public String parseUpdate(Lexer lexer, MetaContext metaContext, final Method method)
+    public String parseUpdate(Lexer lexer, final Method method)
     {
         BuildReturnSql buildReturnSql = new BuildReturnSql() {
             
