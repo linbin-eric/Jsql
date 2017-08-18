@@ -132,7 +132,7 @@ public class MapperBuilder
             methodBody.append(SqlTextAnalyse.analyseDynamicText(sql, paramNames, method.getParameterTypes(), metaContext, sqlContext));
             if (isList)
             {
-                int sn = resultsetTransferStore.registerTransfer(method, jdbcTypeDictionary);
+                int sn = resultsetTransferStore.registerTransfer(method);
                 if (isPage)
                 {
                     String pageParamName = "$" + (method.getParameterTypes().length - 1);
@@ -156,7 +156,7 @@ public class MapperBuilder
             else
             {
                 Class<?> returnType = method.getReturnType();
-                int sn = resultsetTransferStore.registerTransfer(method, jdbcTypeDictionary);
+                int sn = resultsetTransferStore.registerTransfer(method);
                 methodBody.append("return (" + SmcHelper.getTypeName(returnType) + ")session.query(sessionFactory.getResultSetTransferStore().get(")//
                         .append(sn).append(')').append(",sql,list.toArray());");
             }
@@ -166,7 +166,7 @@ public class MapperBuilder
             SqlTextAnalyse.analyseStaticText(sql, paramNames, method.getParameterTypes(), metaContext, sqlContext);
             if (isList)
             {
-                int sn = resultsetTransferStore.registerTransfer(method, jdbcTypeDictionary);
+                int sn = resultsetTransferStore.registerTransfer(method);
                 if (isPage)
                 {
                     methodBody.append("return session.queryList(sessionFactory.getResultSetTransferStore().get(").append(sn).append(')').append(",\"")//
@@ -181,7 +181,7 @@ public class MapperBuilder
             else
             {
                 Class<?> returnType = method.getReturnType();
-                int sn = resultsetTransferStore.registerTransfer(method, jdbcTypeDictionary);
+                int sn = resultsetTransferStore.registerTransfer(method);
                 methodBody.append("return (" + SmcHelper.getTypeName(returnType) + ")session.query(sessionFactory.getResultSetTransferStore().get(").append(sn).append(')').append(",\"")//
                         .append(sqlContext.getSql()).append("\",");
             }

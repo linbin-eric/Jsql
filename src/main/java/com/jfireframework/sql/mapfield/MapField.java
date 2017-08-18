@@ -3,11 +3,10 @@ package com.jfireframework.sql.mapfield;
 import java.lang.reflect.Field;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import com.jfireframework.sql.util.JdbcType;
 
 public interface MapField
 {
-    FieldOperator valueFetcher();
+    FieldOperator fieldOperator();
     
     /**
      * 从resultset通过名称获取值，并且设置到对象中
@@ -39,10 +38,6 @@ public interface MapField
      * @return
      */
     String getFieldName();
-    
-    JdbcType getJdbcType();
-    
-    String getDesc();
     
     /**
      * 返回原始的field对象

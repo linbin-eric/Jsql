@@ -72,7 +72,7 @@ public abstract class BaseDAO<T> implements Dao<T>
         this.entityClass = (Class<T>) metaData.getEntityClass();
         this.sqlInterceptors = sqlInterceptors;
         transfer = new BeanTransfer();
-        transfer.initialize(entityClass, jdbcTypeDictionary);
+        transfer.initialize(entityClass);
         tableName = entityClass.getAnnotation(TableEntity.class).name();
         MapField[] allMapFields = metaData.getFieldInfos();
         MapField t_id = null;

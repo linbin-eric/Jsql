@@ -3,7 +3,6 @@ package com.jfireframework.sql.resultsettransfer.impl;
 import java.sql.ResultSet;
 import java.util.Map;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
-import com.jfireframework.sql.util.JdbcTypeDictionary;
 
 public class EnumOrdinalTransfer extends AbstractResultsetTransfer
 {
@@ -17,7 +16,7 @@ public class EnumOrdinalTransfer extends AbstractResultsetTransfer
     }
     
     @Override
-    public void initialize(Class<?> type, JdbcTypeDictionary jdbcTypeDictionary)
+    public void initialize(Class<?> type)
     {
         @SuppressWarnings("unchecked")
         Map<String, ? extends Enum<?>> allEnumInstances = ReflectUtil.getAllEnumInstances((Class<? extends Enum<?>>) type);

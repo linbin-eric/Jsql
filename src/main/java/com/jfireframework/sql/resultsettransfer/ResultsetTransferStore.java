@@ -23,7 +23,6 @@ import com.jfireframework.sql.resultsettransfer.impl.StringTransfer;
 import com.jfireframework.sql.resultsettransfer.impl.TimeStampTransfer;
 import com.jfireframework.sql.resultsettransfer.impl.TimeTransfer;
 import com.jfireframework.sql.resultsettransfer.impl.UtilDateTransfer;
-import com.jfireframework.sql.util.JdbcTypeDictionary;
 
 public class ResultsetTransferStore
 {
@@ -60,7 +59,7 @@ public class ResultsetTransferStore
      * @param method
      * @return 返回该transfer的编号
      */
-    public int registerTransfer(Method method, JdbcTypeDictionary jdbcTypeDictionary)
+    public int registerTransfer(Method method)
     {
         ResultSetTransfer resultSetTransfer;
         Class<? extends ResultSetTransfer> type;
@@ -100,7 +99,7 @@ public class ResultsetTransferStore
         {
             resultSetTransfer = new BeanTransfer();
         }
-        resultSetTransfer.initialize(returnType, jdbcTypeDictionary);
+        resultSetTransfer.initialize(returnType);
         list.add(resultSetTransfer);
         int sn = index;
         index += 1;

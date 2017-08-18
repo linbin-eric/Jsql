@@ -10,6 +10,7 @@ import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.sql.dbstructure.Structure;
 import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.metadata.TableMetaData;
+import com.jfireframework.sql.metadata.TableMetaData.FieldDesc;
 
 public abstract class AbstractDBStructure implements Structure
 {
@@ -47,15 +48,16 @@ public abstract class AbstractDBStructure implements Structure
         
     }
     
-    protected String getDesc(MapField fieldInfo)
+    protected String getDesc(MapField fieldInfo, TableMetaData tableMetaData)
     {
-        if (StringUtil.isNotBlank(fieldInfo.getDesc()))
+        FieldDesc fieldDesc = tableMetaData.getFieldDesc(fieldInfo);
+        if (StringUtil.isNotBlank(fieldDesc.getDesc()))
         {
-            return fieldInfo.getJdbcType().name() + "(" + fieldInfo.getDesc() + ")";
+            return fieldDesc.getJdbcType().name() + "(" + fieldDesc.getDesc() + ")";
         }
         else
         {
-            return fieldInfo.getJdbcType().name();
+            return fieldDesc.getJdbcType().name();
         }
     }
     

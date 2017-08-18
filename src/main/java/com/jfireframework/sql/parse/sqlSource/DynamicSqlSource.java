@@ -12,17 +12,14 @@ import com.jfireframework.sql.parse.lexer.Lexer;
 import com.jfireframework.sql.parse.lexer.token.Expression;
 import com.jfireframework.sql.parse.lexer.token.Token;
 import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore;
-import com.jfireframework.sql.util.JdbcTypeDictionary;
 
 public class DynamicSqlSource extends AbstractSqlSource
 {
     private final ResultsetTransferStore resultsetTransferStore;
-    private final JdbcTypeDictionary     jdbcTypeDictionary;
     
-    public DynamicSqlSource(ResultsetTransferStore resultsetTransferStore, JdbcTypeDictionary jdbcTypeDictionary)
+    public DynamicSqlSource(ResultsetTransferStore resultsetTransferStore)
     {
         this.resultsetTransferStore = resultsetTransferStore;
-        this.jdbcTypeDictionary = jdbcTypeDictionary;
     }
     
     @Override
@@ -119,6 +116,12 @@ public class DynamicSqlSource extends AbstractSqlSource
                 sqlCache.append(token.getLiterals()).append(" ");
             }
         }
+        methodBody += "builder.append(\"" + sqlCache.toString() + "\");\r\n";
+        sqlCache.clear();
+        methodBody += "String sql = builder.toString();\r\n";
+        int sn = resultsetTransferStore.registerTransfer(method);
+        methodBody += "return (" + SmcHelper.getTypeName(method.getReturnType()) + ")session.query(sessionFactory.getResultSetTransferStore().get("//
+                + sn + "),sql,list.toArray());\r\n";
         return methodBody;
     }
     
@@ -155,7 +158,7 @@ public class DynamicSqlSource extends AbstractSqlSource
             {
                 end = getEndFlag(el, index);
                 String content = el.substring(index + 1, end);
-                cache.append(SmcHelper.buildInvoke(content, paramNames, types));
+                cache.append(buildInvoke(content, paramNames, types));
                 Class<?> type = SmcHelper.getType(content, paramNames, types);
                 if (type == String.class)
                 {

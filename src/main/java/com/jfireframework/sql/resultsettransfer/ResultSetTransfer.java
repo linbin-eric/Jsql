@@ -2,11 +2,10 @@ package com.jfireframework.sql.resultsettransfer;
 
 import java.sql.ResultSet;
 import java.util.List;
-import com.jfireframework.sql.util.JdbcTypeDictionary;
 
 public interface ResultSetTransfer
 {
-    void initialize(Class<?> type, JdbcTypeDictionary jdbcTypeDictionary);
+    void initialize(Class<?> type);
     
     Object transfer(ResultSet resultSet, String sql) throws Exception;
     

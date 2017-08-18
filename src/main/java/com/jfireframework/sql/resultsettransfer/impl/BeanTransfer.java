@@ -19,7 +19,6 @@ import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 import com.jfireframework.sql.dbstructure.name.DefaultNameStrategy;
 import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.mapfield.impl.MapFieldImpl;
-import com.jfireframework.sql.util.JdbcTypeDictionary;
 
 public class BeanTransfer extends AbstractResultsetTransfer
 {
@@ -61,7 +60,7 @@ public class BeanTransfer extends AbstractResultsetTransfer
     }
     
     @Override
-    public void initialize(Class<?> type, JdbcTypeDictionary jdbcTypeDictionary)
+    public void initialize(Class<?> type)
     {
         this.type = type;
         ColNameStrategy colNameStrategy;
@@ -81,7 +80,7 @@ public class BeanTransfer extends AbstractResultsetTransfer
             {
                 continue;
             }
-            list.add(new MapFieldImpl(each, colNameStrategy, jdbcTypeDictionary));
+            list.add(new MapFieldImpl(each, colNameStrategy));
         }
         mapFields = new HashMap<String, MapField>();
         for (MapField each : list)

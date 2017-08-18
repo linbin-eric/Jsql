@@ -3,7 +3,6 @@ package com.jfireframework.sql.resultsettransfer.impl;
 import java.sql.ResultSet;
 import java.util.Map;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
-import com.jfireframework.sql.util.JdbcTypeDictionary;
 
 public class EnumNameTransfer extends AbstractResultsetTransfer
 {
@@ -18,7 +17,7 @@ public class EnumNameTransfer extends AbstractResultsetTransfer
     
     @SuppressWarnings("unchecked")
     @Override
-    public void initialize(Class<?> type, JdbcTypeDictionary jdbcTypeDictionary)
+    public void initialize(Class<?> type)
     {
         instances = ReflectUtil.getAllEnumInstances((Class<? extends Enum<?>>) type);
     }

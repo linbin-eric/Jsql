@@ -174,7 +174,7 @@ public class StrategyOperationImpl<T> implements StrategyOperation<T>
         FindStrategySql findStrategySql = new FindStrategySql();
         findStrategySql.sql = cache.toString();
         findStrategySql.transfer = new BeanTransfer();
-        findStrategySql.transfer.initialize(ckass, jdbcTypeDictionary);
+        findStrategySql.transfer.initialize(ckass);
         return findStrategySql;
     }
     

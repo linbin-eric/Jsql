@@ -19,7 +19,7 @@ public class DefaultMethodParser implements MethodParser
     {
         this.resultsetTransferStore = resultsetTransferStore;
         this.jdbcTypeDictionary = jdbcTypeDictionary;
-        staticSqlSource = new StaticSqlSource(resultsetTransferStore, jdbcTypeDictionary);
+        staticSqlSource = new StaticSqlSource(resultsetTransferStore);
     }
     
     @Override

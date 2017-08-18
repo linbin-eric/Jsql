@@ -1,7 +1,6 @@
 package com.jfireframework.sql.resultsettransfer.impl;
 
 import java.sql.ResultSet;
-import com.jfireframework.sql.util.JdbcTypeDictionary;
 
 public class ShortTransfer extends AbstractResultsetTransfer
 {
@@ -13,7 +12,7 @@ public class ShortTransfer extends AbstractResultsetTransfer
     }
     
     @Override
-    public void initialize(Class<?> type, JdbcTypeDictionary jdbcTypeDictionary)
+    public void initialize(Class<?> type)
     {
     }
     

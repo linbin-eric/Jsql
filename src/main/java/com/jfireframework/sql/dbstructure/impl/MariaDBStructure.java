@@ -18,7 +18,7 @@ public class MariaDBStructure extends AbstractDBStructure
         MapField idInfo = tableMetaData.getIdInfo();
         StringCache cache = new StringCache();
         cache.append("CREATE TABLE ").append(tableName).append(" (");
-        cache.append(idInfo.getColName()).append(' ').append(getDesc(idInfo));
+        cache.append(idInfo.getColName()).append(' ').append(getDesc(idInfo, tableMetaData));
         if (idInfo.getField().getType() == Integer.class || idInfo.getField().getType() == Long.class)
         {
             cache.append(" AUTO_INCREMENT ");
@@ -32,7 +32,7 @@ public class MariaDBStructure extends AbstractDBStructure
             }
             try
             {
-                cache.append(each.getColName()).append(' ').append(getDesc(each)).appendComma();
+                cache.append(each.getColName()).append(' ').append(getDesc(each, tableMetaData)).appendComma();
             }
             catch (Exception e)
             {
@@ -89,13 +89,13 @@ public class MariaDBStructure extends AbstractDBStructure
             // 字段存在，需要执行更新操作
             if (idInfo.getField().getType() == Integer.class || idInfo.getField().getType() == Long.class)
             {
-                logger.debug("执行sql语句:{}", "alter table " + tableName + " modify " + idInfo.getColName() + ' ' + getDesc(idInfo) + " auto_increment");
-                connection.prepareStatement("alter table " + tableName + " modify " + idInfo.getColName() + ' ' + getDesc(idInfo) + " auto_increment").execute();
+                logger.debug("执行sql语句:{}", "alter table " + tableName + " modify " + idInfo.getColName() + ' ' + getDesc(idInfo, tableMetaData) + " auto_increment");
+                connection.prepareStatement("alter table " + tableName + " modify " + idInfo.getColName() + ' ' + getDesc(idInfo, tableMetaData) + " auto_increment").execute();
             }
             else
             {
-                logger.debug("执行sql语句:{}", "alter table " + tableName + " modify " + idInfo.getColName() + ' ' + getDesc(idInfo));
-                connection.prepareStatement("alter table " + tableName + " modify " + idInfo.getColName() + ' ' + getDesc(idInfo)).execute();
+                logger.debug("执行sql语句:{}", "alter table " + tableName + " modify " + idInfo.getColName() + ' ' + getDesc(idInfo, tableMetaData));
+                connection.prepareStatement("alter table " + tableName + " modify " + idInfo.getColName() + ' ' + getDesc(idInfo, tableMetaData)).execute();
             }
         }
         else
@@ -103,13 +103,13 @@ public class MariaDBStructure extends AbstractDBStructure
             // 字段不存在，需要执行新建动作
             if (idInfo.getField().getType() == Integer.class || idInfo.getField().getType() == Long.class)
             {
-                logger.warn("执行sql语句:{}", addColSql + idInfo.getColName() + ' ' + getDesc(idInfo) + " auto_increment");
-                connection.prepareStatement(addColSql + idInfo.getColName() + ' ' + getDesc(idInfo) + " auto_increment").execute();
+                logger.warn("执行sql语句:{}", addColSql + idInfo.getColName() + ' ' + getDesc(idInfo, tableMetaData) + " auto_increment");
+                connection.prepareStatement(addColSql + idInfo.getColName() + ' ' + getDesc(idInfo, tableMetaData) + " auto_increment").execute();
             }
             else
             {
-                logger.warn("执行sql语句:{}", addColSql + idInfo.getColName() + ' ' + getDesc(idInfo));
-                connection.prepareStatement(addColSql + idInfo.getColName() + ' ' + getDesc(idInfo)).execute();
+                logger.warn("执行sql语句:{}", addColSql + idInfo.getColName() + ' ' + getDesc(idInfo, tableMetaData));
+                connection.prepareStatement(addColSql + idInfo.getColName() + ' ' + getDesc(idInfo, tableMetaData)).execute();
             }
         }
         rs.close();
@@ -122,13 +122,13 @@ public class MariaDBStructure extends AbstractDBStructure
             rs = connection.prepareStatement(describeSql + each.getColName()).executeQuery();
             if (rs.next())
             {
-                logger.debug("执行sql语句:{}", modityColSql + each.getColName() + ' ' + getDesc(each));
-                connection.prepareStatement(modityColSql + each.getColName() + ' ' + getDesc(each)).execute();
+                logger.debug("执行sql语句:{}", modityColSql + each.getColName() + ' ' + getDesc(each, tableMetaData));
+                connection.prepareStatement(modityColSql + each.getColName() + ' ' + getDesc(each, tableMetaData)).execute();
             }
             else
             {
-                logger.debug("执行sql语句:{}", addColSql + each.getColName() + ' ' + getDesc(each));
-                connection.prepareStatement(addColSql + each.getColName() + ' ' + getDesc(each)).execute();
+                logger.debug("执行sql语句:{}", addColSql + each.getColName() + ' ' + getDesc(each, tableMetaData));
+                connection.prepareStatement(addColSql + each.getColName() + ' ' + getDesc(each, tableMetaData)).execute();
             }
             rs.close();
         }
