@@ -196,6 +196,7 @@ public class DynamicSqlSource extends AbstractSqlSource
                 return methodBody;
             }
         };
+        return parse(lexer, method, buildReturn);
     }
     
     public String createIf(String el, String[] paramNames, Class<?>[] types)

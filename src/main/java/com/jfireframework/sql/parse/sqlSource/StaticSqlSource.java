@@ -24,7 +24,7 @@ public class StaticSqlSource extends AbstractSqlSource
     
     interface BuildReturnSql
     {
-        String run(String methodBody, String[] paramNames, Class<?>[] paramTypes, String sql, int sn);
+        String run(String methodBody, List<String> params);
     }
     
     String parse(Lexer lexer, Method method, BuildReturnSql buildReturnSql)
@@ -34,7 +34,6 @@ public class StaticSqlSource extends AbstractSqlSource
         String methodBody = "";
         methodBody += "com.jfireframework.sql.SqlSession session = sessionFactory.getCurrentSession();\r\n";
         methodBody += "if(session==null){throw new java.lang.NullPointerException(\"current session 为空，请检查\");}\r\n";
-        int sn = resultsetTransferStore.registerTransfer(method);
         StringCache sqlCache = new StringCache();
         List<String> params = new ArrayList<String>();
         for (Token token : lexer.getTokens())
@@ -55,19 +54,8 @@ public class StaticSqlSource extends AbstractSqlSource
             }
         }
         sqlCache.deleteLast();
-        methodBody = buildReturnSql.run(methodBody, paramNames, paramTypes, sqlCache.toString(), sn);
-        if (params.isEmpty())
-        {
-            methodBody += ");\r\n";
-        }
-        else
-        {
-            for (String param : params)
-            {
-                methodBody += "," + param;
-            }
-            methodBody += ");\r\n";
-        }
+        methodBody += "String sql = \"" + sqlCache.toString() + "\";\r\n";
+        methodBody = buildReturnSql.run(methodBody, params);
         return methodBody;
     }
     
@@ -77,11 +65,23 @@ public class StaticSqlSource extends AbstractSqlSource
         BuildReturnSql buildReturnSql = new BuildReturnSql() {
             
             @Override
-            public String run(String methodBody, String[] paramNames, Class<?>[] paramTypes, String sql, int sn)
+            public String run(String methodBody, List<String> params)
             {
+                int sn = resultsetTransferStore.registerTransfer(method);
                 methodBody += "return (" + SmcHelper.getTypeName(method.getReturnType()) + ")session.query("//
-                        + "sessionFactory.getResultSetTransferStore().get(" + sn + "),"//
-                        + "\"" + sql + "\"";
+                        + "sessionFactory.getResultSetTransferStore().get(" + sn + "),sql";
+                if (params.isEmpty())
+                {
+                    methodBody += ");\r\n";
+                }
+                else
+                {
+                    for (String param : params)
+                    {
+                        methodBody += "," + param;
+                    }
+                    methodBody += ");\r\n";
+                }
                 return methodBody;
             }
             
@@ -95,11 +95,23 @@ public class StaticSqlSource extends AbstractSqlSource
         BuildReturnSql buildReturnSql = new BuildReturnSql() {
             
             @Override
-            public String run(String methodBody, String[] paramNames, Class<?>[] paramTypes, String sql, int sn)
+            public String run(String methodBody, List<String> params)
             {
-                methodBody += "return (" + SmcHelper.getTypeName(method.getReturnType()) + ")session.queryList("//
-                        + "sessionFactory.getResultSetTransferStore().get(" + sn + "),"//
-                        + "\"" + sql + "\"";
+                int sn = resultsetTransferStore.registerTransfer(method);
+                methodBody += "return session.queryList("//
+                        + "sessionFactory.getResultSetTransferStore().get(" + sn + "),sql";
+                if (params.isEmpty())
+                {
+                    methodBody += ");\r\n";
+                }
+                else
+                {
+                    for (String param : params)
+                    {
+                        methodBody += "," + param;
+                    }
+                    methodBody += ");\r\n";
+                }
                 return methodBody;
             }
         };
@@ -112,11 +124,23 @@ public class StaticSqlSource extends AbstractSqlSource
         BuildReturnSql buildReturnSql = new BuildReturnSql() {
             
             @Override
-            public String run(String methodBody, String[] paramNames, Class<?>[] paramTypes, String sql, int sn)
+            public String run(String methodBody, List<String> params)
             {
-                methodBody += "return (" + SmcHelper.getTypeName(method.getReturnType()) + ")session.queryList("//
-                        + "sessionFactory.getResultSetTransferStore().get(" + sn + "),"//
-                        + "\"" + sql + "\",$" + (paramTypes.length - 1);
+                int sn = resultsetTransferStore.registerTransfer(method);
+                methodBody += "return session.queryList("//
+                        + "sessionFactory.getResultSetTransferStore().get(" + sn + "),sql,$" + (method.getParameterTypes().length - 1);
+                if (params.isEmpty())
+                {
+                    methodBody += ");\r\n";
+                }
+                else
+                {
+                    for (String param : params)
+                    {
+                        methodBody += "," + param;
+                    }
+                    methodBody += ");\r\n";
+                }
                 return methodBody;
             }
         };
@@ -124,59 +148,42 @@ public class StaticSqlSource extends AbstractSqlSource
     }
     
     @Override
-    public String parseUpdate(Lexer lexer, MetaContext metaContext, Method method)
+    public String parseUpdate(Lexer lexer, MetaContext metaContext, final Method method)
     {
-        String[] paramNames = method.getAnnotation(Sql.class).paramNames().split(",");
-        Class<?>[] paramTypes = method.getParameterTypes();
-        String methodBody = "";
-        methodBody += "com.jfireframework.sql.SqlSession session = sessionFactory.getCurrentSession();\r\n";
-        methodBody += "if(session==null){throw new java.lang.NullPointerException(\"current session 为空，请检查\");}\r\n";
-        StringCache sqlCache = new StringCache();
-        List<String> params = new ArrayList<String>();
-        for (Token token : lexer.getTokens())
-        {
-            if (token.getTokenType() == Expression.VARIABLE)
+        BuildReturnSql buildReturnSql = new BuildReturnSql() {
+            
+            @Override
+            public String run(String methodBody, List<String> params)
             {
-                sqlCache.append('?').append(' ');
-                params.add(buildParam(token.getLiterals().substring(1), paramNames, paramTypes));
+                methodBody += "int updateRows = session.update(sql";
+                if (params.isEmpty())
+                {
+                    methodBody += ");\r\n";
+                }
+                else
+                {
+                    for (String param : params)
+                    {
+                        methodBody += "," + param;
+                    }
+                    methodBody += ");\r\n";
+                }
+                if (method.getReturnType() == Void.class || method.getReturnType() == void.class)
+                {
+                    ;
+                }
+                else if (method.getReturnType() == int.class || method.getReturnType() == Integer.class)
+                {
+                    methodBody += "return updateRows;\r\n";
+                }
+                else
+                {
+                    throw new UnsupportedOperationException(StringUtil.format("方法:{}.{}的返回类型错误。", method.getDeclaringClass().getName(), method.getName()));
+                }
+                return methodBody;
             }
-            else if (token.getTokenType() == Expression.CONSTANT)
-            {
-                sqlCache.append('?').append(' ');
-                params.add(token.getLiterals().substring(1));
-            }
-            else
-            {
-                sqlCache.append(token.getLiterals()).append(' ');
-            }
-        }
-        sqlCache.deleteLast();
-        methodBody += "int updateRows = session.update(\"" + sqlCache.toString() + "\"";
-        if (params.isEmpty())
-        {
-            methodBody += ");\r\n";
-        }
-        else
-        {
-            for (String param : params)
-            {
-                methodBody += "," + param;
-            }
-            methodBody += ");\r\n";
-        }
-        if (method.getReturnType() == Void.class || method.getReturnType() == void.class)
-        {
-            ;
-        }
-        else if (method.getReturnType() == int.class || method.getReturnType() == Integer.class)
-        {
-            methodBody += "return updateRows;\r\n";
-        }
-        else
-        {
-            throw new UnsupportedOperationException(StringUtil.format("方法:{}.{}的返回类型错误。", method.getDeclaringClass().getName(), method.getName()));
-        }
-        return methodBody;
+        };
+        return parse(lexer, method, buildReturnSql);
     }
     
 }
