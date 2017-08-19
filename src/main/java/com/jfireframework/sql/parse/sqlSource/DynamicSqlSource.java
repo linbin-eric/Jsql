@@ -40,21 +40,30 @@ public class DynamicSqlSource extends AbstractSqlSource
         {
             if (token.getTokenType() == Expression.BRACE)
             {
-                methodBody += "builder.append(\"" + sqlCache.toString() + "\");\r\n";
-                sqlCache.clear();
-                methodBody += "builder.append(" + buildParam(token.getLiterals().substring(1, token.getLiterals().length() - 1), paramNames, paramTypes) + ").append(' ')\r\n";
+                if (sqlCache.count() != 0)
+                {
+                    methodBody += "builder.append(\"" + sqlCache.toString() + "\");\r\n";
+                    sqlCache.clear();
+                }
+                methodBody += "builder.append(" + buildParam(token.getLiterals().substring(1, token.getLiterals().length() - 1), paramNames, paramTypes) + ").append(' ');\r\n";
             }
             else if (token.getTokenType() == Expression.VARIABLE)
             {
-                methodBody += "builder.append(\"" + sqlCache.toString() + "\");\r\n";
-                sqlCache.clear();
+                if (sqlCache.count() != 0)
+                {
+                    methodBody += "builder.append(\"" + sqlCache.toString() + "\");\r\n";
+                    sqlCache.clear();
+                }
                 methodBody += "builder.append(\"? \");\r\n";
                 methodBody += "list.add(" + buildParam(token.getLiterals().substring(1), paramNames, paramTypes) + ");\r\n";
             }
             else if (token.getTokenType() == Expression.VARIABLE_WITH_TIDLE)
             {
-                methodBody += "builder.append(\"" + sqlCache.toString() + "\");\r\n";
-                sqlCache.clear();
+                if (sqlCache.count() != 0)
+                {
+                    methodBody += "builder.append(\"" + sqlCache.toString() + "\");\r\n";
+                    sqlCache.clear();
+                }
                 String content = token.getLiterals().substring(2);
                 Class<?> paramType = SmcHelper.getType(content, paramNames, paramTypes);
                 if (paramType == String.class)
@@ -95,15 +104,21 @@ public class DynamicSqlSource extends AbstractSqlSource
             }
             else if (token.getTokenType() == Expression.CONSTANT)
             {
-                methodBody += "builder.append(\"" + sqlCache.toString() + "\");\r\n";
-                sqlCache.clear();
+                if (sqlCache.count() != 0)
+                {
+                    methodBody += "builder.append(\"" + sqlCache.toString() + "\");\r\n";
+                    sqlCache.clear();
+                }
                 methodBody += "builder.append(\"? \")\r\n";
                 methodBody += "list.add(" + token.getLiterals().substring(1) + ");\r\n";
             }
             else if (token.getTokenType() == Expression.IF)
             {
-                methodBody += "builder.append(\"" + sqlCache.toString() + "\");\r\n";
-                sqlCache.clear();
+                if (sqlCache.count() != 0)
+                {
+                    methodBody += "builder.append(\"" + sqlCache.toString() + "\");\r\n";
+                    sqlCache.clear();
+                }
                 String literals = token.getLiterals();
                 literals = literals.substring(4);
                 literals = literals.substring(0, literals.length() - 2);
@@ -119,8 +134,11 @@ public class DynamicSqlSource extends AbstractSqlSource
                 sqlCache.append(token.getLiterals()).append(" ");
             }
         }
-        methodBody += "builder.append(\"" + sqlCache.toString() + "\");\r\n";
-        sqlCache.clear();
+        if (sqlCache.count() != 0)
+        {
+            methodBody += "builder.append(\"" + sqlCache.toString() + "\");\r\n";
+            sqlCache.clear();
+        }
         methodBody += "String sql = builder.toString();\r\n";
         methodBody = buildReturn.run(methodBody);
         return methodBody;
