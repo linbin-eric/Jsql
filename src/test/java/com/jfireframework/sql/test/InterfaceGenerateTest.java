@@ -9,18 +9,13 @@ import org.junit.Before;
 import org.junit.Test;
 import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.annotation.Sql;
-import com.jfireframework.sql.mapper.MapperBuilder.SqlContext;
-import com.jfireframework.sql.mapper.SqlTextAnalyse;
-import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.test.vo.User;
-import com.jfireframework.sql.util.JdbcTypeDictionary;
 import com.zaxxer.hikari.HikariDataSource;
 
 public class InterfaceGenerateTest
 {
     
     private SessionfactoryConfig config;
-    private MetaContext          metaContext;
     
     @Before
     public void before() throws ClassNotFoundException, InstantiationException, IllegalAccessException
@@ -36,7 +31,6 @@ public class InterfaceGenerateTest
         config.setTableMode("create");
         Set<Class<?>> set = new HashSet<Class<?>>();
         set.add(User.class);
-        metaContext = new MetaContext(set, new JdbcTypeDictionary.MysqlJdbcTypes());
     }
     
     protected void build(String packageName)
@@ -70,24 +64,6 @@ public class InterfaceGenerateTest
         public int update();
     }
     
-    /**
-     * 测试DO中的静态值
-     * 
-     * @throws SecurityException
-     * @throws NoSuchFieldException
-     */
-    @Test
-    public void test_2() throws NoSuchFieldException, SecurityException
-    {
-        SqlContext sqlContext = new SqlContext();
-        SqlTextAnalyse.analyseStaticText("select * from User where name = @User.xx", null, null, metaContext, sqlContext);
-        Assert.assertEquals("select * from user where user.name2 = ?", sqlContext.getSql());
-        sqlContext = new SqlContext();
-        SqlTextAnalyse.analyseStaticText("update User set name = @User.xx", null, null, metaContext, sqlContext);
-        Assert.assertEquals("update user set user.name2 = ?", sqlContext.getSql());
-        build("com.jfireframework.sql.test:in~*$test_2;com.jfireframework.sql.test.vo");
-    }
-    
     public static interface test_3
     {
         @Sql(sql = "select * from User as u where u.name = @com.jfireframework.sql.test.vo.User.xx", paramNames = "")
@@ -97,24 +73,6 @@ public class InterfaceGenerateTest
         public int update();
     }
     
-    /**
-     * 测试类的别名
-     * 
-     * @throws SecurityException
-     * @throws NoSuchFieldException
-     */
-    @Test
-    public void test_3() throws NoSuchFieldException, SecurityException
-    {
-        build("com.jfireframework.sql.test:in~*$test_3;com.jfireframework.sql.test.vo");
-        SqlContext sqlContext = new SqlContext();
-        SqlTextAnalyse.analyseStaticText("select * from User as u where u.name = @User.xx", null, null, metaContext, sqlContext);
-        Assert.assertEquals("select * from user as u where u.name2 = ?", sqlContext.getSql());
-        sqlContext = new SqlContext();
-        SqlTextAnalyse.analyseStaticText("update User as u set u.name = @User.xx", null, null, metaContext, sqlContext);
-        Assert.assertEquals("update user as u set u.name2 = ?", sqlContext.getSql());
-    }
-    
     public static interface test_4
     {
         @Sql(sql = "select * from User <if($i>5)>where name ='kx'</if> ", paramNames = "i")
@@ -122,19 +80,6 @@ public class InterfaceGenerateTest
         
         @Sql(sql = "upadte User set name='x' <if($i>5)>where name ='kx'</if> ", paramNames = "i")
         public int update(int i);
-    }
-    
-    /**
-     * 测试if条件
-     */
-    @Test
-    public void test_4()
-    {
-        build("com.jfireframework.sql.test:in~*$test_4;com.jfireframework.sql.test.vo");
-        String result = SqlTextAnalyse.transMapSql("select * from User <if($i>5)>where name ='kx'</if> ", new SqlContext(), metaContext);
-        Assert.assertEquals("select * from user <if($i>5)>where user.name2 ='kx'</if> ", result);
-        result = SqlTextAnalyse.transMapSql("upadte User set name='x' <if($i>5)>where name ='kx'</if> ", new SqlContext(), metaContext);
-        Assert.assertEquals("upadte user set user.name2='x' <if($i>5)>where user.name2 ='kx'</if> ", result);
     }
     
     public static interface test_5

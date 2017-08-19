@@ -111,6 +111,13 @@ public class MapperTest
         
     }
     
+    public static interface TestOp2
+    {
+        /** 测试Enum */
+        @Sql(sql = "select * from User where state =$s.ordinal()", paramNames = "s")
+        public User find(State s);
+    }
+    
     private SessionFactory       sessionFactory;
     private SessionfactoryConfig config;
     private TestOp               testOp;

@@ -51,7 +51,7 @@ public class LexerTest
     {
         Set<Class<?>> set = new HashSet<Class<?>>();
         set.add(User.class);
-        MetaContext metaContext = new MetaContext(set, new JdbcTypeDictionary.MysqlJdbcTypes());
+        MetaContext metaContext = new MetaContext(set, new JdbcTypeDictionary.StandandTypes());
         String sql = "select name from User";
         Assert.assertEquals("select name from user", new Lexer(sql).parseEntity(metaContext).toString());
     }
@@ -61,13 +61,14 @@ public class LexerTest
     {
         Set<Class<?>> set = new HashSet<Class<?>>();
         set.add(User.class);
-        MetaContext metaContext = new MetaContext(set, new JdbcTypeDictionary.MysqlJdbcTypes());
+        MetaContext metaContext = new MetaContext(set, new JdbcTypeDictionary.StandandTypes());
         String sql = "select name,age from User";
         Assert.assertEquals("select user.name2 , user.age from user", new Lexer(sql).parse(metaContext).toString());
         sql = "select u.name,u.age from User as u";
         Assert.assertEquals("select u.name2 , u.age from user as u", new Lexer(sql).parse(metaContext).toString());
         sql = "select name from User where <if( $name == 'sasda')> name = $name </if>";
         Assert.assertEquals("select user.name2 from user where <if( $name == 'sasda')> user.name2 = $name </if>", new Lexer(sql).parse(metaContext).toString());
-        
+        sql = "select age from User as u where u.name = ?";
+        Assert.assertEquals("select u.age from user as u where u.name2 = ?", new Lexer(sql).parse(metaContext).toString());
     }
 }

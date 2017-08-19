@@ -233,7 +233,7 @@ public class Tokenizer
             char c = charAt(offset + length);
             if (c == '(' && charAt(offset + length + 1) == ')')
             {
-                return new Token(Expression.CONSTANT, input.substring(offset, offset + length + 2), offset + length + 2);
+                return new Token(tokenType, input.substring(offset, offset + length + 2), offset + length + 2);
             }
             if (c == '>' || c == '<' || c == '!' || c == '=' || c == ' ' || c == ',' //
                     || c == '+' || c == '-' || c == '(' || c == ')')

@@ -27,22 +27,17 @@ import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.parse.DefaultMethodParser;
 import com.jfireframework.sql.parse.MethodParser;
 import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore;
-import com.jfireframework.sql.util.JdbcTypeDictionary;
 
 public class MapperBuilder
 {
-    private final JdbcTypeDictionary     jdbcTypeDictionary;
-    private final MetaContext            metaContext;
-    private final ResultsetTransferStore resultsetTransferStore;
-    private static final Logger          logger = LoggerFactory.getLogger(MapperBuilder.class);
-    private MethodParser                 methodParser;
+    private final MetaContext   metaContext;
+    private static final Logger logger = LoggerFactory.getLogger(MapperBuilder.class);
+    private MethodParser        methodParser;
     
-    public MapperBuilder(MetaContext metaContext, ResultsetTransferStore resultsetTransferStore, JdbcTypeDictionary jdbcTypeDictionary)
+    public MapperBuilder(MetaContext metaContext, ResultsetTransferStore resultsetTransferStore)
     {
         this.metaContext = metaContext;
         methodParser = new DefaultMethodParser(resultsetTransferStore);
-        this.resultsetTransferStore = resultsetTransferStore;
-        this.jdbcTypeDictionary = jdbcTypeDictionary;
     }
     
     /**
@@ -123,97 +118,6 @@ public class MapperBuilder
     
     private void createQueryMethod(CompilerModel compilerModel, Method method, String sql, String[] paramNames) throws Exception
     {
-        //
-        // SqlContext sqlContext = new SqlContext();
-        // boolean isPage = detectIsPage(method);
-        // boolean isList = detectIsList(method);
-        // boolean isDynamicSql = SqlTextAnalyse.isDynamic(sql);
-        // StringCache methodBody = new StringCache(1024);
-        // methodBody.append("com.jfireframework.sql.SqlSession session =
-        // sessionFactory.getCurrentSession();\r\n");
-        // methodBody.append("if(session==null){throw new
-        // java.lang.NullPointerException(\"current session 为空，请检查\");}\r\n");
-        // if (isDynamicSql)
-        // {
-        // methodBody.append(SqlTextAnalyse.analyseDynamicText(sql, paramNames,
-        // method.getParameterTypes(), metaContext, sqlContext));
-        // if (isList)
-        // {
-        // int sn = resultsetTransferStore.registerTransfer(method);
-        // if (isPage)
-        // {
-        // String pageParamName = "$" + (method.getParameterTypes().length - 1);
-        // methodBody//
-        // .append("return
-        // session.queryList(sessionFactory.getResultSetTransferStore().get(")//
-        // .append(sn).append(')').appendComma()//
-        // .append("sql").appendComma()//
-        // .append(pageParamName)//
-        // .appendComma().append("list.toArray()")//
-        // .append(");");
-        // }
-        // else
-        // {
-        // methodBody.append("return
-        // session.queryList(sessionFactory.getResultSetTransferStore().get(")//
-        // .append(sn).append(')').appendComma()//
-        // .append("sql").appendComma()//
-        // .append("list.toArray()")//
-        // .append(");");
-        // }
-        // }
-        // else
-        // {
-        // Class<?> returnType = method.getReturnType();
-        // int sn = resultsetTransferStore.registerTransfer(method);
-        // methodBody.append("return (" + SmcHelper.getTypeName(returnType) +
-        // ")session.query(sessionFactory.getResultSetTransferStore().get(")//
-        // .append(sn).append(')').append(",sql,list.toArray());");
-        // }
-        // }
-        // else
-        // {
-        // SqlTextAnalyse.analyseStaticText(sql, paramNames,
-        // method.getParameterTypes(), metaContext, sqlContext);
-        // if (isList)
-        // {
-        // int sn = resultsetTransferStore.registerTransfer(method);
-        // if (isPage)
-        // {
-        // methodBody.append("return
-        // session.queryList(sessionFactory.getResultSetTransferStore().get(").append(sn).append(')').append(",\"")//
-        // .append(sqlContext.getSql()).append("\",$").append(method.getParameterTypes().length
-        // - 1).append(",");
-        // }
-        // else
-        // {
-        // methodBody.append("return
-        // session.queryList(sessionFactory.getResultSetTransferStore().get(").append(sn).append(')').append(",\"")//
-        // .append(sqlContext.getSql()).append("\",");
-        // }
-        // }
-        // else
-        // {
-        // Class<?> returnType = method.getReturnType();
-        // int sn = resultsetTransferStore.registerTransfer(method);
-        // methodBody.append("return (" + SmcHelper.getTypeName(returnType) +
-        // ")session.query(sessionFactory.getResultSetTransferStore().get(").append(sn).append(')').append(",\"")//
-        // .append(sqlContext.getSql()).append("\",");
-        // }
-        // if (sqlContext.getParams().size() == 0)
-        // {
-        // methodBody.append("emptyParams);");
-        // }
-        // else
-        // {
-        // methodBody.append("new Object[]{");
-        // for (String each : sqlContext.getParams())
-        // {
-        // methodBody.append(each).appendComma();
-        // }
-        // methodBody.deleteLast().append("});");
-        // }
-        // }
         boolean isList = detectIsList(method);
         String methodBody = null;
         if (isList)
@@ -239,48 +143,6 @@ public class MapperBuilder
     
     private void createUpdateMethod(CompilerModel compilerModel, Method method, String sql, String[] paramNames) throws Exception
     {
-        // SqlContext sqlContext = new SqlContext();
-        // StringCache cache = new StringCache(1024);
-        // cache.append("com.jfireframework.sql.SqlSession session =
-        // sessionFactory.getCurrentSession();\r\n");
-        // cache.append("if(session==null){throw new
-        // NullPointerException(\"current session 为空，请检查\");}\r\n");
-        // boolean isDynamicSql = SqlTextAnalyse.isDynamic(sql);
-        // if (isDynamicSql)
-        // {
-        // cache.append(SqlTextAnalyse.analyseDynamicText(sql, paramNames,
-        // method.getParameterTypes(), metaContext, sqlContext));
-        // cache.append("int updateRows=session.update(sql,emptyParams);\r\n");
-        // }
-        // else
-        // {
-        // SqlTextAnalyse.analyseStaticText(sql, paramNames,
-        // method.getParameterTypes(), metaContext, sqlContext);
-        // cache.append("int updateRows =
-        // session.update(\"").append(sqlContext.getSql()).append("\",");
-        // if (sqlContext.getParams().isEmpty())
-        // {
-        // cache.append("emptyParams);");
-        // }
-        // else
-        // {
-        // cache.append("new Object[]{");
-        // for (String each : sqlContext.getParams())
-        // {
-        // cache.append(each).appendComma();
-        // }
-        // cache.deleteLast().append("});");
-        // }
-        // }
-        // Class<?> returnType = method.getReturnType();
-        // if (returnType == Void.class || returnType == void.class)
-        // {
-        // ;
-        // }
-        // else
-        // {
-        // cache.append("return updateRows;\r\n");
-        // }
         String methodBody = methodParser.parseUpdate(sql, metaContext, method);
         MethodModel methodModel = new MethodModel(method);
         methodModel.setBody(methodBody);

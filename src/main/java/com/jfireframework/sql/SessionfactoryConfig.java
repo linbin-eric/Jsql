@@ -147,22 +147,22 @@ public class SessionfactoryConfig
                 if (productName.equals("mariadb") || "mysql".equals(productName))
                 {
                     pageParse = new StandardParse();
-                    jdbcTypeDictionary = new JdbcTypeDictionary.MysqlJdbcTypes();
+                    jdbcTypeDictionary = new JdbcTypeDictionary.StandandTypes();
                 }
                 else if (productName.equals("oracle"))
                 {
                     pageParse = new OracleParse();
-                    jdbcTypeDictionary = new JdbcTypeDictionary.MysqlJdbcTypes();
+                    jdbcTypeDictionary = new JdbcTypeDictionary.StandandTypes();
                 }
                 else if (productName.contains("hsql"))
                 {
                     pageParse = new StandardParse();
-                    jdbcTypeDictionary = new JdbcTypeDictionary.MysqlJdbcTypes();
+                    jdbcTypeDictionary = new JdbcTypeDictionary.StandandTypes();
                 }
                 else if (productName.equals("h2"))
                 {
                     pageParse = new StandardParse();
-                    jdbcTypeDictionary = new JdbcTypeDictionary.MysqlJdbcTypes();
+                    jdbcTypeDictionary = new JdbcTypeDictionary.StandandTypes();
                 }
                 else
                 {
@@ -253,7 +253,7 @@ public class SessionfactoryConfig
         @Override
         public void process() throws Exception
         {
-            MapperBuilder mapperBuilder = new MapperBuilder(metaContext, resultsetTransferStore, jdbcTypeDictionary);
+            MapperBuilder mapperBuilder = new MapperBuilder(metaContext, resultsetTransferStore);
             nextSqlInterface: for (Class<?> each : ckasses)
             {
                 if (each.isInterface())

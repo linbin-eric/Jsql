@@ -16,11 +16,11 @@ public interface JdbcTypeDictionary
 {
     JdbcType map(Class<?> type);
     
-    class MysqlJdbcTypes implements JdbcTypeDictionary
+    class StandandTypes implements JdbcTypeDictionary
     {
         private Map<Class<?>, JdbcType> types = new IdentityHashMap<Class<?>, JdbcType>();
         
-        public MysqlJdbcTypes()
+        public StandandTypes()
         {
             types.put(String.class, JdbcType.VARCHAR);
             types.put(BigDecimal.class, JdbcType.NUMERIC);

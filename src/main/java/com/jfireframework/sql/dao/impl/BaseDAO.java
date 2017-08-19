@@ -94,7 +94,7 @@ public abstract class BaseDAO<T> implements Dao<T>
         getInShareInfo = buildGetInShare(allMapFields, idField);
         useForSelf(allMapFields, idField);
         deleteSql = "delete from " + tableName + " where " + idField.getColName() + "=?";
-        strategyOperation = new StrategyOperationImpl<T>(entityClass, allMapFields, jdbcTypeDictionary);
+        strategyOperation = new StrategyOperationImpl<T>(entityClass, allMapFields);
     }
     
     protected abstract void useForSelf(MapField[] fields, MapField idField);

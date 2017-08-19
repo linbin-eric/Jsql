@@ -16,7 +16,6 @@ import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
 import com.jfireframework.sql.resultsettransfer.impl.BeanTransfer;
 import com.jfireframework.sql.resultsettransfer.impl.IntegerTransfer;
-import com.jfireframework.sql.util.JdbcTypeDictionary;
 
 public class StrategyOperationImpl<T> implements StrategyOperation<T>
 {
@@ -33,12 +32,10 @@ public class StrategyOperationImpl<T> implements StrategyOperation<T>
     private final ConcurrentMap<String, String>          deleteMap = new ConcurrentHashMap<String, String>();
     private final ConcurrentMap<String, String>          countMap  = new ConcurrentHashMap<String, String>();
     private final String                                 tableName;
-    private final JdbcTypeDictionary                     jdbcTypeDictionary;
     
-    public StrategyOperationImpl(Class<T> ckass, MapField[] mapFields, JdbcTypeDictionary jdbcTypeDictionary)
+    public StrategyOperationImpl(Class<T> ckass, MapField[] mapFields)
     {
         this.ckass = ckass;
-        this.jdbcTypeDictionary = jdbcTypeDictionary;
         this.mapFields = parse(mapFields);
         tableName = ckass.getAnnotation(TableEntity.class).name();
     }

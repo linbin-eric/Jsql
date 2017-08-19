@@ -103,6 +103,7 @@ public class Lexer
                     for (MapField mapField : tableMetaData.getFieldInfos())
                     {
                         fieldNames.put(entityAlias + '.' + mapField.getFieldName(), entityAlias + "." + mapField.getColName());
+                        fieldNames.put(mapField.getFieldName(), entityAlias + "." + mapField.getColName());
                     }
                 }
             }

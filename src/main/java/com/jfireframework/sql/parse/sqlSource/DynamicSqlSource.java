@@ -90,6 +90,7 @@ public class DynamicSqlSource extends AbstractSqlSource
                 {
                     methodBody += "\tint length = tmp.length;\r\n";
                 }
+                methodBody += "\tbuilder.append('(');\r\n";
                 methodBody += "\tfor(int i=0;i<length;i++){builder.append(\"?,\");}\r\n";
                 methodBody += "\tif(builder.isCommaLast()){builder.deleteLast().append(\")\");}\r\n";
                 if (List.class.isAssignableFrom(paramType))
@@ -185,8 +186,9 @@ public class DynamicSqlSource extends AbstractSqlSource
             @Override
             public String run(String methodBody)
             {
+                String pageVariable = "$" + (method.getParameterTypes().length - 1);
                 int sn = resultsetTransferStore.registerTransfer(method);
-                methodBody += "return session.queryList(sessionFactory.getResultSetTransferStore().get(" + sn + "),sql,list.toArray());\r\n";
+                methodBody += "return session.queryList(sessionFactory.getResultSetTransferStore().get(" + sn + "),sql," + pageVariable + ",list.toArray());\r\n";
                 return methodBody;
             }
         };

@@ -126,8 +126,9 @@ public class StaticSqlSource extends AbstractSqlSource
             public String run(String methodBody, List<String> params)
             {
                 int sn = resultsetTransferStore.registerTransfer(method);
+                String pageVariable = "$" + (method.getParameterTypes().length - 1);
                 methodBody += "return session.queryList("//
-                        + "sessionFactory.getResultSetTransferStore().get(" + sn + "),sql,$" + (method.getParameterTypes().length - 1);
+                        + "sessionFactory.getResultSetTransferStore().get(" + sn + "),sql," + pageVariable;
                 if (params.isEmpty())
                 {
                     methodBody += ");\r\n";
