@@ -4,6 +4,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.List;
+import com.jfireframework.sql.interceptor.InterceptorChain;
+import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.page.PageParse;
 import com.jfireframework.sql.page.PageSqlCache;
@@ -40,7 +42,7 @@ public class StandardParse implements PageParse
     }
     
     @Override
-    public void doQuery(Object[] params, Connection connection, String sql, ResultSetTransfer transfer, Page page) throws Exception
+    public void doQuery(Object[] params, Connection connection, String sql, ResultSetTransfer transfer, Page page, SqlInterceptor[] interceptors) throws Exception
     {
         PreparedStatement pstat = null;
         ResultSet resultSet = null;
@@ -56,6 +58,23 @@ public class StandardParse implements PageParse
             }
             pstat.setInt(index++, page.getOffset());
             pstat.setInt(index, page.getSize());
+            Object[] newParams = new Object[params.length + 2];
+            System.arraycopy(params, 0, newParams, 0, params.length);
+            newParams[params.length] = page.getOffset();
+            newParams[params.length + 1] = page.getSize();
+            if (interceptors.length != 0)
+            {
+                InterceptorChain chain = new InterceptorChain(interceptors);
+                if (chain.intercept(connection, querySql, newParams))
+                {
+                    querySql = chain.getSql();
+                    newParams = chain.getParams();
+                }
+                else
+                {
+                    return;
+                }
+            }
             resultSet = pstat.executeQuery();
             List<?> list = transfer.transferList(resultSet, querySql);
             page.setData(list);
@@ -66,6 +85,19 @@ public class StandardParse implements PageParse
             for (Object param : params)
             {
                 pstat.setObject(index++, param);
+            }
+            if (interceptors.length != 0)
+            {
+                InterceptorChain chain = new InterceptorChain(interceptors);
+                if (chain.intercept(connection, countSql, params))
+                {
+                    countSql = chain.getSql();
+                    params = chain.getParams();
+                }
+                else
+                {
+                    return;
+                }
             }
             resultSet = pstat.executeQuery();
             resultSet.next();
@@ -85,7 +117,7 @@ public class StandardParse implements PageParse
     }
     
     @Override
-    public void queryWithoutCount(Object[] params, Connection connection, String sql, ResultSetTransfer transfer, Page page) throws Exception
+    public void queryWithoutCount(Object[] params, Connection connection, String sql, ResultSetTransfer transfer, Page page, SqlInterceptor[] interceptors) throws Exception
     {
         PreparedStatement pstat = null;
         ResultSet resultSet = null;
@@ -100,6 +132,23 @@ public class StandardParse implements PageParse
             }
             pstat.setInt(index++, page.getOffset());
             pstat.setInt(index, page.getSize());
+            Object[] newParams = new Object[params.length + 2];
+            System.arraycopy(params, 0, newParams, 0, params.length);
+            newParams[params.length] = page.getOffset();
+            newParams[params.length + 1] = page.getSize();
+            if (interceptors.length != 0)
+            {
+                InterceptorChain chain = new InterceptorChain(interceptors);
+                if (chain.intercept(connection, querySql, newParams))
+                {
+                    querySql = chain.getSql();
+                    newParams = chain.getParams();
+                }
+                else
+                {
+                    return;
+                }
+            }
             resultSet = pstat.executeQuery();
             List<?> list = transfer.transferList(resultSet, querySql);
             page.setData(list);

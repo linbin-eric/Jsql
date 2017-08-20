@@ -145,26 +145,13 @@ public class ExecSqlTemplate
         ResultSet resultSet = null;
         try
         {
-            if (interceptors.length != 0)
-            {
-                InterceptorChain chain = new InterceptorChain(interceptors);
-                if (chain.intercept(connection, sql, params))
-                {
-                    sql = chain.getSql();
-                    params = chain.getParams();
-                }
-                else
-                {
-                    return chain.getResult();
-                }
-            }
             if (pageStore.isFetchSum())
             {
-                parse.doQuery(params, connection, sql, transfer, pageStore);
+                parse.doQuery(params, connection, sql, transfer, pageStore, interceptors);
             }
             else
             {
-                parse.queryWithoutCount(params, connection, sql, transfer, pageStore);
+                parse.queryWithoutCount(params, connection, sql, transfer, pageStore, interceptors);
             }
             return pageStore.getData();
         }
