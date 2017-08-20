@@ -1,6 +1,7 @@
 package com.jfireframework.sql.resultsettransfer.impl;
 
 import java.sql.ResultSet;
+import com.jfireframework.sql.SessionfactoryConfig;
 
 public class ShortTransfer extends AbstractResultsetTransfer
 {
@@ -12,7 +13,7 @@ public class ShortTransfer extends AbstractResultsetTransfer
     }
     
     @Override
-    public void initialize(Class<?> type)
+    public void initialize(Class<?> type, SessionfactoryConfig config)
     {
     }
     

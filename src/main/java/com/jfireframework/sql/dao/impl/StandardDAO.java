@@ -3,21 +3,21 @@ package com.jfireframework.sql.dao.impl;
 import java.util.ArrayList;
 import java.util.List;
 import com.jfireframework.baseutil.collection.StringCache;
+import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.SqlSession;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.session.ExecSqlTemplate;
-import com.jfireframework.sql.util.JdbcTypeDictionary;
 
 public class StandardDAO<T> extends BaseDAO<T>
 {
     protected SqlAndFields insertInfo;
     private SqlAndFields   identityInsertInfo;
     
-    public StandardDAO(TableMetaData metaData, SqlInterceptor[] sqlInterceptors, JdbcTypeDictionary jdbcTypeDictionary)
+    public StandardDAO(TableMetaData metaData, SqlInterceptor[] sqlInterceptors, SessionfactoryConfig config)
     {
-        super(metaData, sqlInterceptors, jdbcTypeDictionary);
+        super(metaData, sqlInterceptors, config);
     }
     
     @Override

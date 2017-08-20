@@ -14,6 +14,7 @@ public class EnumOrdinalOperator extends AbstractFieldOperator
     @SuppressWarnings({ "unchecked" })
     public void initialize(Field field)
     {
+        offset = unsafe.objectFieldOffset(field);
         Map<String, ? extends Enum<?>> instances = ReflectUtil.getAllEnumInstances((Class<? extends Enum<?>>) field.getType());
         allEnumInstances = new Enum[instances.size()];
         for (Enum<?> each : instances.values())
@@ -23,7 +24,7 @@ public class EnumOrdinalOperator extends AbstractFieldOperator
     }
     
     @Override
-    public void setEntityValue(Object entity, Field field, String dbColName, long offset, ResultSet resultSet) throws SQLException
+    public void setEntityValue(Object entity, String dbColName, ResultSet resultSet) throws SQLException
     {
         int value = resultSet.getInt(dbColName);
         Enum<?> result = allEnumInstances[value];
@@ -31,7 +32,7 @@ public class EnumOrdinalOperator extends AbstractFieldOperator
     }
     
     @Override
-    public Object fieldValue(Object entity, Field field, long offset)
+    public Object fieldValue(Object entity)
     {
         Enum<?> value = ((Enum<?>) unsafe.getObject(entity, offset));
         return value == null ? null : value.ordinal();

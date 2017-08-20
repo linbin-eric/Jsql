@@ -26,6 +26,7 @@ import com.jfireframework.sql.dbstructure.impl.H2DBStructure;
 import com.jfireframework.sql.dbstructure.impl.HsqlDBStructure;
 import com.jfireframework.sql.dbstructure.impl.MariaDBStructure;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
+import com.jfireframework.sql.mapfield.FieldOperatorDictionary;
 import com.jfireframework.sql.mapper.Mapper;
 import com.jfireframework.sql.mapper.MapperBuilder;
 import com.jfireframework.sql.metadata.MetaContext;
@@ -33,6 +34,7 @@ import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.page.PageParse;
 import com.jfireframework.sql.page.impl.OracleParse;
 import com.jfireframework.sql.page.impl.StandardParse;
+import com.jfireframework.sql.resultsettransfer.ResultSetTransferDictionary;
 import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore;
 import com.jfireframework.sql.session.impl.SessionFactoryImpl;
 import com.jfireframework.sql.util.JdbcTypeDictionary;
@@ -53,6 +55,8 @@ public class SessionfactoryConfig
     private PageParse                         pageParse;
     private String                            productName;
     private JdbcTypeDictionary                jdbcTypeDictionary;
+    private FieldOperatorDictionary           fieldOperatorDictionary;
+    private ResultSetTransferDictionary       resultSetTransferDictionary;
     protected static final Logger             logger      = LoggerFactory.getLogger(SessionfactoryConfig.class);
     
     public SessionFactory build()
@@ -61,7 +65,9 @@ public class SessionfactoryConfig
         {
             Verify.notNull(dataSource, "no dataSource set");
             Verify.notNull(scanPackage, "sql的扫描路径不能为空");
-            resultsetTransferStore = resultsetTransferStore == null ? new ResultsetTransferStore() : resultsetTransferStore;
+            resultSetTransferDictionary = resultSetTransferDictionary == null ? new ResultSetTransferDictionary.BuildInResultSetTransferDictionary() : resultSetTransferDictionary;
+            fieldOperatorDictionary = fieldOperatorDictionary == null ? new FieldOperatorDictionary.BuildInFieldOperatorDictionary() : fieldOperatorDictionary;
+            resultsetTransferStore = new ResultsetTransferStore(resultSetTransferDictionary, SessionfactoryConfig.this);
             Stage[] processors = new Stage[] { //
                     new buildClassSet(), //
                     new initSqlInterceptor(), //
@@ -147,22 +153,22 @@ public class SessionfactoryConfig
                 if (productName.equals("mariadb") || "mysql".equals(productName))
                 {
                     pageParse = new StandardParse();
-                    jdbcTypeDictionary = new JdbcTypeDictionary.StandandTypes();
+                    jdbcTypeDictionary = jdbcTypeDictionary == null ? new JdbcTypeDictionary.StandandTypeDictionary() : jdbcTypeDictionary;
                 }
                 else if (productName.equals("oracle"))
                 {
                     pageParse = new OracleParse();
-                    jdbcTypeDictionary = new JdbcTypeDictionary.StandandTypes();
+                    jdbcTypeDictionary = jdbcTypeDictionary == null ? new JdbcTypeDictionary.StandandTypeDictionary() : jdbcTypeDictionary;
                 }
                 else if (productName.contains("hsql"))
                 {
                     pageParse = new StandardParse();
-                    jdbcTypeDictionary = new JdbcTypeDictionary.StandandTypes();
+                    jdbcTypeDictionary = jdbcTypeDictionary == null ? new JdbcTypeDictionary.StandandTypeDictionary() : jdbcTypeDictionary;
                 }
                 else if (productName.equals("h2"))
                 {
                     pageParse = new StandardParse();
-                    jdbcTypeDictionary = new JdbcTypeDictionary.StandandTypes();
+                    jdbcTypeDictionary = jdbcTypeDictionary == null ? new JdbcTypeDictionary.StandandTypeDictionary() : jdbcTypeDictionary;
                 }
                 else
                 {
@@ -186,7 +192,7 @@ public class SessionfactoryConfig
         @Override
         public void process() throws Exception
         {
-            metaContext = new MetaContext(ckasses, jdbcTypeDictionary);
+            metaContext = new MetaContext(ckasses, SessionfactoryConfig.this);
         }
         
     }
@@ -285,19 +291,19 @@ public class SessionfactoryConfig
                 {
                     if (productName.equals("mysql") || productName.equals("marridb"))
                     {
-                        daos.put(each.getEntityClass(), new MysqlDAO(each, sqlInterceptors, jdbcTypeDictionary));
+                        daos.put(each.getEntityClass(), new MysqlDAO(each, sqlInterceptors, SessionfactoryConfig.this));
                     }
                     else if (productName.equals("oracle"))
                     {
-                        daos.put(each.getEntityClass(), new OracleDAO(each, sqlInterceptors, jdbcTypeDictionary));
+                        daos.put(each.getEntityClass(), new OracleDAO(each, sqlInterceptors, SessionfactoryConfig.this));
                     }
                     else if (productName.contains("hsql"))
                     {
-                        daos.put(each.getEntityClass(), new StandardDAO(each, sqlInterceptors, jdbcTypeDictionary));
+                        daos.put(each.getEntityClass(), new StandardDAO(each, sqlInterceptors, SessionfactoryConfig.this));
                     }
                     else if (productName.equals("h2"))
                     {
-                        daos.put(each.getEntityClass(), new StandardDAO(each, sqlInterceptors, jdbcTypeDictionary));
+                        daos.put(each.getEntityClass(), new StandardDAO(each, sqlInterceptors, SessionfactoryConfig.this));
                     }
                     else
                     {
@@ -327,6 +333,36 @@ public class SessionfactoryConfig
     public void setScanPackage(String scanPackage)
     {
         this.scanPackage = scanPackage;
+    }
+    
+    public JdbcTypeDictionary getJdbcTypeDictionary()
+    {
+        return jdbcTypeDictionary;
+    }
+    
+    public void setJdbcTypeDictionary(JdbcTypeDictionary jdbcTypeDictionary)
+    {
+        this.jdbcTypeDictionary = jdbcTypeDictionary;
+    }
+    
+    public FieldOperatorDictionary getFieldOperatorDictionary()
+    {
+        return fieldOperatorDictionary;
+    }
+    
+    public void setFieldOperatorDictionary(FieldOperatorDictionary fieldOperatorDictionary)
+    {
+        this.fieldOperatorDictionary = fieldOperatorDictionary;
+    }
+    
+    public ResultSetTransferDictionary getResultSetTransferDictionary()
+    {
+        return resultSetTransferDictionary;
+    }
+    
+    public void setResultSetTransferDictionary(ResultSetTransferDictionary resultSetTransferDictionary)
+    {
+        this.resultSetTransferDictionary = resultSetTransferDictionary;
     }
     
 }

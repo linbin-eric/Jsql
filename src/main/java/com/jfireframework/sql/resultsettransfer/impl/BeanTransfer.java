@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
+import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.annotation.NameStrategy;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
@@ -60,7 +61,7 @@ public class BeanTransfer extends AbstractResultsetTransfer
     }
     
     @Override
-    public void initialize(Class<?> type)
+    public void initialize(Class<?> type, SessionfactoryConfig config)
     {
         this.type = type;
         ColNameStrategy colNameStrategy;
@@ -80,7 +81,7 @@ public class BeanTransfer extends AbstractResultsetTransfer
             {
                 continue;
             }
-            list.add(new MapFieldImpl(each, colNameStrategy));
+            list.add(new MapFieldImpl(each, colNameStrategy, config.getFieldOperatorDictionary()));
         }
         mapFields = new HashMap<String, MapField>();
         for (MapField each : list)

@@ -14,11 +14,12 @@ public class EnumNameOperator extends AbstractFieldOperator
     @SuppressWarnings({ "unchecked" })
     public void initialize(Field field)
     {
+        offset = unsafe.objectFieldOffset(field);
         allEnumInstances = ReflectUtil.getAllEnumInstances((Class<? extends Enum<?>>) field.getType());
     }
     
     @Override
-    public void setEntityValue(Object entity, Field field, String dbColName, long offset, ResultSet resultSet) throws SQLException
+    public void setEntityValue(Object entity, String dbColName, ResultSet resultSet) throws SQLException
     {
         String value = resultSet.getString(dbColName);
         Enum<?> result = allEnumInstances.get(value);
@@ -26,7 +27,7 @@ public class EnumNameOperator extends AbstractFieldOperator
     }
     
     @Override
-    public Object fieldValue(Object entity, Field field, long offset)
+    public Object fieldValue(Object entity)
     {
         Enum<?> value = ((Enum<?>) unsafe.getObject(entity, offset));
         return value == null ? null : value.name();

@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
+import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.SqlSession;
 import com.jfireframework.sql.annotation.Id;
 import com.jfireframework.sql.annotation.TableEntity;
@@ -20,7 +21,6 @@ import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
 import com.jfireframework.sql.resultsettransfer.impl.BeanTransfer;
 import com.jfireframework.sql.util.IdType;
-import com.jfireframework.sql.util.JdbcTypeDictionary;
 import sun.misc.Unsafe;
 
 public abstract class BaseDAO<T> implements Dao<T>
@@ -67,12 +67,12 @@ public abstract class BaseDAO<T> implements Dao<T>
     protected final SqlInterceptor[]     sqlInterceptors;
     
     @SuppressWarnings({ "unchecked" })
-    public BaseDAO(TableMetaData metaData, SqlInterceptor[] sqlInterceptors, JdbcTypeDictionary jdbcTypeDictionary)
+    public BaseDAO(TableMetaData metaData, SqlInterceptor[] sqlInterceptors, SessionfactoryConfig config)
     {
         this.entityClass = (Class<T>) metaData.getEntityClass();
         this.sqlInterceptors = sqlInterceptors;
         transfer = new BeanTransfer();
-        transfer.initialize(entityClass);
+        transfer.initialize(entityClass, config);
         tableName = entityClass.getAnnotation(TableEntity.class).name();
         MapField[] allMapFields = metaData.getFieldInfos();
         MapField t_id = null;
@@ -94,7 +94,7 @@ public abstract class BaseDAO<T> implements Dao<T>
         getInShareInfo = buildGetInShare(allMapFields, idField);
         useForSelf(allMapFields, idField);
         deleteSql = "delete from " + tableName + " where " + idField.getColName() + "=?";
-        strategyOperation = new StrategyOperationImpl<T>(entityClass, allMapFields);
+        strategyOperation = new StrategyOperationImpl<T>(entityClass, allMapFields, config);
     }
     
     protected abstract void useForSelf(MapField[] fields, MapField idField);

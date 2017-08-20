@@ -2,6 +2,7 @@ package com.jfireframework.sql.resultsettransfer.impl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import com.jfireframework.sql.SessionfactoryConfig;
 
 public class StringTransfer extends AbstractResultsetTransfer
 {
@@ -13,7 +14,7 @@ public class StringTransfer extends AbstractResultsetTransfer
     }
     
     @Override
-    public void initialize(Class<?> type)
+    public void initialize(Class<?> type, SessionfactoryConfig config)
     {
     }
     

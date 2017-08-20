@@ -1,15 +1,7 @@
 package com.jfireframework.sql.mapper;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.lang.reflect.WildcardType;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.jfireframework.baseutil.StringUtil;
@@ -18,11 +10,8 @@ import com.jfireframework.baseutil.smc.SmcHelper;
 import com.jfireframework.baseutil.smc.compiler.JavaStringCompiler;
 import com.jfireframework.baseutil.smc.model.CompilerModel;
 import com.jfireframework.baseutil.smc.model.MethodModel;
-import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.annotation.Sql;
-import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.metadata.MetaContext;
-import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.parse.DefaultMethodParser;
 import com.jfireframework.sql.parse.MethodParser;
@@ -31,8 +20,8 @@ import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore;
 public class MapperBuilder
 {
     private final MetaContext   metaContext;
+    private final MethodParser  methodParser;
     private static final Logger logger = LoggerFactory.getLogger(MapperBuilder.class);
-    private MethodParser        methodParser;
     
     public MapperBuilder(MetaContext metaContext, ResultsetTransferStore resultsetTransferStore)
     {
@@ -93,15 +82,7 @@ public class MapperBuilder
     
     private boolean detectIsList(Method method)
     {
-        boolean isList = List.class.isAssignableFrom(method.getReturnType()) ? true : false;
-        if (isList)
-        {
-            Verify.True(((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0].getClass().equals(Class.class), "方法{}.{}返回类型是泛型，不允许，请指定具体的类型", method.getDeclaringClass(), method.getName());
-            Type returnParamType = ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0];
-            // 方法返回不能是泛型
-            Verify.False(returnParamType instanceof WildcardType, "接口的返回类型不能是泛型，请检查{}.{}", method.getDeclaringClass().getName(), method.getName());
-        }
-        return isList;
+        return List.class.isAssignableFrom(method.getReturnType()) ? true : false;
     }
     
     private boolean detectIsPage(Method method)
@@ -147,76 +128,6 @@ public class MapperBuilder
         MethodModel methodModel = new MethodModel(method);
         methodModel.setBody(methodBody);
         compilerModel.putMethod(method, methodModel);
-    }
-    
-    public static class SqlContext
-    {
-        private Set<TableMetaData>  metaContexts = new HashSet<TableMetaData>();
-        private Map<String, String> dbColNameMap = new HashMap<String, String>();
-        private Map<String, String> fieldNameMap = new HashMap<String, String>();
-        private String              sql;
-        private List<String>        params       = new LinkedList<String>();
-        
-        public List<String> getParams()
-        {
-            return params;
-        }
-        
-        public void addParams(String param)
-        {
-            params.add(param);
-        }
-        
-        public String getSql()
-        {
-            return sql;
-        }
-        
-        public void setSql(String sql)
-        {
-            this.sql = sql;
-        }
-        
-        public void addMetaData(TableMetaData metaData)
-        {
-            if (metaData == null)
-            {
-                throw new NullPointerException();
-            }
-            if (metaContexts.add(metaData) == false)
-            {
-                return;
-            }
-            Class<?> type = metaData.getEntityClass();
-            String prefix = type.getSimpleName() + '.';
-            String tablePrefix = metaData.getTableName() + ".";
-            for (MapField each : metaData.getFieldInfos())
-            {
-                dbColNameMap.put(each.getFieldName(), tablePrefix + each.getColName());
-                dbColNameMap.put(prefix + each.getFieldName(), tablePrefix + each.getColName());
-                fieldNameMap.put(tablePrefix + each.getColName(), each.getFieldName());
-            }
-        }
-        
-        public void addAliasName(String name, TableMetaData metaData)
-        {
-            if (metaData == null)
-            {
-                throw new NullPointerException();
-            }
-            String prefix = name + '.';
-            for (MapField each : metaData.getFieldInfos())
-            {
-                dbColNameMap.put(each.getFieldName(), prefix + each.getColName());
-                dbColNameMap.put(prefix + each.getFieldName(), prefix + each.getColName());
-                fieldNameMap.put(prefix + each.getColName(), each.getFieldName());
-            }
-        }
-        
-        public String getDbColName(String fieldName)
-        {
-            return dbColNameMap.get(fieldName);
-        }
     }
     
 }

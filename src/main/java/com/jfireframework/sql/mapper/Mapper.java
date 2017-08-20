@@ -10,8 +10,7 @@ import com.jfireframework.sql.SessionFactory;
  */
 public abstract class Mapper
 {
-    protected SessionFactory        sessionFactory;
-    protected static final Object[] emptyParams = new Object[0];
+    protected SessionFactory sessionFactory;
     
     public void setSessionFactory(SessionFactory sessionFactory)
     {

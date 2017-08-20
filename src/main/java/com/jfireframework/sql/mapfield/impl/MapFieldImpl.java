@@ -8,6 +8,7 @@ import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.annotation.Column;
 import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 import com.jfireframework.sql.mapfield.FieldOperator;
+import com.jfireframework.sql.mapfield.FieldOperatorDictionary;
 import com.jfireframework.sql.mapfield.FieldOperatorUtil;
 import com.jfireframework.sql.mapfield.MapField;
 import sun.misc.Unsafe;
@@ -24,12 +25,12 @@ public class MapFieldImpl implements MapField
     protected final long          offset;
     protected final String        dbColName;
     protected final Field         field;
-    protected FieldOperator       valueFetcher;
+    protected FieldOperator       operator;
     
-    public MapFieldImpl(Field field, ColNameStrategy colNameStrategy)
+    public MapFieldImpl(Field field, ColNameStrategy colNameStrategy, FieldOperatorDictionary fieldOperatorDictionary)
     {
         offset = unsafe.objectFieldOffset(field);
-        valueFetcher = FieldOperatorUtil.getFieldOperator(field);
+        operator = FieldOperatorUtil.getFieldOperator(field, fieldOperatorDictionary);
         this.field = field;
         if (field.isAnnotationPresent(Column.class))
         {
@@ -73,33 +74,21 @@ public class MapFieldImpl implements MapField
     }
     
     @Override
-    public int hashCode()
-    {
-        return field.hashCode();
-    }
-    
-    @Override
-    public boolean equals(Object o)
-    {
-        return field.equals(o);
-    }
-    
-    @Override
     public FieldOperator fieldOperator()
     {
-        return valueFetcher;
+        return operator;
     }
     
     @Override
     public void setEntityValue(Object entity, ResultSet resultSet) throws SQLException
     {
-        valueFetcher.setEntityValue(entity, field, dbColName, offset, resultSet);
+        operator.setEntityValue(entity, dbColName, resultSet);
     }
     
     @Override
     public Object fieldValue(Object entity)
     {
-        return valueFetcher.fieldValue(entity, field, offset);
+        return operator.fieldValue(entity);
     }
     
 }

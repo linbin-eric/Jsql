@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentMap;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.verify.Verify;
+import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.SqlSession;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.dao.StrategyOperation;
@@ -32,10 +33,12 @@ public class StrategyOperationImpl<T> implements StrategyOperation<T>
     private final ConcurrentMap<String, String>          deleteMap = new ConcurrentHashMap<String, String>();
     private final ConcurrentMap<String, String>          countMap  = new ConcurrentHashMap<String, String>();
     private final String                                 tableName;
+    private SessionfactoryConfig                         config;
     
-    public StrategyOperationImpl(Class<T> ckass, MapField[] mapFields)
+    public StrategyOperationImpl(Class<T> ckass, MapField[] mapFields, SessionfactoryConfig config)
     {
         this.ckass = ckass;
+        this.config = config;
         this.mapFields = parse(mapFields);
         tableName = ckass.getAnnotation(TableEntity.class).name();
     }
@@ -171,7 +174,7 @@ public class StrategyOperationImpl<T> implements StrategyOperation<T>
         FindStrategySql findStrategySql = new FindStrategySql();
         findStrategySql.sql = cache.toString();
         findStrategySql.transfer = new BeanTransfer();
-        findStrategySql.transfer.initialize(ckass);
+        findStrategySql.transfer.initialize(ckass, config);
         return findStrategySql;
     }
     

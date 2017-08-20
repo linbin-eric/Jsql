@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
+import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.annotation.Column;
 import com.jfireframework.sql.annotation.Id;
 import com.jfireframework.sql.annotation.SqlIgnore;
@@ -28,7 +29,7 @@ public class TableMetaData
     private final ColNameStrategy          colNameStrategy;
     private final boolean                  editable;
     
-    public TableMetaData(Class<?> ckass, ColNameStrategy nameStrategy, JdbcTypeDictionary jdbcTypeDictionary)
+    public TableMetaData(Class<?> ckass, ColNameStrategy nameStrategy, SessionfactoryConfig config)
     {
         this.ckass = ckass;
         this.colNameStrategy = nameStrategy;
@@ -43,9 +44,9 @@ public class TableMetaData
             {
                 continue;
             }
-            MapField mapField = new MapFieldImpl(each, nameStrategy);
+            MapField mapField = new MapFieldImpl(each, nameStrategy, config.getFieldOperatorDictionary());
             list.add(mapField);
-            descMap.put(mapField, buildFieldDesc(each, jdbcTypeDictionary));
+            descMap.put(mapField, buildFieldDesc(each, config.getJdbcTypeDictionary()));
             if (each.isAnnotationPresent(Id.class))
             {
                 t_idField = each;
@@ -58,8 +59,8 @@ public class TableMetaData
             {
                 throw new IllegalArgumentException("作为主键的属性不可以使用基本类型，必须使用包装类。请检查" + t_idField.getDeclaringClass().getName() + "." + t_idField.getName());
             }
-            idInfo = new MapFieldImpl(t_idField, nameStrategy);
-            descMap.put(idInfo, buildFieldDesc(t_idField, jdbcTypeDictionary));
+            idInfo = new MapFieldImpl(t_idField, nameStrategy, config.getFieldOperatorDictionary());
+            descMap.put(idInfo, buildFieldDesc(t_idField, config.getJdbcTypeDictionary()));
         }
         else
         {

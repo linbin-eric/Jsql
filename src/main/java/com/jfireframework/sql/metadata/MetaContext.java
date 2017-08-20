@@ -4,11 +4,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.annotation.NameStrategy;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 import com.jfireframework.sql.dbstructure.name.DefaultNameStrategy;
-import com.jfireframework.sql.util.JdbcTypeDictionary;
 
 public class MetaContext
 {
@@ -16,13 +16,13 @@ public class MetaContext
     private final TableMetaData[]                                        metaDatas;
     private final Map<Class<? extends ColNameStrategy>, ColNameStrategy> map       = new HashMap<Class<? extends ColNameStrategy>, ColNameStrategy>();
     
-    public MetaContext(Set<Class<?>> set, JdbcTypeDictionary jdbcTypeDictionary)
+    public MetaContext(Set<Class<?>> set, SessionfactoryConfig config)
     {
         for (Class<?> each : set)
         {
             if (each.isAnnotationPresent(TableEntity.class))
             {
-                TableMetaData tableMetaData = new TableMetaData(each, getColNameStrategy(each), jdbcTypeDictionary);
+                TableMetaData tableMetaData = new TableMetaData(each, getColNameStrategy(each), config);
                 entityMap.put(each.getSimpleName(), tableMetaData);
             }
         }

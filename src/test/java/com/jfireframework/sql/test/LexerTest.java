@@ -4,6 +4,8 @@ import java.util.HashSet;
 import java.util.Set;
 import org.junit.Assert;
 import org.junit.Test;
+import com.jfireframework.sql.SessionfactoryConfig;
+import com.jfireframework.sql.mapfield.FieldOperatorDictionary;
 import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.parse.lexer.Lexer;
 import com.jfireframework.sql.test.vo.User;
@@ -51,7 +53,10 @@ public class LexerTest
     {
         Set<Class<?>> set = new HashSet<Class<?>>();
         set.add(User.class);
-        MetaContext metaContext = new MetaContext(set, new JdbcTypeDictionary.StandandTypes());
+        SessionfactoryConfig config = new SessionfactoryConfig();
+        config.setJdbcTypeDictionary(new JdbcTypeDictionary.StandandTypeDictionary());
+        config.setFieldOperatorDictionary(new FieldOperatorDictionary.BuildInFieldOperatorDictionary());
+        MetaContext metaContext = new MetaContext(set, config);
         String sql = "select name from User";
         Assert.assertEquals("select name from user", new Lexer(sql).parseEntity(metaContext).toString());
     }
@@ -61,7 +66,10 @@ public class LexerTest
     {
         Set<Class<?>> set = new HashSet<Class<?>>();
         set.add(User.class);
-        MetaContext metaContext = new MetaContext(set, new JdbcTypeDictionary.StandandTypes());
+        SessionfactoryConfig config = new SessionfactoryConfig();
+        config.setJdbcTypeDictionary(new JdbcTypeDictionary.StandandTypeDictionary());
+        config.setFieldOperatorDictionary(new FieldOperatorDictionary.BuildInFieldOperatorDictionary());
+        MetaContext metaContext = new MetaContext(set, config);
         String sql = "select name,age from User";
         Assert.assertEquals("select user.name2 , user.age from user", new Lexer(sql).parse(metaContext).toString());
         sql = "select u.name,u.age from User as u";
