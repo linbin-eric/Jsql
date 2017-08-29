@@ -34,23 +34,23 @@ public interface ResultSetTransferDictionary
         
         public BuildInResultSetTransferDictionary()
         {
-            transfers.putIfAbsent(boolean.class, BooleanTransfer.class);
-            transfers.putIfAbsent(Boolean.class, BooleanTransfer.class);
-            transfers.putIfAbsent(double.class, DoubleTransfer.class);
-            transfers.putIfAbsent(Double.class, DoubleTransfer.class);
-            transfers.putIfAbsent(float.class, FloatTransfer.class);
-            transfers.putIfAbsent(Float.class, FloatTransfer.class);
-            transfers.putIfAbsent(int.class, IntegerTransfer.class);
-            transfers.putIfAbsent(Integer.class, IntegerTransfer.class);
-            transfers.putIfAbsent(long.class, LongTransfer.class);
-            transfers.putIfAbsent(Long.class, LongTransfer.class);
-            transfers.putIfAbsent(short.class, ShortTransfer.class);
-            transfers.putIfAbsent(Short.class, ShortTransfer.class);
-            transfers.putIfAbsent(Date.class, SqlDateTransfer.class);
-            transfers.putIfAbsent(java.util.Date.class, UtilDateTransfer.class);
-            transfers.putIfAbsent(String.class, StringTransfer.class);
-            transfers.putIfAbsent(Timestamp.class, TimeStampTransfer.class);
-            transfers.putIfAbsent(Time.class, TimeTransfer.class);
+            transfers.put(boolean.class, BooleanTransfer.class);
+            transfers.put(Boolean.class, BooleanTransfer.class);
+            transfers.put(double.class, DoubleTransfer.class);
+            transfers.put(Double.class, DoubleTransfer.class);
+            transfers.put(float.class, FloatTransfer.class);
+            transfers.put(Float.class, FloatTransfer.class);
+            transfers.put(int.class, IntegerTransfer.class);
+            transfers.put(Integer.class, IntegerTransfer.class);
+            transfers.put(long.class, LongTransfer.class);
+            transfers.put(Long.class, LongTransfer.class);
+            transfers.put(short.class, ShortTransfer.class);
+            transfers.put(Short.class, ShortTransfer.class);
+            transfers.put(Date.class, SqlDateTransfer.class);
+            transfers.put(java.util.Date.class, UtilDateTransfer.class);
+            transfers.put(String.class, StringTransfer.class);
+            transfers.put(Timestamp.class, TimeStampTransfer.class);
+            transfers.put(Time.class, TimeTransfer.class);
         }
         
         @Override
