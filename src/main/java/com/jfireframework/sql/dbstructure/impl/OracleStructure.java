@@ -37,7 +37,7 @@ public class OracleStructure extends AbstractDBStructure
 		String traceId = TRACEID.currentTraceId();
 		String tableName = tableMetaData.getTableName();
 		deletePkConstraint(connection, tableName);
-		String queryColumnSqlTemplate = "SELECT t.COLUMN_NAME,t.DATA_TYPE,c.COMMENTS FROM user_tab_columns t,user_col_comments c WHERE t.table_name = c.table_name AND t.column_name = c.column_name AND t.table_name ='{}' AND t.COLUMN_NAME = '{}'";
+		String queryColumnSqlTemplate = "SELECT t.DATA_TYPE,c.COMMENTS FROM user_tab_columns t,user_col_comments c WHERE t.table_name = c.table_name AND t.column_name = c.column_name AND t.table_name ='{}' AND t.COLUMN_NAME = '{}'";
 		for (MapField each : tableMetaData.getFieldInfos())
 		{
 			String sql = StringUtil.format(queryColumnSqlTemplate, tableName, each.getColName());
@@ -46,7 +46,7 @@ public class OracleStructure extends AbstractDBStructure
 			if (executeQuery.next())
 			{
 				logger.trace("traceId:{} 表:{}中的列:{}存在", traceId, tableName, each.getColName());
-				String dataType = executeQuery.getString(2);
+				String dataType = executeQuery.getString(1);
 				ColumnType columnType = tableMetaData.columnType(each);
 				if (columnType.type().equals(dataType))
 				{

@@ -21,7 +21,7 @@ public class MysqlTest
 		config.setDataSource(dataSource);
 		config.setScanPackage("com.jfireframework.sql.test.mysqltest");
 		config.setSchema("openapi");
-		config.setTableMode("create");
+		config.setTableMode("update");
 		SessionFactory sessionFactory = config.build();
 		SqlSession session = sessionFactory.openSession();
 	}

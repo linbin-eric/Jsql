@@ -52,35 +52,6 @@ public class H2DBStructure extends AbstractDBStructure
         connection.prepareStatement(cache.toString()).execute();
     }
     
-    @Override
-    public void updateTable(DataSource dataSource, TableMetaData[] metaDatas) throws SQLException
-    {
-        Connection connection = null;
-        try
-        {
-            connection = dataSource.getConnection();
-            connection.setAutoCommit(false);
-            for (TableMetaData metaData : metaDatas)
-            {
-                try
-                {
-                    _updateTable(connection, metaData);
-                }
-                catch (Exception e)
-                {
-                    _createTable(connection, metaData);
-                }
-            }
-            connection.commit();
-        }
-        finally
-        {
-            if (connection != null)
-            {
-                connection.close();
-            }
-        }
-    }
     
     protected void _updateTable(Connection connection, TableMetaData tableMetaData) throws SQLException
     {
