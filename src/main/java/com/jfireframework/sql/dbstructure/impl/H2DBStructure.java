@@ -11,7 +11,12 @@ import com.jfireframework.sql.metadata.TableMetaData;
 
 public class H2DBStructure extends AbstractDBStructure
 {
-    @Override
+    public H2DBStructure(String schema)
+	{
+		super(schema);
+	}
+
+	@Override
     protected void _createTable(Connection connection, TableMetaData tableMetaData) throws SQLException
     {
         String tableName = tableMetaData.getTableName();
@@ -77,7 +82,7 @@ public class H2DBStructure extends AbstractDBStructure
         }
     }
     
-    private void _updateTable(Connection connection, TableMetaData tableMetaData) throws SQLException
+    protected void _updateTable(Connection connection, TableMetaData tableMetaData) throws SQLException
     {
         String tableName = tableMetaData.getTableName();
         String addColSql = "alter table " + tableName + " add ";
@@ -135,5 +140,12 @@ public class H2DBStructure extends AbstractDBStructure
             rs.close();
         }
     }
+
+	@Override
+	protected boolean checkIfTableExists(Connection connection, TableMetaData metaData) throws SQLException
+	{
+		// TODO Auto-generated method stub
+		return false;
+	}
     
 }

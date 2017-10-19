@@ -9,196 +9,155 @@ import java.util.Map;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.SessionfactoryConfig;
-import com.jfireframework.sql.annotation.Column;
 import com.jfireframework.sql.annotation.Id;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableEntity;
+import com.jfireframework.sql.dbstructure.column.ColumnDesc;
+import com.jfireframework.sql.dbstructure.column.ColumnType;
+import com.jfireframework.sql.dbstructure.column.ColumnTypeDictionary;
 import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.mapfield.impl.MapFieldImpl;
-import com.jfireframework.sql.util.JdbcType;
-import com.jfireframework.sql.util.JdbcTypeDictionary;
 
 public class TableMetaData
 {
-    private final String                   tableName;
-    private final MapField[]               fieldInfos;
-    private final MapField                 idInfo;
-    private final Map<MapField, FieldDesc> descMap = new HashMap<MapField, FieldDesc>();
-    private final Class<?>                 ckass;
-    private final ColNameStrategy          colNameStrategy;
-    private final boolean                  editable;
-    
-    public TableMetaData(Class<?> ckass, ColNameStrategy nameStrategy, SessionfactoryConfig config)
-    {
-        this.ckass = ckass;
-        this.colNameStrategy = nameStrategy;
-        TableEntity entity = ckass.getAnnotation(TableEntity.class);
-        editable = entity.editable();
-        tableName = entity.name();
-        List<MapField> list = new LinkedList<MapField>();
-        Field t_idField = null;
-        for (Field each : ReflectUtil.getAllFields(ckass))
-        {
-            if (notTableField(each))
-            {
-                continue;
-            }
-            MapField mapField = new MapFieldImpl(each, nameStrategy, config.getFieldOperatorDictionary());
-            list.add(mapField);
-            descMap.put(mapField, buildFieldDesc(each, config.getJdbcTypeDictionary()));
-            if (each.isAnnotationPresent(Id.class))
-            {
-                t_idField = each;
-            }
-        }
-        fieldInfos = list.toArray(new MapField[list.size()]);
-        if (t_idField != null)
-        {
-            if (t_idField.getType().isPrimitive())
-            {
-                throw new IllegalArgumentException("作为主键的属性不可以使用基本类型，必须使用包装类。请检查" + t_idField.getDeclaringClass().getName() + "." + t_idField.getName());
-            }
-            idInfo = new MapFieldImpl(t_idField, nameStrategy, config.getFieldOperatorDictionary());
-            descMap.put(idInfo, buildFieldDesc(t_idField, config.getJdbcTypeDictionary()));
-        }
-        else
-        {
-            idInfo = null;
-        }
-    }
-    
-    FieldDesc buildFieldDesc(Field field, JdbcTypeDictionary jdbcTypeDictionary)
-    {
-        JdbcType jdbcType;
-        String desc;
-        if (field.isAnnotationPresent(Column.class))
-        {
-            Column column = field.getAnnotation(Column.class);
-            if (JdbcType.ADAPTIVE != column.jdbcType())
-            {
-                jdbcType = column.jdbcType();
-            }
-            else
-            {
-                if (jdbcTypeDictionary.map(field.getType()) == null)
-                {
-                    if (Enum.class.isAssignableFrom(field.getType()))
-                    {
-                        jdbcType = jdbcTypeDictionary.map(String.class);
-                    }
-                    else
-                    {
-                        throw new NullPointerException(StringUtil.format("字段:{}无法找到对应的sql映射。请进行自定义", field.getDeclaringClass().getName() + "." + field.getName()));
-                    }
-                }
-                else
-                {
-                    jdbcType = jdbcTypeDictionary.map(field.getType());
-                }
-            }
-            desc = "".equals(column.desc()) ? jdbcType.desc() : column.desc();
-        }
-        else
-        {
-            if (jdbcTypeDictionary.map(field.getType()) == null)
-            {
-                if (Enum.class.isAssignableFrom(field.getType()))
-                {
-                    jdbcType = jdbcTypeDictionary.map(String.class);
-                }
-                else
-                {
-                    throw new NullPointerException(StringUtil.format("字段:{}无法找到对应的sql映射。请进行自定义", field.getDeclaringClass().getName() + "." + field.getName()));
-                }
-            }
-            else
-            {
-                jdbcType = jdbcTypeDictionary.map(field.getType());
-            }
-            desc = jdbcType.desc();
-        }
-        FieldDesc fieldDesc = new FieldDesc();
-        fieldDesc.jdbcType = jdbcType;
-        fieldDesc.desc = desc;
-        return fieldDesc;
-    }
-    
-    public boolean editable()
-    {
-        return editable;
-    }
-    
-    private boolean notTableField(Field field)
-    {
-        if (field.isAnnotationPresent(SqlIgnore.class) //
-                || Map.class.isAssignableFrom(field.getType())//
-                || List.class.isAssignableFrom(field.getType())//
-                || field.getType().isInterface()//
-                || Modifier.isStatic(field.getModifiers()))
-        {
-            return true;
-        }
-        else
-        {
-            return false;
-        }
-    }
-    
-    public ColNameStrategy getColNameStrategy()
-    {
-        return colNameStrategy;
-    }
-    
-    public String getTableName()
-    {
-        return tableName;
-    }
-    
-    public MapField[] getFieldInfos()
-    {
-        return fieldInfos;
-    }
-    
-    public MapField getIdInfo()
-    {
-        return idInfo;
-    }
-    
-    public Class<?> getEntityClass()
-    {
-        return ckass;
-    }
-    
-    public FieldDesc getFieldDesc(MapField mapField)
-    {
-        return descMap.get(mapField);
-    }
-    
-    public static class FieldDesc
-    {
-        private JdbcType jdbcType;
-        private String   desc;
-        
-        public JdbcType getJdbcType()
-        {
-            return jdbcType;
-        }
-        
-        public void setJdbcType(JdbcType jdbcType)
-        {
-            this.jdbcType = jdbcType;
-        }
-        
-        public String getDesc()
-        {
-            return desc;
-        }
-        
-        public void setDesc(String desc)
-        {
-            this.desc = desc;
-        }
-        
-    }
+	private final String					tableName;
+	private final MapField[]				fieldInfos;
+	private final MapField					idInfo;
+	private final Map<MapField, ColumnType>	columnTypeMap	= new HashMap<MapField, ColumnType>();
+	private final Class<?>					ckass;
+	private final ColNameStrategy			colNameStrategy;
+	private final boolean					editable;
+	
+	public TableMetaData(Class<?> ckass, ColNameStrategy nameStrategy, SessionfactoryConfig config)
+	{
+		this.ckass = ckass;
+		this.colNameStrategy = nameStrategy;
+		TableEntity entity = ckass.getAnnotation(TableEntity.class);
+		editable = entity.editable();
+		tableName = entity.name();
+		List<MapField> list = new LinkedList<MapField>();
+		Field t_idField = null;
+		for (Field each : ReflectUtil.getAllFields(ckass))
+		{
+			if (notTableField(each))
+			{
+				continue;
+			}
+			MapField mapField = new MapFieldImpl(each, nameStrategy, config.getFieldOperatorDictionary());
+			list.add(mapField);
+			columnTypeMap.put(mapField, buildFieldDesc(each, config.getJdbcTypeDictionary()));
+			if (each.isAnnotationPresent(Id.class))
+			{
+				t_idField = each;
+			}
+		}
+		fieldInfos = list.toArray(new MapField[list.size()]);
+		if (t_idField != null)
+		{
+			if (t_idField.getType().isPrimitive())
+			{
+				throw new IllegalArgumentException("作为主键的属性不可以使用基本类型，必须使用包装类。请检查" + t_idField.getDeclaringClass().getName() + "." + t_idField.getName());
+			}
+			idInfo = new MapFieldImpl(t_idField, nameStrategy, config.getFieldOperatorDictionary());
+			columnTypeMap.put(idInfo, buildFieldDesc(t_idField, config.getJdbcTypeDictionary()));
+		}
+		else
+		{
+			idInfo = null;
+		}
+	}
+	
+	ColumnType buildFieldDesc(Field field, ColumnTypeDictionary jdbcTypeDictionary)
+	{
+		ColumnType columnType;
+		if (field.isAnnotationPresent(ColumnDesc.class))
+		{
+			final ColumnDesc columnDesc = field.getAnnotation(ColumnDesc.class);
+			columnType = new ColumnType() {
+				
+				@Override
+				public String type()
+				{
+					return columnDesc.type();
+				}
+				
+				@Override
+				public String desc()
+				{
+					return columnDesc.desc();
+				}
+			};
+		}
+		else
+		{
+			if (jdbcTypeDictionary.map(field.getType()) == null)
+			{
+				if (Enum.class.isAssignableFrom(field.getType()))
+				{
+					columnType = jdbcTypeDictionary.map(String.class);
+				}
+				else
+				{
+					throw new NullPointerException(StringUtil.format("字段:{}无法找到对应的sql映射。请进行自定义", field.getDeclaringClass().getName() + "." + field.getName()));
+				}
+			}
+			else
+			{
+				columnType = jdbcTypeDictionary.map(field.getType());
+			}
+		}
+		return columnType;
+	}
+	
+	public boolean editable()
+	{
+		return editable;
+	}
+	
+	private boolean notTableField(Field field)
+	{
+		if (field.isAnnotationPresent(SqlIgnore.class) //
+		        || Map.class.isAssignableFrom(field.getType())//
+		        || List.class.isAssignableFrom(field.getType())//
+		        || field.getType().isInterface()//
+		        || Modifier.isStatic(field.getModifiers()))
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+	
+	public ColNameStrategy getColNameStrategy()
+	{
+		return colNameStrategy;
+	}
+	
+	public String getTableName()
+	{
+		return tableName;
+	}
+	
+	public MapField[] getFieldInfos()
+	{
+		return fieldInfos;
+	}
+	
+	public MapField getIdInfo()
+	{
+		return idInfo;
+	}
+	
+	public Class<?> getEntityClass()
+	{
+		return ckass;
+	}
+	
+	public ColumnType columnType(MapField mapField)
+	{
+		return columnTypeMap.get(mapField);
+	}
 }
