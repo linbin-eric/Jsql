@@ -14,11 +14,12 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 public @interface Column
 {
-	/**
-	 * 映射的数据库的列名
-	 * 
-	 * @return
-	 */
-	String name() default "";
-	
+    /**
+     * 映射的数据库的列名
+     * 
+     * @return
+     */
+    String name() default "";
+    
+    boolean nullable() default true;
 }
