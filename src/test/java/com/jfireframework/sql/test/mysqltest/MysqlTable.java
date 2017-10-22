@@ -1,8 +1,12 @@
 package com.jfireframework.sql.test.mysqltest;
 
+import java.sql.Clob;
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.Calendar;
 import com.jfireframework.sql.annotation.Id;
 import com.jfireframework.sql.annotation.TableEntity;
-import com.jfireframework.sql.dbstructure.column.UserDefinedColumnType;
 import com.jfireframework.sql.idstrategy.AutoIncrement;
 
 @TableEntity(name = "test_demo")
@@ -10,8 +14,17 @@ public class MysqlTable
 {
     @Id
     @AutoIncrement
-    private Integer id;
-    @UserDefinedColumnType(type = "VARCHAR", desc = "512")
-    private String  name;
-    private int     age;
+    private Integer   id;
+    private int       col1;
+    private long      col2;
+    private float     col3;
+    private double    col4;
+    private String    col5;
+    private boolean   col6;
+    private Date      col7;
+    private Calendar  col8;
+    private Timestamp col9;
+    private Time      col10;
+    private byte[]    col11;
+    private Clob      col12;
 }

@@ -40,7 +40,7 @@ public class MysqlColumnTypeDictionary implements ColumnTypeDictionary
         types.put(Calendar.class, MysqlType.DATETIME);
         types.put(Time.class, MysqlType.TIME);
         types.put(Timestamp.class, MysqlType.TIMESTAMP);
-        types.put(Clob.class, MysqlType.CLOB);
+        types.put(Clob.class, MysqlType.TEXT);
         types.put(Blob.class, MysqlType.BLOB);
         types.put(HeapByteBuf.class, MysqlType.BLOB);
     }
@@ -65,7 +65,7 @@ public class MysqlColumnTypeDictionary implements ColumnTypeDictionary
         TIME(""), //
         TIMESTAMP(""), //
         BLOB(""), //
-        CLOB("");//
+        TEXT("");//
         
         final String desc;
         

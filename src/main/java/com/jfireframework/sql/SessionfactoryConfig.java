@@ -42,19 +42,20 @@ import com.jfireframework.sql.page.impl.StandardParse;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransferDictionary;
 import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore;
 import com.jfireframework.sql.session.impl.SessionFactoryImpl;
+import com.jfireframework.sql.util.TableNameCaseStrategy;
 
 public class SessionfactoryConfig
 {
     private DataSource                        dataSource;
-    private ClassLoader                       classLoader = Thread.currentThread().getContextClassLoader();
+    private ClassLoader                       classLoader           = Thread.currentThread().getContextClassLoader();
     private String                            scanPackage;
     private String                            schema;
     // 如果值是create，则会创建表。
-    private String                            tableMode   = "none";
+    private String                            tableMode             = "none";
     private ResultsetTransferStore            resultsetTransferStore;
     private Set<Class<?>>                     ckasses;
-    private IdentityHashMap<Class<?>, Mapper> mappers     = new IdentityHashMap<Class<?>, Mapper>(128);
-    private IdentityHashMap<Class<?>, Dao<?>> daos        = new IdentityHashMap<Class<?>, Dao<?>>();
+    private IdentityHashMap<Class<?>, Mapper> mappers               = new IdentityHashMap<Class<?>, Mapper>(128);
+    private IdentityHashMap<Class<?>, Dao<?>> daos                  = new IdentityHashMap<Class<?>, Dao<?>>();
     private MetaContext                       metaContext;
     private SqlInterceptor[]                  sqlInterceptors;
     private PageParse                         pageParse;
@@ -62,7 +63,8 @@ public class SessionfactoryConfig
     private ColumnTypeDictionary              jdbcTypeDictionary;
     private FieldOperatorDictionary           fieldOperatorDictionary;
     private ResultSetTransferDictionary       resultSetTransferDictionary;
-    protected static final Logger             logger      = LoggerFactory.getLogger(SessionfactoryConfig.class);
+    private TableNameCaseStrategy             tableNameCaseStrategy = TableNameCaseStrategy.ORIGIN;
+    protected static final Logger             logger                = LoggerFactory.getLogger(SessionfactoryConfig.class);
     
     public SessionFactory build()
     {
@@ -381,4 +383,15 @@ public class SessionfactoryConfig
     {
         return metaContext;
     }
+    
+    public void setTableNameCaseStrategy(TableNameCaseStrategy tableNameCaseStrategy)
+    {
+        this.tableNameCaseStrategy = tableNameCaseStrategy;
+    }
+    
+    public TableNameCaseStrategy getTableNameCaseStrategy()
+    {
+        return tableNameCaseStrategy;
+    }
+    
 }

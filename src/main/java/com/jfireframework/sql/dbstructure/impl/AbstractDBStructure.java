@@ -130,6 +130,7 @@ public abstract class AbstractDBStructure implements Structure
         {
             if (connection != null)
             {
+                connection.rollback();
                 connection.close();
             }
         }

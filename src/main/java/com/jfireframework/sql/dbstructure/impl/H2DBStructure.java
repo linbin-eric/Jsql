@@ -56,10 +56,9 @@ public class H2DBStructure extends AbstractDBStructure
     @Override
     protected boolean checkIfTableExists(Connection connection, TableMetaData metaData) throws SQLException
     {
-        String sql = StringUtil.format("SELECT COUNT(1) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='{}' AND TABLE_NAME='{}'", schema, metaData.getTableName());
+        String sql = StringUtil.format("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='{}' AND TABLE_NAME='{}'", schema, metaData.getTableName());
         ResultSet executeQuery = connection.prepareStatement(sql).executeQuery();
-        executeQuery.next();
-        return executeQuery.getInt(1) > 0;
+        return executeQuery.next();
     }
     
     @Override

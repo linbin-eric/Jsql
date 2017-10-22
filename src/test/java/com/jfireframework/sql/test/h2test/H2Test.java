@@ -15,6 +15,7 @@ import com.jfireframework.sql.SqlSession;
 import com.jfireframework.sql.dbstructure.column.ColumnType;
 import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.metadata.TableMetaData;
+import com.jfireframework.sql.util.TableNameCaseStrategy;
 import com.zaxxer.hikari.HikariDataSource;
 
 public class H2Test
@@ -40,6 +41,7 @@ public class H2Test
         config.setScanPackage("com.jfireframework.sql.test.h2test");
         config.setSchema("PUBLIC");
         config.setTableMode("create");
+        config.setTableNameCaseStrategy(TableNameCaseStrategy.UPPER);
         SessionFactory sessionFactory = config.build();
         SqlSession session = sessionFactory.openSession();
         Connection connection = session.getConnection();

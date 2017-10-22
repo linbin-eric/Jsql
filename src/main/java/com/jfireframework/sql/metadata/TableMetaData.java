@@ -14,9 +14,9 @@ import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.annotation.Id;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableEntity;
-import com.jfireframework.sql.dbstructure.column.UserDefinedColumnType;
 import com.jfireframework.sql.dbstructure.column.ColumnType;
 import com.jfireframework.sql.dbstructure.column.ColumnTypeDictionary;
+import com.jfireframework.sql.dbstructure.column.UserDefinedColumnType;
 import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
 import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.mapfield.impl.MapFieldImpl;
@@ -37,7 +37,20 @@ public class TableMetaData
         this.colNameStrategy = nameStrategy;
         TableEntity entity = ckass.getAnnotation(TableEntity.class);
         editable = entity.editable();
-        tableName = entity.name().toUpperCase();
+        switch (config.getTableNameCaseStrategy())
+        {
+            case UPPER:
+                tableName = entity.name().toUpperCase();
+                break;
+            case LOWER:
+                tableName = entity.name().toLowerCase();
+                break;
+            case ORIGIN:
+                tableName = entity.name();
+                break;
+            default:
+                tableName = entity.name();
+        }
         List<MapField> list = new LinkedList<MapField>();
         Field t_idField = null;
         for (Field each : ReflectUtil.getAllFields(ckass))

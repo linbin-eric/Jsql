@@ -10,6 +10,7 @@ import java.util.Set;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.TRACEID;
 import com.jfireframework.baseutil.collection.StringCache;
+import com.jfireframework.sql.dbstructure.column.ColumnType;
 import com.jfireframework.sql.idstrategy.AutoIncrement;
 import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.metadata.TableMetaData;
@@ -48,16 +49,22 @@ public class MariaDBStructure extends AbstractDBStructure
     @Override
     protected void deletePkConstraint(Connection connection, TableMetaData tableMetaData) throws SQLException
     {
+        String traceId = TRACEID.currentTraceId();
         String tableName = tableMetaData.getTableName();
         String query = StringUtil.format("select COLUMN_NAME,COLUMN_TYPE from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME='{}' and TABLE_SCHEMA='{}' and COLUMN_KEY='PRI';", tableName, schema);
+        logger.debug("traceId:{} 准备删除主键约束，执行的sql:{}", traceId, query);
         ResultSet executeQuery = connection.prepareStatement(query).executeQuery();
         if (executeQuery.next())
         {
             String columnName = executeQuery.getString(1);
             String columnType = executeQuery.getString(2);
             connection.prepareStatement(StringUtil.format("ALTER TABLE {}.{} MODIFY COLUMN {} {}", schema, tableName, columnName, columnType)).executeUpdate();
-            String sql = StringUtil.format("ALTER TABLE {}.{} DROP PRIMARY KEY", schema, tableName);
+            String sql = StringUtil.format("ALTER TABLE {}.{} DROP PRIMARY  KEY", schema, tableName);
             connection.prepareStatement(sql).executeUpdate();
+        }
+        else
+        {
+            logger.debug("traceId:{} 表:{}不存在主键", traceId, tableMetaData.getTableName());
         }
     }
     
@@ -107,7 +114,8 @@ public class MariaDBStructure extends AbstractDBStructure
     @Override
     protected boolean checkIfTableExists(Connection connection, TableMetaData metaData) throws SQLException
     {
-        ResultSet executeQuery = connection.prepareStatement(StringUtil.format("select TABLE_NAME from INFORMATION_SCHEMA.TABLES where TABLE_NAME='{}' and TABLE_SCHEMA='{}'", metaData.getTableName(), schema)).executeQuery();
+        String sql = StringUtil.format("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='{}' and TABLE_SCHEMA='{}'", metaData.getTableName(), schema);
+        ResultSet executeQuery = connection.prepareStatement(sql).executeQuery();
         return executeQuery.next();
     }
     
@@ -134,17 +142,34 @@ public class MariaDBStructure extends AbstractDBStructure
     protected boolean checkColumnDefinitionFit(Connection connection, MapField each, TableMetaData tableMetaData) throws SQLException
     {
         String sql = StringUtil.format("select COLUMN_TYPE from information_schema.`COLUMNS` where TABLE_SCHEMA='{}' and TABLE_NAME='{}' and COLUMN_NAME='{}'", schema, tableMetaData.getTableName(), each.getColName());
-        String columnType = getDesc(each, tableMetaData);
+        String columnType = getColumnType(each, tableMetaData);
         ResultSet executeQuery = connection.prepareStatement(sql).executeQuery();
         executeQuery.next();
         String dbColumnType = executeQuery.getString(1);
         return dbColumnType.equalsIgnoreCase(columnType);
     }
     
+    private String getColumnType(MapField fieldInfo, TableMetaData tableMetaData)
+    {
+        StringCache cache = new StringCache();
+        ColumnType columnType = tableMetaData.columnType(fieldInfo);
+        if (StringUtil.isNotBlank(columnType.desc()))
+        {
+            cache.append(columnType.type()).append('(').append(columnType.desc()).append(')');
+        }
+        else
+        {
+            cache.append(columnType.type());
+        }
+        return cache.toString();
+    }
+    
     @Override
     protected boolean columnExist(Connection connection, MapField each, TableMetaData tableMetaData) throws SQLException
     {
-        String sql = StringUtil.format("select count(1) from information_schema.`COLUMNS` where TABLE_SCHEMA='{}' and TABLE_NAME='{}' and COLUMN_NAME='{}';", schema, tableMetaData.getTableName(), each.getColName());
+        String traceId = TRACEID.currentTraceId();
+        String sql = StringUtil.format("select count(1) from information_schema.`COLUMNS` where TABLE_SCHEMA='{}' and TABLE_NAME='{}' and COLUMN_NAME='{}'", schema, tableMetaData.getTableName(), each.getColName());
+        logger.trace("traceId:{} 执行的判断列是否存在sql为:{}", traceId, sql);
         ResultSet executeQuery = connection.prepareStatement(sql).executeQuery();
         executeQuery.next();
         return executeQuery.getInt(1) > 0;
