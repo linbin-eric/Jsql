@@ -37,14 +37,6 @@ public class MariaDBStructure extends AbstractDBStructure
     }
     
     @Override
-    protected String getDbColumnDataType(Connection connection, String tableName, MapField each) throws SQLException
-    {
-        String queryColumnTemplate = "select DATA_TYPE from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME='{}' and TABLE_SCHEMA='{}' and COLUMN_NAME='{}'";
-        ResultSet executeQuery = connection.prepareStatement(StringUtil.format(queryColumnTemplate, tableName, schema, each.getColName())).executeQuery();
-        return executeQuery.next() ? executeQuery.getString(1) : null;
-    }
-    
-    @Override
     protected void updateColumn(Connection connection, TableMetaData tableMetaData, String tableName, MapField each) throws SQLException
     {
         String traceId = TRACEID.currentTraceId();
@@ -136,6 +128,26 @@ public class MariaDBStructure extends AbstractDBStructure
             logger.debug("traceId:{} 准备执行的差异性更新sql:{}", TRACEID.currentTraceId(), sql);
             connection.prepareStatement(sql).executeUpdate();
         }
+    }
+    
+    @Override
+    protected boolean checkColumnDefinitionFit(Connection connection, MapField each, TableMetaData tableMetaData) throws SQLException
+    {
+        String sql = StringUtil.format("select COLUMN_TYPE from information_schema.`COLUMNS` where TABLE_SCHEMA='{}' and TABLE_NAME='{}' and COLUMN_NAME='{}'", schema, tableMetaData.getTableName(), each.getColName());
+        String columnType = getDesc(each, tableMetaData);
+        ResultSet executeQuery = connection.prepareStatement(sql).executeQuery();
+        executeQuery.next();
+        String dbColumnType = executeQuery.getString(1);
+        return dbColumnType.equalsIgnoreCase(columnType);
+    }
+    
+    @Override
+    protected boolean columnExist(Connection connection, MapField each, TableMetaData tableMetaData) throws SQLException
+    {
+        String sql = StringUtil.format("select count(1) from information_schema.`COLUMNS` where TABLE_SCHEMA='{}' and TABLE_NAME='{}' and COLUMN_NAME='{}';", schema, tableMetaData.getTableName(), each.getColName());
+        ResultSet executeQuery = connection.prepareStatement(sql).executeQuery();
+        executeQuery.next();
+        return executeQuery.getInt(1) > 0;
     }
     
 }

@@ -67,11 +67,18 @@ public abstract class AbstractDBStructure implements Structure
             deleteExistTable(connection, tableMetaData);
         }
         String sql = buildCreateTableSql(tableMetaData);
-        logger.debug("traceId:{} 进行表:{}的创建，创建语句是:{}", TRACEID.currentTraceId(), sql);
+        logger.debug("traceId:{} 进行表:{}的创建，创建语句是:{}", TRACEID.currentTraceId(), tableMetaData.getTableName(), sql);
         connection.prepareStatement(sql).execute();
         differentiatedUpdate(connection, tableMetaData);
     }
     
+    /**
+     * 在创建表的时候执行一些差异性的更新操作
+     * 
+     * @param connection
+     * @param tableMetaData
+     * @throws SQLException
+     */
     protected abstract void differentiatedUpdate(Connection connection, TableMetaData tableMetaData) throws SQLException;
     
     protected abstract String buildCreateTableSql(TableMetaData tableMetaData);
@@ -137,13 +144,11 @@ public abstract class AbstractDBStructure implements Structure
         deletePkConstraint(connection, tableMetaData);
         for (MapField each : tableMetaData.getFieldInfos())
         {
-            String dataType = getDbColumnDataType(connection, tableName, each);
-            if (StringUtil.isNotBlank(dataType))
+            if (columnExist(connection, each, tableMetaData))
             {
-                ColumnType columnType = tableMetaData.columnType(each);
-                if (columnType.type().equals(dataType) == false)
+                if (checkColumnDefinitionFit(connection, each, tableMetaData) == false)
                 {
-                    logger.debug("traceId:{} 表:{}中的列:{}的类型:{}与类:{}的字段类型定义:{}不符合，需要更新", traceId, tableName, each.getColName(), dataType, each.getField().getDeclaringClass().getSimpleName(), columnType.type());
+                    logger.debug("traceId:{} 表:{}中的列:{}与类:{}的字段类型不符合，需要更新", traceId, tableName, each.getColName(), each.getField().getDeclaringClass().getSimpleName());
                     updateColumn(connection, tableMetaData, tableName, each);
                 }
             }
@@ -158,7 +163,9 @@ public abstract class AbstractDBStructure implements Structure
         differentiatedUpdate(connection, tableMetaData);
     }
     
-    protected abstract String getDbColumnDataType(Connection connection, String tableName, MapField each) throws SQLException;
+    protected abstract boolean columnExist(Connection connection, MapField each, TableMetaData tableMetaData) throws SQLException;
+    
+    protected abstract boolean checkColumnDefinitionFit(Connection connection, MapField each, TableMetaData tableMetaData) throws SQLException;
     
     protected abstract void updateColumn(Connection connection, TableMetaData tableMetaData, String tableName, MapField each) throws SQLException;
     

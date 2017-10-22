@@ -1,6 +1,7 @@
 package com.jfireframework.sql.mapfield;
 
 import java.lang.reflect.Field;
+import java.sql.Clob;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -12,6 +13,7 @@ import com.jfireframework.baseutil.collection.buffer.HeapByteBuf;
 import com.jfireframework.sql.mapfield.impl.BooleanOperator;
 import com.jfireframework.sql.mapfield.impl.ByteArrayOperator;
 import com.jfireframework.sql.mapfield.impl.CalendarOperator;
+import com.jfireframework.sql.mapfield.impl.ClobFieldOperator;
 import com.jfireframework.sql.mapfield.impl.DateOperator;
 import com.jfireframework.sql.mapfield.impl.DoubleOperator;
 import com.jfireframework.sql.mapfield.impl.EnumNameOperator;
@@ -62,6 +64,7 @@ public interface FieldOperatorDictionary
             operators.put(Integer.class, IntegerOperator.class);
             operators.put(Long.class, WLongOperator.class);
             operators.put(byte[].class, ByteArrayOperator.class);
+            operators.put(Clob.class, ClobFieldOperator.class);
             operators.put(HeapByteBuf.class, HeapByteBufOperator.class);
         }
         

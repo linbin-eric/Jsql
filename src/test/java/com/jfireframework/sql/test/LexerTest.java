@@ -5,7 +5,7 @@ import java.util.Set;
 import org.junit.Assert;
 import org.junit.Test;
 import com.jfireframework.sql.SessionfactoryConfig;
-import com.jfireframework.sql.dbstructure.column.ColumnTypeDictionary;
+import com.jfireframework.sql.dbstructure.column.impl.MysqlColumnTypeDictionary;
 import com.jfireframework.sql.mapfield.FieldOperatorDictionary;
 import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.parse.lexer.Lexer;
@@ -54,7 +54,7 @@ public class LexerTest
         Set<Class<?>> set = new HashSet<Class<?>>();
         set.add(User.class);
         SessionfactoryConfig config = new SessionfactoryConfig();
-        config.setJdbcTypeDictionary(new ColumnTypeDictionary.StandandTypeDictionary());
+        config.setJdbcTypeDictionary(new MysqlColumnTypeDictionary());
         config.setFieldOperatorDictionary(new FieldOperatorDictionary.BuildInFieldOperatorDictionary());
         MetaContext metaContext = new MetaContext(set, config);
         String sql = "select name from User";
@@ -67,7 +67,7 @@ public class LexerTest
         Set<Class<?>> set = new HashSet<Class<?>>();
         set.add(User.class);
         SessionfactoryConfig config = new SessionfactoryConfig();
-        config.setJdbcTypeDictionary(new ColumnTypeDictionary.StandandTypeDictionary());
+        config.setJdbcTypeDictionary(new MysqlColumnTypeDictionary());
         config.setFieldOperatorDictionary(new FieldOperatorDictionary.BuildInFieldOperatorDictionary());
         MetaContext metaContext = new MetaContext(set, config);
         String sql = "select name,age from User";

@@ -24,7 +24,9 @@ import com.jfireframework.sql.dao.impl.OracleDAO;
 import com.jfireframework.sql.dao.impl.StandardDAO;
 import com.jfireframework.sql.dbstructure.Structure;
 import com.jfireframework.sql.dbstructure.column.ColumnTypeDictionary;
-import com.jfireframework.sql.dbstructure.column.OracleColumnTypeDictionary;
+import com.jfireframework.sql.dbstructure.column.impl.H2ColumnTypeDictionary;
+import com.jfireframework.sql.dbstructure.column.impl.MysqlColumnTypeDictionary;
+import com.jfireframework.sql.dbstructure.column.impl.OracleColumnTypeDictionary;
 import com.jfireframework.sql.dbstructure.impl.H2DBStructure;
 import com.jfireframework.sql.dbstructure.impl.MariaDBStructure;
 import com.jfireframework.sql.dbstructure.impl.OracleStructure;
@@ -158,22 +160,17 @@ public class SessionfactoryConfig
                 if (productName.equals("mariadb") || "mysql".equals(productName))
                 {
                     pageParse = new StandardParse();
-                    jdbcTypeDictionary = jdbcTypeDictionary == null ? new ColumnTypeDictionary.StandandTypeDictionary() : jdbcTypeDictionary;
+                    jdbcTypeDictionary = jdbcTypeDictionary == null ? new MysqlColumnTypeDictionary() : jdbcTypeDictionary;
                 }
                 else if (productName.equals("oracle"))
                 {
                     pageParse = new OracleParse();
                     jdbcTypeDictionary = jdbcTypeDictionary == null ? new OracleColumnTypeDictionary() : jdbcTypeDictionary;
                 }
-                else if (productName.contains("hsql"))
-                {
-                    pageParse = new StandardParse();
-                    jdbcTypeDictionary = jdbcTypeDictionary == null ? new ColumnTypeDictionary.StandandTypeDictionary() : jdbcTypeDictionary;
-                }
                 else if (productName.equals("h2"))
                 {
                     pageParse = new StandardParse();
-                    jdbcTypeDictionary = jdbcTypeDictionary == null ? new ColumnTypeDictionary.StandandTypeDictionary() : jdbcTypeDictionary;
+                    jdbcTypeDictionary = jdbcTypeDictionary == null ? new H2ColumnTypeDictionary() : jdbcTypeDictionary;
                 }
                 else
                 {
@@ -380,4 +377,8 @@ public class SessionfactoryConfig
         this.schema = schema;
     }
     
+    public MetaContext getMetaContext()
+    {
+        return metaContext;
+    }
 }

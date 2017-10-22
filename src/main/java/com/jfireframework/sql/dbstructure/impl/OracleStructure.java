@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.TRACEID;
 import com.jfireframework.baseutil.collection.StringCache;
+import com.jfireframework.sql.dbstructure.column.ColumnType;
 import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.metadata.TableMetaData;
 
@@ -102,17 +103,6 @@ public class OracleStructure extends AbstractDBStructure
     }
     
     @Override
-    protected String getDbColumnDataType(Connection connection, String tableName, MapField each) throws SQLException
-    {
-        String traceId = TRACEID.currentTraceId();
-        String queryColumnSqlTemplate = "SELECT t.DATA_TYPE FROM user_tab_columns t,user_col_comments c WHERE t.table_name = c.table_name AND t.column_name = c.column_name AND t.table_name ='{}' AND t.COLUMN_NAME = '{}'";
-        String sql = StringUtil.format(queryColumnSqlTemplate, tableName, each.getColName());
-        logger.trace("traceId:{} 查询表:{}的列:{}的sql为{}", traceId, tableName, each.getColName(), sql);
-        ResultSet executeQuery = connection.prepareStatement(sql).executeQuery();
-        return executeQuery.next() ? executeQuery.getString(1) : null;
-    }
-    
-    @Override
     protected String buildCreateTableSql(TableMetaData tableMetaData)
     {
         String tableName = schema + "." + tableMetaData.getTableName();
@@ -136,8 +126,26 @@ public class OracleStructure extends AbstractDBStructure
     @Override
     protected void differentiatedUpdate(Connection connection, TableMetaData tableMetaData) throws SQLException
     {
+        // 无需特异性更新
+    }
+    
+    @Override
+    protected boolean checkColumnDefinitionFit(Connection connection, MapField each, TableMetaData tableMetaData) throws SQLException
+    {
+        String sql = StringUtil.format("SELECT DATA_TYPE,DATA_LENGTH FROM SYS.USER_TAB_COLUMNS WHERE TABLE_NAME='{}' AND COLUMN_NAME='{}';", tableMetaData.getTableName(), each.getColName());
+        ResultSet executeQuery = connection.prepareStatement(sql).executeQuery();
+        executeQuery.next();
+        String data_type = executeQuery.getString(1);
+        String data_length = executeQuery.getString(2);
+        ColumnType columnType = tableMetaData.columnType(each);
+        return data_type.equalsIgnoreCase(columnType.type()) && data_length.equalsIgnoreCase(columnType.desc());
+    }
+    
+    @Override
+    protected boolean columnExist(Connection connection, MapField each, TableMetaData tableMetaData) throws SQLException
+    {
         // TODO Auto-generated method stub
-        
+        return false;
     }
     
 }
