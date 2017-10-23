@@ -19,25 +19,25 @@ public class OracleColumnTypeDictionary implements ColumnTypeDictionary
     public OracleColumnTypeDictionary()
     {
         types.put(String.class, OracleColumnType.VARCHAR2);
-        types.put(boolean.class, OracleColumnType.TINYINT);
-        types.put(Boolean.class, OracleColumnType.BIT);
-        types.put(byte.class, OracleColumnType.TINYINT);
-        types.put(Byte.class, OracleColumnType.TINYINT);
-        types.put(short.class, OracleColumnType.INTEGER);
-        types.put(Short.class, OracleColumnType.INTEGER);
-        types.put(int.class, OracleColumnType.INTEGER);
-        types.put(Integer.class, OracleColumnType.INTEGER);
-        types.put(long.class, OracleColumnType.INTEGER);
-        types.put(Long.class, OracleColumnType.INTEGER);
-        types.put(float.class, OracleColumnType.FLOAT);
-        types.put(Float.class, OracleColumnType.FLOAT);
-        types.put(double.class, OracleColumnType.DOUBLE);
-        types.put(Double.class, OracleColumnType.DOUBLE);
-        types.put(byte[].class, OracleColumnType.INTEGER);
-        types.put(Date.class, OracleColumnType.DATETIME);
-        types.put(java.util.Date.class, OracleColumnType.DATETIME);
-        types.put(Calendar.class, OracleColumnType.DATETIME);
-        types.put(Time.class, OracleColumnType.TIME);
+        types.put(boolean.class, OracleColumnType.NUMBER);
+        types.put(Boolean.class, OracleColumnType.NUMBER);
+        types.put(byte.class, OracleColumnType.NUMBER);
+        types.put(Byte.class, OracleColumnType.NUMBER);
+        types.put(short.class, OracleColumnType.NUMBER);
+        types.put(Short.class, OracleColumnType.NUMBER);
+        types.put(int.class, OracleColumnType.NUMBER);
+        types.put(Integer.class, OracleColumnType.NUMBER);
+        types.put(long.class, OracleColumnType.NUMBER);
+        types.put(Long.class, OracleColumnType.NUMBER);
+        types.put(float.class, OracleColumnType.NUMBER);
+        types.put(Float.class, OracleColumnType.NUMBER);
+        types.put(double.class, OracleColumnType.NUMBER);
+        types.put(Double.class, OracleColumnType.NUMBER);
+        types.put(byte[].class, OracleColumnType.BLOB);
+        types.put(Date.class, OracleColumnType.TIMESTAMP);
+        types.put(java.util.Date.class, OracleColumnType.TIMESTAMP);
+        types.put(Calendar.class, OracleColumnType.TIMESTAMP);
+        types.put(Time.class, OracleColumnType.TIMESTAMP);
         types.put(Timestamp.class, OracleColumnType.TIMESTAMP);
         types.put(Clob.class, OracleColumnType.CLOB);
         types.put(Blob.class, OracleColumnType.BLOB);
@@ -52,17 +52,10 @@ public class OracleColumnTypeDictionary implements ColumnTypeDictionary
     
     enum OracleColumnType implements ColumnType
     {
-        BIT("1"), //
-        TINYINT(""), //
-        INTEGER(""), //
-        BIGINT("9"), //
-        FLOAT(""), //
-        DOUBLE(""), //
+        NUMBER("22"),
         VARCHAR2("255"), //
         DATE(""), //
-        DATETIME(""), //
-        TIME(""), //
-        TIMESTAMP(""), //
+        TIMESTAMP("6"), //
         BLOB(""), //
         CLOB("");//
         //
