@@ -5,7 +5,7 @@ import com.jfireframework.sql.SqlSession;
 
 public interface Dao<T> extends StrategyOperation<T>
 {
-    
+//    void initialize();
     /**
      * 将对象信息保存到数据库中。如果对象id值为null，进行插入操作，否则进行更新操作
      * 

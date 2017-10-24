@@ -25,8 +25,10 @@ public class OracleTest
 	public void test() throws SQLException
 	{
 		String traceId = TRACEID.newTraceId();
+		String url = "jdbc:oracle:thin:@172.18.169.20:1521/orcl";
+		String url2 = "jdbc:oracle:thin:@(DESCRIPTION =(ADDRESS_LIST =(ADDRESS = (PROTOCOL = TCP)(HOST = 172.18.169.20)(PORT = 1521)))(CONNECT_DATA =(SERVER = DEDICATED)(SERVICE_NAME = orcl)))";
 		HikariDataSource dataSource = new HikariDataSource();
-		dataSource.setJdbcUrl("jdbc:oracle:thin:@172.18.169.20:1521/orcl");
+		dataSource.setJdbcUrl(url2);
 		dataSource.setDriverClassName("oracle.jdbc.driver.OracleDriver");
 		dataSource.setUsername("linbin_demo");
 		dataSource.setPassword("demo");
