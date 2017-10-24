@@ -8,7 +8,7 @@ public class TimeStampTransfer extends AbstractResultsetTransfer
 {
     
     @Override
-    protected Timestamp valueOf(ResultSet resultSet, String sql) throws Exception
+    protected Timestamp valueOf(ResultSet resultSet) throws Exception
     {
         return resultSet.getTimestamp(1);
     }

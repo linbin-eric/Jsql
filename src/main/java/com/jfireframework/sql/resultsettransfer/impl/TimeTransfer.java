@@ -8,7 +8,7 @@ public class TimeTransfer extends AbstractResultsetTransfer
 {
     
     @Override
-    protected Time valueOf(ResultSet resultSet, String sql) throws Exception
+    protected Time valueOf(ResultSet resultSet) throws Exception
     {
         return resultSet.getTime(1);
     }

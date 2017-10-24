@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.exception.JustThrowException;
-import com.jfireframework.baseutil.reflect.ReflectUtil;
+import com.jfireframework.sql.dao.impl.MysqlDAO.GeneratePkStrategy;
 import com.jfireframework.sql.dbstructure.column.ColumnType;
 import com.jfireframework.sql.dbstructure.column.ColumnTypeDictionary;
 import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
@@ -20,11 +20,9 @@ import com.jfireframework.sql.mapfield.FieldOperatorDictionary;
 import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.session.ExecSqlTemplate;
 import com.jfireframework.sql.util.ExecuteSqlInfo;
-import sun.misc.Unsafe;
 
-public class MysqlDAO extends BaseDAO
+public class H2DAO extends BaseDAO
 {
-	private static final Unsafe		unsafe	= ReflectUtil.getUnsafe();
 	protected GeneratePkStrategy	generatePkStrategy;
 	protected ExecuteSqlInfo		autoGeneratePkInsertInfo;
 	
@@ -63,7 +61,6 @@ public class MysqlDAO extends BaseDAO
 			{
 				final StringGenerator stringGenerator = field.getAnnotation(GenerateStringPk.class).value().newInstance();
 				params.add(new MapField() {
-					private long offset;
 					
 					@Override
 					public void setEntityValue(Object entity, ResultSet resultSet) throws SQLException
@@ -74,7 +71,7 @@ public class MysqlDAO extends BaseDAO
 					@Override
 					public void initialize(Field field, ColNameStrategy colNameStrategy, FieldOperatorDictionary fieldOperatorDictionary, ColumnTypeDictionary columnTypeDictionary)
 					{
-						unsafe.objectFieldOffset(field);
+						throw new UnsupportedOperationException();
 					}
 					
 					@Override
@@ -104,9 +101,7 @@ public class MysqlDAO extends BaseDAO
 					@Override
 					public Object fieldValue(Object entity)
 					{
-						String pk = stringGenerator.next();
-						unsafe.putObject(entity, offset, pk);
-						return pk;
+						return stringGenerator.next();
 					}
 					
 					@Override
@@ -144,18 +139,6 @@ public class MysqlDAO extends BaseDAO
 			default:
 				break;
 		}
-	}
-	
-	enum GeneratePkStrategy
-	{
-		/**
-		 * 主键由程序自动生成
-		 */
-		GENERATE_BY_APPLICATION, //
-		/**
-		 * 主键由数据库生成
-		 */
-		GENERATE_BY_DATABASE
 	}
 	
 }

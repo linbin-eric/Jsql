@@ -1,12 +1,27 @@
 package com.jfireframework.sql.page;
 
-import java.sql.Connection;
-import com.jfireframework.sql.interceptor.SqlInterceptor;
-import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
+import com.jfireframework.sql.util.ExecuteSqlAndParams;
 
 public interface PageParse
 {
-    void doQuery(Object[] params, Connection connection, String sql, ResultSetTransfer transfer, Page page, SqlInterceptor[] interceptors) throws Exception;
-    
-    void queryWithoutCount(Object[] params, Connection connection, String sql, ResultSetTransfer transfer, Page page, SqlInterceptor[] interceptors) throws Exception;
+	/**
+	 * 返回2个信息。第一个是查询的，第二个是统计
+	 * 
+	 * @param page
+	 * @param sql
+	 * @param params
+	 * @return
+	 */
+	ExecuteSqlAndParams[] parseQuery(Page page, String sql, Object... params);
+	
+	/**
+	 * 返回查询的信息
+	 * 
+	 * @param page
+	 * @param sql
+	 * @param params
+	 * @return
+	 */
+	ExecuteSqlAndParams parseQeuryWithoutCount(Page page, String sql, Object... params);
+	
 }

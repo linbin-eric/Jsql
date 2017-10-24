@@ -8,7 +8,7 @@ public class IntegerTransfer extends AbstractResultsetTransfer
 {
     
     @Override
-    protected Integer valueOf(ResultSet resultSet, String sql) throws SQLException
+    protected Integer valueOf(ResultSet resultSet) throws SQLException
     {
         return Integer.valueOf(resultSet.getInt(1));
     }

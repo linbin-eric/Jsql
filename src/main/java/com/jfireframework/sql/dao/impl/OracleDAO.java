@@ -1,148 +1,163 @@
 package com.jfireframework.sql.dao.impl;
 
-import java.util.LinkedList;
+import java.lang.reflect.Field;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import com.jfireframework.baseutil.collection.StringCache;
-import com.jfireframework.sql.SessionfactoryConfig;
-import com.jfireframework.sql.SqlSession;
-import com.jfireframework.sql.annotation.SeqId;
-import com.jfireframework.sql.interceptor.SqlInterceptor;
+import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.baseutil.reflect.ReflectUtil;
+import com.jfireframework.sql.dbstructure.column.ColumnType;
+import com.jfireframework.sql.dbstructure.column.ColumnTypeDictionary;
+import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
+import com.jfireframework.sql.idstrategy.AutoIncrement;
+import com.jfireframework.sql.idstrategy.GenerateStringPk;
+import com.jfireframework.sql.idstrategy.Sequence;
+import com.jfireframework.sql.idstrategy.GenerateStringPk.StringGenerator;
+import com.jfireframework.sql.mapfield.FieldOperator;
+import com.jfireframework.sql.mapfield.FieldOperatorDictionary;
 import com.jfireframework.sql.mapfield.MapField;
-import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.session.ExecSqlTemplate;
+import com.jfireframework.sql.util.ExecuteSqlInfo;
+import sun.misc.Unsafe;
 
-public class OracleDAO<T> extends BaseDAO<T>
+public class OracleDAO extends BaseDAO
 {
-    private SqlAndFields  seqInsertInfo;
-    private SqlAndFields  insertInfo;
-    private final boolean useSeq;
-    private String[]      returnKey;
-    
-    public OracleDAO(TableMetaData metaData, SqlInterceptor[] sqlInterceptors, SessionfactoryConfig config)
-    {
-        super(metaData, sqlInterceptors, config);
-        useSeq = idField.getField().isAnnotationPresent(SeqId.class) ? true : false;
-    }
-    
-    @Override
-    public void batchInsert(List<T> entitys, SqlSession session)
-    {
-        Object[] array = new Object[entitys.size()];
-        int index = 0;
-        for (Object entity : entitys)
-        {
-            array[index] = parseParam(insertInfo.getFields(), entity);
-            index += 1;
-        }
-        if (useSeq == false)
-        {
-            ExecSqlTemplate.batchInsert(sqlInterceptors, session.getConnection(), insertInfo.getSql(), array);
-        }
-        else
-        {
-            ExecSqlTemplate.batchInsert(sqlInterceptors, session.getConnection(), seqInsertInfo.getSql(), array);
-        }
-    }
-    
-    @Override
-    protected void useForSelf(MapField[] fields, MapField idField)
-    {
-        List<MapField> insertFields = new LinkedList<MapField>();
-        StringCache cache = new StringCache();
-        /******** 生成insertSql *******/
-        cache.append("insert into ").append(tableName).append(" ( ");
-        cache.append(idField.getColName()).appendComma();
-        insertFields.add(idField);
-        int count = 1;
-        for (MapField each : fields)
-        {
-            if (each == idField)
-            {
-                continue;
-            }
-            count++;
-            insertFields.add(each);
-            cache.append(each.getColName()).append(',');
-        }
-        cache.deleteLast().append(") values (");
-        cache.appendStrsByComma("?", count);
-        cache.append(')');
-        insertInfo = new SqlAndFields(cache.toString(), insertFields.toArray(new MapField[insertFields.size()]));
-        LOGGER.debug("为表{},类{}创建的插入语句是{}", tableName, entityClass.getName(), insertInfo.getSql());
-        if (idField.getField().isAnnotationPresent(SeqId.class))
-        {
-            insertFields.clear();
-            cache.clear();
-            /******** 生成insertSql *******/
-            cache.append("insert into ").append(tableName).append(" ( ");
-            cache.append(idField.getColName()).appendComma();
-            count = 0;
-            for (MapField each : fields)
-            {
-                if (each == idField)
-                {
-                    continue;
-                }
-                count++;
-                insertFields.add(each);
-                cache.append(each.getColName()).append(',');
-            }
-            String seqName = idField.getField().getAnnotation(SeqId.class).value();
-            cache.deleteLast().append(") values (").append(seqName).append(".nextval,");
-            cache.appendStrsByComma("?", count);
-            if (cache.isCommaLast())
-            {
-                cache.deleteLast();
-            }
-            cache.append(')');
-            seqInsertInfo = new SqlAndFields(cache.toString(), insertFields.toArray(new MapField[insertFields.size()]));
-            LOGGER.debug("为表{},类{}创建的插入语句是{}", tableName, entityClass.getName(), seqInsertInfo.getSql());
-            returnKey = new String[] { idField.getColName() };
-        }
-        
-    }
-    
-    @Override
-    protected void insert(T entity, Object idValue, SqlSession session)
-    {
-        String sql;
-        Object[] params;
-        boolean returnPk = false;
-        if (idValue == null)
-        {
-            returnPk = true;
-        }
-        else
-        {
-            returnPk = false;
-        }
-        if (useSeq == false)
-        {
-            sql = insertInfo.getSql();
-            params = parseParam(insertInfo.getFields(), entity);
-        }
-        else
-        {
-            if (idValue != null)
-            {
-                sql = insertInfo.getSql();
-                params = parseParam(insertInfo.getFields(), entity);
-            }
-            else
-            {
-                sql = seqInsertInfo.getSql();
-                params = parseParam(seqInsertInfo.getFields(), entity);
-            }
-        }
-        if (returnPk)
-        {
-            Object pk = ExecSqlTemplate.insert(idType, returnKey, sqlInterceptors, session.getConnection(), sql, params);
-            unsafe.putObject(entity, idOffset, pk);
-        }
-        else
-        {
-            session.update(sql, params);
-        }
-    }
-    
+	private static final Unsafe		unsafe	= ReflectUtil.getUnsafe();
+	protected GeneratePkStrategy	generatePkStrategy;
+	protected ExecuteSqlInfo		autoGeneratePkInsertInfo;
+	
+	@Override
+	protected void setAutoGeneratePkInsertInfo()
+	{
+		Field field = pkColumn.getField();
+		if (Number.class.isAssignableFrom(field.getType()) && field.isAnnotationPresent(Sequence.class))
+		{
+			StringCache cache = new StringCache();
+			cache.append("INSERT INTO ").append(tableName).append('(').append(pkColumn.getColName()).appendComma();
+			for (MapField column : valueColumns)
+			{
+				cache.append(column.getColName()).appendComma();
+			}
+			cache.deleteLast().append(") VALUES(");
+			String sequenceName = field.getAnnotation(Sequence.class).value();
+			cache.append(sequenceName).append(".NEXTVAL,");
+			for (int i = 0; i < valueColumns.length; i++)
+			{
+				cache.append("?").appendComma();
+			}
+			cache.deleteLast().append(")");
+			autoGeneratePkInsertInfo = new ExecuteSqlInfo(cache.toString(), valueColumns);
+			generatePkStrategy = GeneratePkStrategy.GENERATE_BY_DATABASE;
+		}
+		else if (field.getType() == String.class && field.isAnnotationPresent(GenerateStringPk.class))
+		{
+			StringCache cache = new StringCache();
+			List<MapField> params = new ArrayList<MapField>();
+			cache.append("INSERT INTO ").append(tableName).append('(').append(pkColumn.getColName()).appendComma();
+			for (MapField column : valueColumns)
+			{
+				cache.append(column.getColName()).appendComma();
+			}
+			cache.deleteLast().append(") VALUES(?,");
+			try
+			{
+				final StringGenerator stringGenerator = field.getAnnotation(GenerateStringPk.class).value().newInstance();
+				params.add(new MapField() {
+					private long offset;
+					
+					@Override
+					public void setEntityValue(Object entity, ResultSet resultSet) throws SQLException
+					{
+						throw new UnsupportedOperationException();
+					}
+					
+					@Override
+					public void initialize(Field field, ColNameStrategy colNameStrategy, FieldOperatorDictionary fieldOperatorDictionary, ColumnTypeDictionary columnTypeDictionary)
+					{
+						unsafe.objectFieldOffset(field);
+					}
+					
+					@Override
+					public String getFieldName()
+					{
+						throw new UnsupportedOperationException();
+					}
+					
+					@Override
+					public Field getField()
+					{
+						throw new UnsupportedOperationException();
+					}
+					
+					@Override
+					public ColumnType getColumnType()
+					{
+						throw new UnsupportedOperationException();
+					}
+					
+					@Override
+					public String getColName()
+					{
+						throw new UnsupportedOperationException();
+					}
+					
+					@Override
+					public Object fieldValue(Object entity)
+					{
+						String pk = stringGenerator.next();
+						unsafe.putObject(entity, offset, pk);
+						return pk;
+					}
+					
+					@Override
+					public FieldOperator fieldOperator()
+					{
+						throw new UnsupportedOperationException();
+					}
+				});
+			}
+			catch (Exception e)
+			{
+				throw new JustThrowException(e);
+			}
+			for (MapField column : valueColumns)
+			{
+				params.add(column);
+				cache.append("?").appendComma();
+			}
+			cache.deleteLast().append(")");
+			generatePkStrategy = GeneratePkStrategy.GENERATE_BY_APPLICATION;
+		}
+	}
+	
+	@Override
+	protected void autoGeneratePkInsert(Object entity, Connection connection)
+	{
+		switch (generatePkStrategy)
+		{
+			case GENERATE_BY_APPLICATION:
+				ExecSqlTemplate.insert(sqlInterceptors, connection, autoGeneratePkInsertInfo.getSql(), parseParam(autoGeneratePkInsertInfo.getColumns(), entity));
+				break;
+			case GENERATE_BY_DATABASE:
+				ExecSqlTemplate.databasePkGenerateInsert(pkType, pkName, sqlInterceptors, connection, autoGeneratePkInsertInfo.getSql(), parseParam(autoGeneratePkInsertInfo.getColumns(), entity));
+				break;
+			default:
+				break;
+		}
+	}
+	
+	enum GeneratePkStrategy
+	{
+		/**
+		 * 主键由程序自动生成
+		 */
+		GENERATE_BY_APPLICATION, //
+		/**
+		 * 主键由数据库生成
+		 */
+		GENERATE_BY_DATABASE
+	}
 }

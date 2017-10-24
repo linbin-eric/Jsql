@@ -7,7 +7,7 @@ public class BooleanTransfer extends AbstractResultsetTransfer
 {
     
     @Override
-    protected Boolean valueOf(ResultSet resultSet, String sql) throws Exception
+    protected Boolean valueOf(ResultSet resultSet) throws Exception
     {
         return Boolean.valueOf(resultSet.getBoolean(1));
     }

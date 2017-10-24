@@ -6,9 +6,9 @@ import com.jfireframework.sql.SessionfactoryConfig;
 
 public interface ResultSetTransfer
 {
-    void initialize(Class<?> type, SessionfactoryConfig config);
-    
-    Object transfer(ResultSet resultSet, String sql) throws Exception;
-    
-    List<Object> transferList(ResultSet resultSet, String sql) throws Exception;
+	void initialize(Class<?> type, SessionfactoryConfig config);
+	
+	Object transfer(ResultSet resultSet) throws Exception;
+	
+	List<Object> transferList(ResultSet resultSet) throws Exception;
 }

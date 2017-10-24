@@ -5,14 +5,14 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
-import com.jfireframework.sql.annotation.Id;
+import com.jfireframework.sql.annotation.Pk;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.idstrategy.AutoIncrement;
 
 @TableEntity(name = "test_demo")
 public class H2Table
 {
-    @Id
+    @Pk
     @AutoIncrement
     private Integer   id;
     private int       col1;

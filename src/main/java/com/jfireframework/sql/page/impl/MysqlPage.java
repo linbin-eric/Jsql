@@ -5,14 +5,20 @@ import com.jfireframework.sql.page.PageParse;
 import com.jfireframework.sql.page.PageSqlCache;
 import com.jfireframework.sql.util.ExecuteSqlAndParams;
 
-public class OracleParse implements PageParse
+/**
+ * 基于sql92语法,使用limit的方式进行分页
+ * 
+ * @author linbin
+ *
+ */
+public class MysqlPage implements PageParse
 {
 	private String parseQuerySql(String originSql)
 	{
 		String querySql = PageSqlCache.getQuerySql(originSql);
 		if (querySql == null)
 		{
-			querySql = "select * from ( select a.*,rownum rn from(" + originSql + ") a where rownum<=?) where rn>=?";
+			querySql = originSql + " limit ?,?";
 			PageSqlCache.putQuerySql(originSql, querySql);
 		}
 		return querySql;
@@ -36,8 +42,8 @@ public class OracleParse implements PageParse
 		String countSql = parseCountSql(sql);
 		Object[] newParams = new Object[params.length + 2];
 		System.arraycopy(params, 0, newParams, 0, params.length);
-		newParams[params.length] = page.getOffset() + page.getSize();
-		newParams[params.length + 1] = page.getOffset() + 1;
+		newParams[params.length] = page.getOffset();
+		newParams[params.length + 1] = page.getSize();
 		ExecuteSqlAndParams query = new ExecuteSqlAndParams(querySql, newParams);
 		ExecuteSqlAndParams count = new ExecuteSqlAndParams(countSql, params);
 		return new ExecuteSqlAndParams[] { query, count };
@@ -49,8 +55,8 @@ public class OracleParse implements PageParse
 		String querySql = parseQuerySql(sql);
 		Object[] newParams = new Object[params.length + 2];
 		System.arraycopy(params, 0, newParams, 0, params.length);
-		newParams[params.length] = page.getOffset() + page.getSize();
-		newParams[params.length + 1] = page.getOffset() + 1;
+		newParams[params.length] = page.getOffset();
+		newParams[params.length + 1] = page.getSize();
 		ExecuteSqlAndParams query = new ExecuteSqlAndParams(querySql, newParams);
 		return query;
 	}

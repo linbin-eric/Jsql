@@ -10,7 +10,7 @@ public class EnumNameTransfer extends AbstractResultsetTransfer
     private Map<String, ? extends Enum<?>> instances;
     
     @Override
-    protected Enum<?> valueOf(ResultSet resultSet, String sql) throws Exception
+    protected Enum<?> valueOf(ResultSet resultSet) throws Exception
     {
         String result = resultSet.getString(1);
         return result == null ? null : instances.get(result);

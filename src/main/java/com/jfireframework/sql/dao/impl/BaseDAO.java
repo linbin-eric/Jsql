@@ -1,16 +1,17 @@
 package com.jfireframework.sql.dao.impl;
 
 import java.lang.reflect.Field;
+import java.sql.Connection;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.SessionfactoryConfig;
-import com.jfireframework.sql.SqlSession;
-import com.jfireframework.sql.annotation.Id;
-import com.jfireframework.sql.annotation.TableEntity;
+import com.jfireframework.sql.annotation.Pk;
 import com.jfireframework.sql.dao.Dao;
 import com.jfireframework.sql.dao.LockMode;
 import com.jfireframework.sql.dao.StrategyOperation;
@@ -20,273 +21,286 @@ import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
 import com.jfireframework.sql.resultsettransfer.impl.BeanTransfer;
-import com.jfireframework.sql.util.IdType;
+import com.jfireframework.sql.session.ExecSqlTemplate;
+import com.jfireframework.sql.util.ExecuteSqlInfo;
+import com.jfireframework.sql.util.PkType;
 import sun.misc.Unsafe;
 
-public abstract class BaseDAO<T> implements Dao<T>
+public abstract class BaseDAO implements Dao
 {
-    static class SqlAndFields
-    {
-        protected final String     sql;
-        protected final MapField[] fields;
-        
-        public SqlAndFields(String sql, MapField[] fields)
-        {
-            this.sql = sql;
-            this.fields = fields;
-        }
-        
-        public String getSql()
-        {
-            return sql;
-        }
-        
-        public MapField[] getFields()
-        {
-            return fields;
-        }
-        
-    }
-    
-    protected final Class<T>             entityClass;
-    // 代表数据库主键id的field
-    protected final MapField             idField;
-    protected final long                 idOffset;
-    protected final IdType               idType;
-    protected final static Unsafe        unsafe = ReflectUtil.getUnsafe();
-    protected final String               tableName;
-    protected final SqlAndFields         getInfo;
-    protected final SqlAndFields         getInShareInfo;
-    protected final SqlAndFields         getForUpdateInfo;
-    protected final SqlAndFields         updateInfo;
-    protected final String               deleteSql;
-    protected static final Logger        LOGGER = LoggerFactory.getLogger(BaseDAO.class);
-    protected final StrategyOperation<T> strategyOperation;
-    protected final ResultSetTransfer    transfer;
-    protected final String[]             pkName;
-    protected final SqlInterceptor[]     sqlInterceptors;
-    
-    @SuppressWarnings({ "unchecked" })
-    public BaseDAO(TableMetaData metaData, SqlInterceptor[] sqlInterceptors, SessionfactoryConfig config)
-    {
-        this.entityClass = (Class<T>) metaData.getEntityClass();
-        this.sqlInterceptors = sqlInterceptors;
-        transfer = new BeanTransfer();
-        transfer.initialize(entityClass, config);
-        tableName = entityClass.getAnnotation(TableEntity.class).name();
-        MapField[] allMapFields = metaData.getFieldInfos();
-        MapField t_id = null;
-        for (MapField mapField : allMapFields)
-        {
-            if (mapField.getField().isAnnotationPresent(Id.class))
-            {
-                t_id = mapField;
-            }
-        }
-        Field t_idField = t_id.getField();
-        idType = getIdType(t_idField);
-        idField = t_id;
-        pkName = new String[] { idField.getColName() };
-        idOffset = unsafe.objectFieldOffset(t_idField);
-        updateInfo = buildUpdate(allMapFields, idField);
-        getInfo = buildGet(allMapFields, idField);
-        getForUpdateInfo = buildGetForUpdate(allMapFields, idField);
-        getInShareInfo = buildGetInShare(allMapFields, idField);
-        useForSelf(allMapFields, idField);
-        deleteSql = "delete from " + tableName + " where " + idField.getColName() + "=?";
-        strategyOperation = new StrategyOperationImpl<T>(entityClass, allMapFields, config);
-    }
-    
-    protected abstract void useForSelf(MapField[] fields, MapField idField);
-    
-    protected SqlAndFields buildGet(MapField[] fields, MapField idField)
-    {
-        List<MapField> getFields = new LinkedList<MapField>();
-        StringCache cache = new StringCache();
-        /******** 生成getSql ******/
-        cache.clear();
-        cache.append("select ");
-        for (MapField each : fields)
-        {
-            getFields.add(each);
-            cache.append(each.getColName()).append(",");
-        }
-        cache.deleteLast().append(" from ").append(tableName).append(" where ").append(idField.getColName()).append("=?");
-        return new SqlAndFields(cache.toString(), getFields.toArray(new MapField[getFields.size()]));
-    }
-    
-    protected SqlAndFields buildUpdate(MapField[] fields, MapField idField)
-    {
-        List<MapField> updateFields = new LinkedList<MapField>();
-        StringCache cache = new StringCache();
-        cache.append("update ").append(tableName).append(" set ");
-        for (MapField each : fields)
-        {
-            if (each == idField)
-            {
-                continue;
-            }
-            updateFields.add(each);
-            cache.append(each.getColName()).append("=?,");
-        }
-        cache.deleteLast().append(" where ").append(idField.getColName()).append("=?");
-        updateFields.add(idField);
-        return new SqlAndFields(cache.toString(), updateFields.toArray(new MapField[updateFields.size()]));
-    }
-    
-    protected SqlAndFields buildGetForUpdate(MapField[] fields, MapField idField)
-    {
-        StringCache cache = new StringCache();
-        /******** 生成getSql ******/
-        cache.clear();
-        cache.append("select ");
-        List<MapField> getForUpdateFields = new LinkedList<MapField>();
-        for (MapField each : fields)
-        {
-            getForUpdateFields.add(each);
-            cache.append(each.getColName()).append(",");
-        }
-        cache.deleteLast().append(" from ").append(tableName).append(" where ").append(idField.getColName()).append("=? for update");
-        return new SqlAndFields(cache.toString(), getForUpdateFields.toArray(new MapField[getForUpdateFields.size()]));
-    }
-    
-    protected SqlAndFields buildGetInShare(MapField[] fields, MapField idField)
-    {
-        StringCache cache = new StringCache();
-        /******** 生成getSql ******/
-        cache.clear();
-        cache.append("select ");
-        List<MapField> getInSahreFields = new LinkedList<MapField>();
-        for (MapField each : fields)
-        {
-            getInSahreFields.add(each);
-            cache.append(each.getColName()).append(",");
-        }
-        cache.deleteLast().append(" from ").append(tableName).append(" where ").append(idField.getColName()).append("=? lock in share mode");
-        return new SqlAndFields(cache.toString(), getInSahreFields.toArray(new MapField[getInSahreFields.size()]));
-    }
-    
-    protected IdType getIdType(Field field)
-    {
-        Class<?> type = field.getType();
-        if (type == String.class)
-        {
-            return IdType.STRING;
-        }
-        else if (type == Integer.class)
-        {
-            return IdType.INT;
-        }
-        else if (type == Long.class)
-        {
-            return IdType.LONG;
-        }
-        else
-        {
-            throw new UnsupportedOperationException("id字段只支持Integer，Long，String");
-        }
-        
-    }
-    
-    @Override
-    public int delete(Object entity, SqlSession session)
-    {
-        return session.update(deleteSql, unsafe.getObject(entity, idOffset));
-    }
-    
-    @Override
-    public T getById(Object pk, SqlSession session)
-    {
-        return session.query(transfer, getInfo.getSql(), pk);
-    }
-    
-    @Override
-    public void save(T entity, SqlSession session)
-    {
-        Object idValue = unsafe.getObject(entity, idOffset);
-        if (idValue == null)
-        {
-            insert(entity, null, session);
-        }
-        else
-        {
-            update(entity, session);
-        }
-        
-    }
-    
-    protected Object[] parseParam(MapField[] fields, Object entity)
-    {
-        Object[] params = new Object[fields.length];
-        for (int i = 0; i < params.length; i++)
-        {
-            params[i] = fields[i].fieldValue(entity);
-        }
-        return params;
-    }
-    
-    @Override
-    public int update(T entity, SqlSession session)
-    {
-        return session.update(updateInfo.getSql(), parseParam(updateInfo.getFields(), entity));
-    }
-    
-    protected abstract void insert(T entity, Object idValue, SqlSession session);
-    
-    @Override
-    public void insert(T entity, SqlSession session)
-    {
-        Object idValue = unsafe.getObject(entity, idOffset);
-        insert(entity, idValue, session);
-    }
-    
-    @Override
-    public T getById(Object pk, SqlSession session, LockMode mode)
-    {
-        String sql = mode == LockMode.SHARE ? getInShareInfo.getSql() : getForUpdateInfo.getSql();
-        return session.query(transfer, sql, pk);
-    }
-    
-    @Override
-    public int deleteAll(SqlSession session)
-    {
-        return session.update("delete from " + tableName);
-    }
-    
-    @Override
-    public int update(SqlSession session, String strategy, Object... params)
-    {
-        return strategyOperation.update(session, strategy, params);
-    }
-    
-    @Override
-    public int delete(SqlSession session, String strategy, Object... params)
-    {
-        return strategyOperation.delete(session, strategy, params);
-    }
-    
-    @Override
-    public T findOne(SqlSession session, String strategy, Object... params)
-    {
-        return strategyOperation.findOne(session, strategy, params);
-    }
-    
-    @Override
-    public List<T> findAll(SqlSession session, String strategy, Object... params)
-    {
-        return strategyOperation.findAll(session, strategy, params);
-    }
-    
-    @Override
-    public List<T> findPage(SqlSession session, Page page, String strategy, Object... params)
-    {
-        return strategyOperation.findPage(session, page, strategy, params);
-    }
-    
-    @Override
-    public int count(SqlSession session, String strategy, Object... params)
-    {
-        return strategyOperation.count(session, strategy, params);
-    }
-    
+	
+	protected Class<?>				entityClass;
+	// 数据表主键的列
+	protected MapField				pkColumn;
+	// 数据表的所有列
+	protected MapField[]			allColumns;
+	// 数据表除了主键之外所有列
+	protected MapField[]			valueColumns;
+	protected long					pkColumnOffset;
+	protected PkType				pkType;
+	protected String				tableName;
+	protected ExecuteSqlInfo		queryInfo;
+	protected ExecuteSqlInfo		queryInShareInfo;
+	protected ExecuteSqlInfo		queryForUpdateInfo;
+	protected ExecuteSqlInfo		updateInfo;
+	protected ExecuteSqlInfo		deleteInfo;
+	protected ExecuteSqlInfo		insertInfo;
+	protected StrategyOperation		strategyOperation;
+	protected ResultSetTransfer		transfer;
+	protected String[]				pkName;
+	protected SqlInterceptor[]		sqlInterceptors;
+	protected static final Unsafe	unsafe	= ReflectUtil.getUnsafe();
+	protected static final Logger	LOGGER	= LoggerFactory.getLogger(BaseDAO.class);
+	
+	/**
+	 * 初始化
+	 */
+	public void initialize(TableMetaData metaData, SqlInterceptor[] sqlInterceptors, SessionfactoryConfig config)
+	{
+		this.entityClass = metaData.getEntityClass();
+		this.sqlInterceptors = sqlInterceptors;
+		tableName = metaData.getTableName();
+		setTransfer(config);
+		setColumnCorrelation(metaData);
+		setUpdateInfo();
+		setQuery();
+		setQueryForUpdate();
+		setQueryInShare();
+		setDeleteInfo();
+		setInsertInfo();
+		setAutoGeneratePkInsertInfo();
+		strategyOperation = new StrategyOperationImpl(entityClass, allColumns, config);
+	}
+	
+	protected abstract void setAutoGeneratePkInsertInfo();
+	
+	private void setInsertInfo()
+	{
+		StringCache cache = new StringCache();
+		cache.append("INSERT INTO ").append(tableName).append('(');
+		for (MapField column : allColumns)
+		{
+			cache.append(column.getColName()).appendComma();
+		}
+		cache.deleteLast().append(") VALUES(");
+		for (int i = 0; i < allColumns.length; i++)
+		{
+			cache.append("?").appendComma();
+		}
+		cache.deleteLast().append(")");
+		insertInfo = new ExecuteSqlInfo(cache.toString(), allColumns);
+	}
+	
+	/**
+	 * 设置列相关内容。主要是设置主键列，全部列数组，以及值列数组
+	 * 
+	 * @param metaData
+	 */
+	private void setColumnCorrelation(TableMetaData metaData)
+	{
+		allColumns = metaData.getFieldInfos();
+		List<MapField> columns = new ArrayList<MapField>();
+		for (MapField column : allColumns)
+		{
+			if (column.getField().isAnnotationPresent(Pk.class))
+			{
+				pkColumn = column;
+				pkColumnOffset = unsafe.objectFieldOffset(pkColumn.getField());
+				pkType = getIdType(pkColumn.getField());
+				pkName = new String[] { pkColumn.getColName() };
+			}
+			else
+			{
+				columns.add(column);
+			}
+		}
+		valueColumns = columns.toArray(new MapField[columns.size()]);
+	}
+	
+	private void setTransfer(SessionfactoryConfig config)
+	{
+		transfer = new BeanTransfer();
+		transfer.initialize(entityClass, config);
+	}
+	
+	protected void setQuery()
+	{
+		StringCache cache = new StringCache();
+		cache.append("select ");
+		for (MapField each : allColumns)
+		{
+			cache.append(each.getColName()).append(",");
+		}
+		cache.deleteLast().append(" from ").append(tableName).append(" where ").append(pkColumn.getColName()).append("=?");
+		queryInfo = new ExecuteSqlInfo(cache.toString(), new MapField[] { pkColumn });
+	}
+	
+	protected void setUpdateInfo()
+	{
+		List<MapField> params = new LinkedList<MapField>();
+		StringCache cache = new StringCache();
+		cache.append("update ").append(tableName).append(" set ");
+		for (MapField each : valueColumns)
+		{
+			params.add(each);
+			cache.append(each.getColName()).append("=?,");
+		}
+		cache.deleteLast().append(" where ").append(pkColumn.getColName()).append("=?");
+		params.add(pkColumn);
+		updateInfo = new ExecuteSqlInfo(cache.toString(), params.toArray(new MapField[params.size()]));
+	}
+	
+	protected void setQueryForUpdate()
+	{
+		StringCache cache = new StringCache();
+		cache.append("select ");
+		for (MapField each : allColumns)
+		{
+			cache.append(each.getColName()).append(",");
+		}
+		cache.deleteLast().append(" from ").append(tableName).append(" where ").append(pkColumn.getColName()).append("=? FOR UPDATE");
+		queryForUpdateInfo = new ExecuteSqlInfo(cache.toString(), new MapField[] { pkColumn });
+	}
+	
+	protected void setQueryInShare()
+	{
+		StringCache cache = new StringCache();
+		cache.append("select ");
+		for (MapField each : allColumns)
+		{
+			cache.append(each.getColName()).append(",");
+		}
+		cache.deleteLast().append(" from ").append(tableName).append(" where ").append(pkColumn.getColName()).append("=? LOCK IN SHARE MODE");
+		queryInShareInfo = new ExecuteSqlInfo(cache.toString(), new MapField[] { pkColumn });
+	}
+	
+	protected PkType getIdType(Field field)
+	{
+		Class<?> type = field.getType();
+		if (type == String.class)
+		{
+			return PkType.STRING;
+		}
+		else if (type == Integer.class)
+		{
+			return PkType.INT;
+		}
+		else if (type == Long.class)
+		{
+			return PkType.LONG;
+		}
+		else
+		{
+			throw new UnsupportedOperationException("id字段只支持Integer，Long，String");
+		}
+		
+	}
+	
+	protected void setDeleteInfo()
+	{
+		String sql = StringUtil.format("DELETE FROM {} WHERE {}=?", tableName, pkColumn.getColName());
+		deleteInfo = new ExecuteSqlInfo(sql, new MapField[] { pkColumn });
+	}
+	
+	@Override
+	public int delete(Object entity, Connection connection)
+	{
+		return ExecSqlTemplate.update(sqlInterceptors, connection, deleteInfo.getSql(), parseParam(deleteInfo.getColumns(), entity));
+	}
+	
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T> T getById(Object pk, Connection connection)
+	{
+		return (T) ExecSqlTemplate.queryOne(sqlInterceptors, transfer, connection, queryInfo.getSql(), pk);
+	}
+	
+	@Override
+	public void insert(Object entity, Connection connection)
+	{
+		ExecSqlTemplate.insert(sqlInterceptors, connection, insertInfo.getSql(), parseParam(insertInfo.getColumns(), entity));
+	}
+	
+	@Override
+	public void save(Object entity, Connection connection)
+	{
+		Object idValue = unsafe.getObject(entity, pkColumnOffset);
+		if (idValue == null)
+		{
+			autoGeneratePkInsert(entity, connection);
+		}
+		else
+		{
+			ExecSqlTemplate.update(sqlInterceptors, connection, updateInfo.getSql(), parseParam(updateInfo.getColumns(), entity));
+		}
+		
+	}
+	
+	protected abstract void autoGeneratePkInsert(Object entity, Connection connection);
+	
+	protected Object[] parseParam(MapField[] fields, Object entity)
+	{
+		Object[] params = new Object[fields.length];
+		for (int i = 0; i < params.length; i++)
+		{
+			params[i] = fields[i].fieldValue(entity);
+		}
+		return params;
+	}
+	
+	@Override
+	public int update(Object entity, Connection connection)
+	{
+		return ExecSqlTemplate.update(sqlInterceptors, connection, updateInfo.getSql(), parseParam(updateInfo.getColumns(), entity));
+	}
+	
+	@Override
+	public <T> T getById(Object pk, Connection connection, LockMode mode)
+	{
+		String sql = mode == LockMode.SHARE ? queryInShareInfo.getSql() : queryForUpdateInfo.getSql();
+		return ExecSqlTemplate.queryOne(sqlInterceptors, transfer, connection, sql, pk);
+	}
+	
+	@Override
+	public int deleteAll(Connection connection)
+	{
+		return ExecSqlTemplate.update(sqlInterceptors, connection, "DELETE FROM " + tableName);
+	}
+	
+	@Override
+	public int update(Connection connection, String strategy, Object... params)
+	{
+		return strategyOperation.update(connection, strategy, params);
+	}
+	
+	@Override
+	public int delete(Connection connection, String strategy, Object... params)
+	{
+		return strategyOperation.delete(connection, strategy, params);
+	}
+	
+	@Override
+	public <T> T findOne(Connection connection, String strategy, Object... params)
+	{
+		return strategyOperation.findOne(connection, strategy, params);
+	}
+	
+	@Override
+	public <T> List<T> findAll(Connection connection, String strategy, Object... params)
+	{
+		return strategyOperation.findAll(connection, strategy, params);
+	}
+	
+	@Override
+	public <T> List<T> findPage(Connection connection, Page page, String strategy, Object... params)
+	{
+		return strategyOperation.findPage(connection, page, strategy, params);
+	}
+	
+	@Override
+	public int count(Connection connection, String strategy, Object... params)
+	{
+		return strategyOperation.count(connection, strategy, params);
+	}
+	
 }

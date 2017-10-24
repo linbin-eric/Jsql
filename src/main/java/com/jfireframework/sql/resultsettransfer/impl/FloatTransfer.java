@@ -7,7 +7,7 @@ public class FloatTransfer extends AbstractResultsetTransfer
 {
     
     @Override
-    protected Float valueOf(ResultSet resultSet, String sql) throws Exception
+    protected Float valueOf(ResultSet resultSet) throws Exception
     {
         return Float.valueOf(resultSet.getFloat(1));
     }

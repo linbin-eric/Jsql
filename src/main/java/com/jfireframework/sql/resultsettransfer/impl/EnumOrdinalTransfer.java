@@ -10,7 +10,7 @@ public class EnumOrdinalTransfer extends AbstractResultsetTransfer
     Enum<?>[] instances;
     
     @Override
-    protected Enum<?> valueOf(ResultSet resultSet, String sql) throws Exception
+    protected Enum<?> valueOf(ResultSet resultSet) throws Exception
     {
         int result = resultSet.getInt(1);
         return resultSet.wasNull() ? null : instances[result];

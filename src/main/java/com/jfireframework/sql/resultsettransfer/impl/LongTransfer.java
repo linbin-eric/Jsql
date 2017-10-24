@@ -7,7 +7,7 @@ public class LongTransfer extends AbstractResultsetTransfer
 {
     
     @Override
-    protected Long valueOf(ResultSet resultSet, String sql) throws Exception
+    protected Long valueOf(ResultSet resultSet) throws Exception
     {
         return Long.valueOf(resultSet.getLong(1));
     }

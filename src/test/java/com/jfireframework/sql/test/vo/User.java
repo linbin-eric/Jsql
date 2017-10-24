@@ -5,7 +5,7 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
 import com.jfireframework.sql.annotation.Column;
-import com.jfireframework.sql.annotation.Id;
+import com.jfireframework.sql.annotation.Pk;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.dbstructure.column.UserDefinedColumnType;
@@ -28,7 +28,7 @@ public class User
 	}
 	
 	public static String	customName	= "12asdaseda";
-	@Id
+	@Pk
 	private Integer			id;
 	@Column(name = "name2")
 	private String			name;

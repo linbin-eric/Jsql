@@ -8,7 +8,7 @@ public class SqlDateTransfer extends AbstractResultsetTransfer
 {
     
     @Override
-    protected Date valueOf(ResultSet resultSet, String sql) throws Exception
+    protected Date valueOf(ResultSet resultSet) throws Exception
     {
         return resultSet.getDate(1);
     }

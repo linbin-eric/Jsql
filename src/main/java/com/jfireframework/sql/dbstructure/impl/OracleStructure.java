@@ -139,7 +139,7 @@ public class OracleStructure extends AbstractDBStructure
 		executeQuery.next();
 		String data_type = executeQuery.getString(1);
 		String data_length = executeQuery.getString(2);
-		ColumnType columnType = tableMetaData.columnType(each);
+		ColumnType columnType = each.getColumnType();
 		return data_type.equalsIgnoreCase(columnType.type()) && data_length.equalsIgnoreCase(columnType.desc());
 	}
 	

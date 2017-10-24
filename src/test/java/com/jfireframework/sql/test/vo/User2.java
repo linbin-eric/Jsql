@@ -1,13 +1,13 @@
 package com.jfireframework.sql.test.vo;
 
 import com.jfireframework.sql.annotation.Column;
-import com.jfireframework.sql.annotation.Id;
+import com.jfireframework.sql.annotation.Pk;
 import com.jfireframework.sql.annotation.TableEntity;
 
 @TableEntity(name = "user", editable = false)
 public class User2
 {
-    @Id
+    @Pk
     private Integer id;
     @Column(name = "name2")
     private String  name;

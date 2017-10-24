@@ -21,7 +21,7 @@ import com.jfireframework.sql.annotation.Sql;
 import com.jfireframework.sql.dao.Dao;
 import com.jfireframework.sql.dao.impl.MysqlDAO;
 import com.jfireframework.sql.dao.impl.OracleDAO;
-import com.jfireframework.sql.dao.impl.StandardDAO;
+import com.jfireframework.sql.dao.impl.H2DAO;
 import com.jfireframework.sql.dbstructure.Structure;
 import com.jfireframework.sql.dbstructure.column.ColumnTypeDictionary;
 import com.jfireframework.sql.dbstructure.column.impl.H2ColumnTypeDictionary;
@@ -38,7 +38,7 @@ import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.page.PageParse;
 import com.jfireframework.sql.page.impl.OracleParse;
-import com.jfireframework.sql.page.impl.StandardParse;
+import com.jfireframework.sql.page.impl.MysqlPage;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransferDictionary;
 import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore;
 import com.jfireframework.sql.session.impl.SessionFactoryImpl;
@@ -161,7 +161,7 @@ public class SessionfactoryConfig
                 productName = md.getDatabaseProductName().toLowerCase();
                 if (productName.equals("mariadb") || "mysql".equals(productName))
                 {
-                    pageParse = new StandardParse();
+                    pageParse = new MysqlPage();
                     jdbcTypeDictionary = jdbcTypeDictionary == null ? new MysqlColumnTypeDictionary() : jdbcTypeDictionary;
                 }
                 else if (productName.equals("oracle"))
@@ -171,7 +171,7 @@ public class SessionfactoryConfig
                 }
                 else if (productName.equals("h2"))
                 {
-                    pageParse = new StandardParse();
+                    pageParse = new MysqlPage();
                     jdbcTypeDictionary = jdbcTypeDictionary == null ? new H2ColumnTypeDictionary() : jdbcTypeDictionary;
                 }
                 else
@@ -303,11 +303,11 @@ public class SessionfactoryConfig
                     }
                     else if (productName.contains("hsql"))
                     {
-                        daos.put(each.getEntityClass(), new StandardDAO(each, sqlInterceptors, SessionfactoryConfig.this));
+                        daos.put(each.getEntityClass(), new H2DAO(each, sqlInterceptors, SessionfactoryConfig.this));
                     }
                     else if (productName.equals("h2"))
                     {
-                        daos.put(each.getEntityClass(), new StandardDAO(each, sqlInterceptors, SessionfactoryConfig.this));
+                        daos.put(each.getEntityClass(), new H2DAO(each, sqlInterceptors, SessionfactoryConfig.this));
                     }
                     else
                     {
@@ -393,5 +393,6 @@ public class SessionfactoryConfig
     {
         return tableNameCaseStrategy;
     }
+    
     
 }

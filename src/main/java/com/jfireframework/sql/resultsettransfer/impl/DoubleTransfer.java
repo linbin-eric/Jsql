@@ -7,7 +7,7 @@ public class DoubleTransfer extends AbstractResultsetTransfer
 {
     
     @Override
-    protected Double valueOf(ResultSet resultSet, String sql) throws Exception
+    protected Double valueOf(ResultSet resultSet) throws Exception
     {
         return Double.valueOf(resultSet.getDouble(1));
     }

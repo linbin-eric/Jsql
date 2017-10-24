@@ -8,7 +8,7 @@ public class StringTransfer extends AbstractResultsetTransfer
 {
     
     @Override
-    protected String valueOf(ResultSet resultSet, String sql) throws SQLException
+    protected String valueOf(ResultSet resultSet) throws SQLException
     {
         return resultSet.getString(1);
     }

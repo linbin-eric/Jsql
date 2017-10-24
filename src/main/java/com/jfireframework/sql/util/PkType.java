@@ -1,6 +1,6 @@
 package com.jfireframework.sql.util;
 
-public enum IdType
+public enum PkType
 {
     INT, LONG, STRING
 }

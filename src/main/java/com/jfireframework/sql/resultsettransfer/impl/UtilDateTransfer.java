@@ -9,7 +9,7 @@ public class UtilDateTransfer extends AbstractResultsetTransfer
 {
     
     @Override
-    protected Date valueOf(ResultSet resultSet, String sql) throws Exception
+    protected Date valueOf(ResultSet resultSet) throws Exception
     {
         Timestamp timestamp = resultSet.getTimestamp(1);
         return new Date(timestamp.getTime());
