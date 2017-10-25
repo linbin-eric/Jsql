@@ -27,6 +27,7 @@ public class InterfaceGenerateTest
         dataSource.setUsername("sa");
         dataSource.setPassword("");
         config.setDataSource(dataSource);
+        config.setSchema("PUBLIC");
         config.setClassLoader(InterfaceGenerateTest.class.getClassLoader());
         config.setTableMode("create");
         Set<Class<?>> set = new HashSet<Class<?>>();

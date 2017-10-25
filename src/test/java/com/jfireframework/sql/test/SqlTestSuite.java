@@ -4,7 +4,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
-@SuiteClasses({ InterfaceGenerateTest.class, DbCreateTest.class, CURDTest.class, StrategyTest.class, MapperTest.class, LexerTest.class })
+@SuiteClasses({ InterfaceGenerateTest.class, CURDTest.class, CURDTest.class, StrategyTest.class, MapperTest.class, LexerTest.class })
 @RunWith(Suite.class)
 public class SqlTestSuite
 {

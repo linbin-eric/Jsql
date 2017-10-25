@@ -1,6 +1,6 @@
 package com.jfireframework.sql.dbstructure.name;
 
-public interface ColNameStrategy
+public interface ColumnNameStrategy
 {
     String toDbName(String name);
 }

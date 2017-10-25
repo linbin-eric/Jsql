@@ -9,7 +9,7 @@ import com.jfireframework.sql.annotation.Column;
 import com.jfireframework.sql.dbstructure.column.ColumnType;
 import com.jfireframework.sql.dbstructure.column.ColumnTypeDictionary;
 import com.jfireframework.sql.dbstructure.column.UserDefinedColumnType;
-import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
+import com.jfireframework.sql.dbstructure.name.ColumnNameStrategy;
 import com.jfireframework.sql.mapfield.FieldOperator;
 import com.jfireframework.sql.mapfield.FieldOperatorDictionary;
 import com.jfireframework.sql.mapfield.FieldOperatorUtil;
@@ -32,7 +32,7 @@ public class MapFieldImpl implements MapField
 	protected FieldOperator			operator;
 	
 	@Override
-	public void initialize(Field field, ColNameStrategy colNameStrategy, FieldOperatorDictionary fieldOperatorDictionary, ColumnTypeDictionary columnTypeDictionary)
+	public void initialize(Field field, ColumnNameStrategy colNameStrategy, FieldOperatorDictionary fieldOperatorDictionary, ColumnTypeDictionary columnTypeDictionary)
 	{
 		offset = unsafe.objectFieldOffset(field);
 		operator = FieldOperatorUtil.getFieldOperator(field, fieldOperatorDictionary);

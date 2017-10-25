@@ -6,8 +6,6 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.TimeZone;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,7 +19,6 @@ import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.SqlSession;
 import com.jfireframework.sql.dao.LockMode;
 import com.jfireframework.sql.test.vo.User;
-import com.jfireframework.sql.test.vo.User.State;
 import com.zaxxer.hikari.HikariDataSource;
 
 public class CURDTest
@@ -38,7 +35,7 @@ public class CURDTest
         dataSource.setUsername("sa");
         dataSource.setPassword("");
         config.setDataSource(dataSource);
-        config.setClassLoader(DbCreateTest.class.getClassLoader());
+        config.setClassLoader(CURDTest.class.getClassLoader());
         config.setTableMode("create");
         config.setScanPackage(User.class.getPackage().getName());
         sessionFactory = config.build();
@@ -284,27 +281,4 @@ public class CURDTest
         Assert.assertEquals(1, count.get());
     }
     
-    /**
-     * 测试批量保存
-     */
-    @Test
-    public void test_batchInsert()
-    {
-        List<User> users = new LinkedList<User>();
-        User one = new User();
-        one.setName("11");
-        one.setAge(12);
-        one.setLength(12);
-        one.setState(State.off);
-        users.add(one);
-        User two = new User();
-        two.setAge(14);
-        two.setName("14");
-        two.setLength(12);
-        two.setState(State.off);
-        users.add(two);
-        SqlSession session = sessionFactory.openSession();
-        session.batchInsert(users);
-        Assert.assertEquals(2, session.count(User.class, ""));
-    }
 }

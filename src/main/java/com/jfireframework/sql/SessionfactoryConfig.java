@@ -19,9 +19,9 @@ import com.jfireframework.baseutil.order.AescComparator;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.annotation.Sql;
 import com.jfireframework.sql.dao.Dao;
+import com.jfireframework.sql.dao.impl.H2DAO;
 import com.jfireframework.sql.dao.impl.MysqlDAO;
 import com.jfireframework.sql.dao.impl.OracleDAO;
-import com.jfireframework.sql.dao.impl.H2DAO;
 import com.jfireframework.sql.dbstructure.Structure;
 import com.jfireframework.sql.dbstructure.column.ColumnTypeDictionary;
 import com.jfireframework.sql.dbstructure.column.impl.H2ColumnTypeDictionary;
@@ -37,8 +37,8 @@ import com.jfireframework.sql.mapper.MapperBuilder;
 import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.page.PageParse;
-import com.jfireframework.sql.page.impl.OracleParse;
 import com.jfireframework.sql.page.impl.MysqlPage;
+import com.jfireframework.sql.page.impl.OracleParse;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransferDictionary;
 import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore;
 import com.jfireframework.sql.session.impl.SessionFactoryImpl;
@@ -55,7 +55,7 @@ public class SessionfactoryConfig
     private ResultsetTransferStore            resultsetTransferStore;
     private Set<Class<?>>                     ckasses;
     private IdentityHashMap<Class<?>, Mapper> mappers               = new IdentityHashMap<Class<?>, Mapper>(128);
-    private IdentityHashMap<Class<?>, Dao<?>> daos                  = new IdentityHashMap<Class<?>, Dao<?>>();
+    private IdentityHashMap<Class<?>, Dao>    daos                  = new IdentityHashMap<Class<?>, Dao>();
     private MetaContext                       metaContext;
     private SqlInterceptor[]                  sqlInterceptors;
     private PageParse                         pageParse;
@@ -285,7 +285,6 @@ public class SessionfactoryConfig
     class BuildDao implements Stage
     {
         
-        @SuppressWarnings({ "rawtypes" })
         @Override
         public void process() throws Exception
         {
@@ -293,26 +292,25 @@ public class SessionfactoryConfig
             {
                 if (each.getIdInfo() != null)
                 {
+                    Dao dao;
                     if (productName.equals("mysql") || productName.equals("marridb"))
                     {
-                        daos.put(each.getEntityClass(), new MysqlDAO(each, sqlInterceptors, SessionfactoryConfig.this));
+                        dao = new MysqlDAO();
                     }
                     else if (productName.equals("oracle"))
                     {
-                        daos.put(each.getEntityClass(), new OracleDAO(each, sqlInterceptors, SessionfactoryConfig.this));
-                    }
-                    else if (productName.contains("hsql"))
-                    {
-                        daos.put(each.getEntityClass(), new H2DAO(each, sqlInterceptors, SessionfactoryConfig.this));
+                        dao = new OracleDAO();
                     }
                     else if (productName.equals("h2"))
                     {
-                        daos.put(each.getEntityClass(), new H2DAO(each, sqlInterceptors, SessionfactoryConfig.this));
+                        dao = new H2DAO();
                     }
                     else
                     {
                         throw new UnsupportedOperationException("不支持的数据库产品");
                     }
+                    dao.initialize(each, sqlInterceptors, SessionfactoryConfig.this, pageParse);
+                    daos.put(each.getEntityClass(), dao);
                 }
             }
         }
@@ -393,6 +391,5 @@ public class SessionfactoryConfig
     {
         return tableNameCaseStrategy;
     }
-    
     
 }

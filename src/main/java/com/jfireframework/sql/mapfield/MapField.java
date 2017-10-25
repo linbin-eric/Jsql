@@ -5,12 +5,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import com.jfireframework.sql.dbstructure.column.ColumnType;
 import com.jfireframework.sql.dbstructure.column.ColumnTypeDictionary;
-import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
+import com.jfireframework.sql.dbstructure.name.ColumnNameStrategy;
 
 public interface MapField
 {
 	
-	void initialize(Field field, ColNameStrategy colNameStrategy, FieldOperatorDictionary fieldOperatorDictionary, ColumnTypeDictionary columnTypeDictionary);
+	void initialize(Field field, ColumnNameStrategy colNameStrategy, FieldOperatorDictionary fieldOperatorDictionary, ColumnTypeDictionary columnTypeDictionary);
 	
 	FieldOperator fieldOperator();
 	

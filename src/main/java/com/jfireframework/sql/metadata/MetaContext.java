@@ -7,14 +7,14 @@ import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.annotation.NameStrategy;
 import com.jfireframework.sql.annotation.TableEntity;
-import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
+import com.jfireframework.sql.dbstructure.name.ColumnNameStrategy;
 import com.jfireframework.sql.dbstructure.name.DefaultNameStrategy;
 
 public class MetaContext
 {
     private final Map<String, TableMetaData>                             entityMap = new HashMap<String, TableMetaData>();
     private final TableMetaData[]                                        metaDatas;
-    private final Map<Class<? extends ColNameStrategy>, ColNameStrategy> map       = new HashMap<Class<? extends ColNameStrategy>, ColNameStrategy>();
+    private final Map<Class<? extends ColumnNameStrategy>, ColumnNameStrategy> map       = new HashMap<Class<? extends ColumnNameStrategy>, ColumnNameStrategy>();
     
     public MetaContext(Set<Class<?>> set, SessionfactoryConfig config)
     {
@@ -29,10 +29,10 @@ public class MetaContext
         metaDatas = entityMap.values().toArray(new TableMetaData[entityMap.size()]);
     }
     
-    private ColNameStrategy getColNameStrategy(Class<?> entityClass)
+    private ColumnNameStrategy getColNameStrategy(Class<?> entityClass)
     {
-        Class<? extends ColNameStrategy> ckass = entityClass.isAnnotationPresent(NameStrategy.class) ? entityClass.getAnnotation(NameStrategy.class).value() : DefaultNameStrategy.class;
-        ColNameStrategy nameStrategy = map.get(ckass);
+        Class<? extends ColumnNameStrategy> ckass = entityClass.isAnnotationPresent(NameStrategy.class) ? entityClass.getAnnotation(NameStrategy.class).value() : DefaultNameStrategy.class;
+        ColumnNameStrategy nameStrategy = map.get(ckass);
         if (nameStrategy == null)
         {
             try

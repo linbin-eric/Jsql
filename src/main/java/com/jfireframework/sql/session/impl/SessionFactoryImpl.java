@@ -15,13 +15,13 @@ import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore;
 public class SessionFactoryImpl implements SessionFactory
 {
     private final IdentityHashMap<Class<?>, Mapper> mappers;
-    private final IdentityHashMap<Class<?>, Dao<?>> daos;
+    private final IdentityHashMap<Class<?>, Dao>    daos;
     private final SqlInterceptor[]                  sqlInterceptors;
     private final PageParse                         pageParse;
     private final DataSource                        dataSource;
     private final ResultsetTransferStore            resultsetTransferStore;
     
-    public SessionFactoryImpl(IdentityHashMap<Class<?>, Mapper> mappers, IdentityHashMap<Class<?>, Dao<?>> daos, SqlInterceptor[] sqlInterceptors, PageParse pageParse, DataSource dataSource, ResultsetTransferStore resultsetTransferStore)
+    public SessionFactoryImpl(IdentityHashMap<Class<?>, Mapper> mappers, IdentityHashMap<Class<?>, Dao> daos, SqlInterceptor[] sqlInterceptors, PageParse pageParse, DataSource dataSource, ResultsetTransferStore resultsetTransferStore)
     {
         this.resultsetTransferStore = resultsetTransferStore;
         this.mappers = mappers;
@@ -80,11 +80,10 @@ public class SessionFactoryImpl implements SessionFactory
         }
     }
     
-    @SuppressWarnings("unchecked")
     @Override
-    public <T> Dao<T> getDao(Class<T> ckass)
+    public Dao getDao(Class<?> ckass)
     {
-        return (Dao<T>) daos.get(ckass);
+        return daos.get(ckass);
     }
     
     @Override
@@ -92,9 +91,9 @@ public class SessionFactoryImpl implements SessionFactory
     {
         SqlSession session = getOrCreateCurrentSession();
         session.beginTransAction(0);
-        for (Dao<?> dao : daos.values())
+        for (Dao dao : daos.values())
         {
-            dao.deleteAll(session);
+            dao.deleteAll(session.getConnection());
         }
         session.commit();
     }

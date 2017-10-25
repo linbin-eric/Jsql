@@ -55,7 +55,7 @@ public class H2Test
             }
             for (MapField mapField : tableMetaData.getFieldInfos())
             {
-                ColumnType columnType = tableMetaData.columnType(mapField);
+                ColumnType columnType = mapField.getColumnType();
                 logger.debug("traceId:{} 查询的语句是:{}", traceId, StringUtil.format(template, tableMetaData.getTableName(), mapField.getColName()));
                 ResultSet executeQuery = connection.prepareStatement(StringUtil.format(template, tableMetaData.getTableName(), mapField.getColName())).executeQuery();
                 Assert.assertTrue(executeQuery.next());

@@ -22,68 +22,68 @@ import com.zaxxer.hikari.HikariDataSource;
 
 public class MysqlTest
 {
-	private static final Logger logger = LoggerFactory.getLogger(MysqlTest.class);
-	
-	@Test
-	public void test() throws SQLException
-	{
-		String traceId = TRACEID.newTraceId();
-		HikariDataSource dataSource = new HikariDataSource();
-		dataSource.setJdbcUrl("jdbc:mysql://172.18.169.18:13306");
-		dataSource.setDriverClassName(Driver.class.getName());
-		dataSource.setUsername("root");
-		dataSource.setPassword("root");
-		SessionfactoryConfig config = new SessionfactoryConfig();
-		config.setDataSource(dataSource);
-		config.setScanPackage("com.jfireframework.sql.test.mysqltest");
-		config.setSchema("test");
-		config.setTableMode("update");
-		config.setTableNameCaseStrategy(TableNameCaseStrategy.LOWER);
-		SessionFactory sessionFactory = config.build();
-		SqlSession session = sessionFactory.openSession();
-		Connection connection = session.getConnection();
-		String template = "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='test' AND TABLE_NAME='{}' AND COLUMN_NAME='{}'";
-		TableMetaData[] metaDatas = config.getMetaContext().metaDatas();
-		for (TableMetaData tableMetaData : metaDatas)
-		{
-			if (tableMetaData.getIdInfo() == null || tableMetaData.editable() == false)
-			{
-				continue;
-			}
-			for (MapField mapField : tableMetaData.getFieldInfos())
-			{
-				logger.trace("traceId:{} 查询的语句是:{}", traceId, StringUtil.format(template, tableMetaData.getTableName(), mapField.getColName()));
-				ResultSet executeQuery = connection.prepareStatement(StringUtil.format(template, tableMetaData.getTableName(), mapField.getColName())).executeQuery();
-				Assert.assertTrue(executeQuery.next());
-				Assert.assertTrue(executeQuery.getString(1).equalsIgnoreCase(getColumnType(mapField, tableMetaData)));
-			}
-		}
-	}
-	
-	private String getColumnType(MapField fieldInfo, TableMetaData tableMetaData)
-	{
-		StringCache cache = new StringCache();
-		ColumnType columnType = tableMetaData.columnType(fieldInfo);
-		if (StringUtil.isNotBlank(columnType.desc()))
-		{
-			cache.append(columnType.type()).append('(').append(columnType.desc()).append(')');
-		}
-		else
-		{
-			cache.append(columnType.type());
-		}
-		return cache.toString();
-	}
-	
-	@Test
-	public void test2() throws SQLException
-	{
-		HikariDataSource dataSource = new HikariDataSource();
-		dataSource.setJdbcUrl("jdbc:mysql://172.18.169.18:13306");
-		dataSource.setDriverClassName(Driver.class.getName());
-		dataSource.setUsername("root");
-		dataSource.setPassword("root");
-		Connection connection = dataSource.getConnection();
-		connection.prepareStatement("insert into test.test_demo (ID) values(NULL)").executeUpdate();
-	}
+    private static final Logger logger = LoggerFactory.getLogger(MysqlTest.class);
+    
+    @Test
+    public void test() throws SQLException
+    {
+        String traceId = TRACEID.newTraceId();
+        HikariDataSource dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl("jdbc:mysql://172.18.169.18:13306");
+        dataSource.setDriverClassName(Driver.class.getName());
+        dataSource.setUsername("root");
+        dataSource.setPassword("root");
+        SessionfactoryConfig config = new SessionfactoryConfig();
+        config.setDataSource(dataSource);
+        config.setScanPackage("com.jfireframework.sql.test.mysqltest");
+        config.setSchema("test");
+        config.setTableMode("update");
+        config.setTableNameCaseStrategy(TableNameCaseStrategy.LOWER);
+        SessionFactory sessionFactory = config.build();
+        SqlSession session = sessionFactory.openSession();
+        Connection connection = session.getConnection();
+        String template = "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='test' AND TABLE_NAME='{}' AND COLUMN_NAME='{}'";
+        TableMetaData[] metaDatas = config.getMetaContext().metaDatas();
+        for (TableMetaData tableMetaData : metaDatas)
+        {
+            if (tableMetaData.getIdInfo() == null || tableMetaData.editable() == false)
+            {
+                continue;
+            }
+            for (MapField mapField : tableMetaData.getFieldInfos())
+            {
+                logger.trace("traceId:{} 查询的语句是:{}", traceId, StringUtil.format(template, tableMetaData.getTableName(), mapField.getColName()));
+                ResultSet executeQuery = connection.prepareStatement(StringUtil.format(template, tableMetaData.getTableName(), mapField.getColName())).executeQuery();
+                Assert.assertTrue(executeQuery.next());
+                Assert.assertTrue(executeQuery.getString(1).equalsIgnoreCase(getColumnType(mapField, tableMetaData)));
+            }
+        }
+    }
+    
+    private String getColumnType(MapField fieldInfo, TableMetaData tableMetaData)
+    {
+        StringCache cache = new StringCache();
+        ColumnType columnType = fieldInfo.getColumnType();
+        if (StringUtil.isNotBlank(columnType.desc()))
+        {
+            cache.append(columnType.type()).append('(').append(columnType.desc()).append(')');
+        }
+        else
+        {
+            cache.append(columnType.type());
+        }
+        return cache.toString();
+    }
+    
+    @Test
+    public void test2() throws SQLException
+    {
+        HikariDataSource dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl("jdbc:mysql://172.18.169.18:13306");
+        dataSource.setDriverClassName(Driver.class.getName());
+        dataSource.setUsername("root");
+        dataSource.setPassword("root");
+        Connection connection = dataSource.getConnection();
+        connection.prepareStatement("insert into test.test_demo (ID) values(NULL)").executeUpdate();
+    }
 }

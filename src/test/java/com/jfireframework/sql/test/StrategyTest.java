@@ -28,7 +28,7 @@ public class StrategyTest
         dataSource.setUsername("sa");
         dataSource.setPassword("");
         config.setDataSource(dataSource);
-        config.setClassLoader(DbCreateTest.class.getClassLoader());
+        config.setClassLoader(StrategyTest.class.getClassLoader());
         config.setTableMode("create");
         config.setScanPackage(User.class.getPackage().getName());
         sessionFactory = config.build();

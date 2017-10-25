@@ -12,7 +12,7 @@ import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.annotation.Pk;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableEntity;
-import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
+import com.jfireframework.sql.dbstructure.name.ColumnNameStrategy;
 import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.mapfield.impl.MapFieldImpl;
 
@@ -22,10 +22,10 @@ public class TableMetaData
 	private MapField[]		fieldInfos;
 	private MapField		idInfo;
 	private Class<?>		ckass;
-	private ColNameStrategy	colNameStrategy;
+	private ColumnNameStrategy	colNameStrategy;
 	private boolean			editable;
 	
-	public TableMetaData(Class<?> ckass, ColNameStrategy nameStrategy, SessionfactoryConfig config)
+	public TableMetaData(Class<?> ckass, ColumnNameStrategy nameStrategy, SessionfactoryConfig config)
 	{
 		this.ckass = ckass;
 		this.colNameStrategy = nameStrategy;
@@ -92,7 +92,7 @@ public class TableMetaData
 		}
 	}
 	
-	public ColNameStrategy getColNameStrategy()
+	public ColumnNameStrategy getColNameStrategy()
 	{
 		return colNameStrategy;
 	}

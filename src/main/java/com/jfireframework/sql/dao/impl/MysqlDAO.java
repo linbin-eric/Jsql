@@ -11,7 +11,7 @@ import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.dbstructure.column.ColumnType;
 import com.jfireframework.sql.dbstructure.column.ColumnTypeDictionary;
-import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
+import com.jfireframework.sql.dbstructure.name.ColumnNameStrategy;
 import com.jfireframework.sql.idstrategy.AutoIncrement;
 import com.jfireframework.sql.idstrategy.GenerateStringPk;
 import com.jfireframework.sql.idstrategy.GenerateStringPk.StringGenerator;
@@ -72,7 +72,7 @@ public class MysqlDAO extends BaseDAO
 					}
 					
 					@Override
-					public void initialize(Field field, ColNameStrategy colNameStrategy, FieldOperatorDictionary fieldOperatorDictionary, ColumnTypeDictionary columnTypeDictionary)
+					public void initialize(Field field, ColumnNameStrategy colNameStrategy, FieldOperatorDictionary fieldOperatorDictionary, ColumnTypeDictionary columnTypeDictionary)
 					{
 						unsafe.objectFieldOffset(field);
 					}

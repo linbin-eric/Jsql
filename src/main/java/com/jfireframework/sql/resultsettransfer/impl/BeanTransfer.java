@@ -16,7 +16,7 @@ import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.annotation.NameStrategy;
 import com.jfireframework.sql.annotation.SqlIgnore;
-import com.jfireframework.sql.dbstructure.name.ColNameStrategy;
+import com.jfireframework.sql.dbstructure.name.ColumnNameStrategy;
 import com.jfireframework.sql.dbstructure.name.DefaultNameStrategy;
 import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.mapfield.impl.MapFieldImpl;
@@ -75,10 +75,10 @@ public class BeanTransfer extends AbstractResultsetTransfer
 	public void initialize(Class<?> type, SessionfactoryConfig config)
 	{
 		this.type = type;
-		ColNameStrategy colNameStrategy;
+		ColumnNameStrategy colNameStrategy;
 		try
 		{
-			Class<? extends ColNameStrategy> ckass = type.isAnnotationPresent(NameStrategy.class) ? type.getAnnotation(NameStrategy.class).value() : DefaultNameStrategy.class;
+			Class<? extends ColumnNameStrategy> ckass = type.isAnnotationPresent(NameStrategy.class) ? type.getAnnotation(NameStrategy.class).value() : DefaultNameStrategy.class;
 			colNameStrategy = ckass.newInstance();
 		}
 		catch (Exception e)
