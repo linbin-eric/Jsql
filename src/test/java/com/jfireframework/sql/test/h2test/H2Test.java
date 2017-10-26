@@ -36,6 +36,13 @@ public class H2Test
         dataSource.setDriverClassName("org.h2.Driver");
         dataSource.setUsername("root");
         dataSource.setPassword("");
+        createTable(traceId, dataSource);
+        createTable(traceId, dataSource);
+        
+    }
+    
+    private void createTable(String traceId, HikariDataSource dataSource) throws SQLException
+    {
         SessionfactoryConfig config = new SessionfactoryConfig();
         config.setDataSource(dataSource);
         config.setScanPackage("com.jfireframework.sql.test.h2test");

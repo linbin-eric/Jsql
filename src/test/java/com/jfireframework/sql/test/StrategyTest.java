@@ -28,6 +28,7 @@ public class StrategyTest
         dataSource.setUsername("sa");
         dataSource.setPassword("");
         config.setDataSource(dataSource);
+        config.setSchema("PUBLIC");
         config.setClassLoader(StrategyTest.class.getClassLoader());
         config.setTableMode("create");
         config.setScanPackage(User.class.getPackage().getName());
