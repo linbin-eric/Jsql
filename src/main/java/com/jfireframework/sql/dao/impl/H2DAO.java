@@ -127,7 +127,7 @@ public class H2DAO extends BaseDAO
     }
     
     @Override
-    protected void autoGeneratePkInsert(Object entity, Connection connection)
+    protected Object autoGeneratePkInsert(Object entity, Connection connection)
     {
         Verify.notNull(generatePkStrategy, "generatePkStrategy为空时无法执行生成主键并插入。请检查{}", entityClass.getName());
         switch (generatePkStrategy)

@@ -5,6 +5,7 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
+import com.jfireframework.sql.annotation.NameStrategy;
 import com.jfireframework.sql.annotation.Pk;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.idstrategy.AutoIncrement;

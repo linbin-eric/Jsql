@@ -12,6 +12,7 @@ import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.SqlSession;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.test.vo.User;
+import com.jfireframework.sql.util.TableNameCaseStrategy;
 import com.zaxxer.hikari.HikariDataSource;
 
 public class StrategyTest
@@ -29,6 +30,7 @@ public class StrategyTest
         dataSource.setPassword("");
         config.setDataSource(dataSource);
         config.setSchema("PUBLIC");
+        config.setTableNameCaseStrategy(TableNameCaseStrategy.UPPER);
         config.setClassLoader(StrategyTest.class.getClassLoader());
         config.setTableMode("create");
         config.setScanPackage(User.class.getPackage().getName());

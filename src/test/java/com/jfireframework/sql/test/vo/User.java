@@ -11,6 +11,7 @@ import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.dbstructure.column.UserDefinedColumnType;
 import com.jfireframework.sql.dbstructure.name.DefaultLowerCaseNameStrategy;
+import com.jfireframework.sql.idstrategy.AutoIncrement;
 import com.jfireframework.sql.mapfield.UserDefinedFieldOperator;
 import com.jfireframework.sql.mapfield.impl.EnumOrdinalOperator;
 
@@ -32,6 +33,7 @@ public class User
     
     public static String  customName = "12asdaseda";
     @Pk
+    @AutoIncrement
     private Integer       id;
     @Column(name = "name2")
     private String        name;

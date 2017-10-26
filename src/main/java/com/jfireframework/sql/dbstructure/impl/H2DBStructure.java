@@ -56,9 +56,14 @@ public class H2DBStructure extends AbstractDBStructure
 	@Override
 	protected boolean checkIfTableExists(Connection connection, TableMetaData metaData) throws SQLException
 	{
-		String sql = StringUtil.format("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='{}' AND TABLE_NAME='{}'", schema, metaData.getTableName());
+		String traceId = TRACEID.currentTraceId();
+		String sql = StringUtil.format("SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='{}' AND TABLE_NAME='{}'", schema, metaData.getTableName());
+		logger.debug("traceId:{} 检查H2数据库表是否存在的sql是:{}", traceId, sql);
 		ResultSet executeQuery = connection.prepareStatement(sql).executeQuery();
-		return executeQuery.next();
+		executeQuery.next();
+		int exist = executeQuery.getInt(1);
+		logger.debug("traceId:{} 检查结果:{}", traceId, exist);
+		return exist >= 1;
 	}
 	
 	@Override
