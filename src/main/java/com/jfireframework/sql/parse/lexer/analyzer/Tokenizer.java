@@ -170,7 +170,8 @@ public class Tokenizer
         String literals = input.substring(offset, offset + length);
         if (DefaultKeyWord.getDefaultKeyWord(literals) != null)
         {
-            return new Token(DefaultKeyWord.getDefaultKeyWord(literals), literals, offset + length);
+        	DefaultKeyWord keyWord = DefaultKeyWord.getDefaultKeyWord(literals);
+            return new Token(keyWord, keyWord.name(), offset + length);
         }
         if (charAt(offset) >= 'A' && charAt(offset) <= 'Z')
         {

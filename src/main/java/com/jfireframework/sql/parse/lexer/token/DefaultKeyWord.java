@@ -115,7 +115,6 @@ public enum DefaultKeyWord implements KeyWord
     EXCEPT, //
     INTERSECT, //
     MINUS, //
-    USER, //
     PASSWORD, //
     CONNECT_BY_ROOT, //
     IF, //
@@ -135,6 +134,6 @@ public enum DefaultKeyWord implements KeyWord
     
     public static DefaultKeyWord getDefaultKeyWord(String literals)
     {
-        return defaultKeeyWords.get(literals);
+        return defaultKeeyWords.get(literals.toLowerCase());
     }
 }
