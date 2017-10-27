@@ -90,15 +90,15 @@ public class LexerTest
 		config.setFieldOperatorDictionary(new FieldOperatorDictionary.BuildInFieldOperatorDictionary());
 		MetaContext metaContext = new MetaContext(set, config);
 		String sql = "select name,age FROM User";
-		Assert.assertEquals("SELECT user.name2 , user.age FROM user", new Lexer(sql).parse(metaContext).toString());
+		Assert.assertEquals("SELECT user.name2 , user.AGE FROM user", new Lexer(sql).parse(metaContext).toString());
 		//
 		sql = "select u.name,u.age FROM User as u";
-		Assert.assertEquals("SELECT u.name2 , u.age FROM user AS u", new Lexer(sql).parse(metaContext).toString());
+		Assert.assertEquals("SELECT u.name2 , u.AGE FROM user AS u", new Lexer(sql).parse(metaContext).toString());
 		//
 		sql = "select name FROM User WHERE <if( $name == 'sasda')> name = $name </if>";
 		Assert.assertEquals("SELECT user.name2 FROM user WHERE <if( $name == 'sasda')> user.name2 = $name </if>", new Lexer(sql).parse(metaContext).toString());
 		//
 		sql = "select age FROM User as u WHERE u.name = ?";
-		Assert.assertEquals("SELECT u.age FROM user AS u WHERE u.name2 = ?", new Lexer(sql).parse(metaContext).toString());
+		Assert.assertEquals("SELECT u.AGE FROM user AS u WHERE u.name2 = ?", new Lexer(sql).parse(metaContext).toString());
 	}
 }

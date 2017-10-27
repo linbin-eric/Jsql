@@ -19,6 +19,7 @@ import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.SqlSession;
 import com.jfireframework.sql.dao.LockMode;
 import com.jfireframework.sql.test.vo.User;
+import com.jfireframework.sql.util.TableNameCaseStrategy;
 import com.zaxxer.hikari.HikariDataSource;
 
 public class CURDTest
@@ -38,6 +39,7 @@ public class CURDTest
         config.setSchema("PUBLIC");
         config.setClassLoader(CURDTest.class.getClassLoader());
         config.setTableMode("create");
+        config.setTableNameCaseStrategy(TableNameCaseStrategy.UPPER);
         config.setScanPackage(User.class.getPackage().getName());
         sessionFactory = config.build();
     }
