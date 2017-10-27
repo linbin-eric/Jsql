@@ -11,9 +11,9 @@ import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.TRACEID;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.sql.dbstructure.column.ColumnType;
-import com.jfireframework.sql.idstrategy.AutoIncrement;
 import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.metadata.TableMetaData;
+import com.jfireframework.sql.pkstrategy.AutoIncrement;
 
 public class MariaDBStructure extends AbstractDBStructure
 {

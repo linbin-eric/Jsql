@@ -7,7 +7,7 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import com.jfireframework.sql.annotation.Pk;
 import com.jfireframework.sql.annotation.TableEntity;
-import com.jfireframework.sql.idstrategy.AutoIncrement;
+import com.jfireframework.sql.pkstrategy.AutoIncrement;
 
 @TableEntity(name = "TEST_DEMO")
 public class OracleTable

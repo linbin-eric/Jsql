@@ -1,4 +1,4 @@
-package com.jfireframework.sql.idstrategy;
+package com.jfireframework.sql.pkstrategy;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

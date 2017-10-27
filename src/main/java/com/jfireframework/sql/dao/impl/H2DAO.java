@@ -13,12 +13,12 @@ import com.jfireframework.sql.dao.impl.MysqlDAO.GeneratePkStrategy;
 import com.jfireframework.sql.dbstructure.column.ColumnType;
 import com.jfireframework.sql.dbstructure.column.ColumnTypeDictionary;
 import com.jfireframework.sql.dbstructure.name.ColumnNameStrategy;
-import com.jfireframework.sql.idstrategy.AutoIncrement;
-import com.jfireframework.sql.idstrategy.GenerateStringPk;
-import com.jfireframework.sql.idstrategy.GenerateStringPk.StringGenerator;
 import com.jfireframework.sql.mapfield.FieldOperator;
 import com.jfireframework.sql.mapfield.FieldOperatorDictionary;
 import com.jfireframework.sql.mapfield.MapField;
+import com.jfireframework.sql.pkstrategy.AutoIncrement;
+import com.jfireframework.sql.pkstrategy.GenerateStringPk;
+import com.jfireframework.sql.pkstrategy.GenerateStringPk.StringGenerator;
 import com.jfireframework.sql.session.ExecSqlTemplate;
 import com.jfireframework.sql.util.ExecuteSqlInfo;
 
