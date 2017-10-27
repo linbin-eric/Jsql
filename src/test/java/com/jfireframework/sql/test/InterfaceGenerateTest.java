@@ -186,11 +186,26 @@ public class InterfaceGenerateTest
 	{
 		try
 		{
-			build("com.jfireframework.sql.test:in~*$test_10;com.jfireframework.sql.test.vo");
+			build("com.jfireframework1.sql.test:in~*$test_10;com.jfireframework.sql.test.vo");
 			Assert.fail();
 		}
 		catch (Exception e)
 		{
 		}
+	}
+	
+	public static interface test_11
+	{
+		@Sql(sql="select sum(age) from User",paramNames="")
+		public int count();
+	}
+	
+	/**
+	 * 测试内置标准函数
+	 */
+	@Test
+	public void test_11()
+	{
+		build("com.jfireframework.sql.test:in~*$test_11;com.jfireframework.sql.test.vo");
 	}
 }
