@@ -66,7 +66,7 @@ public class SessionfactoryConfig
 	private SqlInterceptor[]					sqlInterceptors;
 	private PageParse							pageParse;
 	private String								productName;
-	private ColumnTypeDictionary				jdbcTypeDictionary;
+	private ColumnTypeDictionary				columnTypeDictionary;
 	private FieldOperatorDictionary				fieldOperatorDictionary;
 	private ResultSetTransferDictionary			resultSetTransferDictionary;
 	private TableNameCaseStrategy				tableNameCaseStrategy	= TableNameCaseStrategy.ORIGIN;
@@ -187,17 +187,17 @@ public class SessionfactoryConfig
 			if (productName.equals("mariadb") || "mysql".equals(productName))
 			{
 				pageParse = new MysqlPage();
-				jdbcTypeDictionary = jdbcTypeDictionary == null ? new MysqlColumnTypeDictionary() : jdbcTypeDictionary;
+				columnTypeDictionary = columnTypeDictionary == null ? new MysqlColumnTypeDictionary() : columnTypeDictionary;
 			}
 			else if (productName.equals("oracle"))
 			{
 				pageParse = new OracleParse();
-				jdbcTypeDictionary = jdbcTypeDictionary == null ? new OracleColumnTypeDictionary() : jdbcTypeDictionary;
+				columnTypeDictionary = columnTypeDictionary == null ? new OracleColumnTypeDictionary() : columnTypeDictionary;
 			}
 			else if (productName.equals("h2"))
 			{
 				pageParse = new MysqlPage();
-				jdbcTypeDictionary = jdbcTypeDictionary == null ? new H2ColumnTypeDictionary() : jdbcTypeDictionary;
+				columnTypeDictionary = columnTypeDictionary == null ? new H2ColumnTypeDictionary() : columnTypeDictionary;
 			}
 			else
 			{
@@ -286,14 +286,14 @@ public class SessionfactoryConfig
 		this.scanPackage = scanPackage;
 	}
 	
-	public ColumnTypeDictionary getJdbcTypeDictionary()
+	public ColumnTypeDictionary getColumnTypeDictionary()
 	{
-		return jdbcTypeDictionary;
+		return columnTypeDictionary;
 	}
 	
-	public void setJdbcTypeDictionary(ColumnTypeDictionary jdbcTypeDictionary)
+	public void setColumnTypeDictionary(ColumnTypeDictionary columnTypeDictionary)
 	{
-		this.jdbcTypeDictionary = jdbcTypeDictionary;
+		this.columnTypeDictionary = columnTypeDictionary;
 	}
 	
 	public FieldOperatorDictionary getFieldOperatorDictionary()

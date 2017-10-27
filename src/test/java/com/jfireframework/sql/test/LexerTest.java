@@ -2,7 +2,6 @@ package com.jfireframework.sql.test;
 
 import java.util.HashSet;
 import java.util.Set;
-import org.h2.util.New;
 import org.junit.Assert;
 import org.junit.Test;
 import com.jfireframework.sql.SessionfactoryConfig;
@@ -73,7 +72,7 @@ public class LexerTest
 		Set<Class<?>> set = new HashSet<Class<?>>();
 		set.add(User.class);
 		SessionfactoryConfig config = new SessionfactoryConfig();
-		config.setJdbcTypeDictionary(new MysqlColumnTypeDictionary());
+		config.setColumnTypeDictionary(new MysqlColumnTypeDictionary());
 		config.setFieldOperatorDictionary(new FieldOperatorDictionary.BuildInFieldOperatorDictionary());
 		MetaContext metaContext = new MetaContext(set, config);
 		String sql = "select name FROM User";
@@ -86,7 +85,7 @@ public class LexerTest
 		Set<Class<?>> set = new HashSet<Class<?>>();
 		set.add(User.class);
 		SessionfactoryConfig config = new SessionfactoryConfig();
-		config.setJdbcTypeDictionary(new MysqlColumnTypeDictionary());
+		config.setColumnTypeDictionary(new MysqlColumnTypeDictionary());
 		config.setFieldOperatorDictionary(new FieldOperatorDictionary.BuildInFieldOperatorDictionary());
 		MetaContext metaContext = new MetaContext(set, config);
 		String sql = "select name,age FROM User";

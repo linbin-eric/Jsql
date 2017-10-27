@@ -53,7 +53,7 @@ public class TableMetaData
 				continue;
 			}
 			MapField mapField = new MapFieldImpl();
-			mapField.initialize(each, nameStrategy, config.getFieldOperatorDictionary(), config.getJdbcTypeDictionary());
+			mapField.initialize(each, nameStrategy, config.getFieldOperatorDictionary(), config.getColumnTypeDictionary());
 			list.add(mapField);
 			if (each.isAnnotationPresent(Pk.class))
 			{

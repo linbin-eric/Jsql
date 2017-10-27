@@ -92,7 +92,7 @@ public class BeanTransfer extends AbstractResultsetTransfer
 				continue;
 			}
 			MapField mapField = new MapFieldImpl();
-			mapField.initialize(each, colNameStrategy, config.getFieldOperatorDictionary(), config.getJdbcTypeDictionary());
+			mapField.initialize(each, colNameStrategy, config.getFieldOperatorDictionary(), config.getColumnTypeDictionary());
 			columnNameDictory.put(mapField.getColName().toLowerCase(), mapField);
 		}
 	}
