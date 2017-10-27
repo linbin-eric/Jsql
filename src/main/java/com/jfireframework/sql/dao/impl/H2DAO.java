@@ -62,6 +62,7 @@ public class H2DAO extends BaseDAO
             {
                 final StringGenerator stringGenerator = field.getAnnotation(GenerateStringPk.class).value().newInstance();
                 params.add(new MapField() {
+                    private long offset;
                     
                     @Override
                     public void setEntityValue(Object entity, ResultSet resultSet) throws SQLException
@@ -72,7 +73,7 @@ public class H2DAO extends BaseDAO
                     @Override
                     public void initialize(Field field, ColumnNameStrategy colNameStrategy, FieldOperatorDictionary fieldOperatorDictionary, ColumnTypeDictionary columnTypeDictionary)
                     {
-                        throw new UnsupportedOperationException();
+                        offset = unsafe.objectFieldOffset(field);
                     }
                     
                     @Override
@@ -102,7 +103,9 @@ public class H2DAO extends BaseDAO
                     @Override
                     public Object fieldValue(Object entity)
                     {
-                        return stringGenerator.next();
+                        String pk = stringGenerator.next();
+                        unsafe.putObject(entity, offset, pk);
+                        return pk;
                     }
                     
                     @Override
@@ -127,7 +130,7 @@ public class H2DAO extends BaseDAO
     }
     
     @Override
-    protected Object autoGeneratePkInsert(Object entity, Connection connection)
+    protected void autoGeneratePkInsert(Object entity, Connection connection)
     {
         Verify.notNull(generatePkStrategy, "generatePkStrategy为空时无法执行生成主键并插入。请检查{}", entityClass.getName());
         switch (generatePkStrategy)
@@ -136,7 +139,8 @@ public class H2DAO extends BaseDAO
                 ExecSqlTemplate.insert(sqlInterceptors, connection, autoGeneratePkInsertInfo.getSql(), parseParam(autoGeneratePkInsertInfo.getColumns(), entity));
                 break;
             case GENERATE_BY_DATABASE:
-                ExecSqlTemplate.databasePkGenerateInsert(pkType, pkName, sqlInterceptors, connection, autoGeneratePkInsertInfo.getSql(), parseParam(autoGeneratePkInsertInfo.getColumns(), entity));
+                Object pk = ExecSqlTemplate.databasePkGenerateInsert(pkType, pkName, sqlInterceptors, connection, autoGeneratePkInsertInfo.getSql(), parseParam(autoGeneratePkInsertInfo.getColumns(), entity));
+                unsafe.putObject(entity, pkColumnOffset, pk);
                 break;
             default:
                 break;

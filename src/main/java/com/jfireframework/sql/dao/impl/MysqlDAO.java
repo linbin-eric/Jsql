@@ -24,138 +24,139 @@ import sun.misc.Unsafe;
 
 public class MysqlDAO extends BaseDAO
 {
-	private static final Unsafe		unsafe	= ReflectUtil.getUnsafe();
-	protected GeneratePkStrategy	generatePkStrategy;
-	protected ExecuteSqlInfo		autoGeneratePkInsertInfo;
-	
-	@Override
-	protected void setAutoGeneratePkInsertInfo()
-	{
-		Field field = pkColumn.getField();
-		if (Number.class.isAssignableFrom(field.getType()) && field.isAnnotationPresent(AutoIncrement.class))
-		{
-			StringCache cache = new StringCache();
-			cache.append("INSERT INTO ").append(tableName).append('(').append(pkColumn.getColName()).appendComma();
-			for (MapField column : valueColumns)
-			{
-				cache.append(column.getColName()).appendComma();
-			}
-			cache.deleteLast().append(") VALUES(NULL,");
-			for (int i = 0; i < valueColumns.length; i++)
-			{
-				cache.append("?").appendComma();
-			}
-			cache.deleteLast().append(")");
-			autoGeneratePkInsertInfo = new ExecuteSqlInfo(cache.toString(), valueColumns);
-			generatePkStrategy = GeneratePkStrategy.GENERATE_BY_DATABASE;
-		}
-		else if (field.getType() == String.class && field.isAnnotationPresent(GenerateStringPk.class))
-		{
-			StringCache cache = new StringCache();
-			List<MapField> params = new ArrayList<MapField>();
-			cache.append("INSERT INTO ").append(tableName).append('(').append(pkColumn.getColName()).appendComma();
-			for (MapField column : valueColumns)
-			{
-				cache.append(column.getColName()).appendComma();
-			}
-			cache.deleteLast().append(") VALUES(?,");
-			try
-			{
-				final StringGenerator stringGenerator = field.getAnnotation(GenerateStringPk.class).value().newInstance();
-				params.add(new MapField() {
-					private long offset;
-					
-					@Override
-					public void setEntityValue(Object entity, ResultSet resultSet) throws SQLException
-					{
-						throw new UnsupportedOperationException();
-					}
-					
-					@Override
-					public void initialize(Field field, ColumnNameStrategy colNameStrategy, FieldOperatorDictionary fieldOperatorDictionary, ColumnTypeDictionary columnTypeDictionary)
-					{
-						unsafe.objectFieldOffset(field);
-					}
-					
-					@Override
-					public String getFieldName()
-					{
-						throw new UnsupportedOperationException();
-					}
-					
-					@Override
-					public Field getField()
-					{
-						throw new UnsupportedOperationException();
-					}
-					
-					@Override
-					public ColumnType getColumnType()
-					{
-						throw new UnsupportedOperationException();
-					}
-					
-					@Override
-					public String getColName()
-					{
-						throw new UnsupportedOperationException();
-					}
-					
-					@Override
-					public Object fieldValue(Object entity)
-					{
-						String pk = stringGenerator.next();
-						unsafe.putObject(entity, offset, pk);
-						return pk;
-					}
-					
-					@Override
-					public FieldOperator fieldOperator()
-					{
-						throw new UnsupportedOperationException();
-					}
-				});
-			}
-			catch (Exception e)
-			{
-				throw new JustThrowException(e);
-			}
-			for (MapField column : valueColumns)
-			{
-				params.add(column);
-				cache.append("?").appendComma();
-			}
-			cache.deleteLast().append(")");
-			generatePkStrategy = GeneratePkStrategy.GENERATE_BY_APPLICATION;
-		}
-	}
-	
-	@Override
-	protected void autoGeneratePkInsert(Object entity, Connection connection)
-	{
-		switch (generatePkStrategy)
-		{
-			case GENERATE_BY_APPLICATION:
-				ExecSqlTemplate.insert(sqlInterceptors, connection, autoGeneratePkInsertInfo.getSql(), parseParam(autoGeneratePkInsertInfo.getColumns(), entity));
-				break;
-			case GENERATE_BY_DATABASE:
-				ExecSqlTemplate.databasePkGenerateInsert(pkType, pkName, sqlInterceptors, connection, autoGeneratePkInsertInfo.getSql(), parseParam(autoGeneratePkInsertInfo.getColumns(), entity));
-				break;
-			default:
-				break;
-		}
-	}
-	
-	enum GeneratePkStrategy
-	{
-		/**
-		 * 主键由程序自动生成
-		 */
-		GENERATE_BY_APPLICATION, //
-		/**
-		 * 主键由数据库生成
-		 */
-		GENERATE_BY_DATABASE
-	}
-	
+    private static final Unsafe  unsafe = ReflectUtil.getUnsafe();
+    protected GeneratePkStrategy generatePkStrategy;
+    protected ExecuteSqlInfo     autoGeneratePkInsertInfo;
+    
+    @Override
+    protected void setAutoGeneratePkInsertInfo()
+    {
+        Field field = pkColumn.getField();
+        if (Number.class.isAssignableFrom(field.getType()) && field.isAnnotationPresent(AutoIncrement.class))
+        {
+            StringCache cache = new StringCache();
+            cache.append("INSERT INTO ").append(tableName).append('(').append(pkColumn.getColName()).appendComma();
+            for (MapField column : valueColumns)
+            {
+                cache.append(column.getColName()).appendComma();
+            }
+            cache.deleteLast().append(") VALUES(NULL,");
+            for (int i = 0; i < valueColumns.length; i++)
+            {
+                cache.append("?").appendComma();
+            }
+            cache.deleteLast().append(")");
+            autoGeneratePkInsertInfo = new ExecuteSqlInfo(cache.toString(), valueColumns);
+            generatePkStrategy = GeneratePkStrategy.GENERATE_BY_DATABASE;
+        }
+        else if (field.getType() == String.class && field.isAnnotationPresent(GenerateStringPk.class))
+        {
+            StringCache cache = new StringCache();
+            List<MapField> params = new ArrayList<MapField>();
+            cache.append("INSERT INTO ").append(tableName).append('(').append(pkColumn.getColName()).appendComma();
+            for (MapField column : valueColumns)
+            {
+                cache.append(column.getColName()).appendComma();
+            }
+            cache.deleteLast().append(") VALUES(?,");
+            try
+            {
+                final StringGenerator stringGenerator = field.getAnnotation(GenerateStringPk.class).value().newInstance();
+                params.add(new MapField() {
+                    private long offset;
+                    
+                    @Override
+                    public void setEntityValue(Object entity, ResultSet resultSet) throws SQLException
+                    {
+                        throw new UnsupportedOperationException();
+                    }
+                    
+                    @Override
+                    public void initialize(Field field, ColumnNameStrategy colNameStrategy, FieldOperatorDictionary fieldOperatorDictionary, ColumnTypeDictionary columnTypeDictionary)
+                    {
+                        offset = unsafe.objectFieldOffset(field);
+                    }
+                    
+                    @Override
+                    public String getFieldName()
+                    {
+                        throw new UnsupportedOperationException();
+                    }
+                    
+                    @Override
+                    public Field getField()
+                    {
+                        throw new UnsupportedOperationException();
+                    }
+                    
+                    @Override
+                    public ColumnType getColumnType()
+                    {
+                        throw new UnsupportedOperationException();
+                    }
+                    
+                    @Override
+                    public String getColName()
+                    {
+                        throw new UnsupportedOperationException();
+                    }
+                    
+                    @Override
+                    public Object fieldValue(Object entity)
+                    {
+                        String pk = stringGenerator.next();
+                        unsafe.putObject(entity, offset, pk);
+                        return pk;
+                    }
+                    
+                    @Override
+                    public FieldOperator fieldOperator()
+                    {
+                        throw new UnsupportedOperationException();
+                    }
+                });
+            }
+            catch (Exception e)
+            {
+                throw new JustThrowException(e);
+            }
+            for (MapField column : valueColumns)
+            {
+                params.add(column);
+                cache.append("?").appendComma();
+            }
+            cache.deleteLast().append(")");
+            generatePkStrategy = GeneratePkStrategy.GENERATE_BY_APPLICATION;
+        }
+    }
+    
+    @Override
+    protected void autoGeneratePkInsert(Object entity, Connection connection)
+    {
+        switch (generatePkStrategy)
+        {
+            case GENERATE_BY_APPLICATION:
+                ExecSqlTemplate.insert(sqlInterceptors, connection, autoGeneratePkInsertInfo.getSql(), parseParam(autoGeneratePkInsertInfo.getColumns(), entity));
+                break;
+            case GENERATE_BY_DATABASE:
+                Object pk = ExecSqlTemplate.databasePkGenerateInsert(pkType, pkName, sqlInterceptors, connection, autoGeneratePkInsertInfo.getSql(), parseParam(autoGeneratePkInsertInfo.getColumns(), entity));
+                unsafe.putObject(entity, pkColumnOffset, pk);
+                break;
+            default:
+                break;
+        }
+    }
+    
+    enum GeneratePkStrategy
+    {
+        /**
+         * 主键由程序自动生成
+         */
+        GENERATE_BY_APPLICATION, //
+        /**
+         * 主键由数据库生成
+         */
+        GENERATE_BY_DATABASE
+    }
+    
 }

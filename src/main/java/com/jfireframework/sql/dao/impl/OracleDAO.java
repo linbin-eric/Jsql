@@ -76,7 +76,7 @@ public class OracleDAO extends BaseDAO
                     @Override
                     public void initialize(Field field, ColumnNameStrategy colNameStrategy, FieldOperatorDictionary fieldOperatorDictionary, ColumnTypeDictionary columnTypeDictionary)
                     {
-                        unsafe.objectFieldOffset(field);
+                        offset = unsafe.objectFieldOffset(field);
                     }
                     
                     @Override
@@ -141,7 +141,8 @@ public class OracleDAO extends BaseDAO
                 ExecSqlTemplate.insert(sqlInterceptors, connection, autoGeneratePkInsertInfo.getSql(), parseParam(autoGeneratePkInsertInfo.getColumns(), entity));
                 break;
             case GENERATE_BY_DATABASE:
-                ExecSqlTemplate.databasePkGenerateInsert(pkType, pkName, sqlInterceptors, connection, autoGeneratePkInsertInfo.getSql(), parseParam(autoGeneratePkInsertInfo.getColumns(), entity));
+                Object pk = ExecSqlTemplate.databasePkGenerateInsert(pkType, pkName, sqlInterceptors, connection, autoGeneratePkInsertInfo.getSql(), parseParam(autoGeneratePkInsertInfo.getColumns(), entity));
+                unsafe.putObject(entity, pkColumnOffset, pk);
                 break;
             default:
                 break;
