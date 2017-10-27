@@ -35,6 +35,7 @@ public class CURDTest
         dataSource.setUsername("sa");
         dataSource.setPassword("");
         config.setDataSource(dataSource);
+        config.setSchema("PUBLIC");
         config.setClassLoader(CURDTest.class.getClassLoader());
         config.setTableMode("create");
         config.setScanPackage(User.class.getPackage().getName());

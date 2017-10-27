@@ -5,18 +5,15 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
 import com.jfireframework.sql.annotation.Column;
-import com.jfireframework.sql.annotation.NameStrategy;
 import com.jfireframework.sql.annotation.Pk;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.dbstructure.column.UserDefinedColumnType;
-import com.jfireframework.sql.dbstructure.name.DefaultLowerCaseNameStrategy;
 import com.jfireframework.sql.idstrategy.AutoIncrement;
 import com.jfireframework.sql.mapfield.UserDefinedFieldOperator;
 import com.jfireframework.sql.mapfield.impl.EnumOrdinalOperator;
 
 @TableEntity(name = "user")
-@NameStrategy(DefaultLowerCaseNameStrategy.class)
 public class User
 {
     public static final long now = System.currentTimeMillis();
