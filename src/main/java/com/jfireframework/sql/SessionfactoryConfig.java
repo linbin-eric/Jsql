@@ -3,6 +3,7 @@ package com.jfireframework.sql;
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -46,350 +47,298 @@ import com.jfireframework.sql.util.TableNameCaseStrategy;
 
 public class SessionfactoryConfig
 {
-    private DataSource                        dataSource;
-    private ClassLoader                       classLoader           = Thread.currentThread().getContextClassLoader();
-    private String                            scanPackage;
-    private String                            schema;
-    // 如果值是create，则会创建表。
-    private String                            tableMode             = "none";
-    private ResultsetTransferStore            resultsetTransferStore;
-    private Set<Class<?>>                     ckasses;
-    private IdentityHashMap<Class<?>, Mapper> mappers               = new IdentityHashMap<Class<?>, Mapper>(128);
-    private IdentityHashMap<Class<?>, Dao>    daos                  = new IdentityHashMap<Class<?>, Dao>();
-    private MetaContext                       metaContext;
-    private SqlInterceptor[]                  sqlInterceptors;
-    private PageParse                         pageParse;
-    private String                            productName;
-    private ColumnTypeDictionary              jdbcTypeDictionary;
-    private FieldOperatorDictionary           fieldOperatorDictionary;
-    private ResultSetTransferDictionary       resultSetTransferDictionary;
-    private TableNameCaseStrategy             tableNameCaseStrategy = TableNameCaseStrategy.ORIGIN;
-    protected static final Logger             logger                = LoggerFactory.getLogger(SessionfactoryConfig.class);
-    
-    public SessionFactory build()
-    {
-        TRACEID.newTraceId();
-        try
-        {
-            Verify.notNull(schema, "schema 不能为空");
-            Verify.notNull(dataSource, "dataSource 对象不能为空");
-            Verify.notNull(scanPackage, "sql的扫描路径不能为空");
-            resultSetTransferDictionary = resultSetTransferDictionary == null ? new ResultSetTransferDictionary.BuildInResultSetTransferDictionary() : resultSetTransferDictionary;
-            fieldOperatorDictionary = fieldOperatorDictionary == null ? new FieldOperatorDictionary.BuildInFieldOperatorDictionary() : fieldOperatorDictionary;
-            resultsetTransferStore = new ResultsetTransferStore(resultSetTransferDictionary, SessionfactoryConfig.this);
-            Stage[] processors = new Stage[] { //
-                    new buildClassSet(), //
-                    new initSqlInterceptor(), //
-                    new detectProductName(), //
-                    new initMetaContext(), //
-                    new createOrUpdateDatabase(), //
-                    new CreateMappers(), //
-                    new BuildDao()//
-            };
-            for (Stage each : processors)
-            {
-                each.process();
-            }
-            return new SessionFactoryImpl(mappers, daos, sqlInterceptors, pageParse, dataSource, resultsetTransferStore);
-        }
-        catch (Exception e)
-        {
-            throw new JustThrowException(e);
-        }
-    }
-    
-    interface Stage
-    {
-        void process() throws Exception;
-    }
-    
-    class buildClassSet implements Stage
-    {
-        
-        @Override
-        public void process() throws Exception
-        {
-            Set<String> set = new HashSet<String>();
-            String[] packageNames = scanPackage.split(";");
-            for (String packageName : packageNames)
-            {
-                for (String each : PackageScan.scan(packageName))
-                {
-                    set.add(each);
-                }
-            }
-            Set<Class<?>> types = new HashSet<Class<?>>();
-            for (String each : set)
-            {
-                types.add(classLoader.loadClass(each));
-            }
-            ckasses = types;
-        }
-        
-    }
-    
-    class initSqlInterceptor implements Stage
-    {
-        
-        @Override
-        public void process() throws Exception
-        {
-            List<SqlInterceptor> list = new LinkedList<SqlInterceptor>();
-            for (Class<?> each : ckasses)
-            {
-                if (SqlInterceptor.class.isAssignableFrom(each) && each.isInterface() == false)
-                {
-                    list.add((SqlInterceptor) each.newInstance());
-                }
-            }
-            Collections.sort(list, new AescComparator());
-            sqlInterceptors = list.toArray(new SqlInterceptor[list.size()]);
-        }
-    }
-    
-    class detectProductName implements Stage
-    {
-        
-        @Override
-        public void process() throws Exception
-        {
-            Connection connection = null;
-            try
-            {
-                connection = dataSource.getConnection();
-                DatabaseMetaData md = connection.getMetaData();
-                productName = md.getDatabaseProductName().toLowerCase();
-                if (productName.equals("mariadb") || "mysql".equals(productName))
-                {
-                    pageParse = new MysqlPage();
-                    jdbcTypeDictionary = jdbcTypeDictionary == null ? new MysqlColumnTypeDictionary() : jdbcTypeDictionary;
-                }
-                else if (productName.equals("oracle"))
-                {
-                    pageParse = new OracleParse();
-                    jdbcTypeDictionary = jdbcTypeDictionary == null ? new OracleColumnTypeDictionary() : jdbcTypeDictionary;
-                }
-                else if (productName.equals("h2"))
-                {
-                    pageParse = new MysqlPage();
-                    jdbcTypeDictionary = jdbcTypeDictionary == null ? new H2ColumnTypeDictionary() : jdbcTypeDictionary;
-                }
-                else
-                {
-                    logger.error("不支持分页的数据库类型：{}", productName);
-                }
-            }
-            finally
-            {
-                if (connection != null)
-                {
-                    connection.close();
-                }
-            }
-        }
-        
-    }
-    
-    class initMetaContext implements Stage
-    {
-        
-        @Override
-        public void process() throws Exception
-        {
-            metaContext = new MetaContext(ckasses, SessionfactoryConfig.this);
-        }
-        
-    }
-    
-    class createOrUpdateDatabase implements Stage
-    {
-        private static final String CREATE = "create";
-        private static final String UPDATE = "update";
-        private static final String NONE   = "none";
-        
-        Structure buildStructure()
-        {
-            if (productName.equals("mysql"))
-            {
-                return new MariaDBStructure(schema);
-            }
-            else if (productName.equals("mariadb"))
-            {
-                return new MariaDBStructure(schema);
-            }
-            else if (productName.equals("h2"))
-            {
-                return new H2DBStructure(schema);
-            }
-            else if (productName.equals("oracle"))
-            {
-                return new OracleStructure(schema);
-            }
-            else
-            {
-                throw new IllegalArgumentException("暂不支持" + productName + "数据库结构类型新建或者修改,当前支持：mysql,MariaDB,Oracle");
-            }
-        }
-        
-        @Override
-        public void process() throws Exception
-        {
-            if (NONE.equals(tableMode))
-            {
-                return;
-            }
-            else if (CREATE.equals(tableMode))
-            {
-                Structure structure = buildStructure();
-                structure.createTable(dataSource, metaContext.metaDatas());
-                
-            }
-            else if (UPDATE.equals(tableMode))
-            {
-                Structure structure = buildStructure();
-                structure.updateTable(dataSource, metaContext.metaDatas());
-            }
-            else
-            {
-                throw new UnsupportedOperationException();
-            }
-        }
-        
-    }
-    
-    class CreateMappers implements Stage
-    {
-        
-        @Override
-        public void process() throws Exception
-        {
-            MapperBuilder mapperBuilder = new MapperBuilder(metaContext, resultsetTransferStore);
-            nextSqlInterface: for (Class<?> each : ckasses)
-            {
-                if (each.isInterface())
-                {
-                    for (Method method : each.getMethods())
-                    {
-                        if (method.isAnnotationPresent(Sql.class))
-                        {
-                            mappers.put(each, (Mapper) mapperBuilder.build(each).newInstance());
-                            continue nextSqlInterface;
-                        }
-                    }
-                }
-            }
-        }
-        
-    }
-    
-    class BuildDao implements Stage
-    {
-        
-        @Override
-        public void process() throws Exception
-        {
-            for (TableMetaData each : metaContext.metaDatas())
-            {
-                if (each.getIdInfo() != null)
-                {
-                    Dao dao;
-                    if (productName.equals("mysql") || productName.equals("marridb"))
-                    {
-                        dao = new MysqlDAO();
-                    }
-                    else if (productName.equals("oracle"))
-                    {
-                        dao = new OracleDAO();
-                    }
-                    else if (productName.equals("h2"))
-                    {
-                        dao = new H2DAO();
-                    }
-                    else
-                    {
-                        throw new UnsupportedOperationException("不支持的数据库产品");
-                    }
-                    dao.initialize(each, sqlInterceptors, SessionfactoryConfig.this, pageParse);
-                    daos.put(each.getEntityClass(), dao);
-                }
-            }
-        }
-        
-    }
-    
-    public void setTableMode(String tableMode)
-    {
-        this.tableMode = tableMode;
-    }
-    
-    public void setDataSource(DataSource dataSource)
-    {
-        this.dataSource = dataSource;
-    }
-    
-    public void setClassLoader(ClassLoader classLoader)
-    {
-        this.classLoader = classLoader;
-    }
-    
-    public void setScanPackage(String scanPackage)
-    {
-        this.scanPackage = scanPackage;
-    }
-    
-    public ColumnTypeDictionary getJdbcTypeDictionary()
-    {
-        return jdbcTypeDictionary;
-    }
-    
-    public void setJdbcTypeDictionary(ColumnTypeDictionary jdbcTypeDictionary)
-    {
-        this.jdbcTypeDictionary = jdbcTypeDictionary;
-    }
-    
-    public FieldOperatorDictionary getFieldOperatorDictionary()
-    {
-        return fieldOperatorDictionary;
-    }
-    
-    public void setFieldOperatorDictionary(FieldOperatorDictionary fieldOperatorDictionary)
-    {
-        this.fieldOperatorDictionary = fieldOperatorDictionary;
-    }
-    
-    public ResultSetTransferDictionary getResultSetTransferDictionary()
-    {
-        return resultSetTransferDictionary;
-    }
-    
-    public void setResultSetTransferDictionary(ResultSetTransferDictionary resultSetTransferDictionary)
-    {
-        this.resultSetTransferDictionary = resultSetTransferDictionary;
-    }
-    
-    public String getSchema()
-    {
-        return schema;
-    }
-    
-    public void setSchema(String schema)
-    {
-        this.schema = schema;
-    }
-    
-    public MetaContext getMetaContext()
-    {
-        return metaContext;
-    }
-    
-    public void setTableNameCaseStrategy(TableNameCaseStrategy tableNameCaseStrategy)
-    {
-        this.tableNameCaseStrategy = tableNameCaseStrategy;
-    }
-    
-    public TableNameCaseStrategy getTableNameCaseStrategy()
-    {
-        return tableNameCaseStrategy;
-    }
-    
+	
+	private static final String					CREATE					= "create";
+	private static final String					UPDATE					= "update";
+	private static final String					NONE					= "none";
+	protected static final Logger				logger					= LoggerFactory.getLogger(SessionfactoryConfig.class);
+	private DataSource							dataSource;
+	private ClassLoader							classLoader				= Thread.currentThread().getContextClassLoader();
+	private String								scanPackage;
+	private String								schema;
+	// 如果值是create，则会创建表。
+	private String								tableMode				= "none";
+	private ResultsetTransferStore				resultsetTransferStore;
+	private Set<Class<?>>						ckasses;
+	private IdentityHashMap<Class<?>, Mapper>	mappers					= new IdentityHashMap<Class<?>, Mapper>(128);
+	private IdentityHashMap<Class<?>, Dao>		daos					= new IdentityHashMap<Class<?>, Dao>();
+	private MetaContext							metaContext;
+	private SqlInterceptor[]					sqlInterceptors;
+	private PageParse							pageParse;
+	private String								productName;
+	private ColumnTypeDictionary				jdbcTypeDictionary;
+	private FieldOperatorDictionary				fieldOperatorDictionary;
+	private ResultSetTransferDictionary			resultSetTransferDictionary;
+	private TableNameCaseStrategy				tableNameCaseStrategy	= TableNameCaseStrategy.ORIGIN;
+	
+	public SessionFactory build()
+	{
+		TRACEID.newTraceId();
+		try
+		{
+			Verify.notNull(schema, "schema 不能为空");
+			Verify.notNull(dataSource, "dataSource 对象不能为空");
+			Verify.notNull(scanPackage, "sql的扫描路径不能为空");
+			resultSetTransferDictionary = resultSetTransferDictionary == null ? new ResultSetTransferDictionary.BuildInResultSetTransferDictionary() : resultSetTransferDictionary;
+			fieldOperatorDictionary = fieldOperatorDictionary == null ? new FieldOperatorDictionary.BuildInFieldOperatorDictionary() : fieldOperatorDictionary;
+			resultsetTransferStore = new ResultsetTransferStore(resultSetTransferDictionary, SessionfactoryConfig.this);
+			buildClassSet();
+			initSqlInterceptor();
+			detectProductName();
+			initMetaContext();
+			createOrUpdateDatabase();
+			createMappers();
+			buildDao();
+			return new SessionFactoryImpl(mappers, daos, sqlInterceptors, pageParse, dataSource, resultsetTransferStore);
+		}
+		catch (Exception e)
+		{
+			throw new JustThrowException(e);
+		}
+	}
+	
+	private void createMappers() throws InstantiationException, IllegalAccessException
+	{
+		MapperBuilder mapperBuilder = new MapperBuilder(metaContext, resultsetTransferStore);
+		nextSqlInterface: for (Class<?> each : ckasses)
+		{
+			if (each.isInterface())
+			{
+				for (Method method : each.getMethods())
+				{
+					if (method.isAnnotationPresent(Sql.class))
+					{
+						mappers.put(each, (Mapper) mapperBuilder.build(each).newInstance());
+						continue nextSqlInterface;
+					}
+				}
+			}
+		}
+	}
+	
+	private void createOrUpdateDatabase() throws SQLException
+	{
+		if (NONE.equals(tableMode))
+		{
+			return;
+		}
+		else if (CREATE.equals(tableMode))
+		{
+			Structure structure = buildStructure();
+			structure.createTable(dataSource, metaContext.metaDatas());
+		}
+		else if (UPDATE.equals(tableMode))
+		{
+			Structure structure = buildStructure();
+			structure.updateTable(dataSource, metaContext.metaDatas());
+		}
+		else
+		{
+			throw new UnsupportedOperationException();
+		}
+	}
+	
+	private void initMetaContext()
+	{
+		metaContext = new MetaContext(ckasses, SessionfactoryConfig.this);
+	}
+	
+	private void buildClassSet() throws ClassNotFoundException
+	{
+		Set<String> set = new HashSet<String>();
+		String[] packageNames = scanPackage.split(";");
+		for (String packageName : packageNames)
+		{
+			for (String each : PackageScan.scan(packageName))
+			{
+				set.add(each);
+			}
+		}
+		Set<Class<?>> types = new HashSet<Class<?>>();
+		for (String each : set)
+		{
+			types.add(classLoader.loadClass(each));
+		}
+		ckasses = types;
+	}
+	
+	private void initSqlInterceptor() throws InstantiationException, IllegalAccessException
+	{
+		List<SqlInterceptor> list = new LinkedList<SqlInterceptor>();
+		for (Class<?> each : ckasses)
+		{
+			if (SqlInterceptor.class.isAssignableFrom(each) && each.isInterface() == false)
+			{
+				list.add((SqlInterceptor) each.newInstance());
+			}
+		}
+		Collections.sort(list, new AescComparator());
+		sqlInterceptors = list.toArray(new SqlInterceptor[list.size()]);
+	}
+	
+	private void detectProductName() throws SQLException
+	{
+		Connection connection = null;
+		try
+		{
+			connection = dataSource.getConnection();
+			DatabaseMetaData md = connection.getMetaData();
+			productName = md.getDatabaseProductName().toLowerCase();
+			if (productName.equals("mariadb") || "mysql".equals(productName))
+			{
+				pageParse = new MysqlPage();
+				jdbcTypeDictionary = jdbcTypeDictionary == null ? new MysqlColumnTypeDictionary() : jdbcTypeDictionary;
+			}
+			else if (productName.equals("oracle"))
+			{
+				pageParse = new OracleParse();
+				jdbcTypeDictionary = jdbcTypeDictionary == null ? new OracleColumnTypeDictionary() : jdbcTypeDictionary;
+			}
+			else if (productName.equals("h2"))
+			{
+				pageParse = new MysqlPage();
+				jdbcTypeDictionary = jdbcTypeDictionary == null ? new H2ColumnTypeDictionary() : jdbcTypeDictionary;
+			}
+			else
+			{
+				logger.error("不支持分页的数据库类型：{}", productName);
+			}
+		}
+		finally
+		{
+			if (connection != null)
+			{
+				connection.close();
+			}
+		}
+	}
+	
+	Structure buildStructure()
+	{
+		if (productName.equals("mysql"))
+		{
+			return new MariaDBStructure(schema);
+		}
+		else if (productName.equals("mariadb"))
+		{
+			return new MariaDBStructure(schema);
+		}
+		else if (productName.equals("h2"))
+		{
+			return new H2DBStructure(schema);
+		}
+		else if (productName.equals("oracle"))
+		{
+			return new OracleStructure(schema);
+		}
+		else
+		{
+			throw new IllegalArgumentException("暂不支持" + productName + "数据库结构类型新建或者修改,当前支持：mysql,MariaDB,Oracle");
+		}
+	}
+	
+	private void buildDao()
+	{
+		for (TableMetaData each : metaContext.metaDatas())
+		{
+			if (each.getIdInfo() != null)
+			{
+				Dao dao;
+				if (productName.equals("mysql") || productName.equals("marridb"))
+				{
+					dao = new MysqlDAO();
+				}
+				else if (productName.equals("oracle"))
+				{
+					dao = new OracleDAO();
+				}
+				else if (productName.equals("h2"))
+				{
+					dao = new H2DAO();
+				}
+				else
+				{
+					throw new UnsupportedOperationException("不支持的数据库产品");
+				}
+				dao.initialize(each, sqlInterceptors, SessionfactoryConfig.this, pageParse);
+				daos.put(each.getEntityClass(), dao);
+			}
+		}
+	}
+	
+	public void setTableMode(String tableMode)
+	{
+		this.tableMode = tableMode;
+	}
+	
+	public void setDataSource(DataSource dataSource)
+	{
+		this.dataSource = dataSource;
+	}
+	
+	public void setClassLoader(ClassLoader classLoader)
+	{
+		this.classLoader = classLoader;
+	}
+	
+	public void setScanPackage(String scanPackage)
+	{
+		this.scanPackage = scanPackage;
+	}
+	
+	public ColumnTypeDictionary getJdbcTypeDictionary()
+	{
+		return jdbcTypeDictionary;
+	}
+	
+	public void setJdbcTypeDictionary(ColumnTypeDictionary jdbcTypeDictionary)
+	{
+		this.jdbcTypeDictionary = jdbcTypeDictionary;
+	}
+	
+	public FieldOperatorDictionary getFieldOperatorDictionary()
+	{
+		return fieldOperatorDictionary;
+	}
+	
+	public void setFieldOperatorDictionary(FieldOperatorDictionary fieldOperatorDictionary)
+	{
+		this.fieldOperatorDictionary = fieldOperatorDictionary;
+	}
+	
+	public ResultSetTransferDictionary getResultSetTransferDictionary()
+	{
+		return resultSetTransferDictionary;
+	}
+	
+	public void setResultSetTransferDictionary(ResultSetTransferDictionary resultSetTransferDictionary)
+	{
+		this.resultSetTransferDictionary = resultSetTransferDictionary;
+	}
+	
+	public String getSchema()
+	{
+		return schema;
+	}
+	
+	public void setSchema(String schema)
+	{
+		this.schema = schema;
+	}
+	
+	public MetaContext getMetaContext()
+	{
+		return metaContext;
+	}
+	
+	public void setTableNameCaseStrategy(TableNameCaseStrategy tableNameCaseStrategy)
+	{
+		this.tableNameCaseStrategy = tableNameCaseStrategy;
+	}
+	
+	public TableNameCaseStrategy getTableNameCaseStrategy()
+	{
+		return tableNameCaseStrategy;
+	}
+	
 }
