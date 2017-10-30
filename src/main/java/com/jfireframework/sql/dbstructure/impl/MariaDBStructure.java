@@ -33,7 +33,8 @@ public class MariaDBStructure extends AbstractDBStructure
 		{
 			cache.append(each.getColName()).append(' ').append(getDesc(each, tableMetaData)).appendComma();
 		}
-		cache.append("CONSTRAINT ").append(tableMetaData.getIdInfo().getColName()).append("_PK").append(" PRIMARY KEY (").append(tableMetaData.getIdInfo().getColName()).append("))");
+		String pkName = StringUtil.format("{}_{}_PK", tableMetaData.getTableName(), tableMetaData.getIdInfo().getColName());
+		cache.append("CONSTRAINT ").append(pkName).append(" PRIMARY KEY (").append(tableMetaData.getIdInfo().getColName()).append("))");
 		return cache.toString();
 	}
 	
