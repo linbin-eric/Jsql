@@ -43,7 +43,7 @@ public class H2DBStructure extends AbstractDBStructure
 		{
 			cache.append(each.getColName()).append(' ').append(getDesc(each, tableMetaData)).appendComma();
 		}
-		String pkName = StringUtil.format("{}_{}_PK", tableMetaData.getTableName(), tableMetaData.getIdInfo().getColName());
+		String pkName = StringUtil.format("PK_{}", tableMetaData.getTableName().hashCode() & 0x7fffffff);
 		cache.append("CONSTRAINT ").append(pkName).append(" PRIMARY KEY (").append(tableMetaData.getIdInfo().getColName()).append("))");
 		return cache.toString();
 	}

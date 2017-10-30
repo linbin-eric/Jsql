@@ -128,6 +128,7 @@ public class OracleDAO extends BaseDAO
                 cache.append("?").appendComma();
             }
             cache.deleteLast().append(")");
+        	autoGeneratePkInsertInfo = new ExecuteSqlInfo(cache.toString(), params.toArray(new MapField[params.size()]));
             generatePkStrategy = GeneratePkStrategy.GENERATE_BY_APPLICATION;
         }
     }
