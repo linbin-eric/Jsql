@@ -29,8 +29,12 @@ import com.jfireframework.sql.dbstructure.column.impl.H2ColumnTypeDictionary;
 import com.jfireframework.sql.dbstructure.column.impl.MysqlColumnTypeDictionary;
 import com.jfireframework.sql.dbstructure.column.impl.OracleColumnTypeDictionary;
 import com.jfireframework.sql.dbstructure.impl.H2DBStructure;
-import com.jfireframework.sql.dbstructure.impl.MariaDBStructure;
+import com.jfireframework.sql.dbstructure.impl.MysqlDBStructure;
 import com.jfireframework.sql.dbstructure.impl.OracleStructure;
+import com.jfireframework.sql.dialect.Dialect;
+import com.jfireframework.sql.dialect.impl.H2Dialect;
+import com.jfireframework.sql.dialect.impl.MysqlDialect;
+import com.jfireframework.sql.dialect.impl.OracleDialect;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.mapfield.FieldOperatorDictionary;
 import com.jfireframework.sql.mapper.Mapper;
@@ -69,6 +73,7 @@ public class SessionfactoryConfig
 	private ColumnTypeDictionary				columnTypeDictionary;
 	private FieldOperatorDictionary				fieldOperatorDictionary;
 	private ResultSetTransferDictionary			resultSetTransferDictionary;
+	private Dialect								dialect;
 	private TableNameCaseStrategy				tableNameCaseStrategy	= TableNameCaseStrategy.ORIGIN;
 	
 	public SessionFactory build()
@@ -89,7 +94,7 @@ public class SessionfactoryConfig
 			createOrUpdateDatabase();
 			createMappers();
 			buildDao();
-			return new SessionFactoryImpl(mappers, daos, sqlInterceptors, pageParse, dataSource, resultsetTransferStore);
+			return new SessionFactoryImpl(mappers, daos, sqlInterceptors, pageParse, dataSource, resultsetTransferStore, dialect);
 		}
 		catch (Exception e)
 		{
@@ -188,16 +193,19 @@ public class SessionfactoryConfig
 			{
 				pageParse = new MysqlPage();
 				columnTypeDictionary = columnTypeDictionary == null ? new MysqlColumnTypeDictionary() : columnTypeDictionary;
+				dialect = new MysqlDialect();
 			}
 			else if (productName.equals("oracle"))
 			{
 				pageParse = new OracleParse();
 				columnTypeDictionary = columnTypeDictionary == null ? new OracleColumnTypeDictionary() : columnTypeDictionary;
+				dialect = new OracleDialect();
 			}
 			else if (productName.equals("h2"))
 			{
 				pageParse = new MysqlPage();
 				columnTypeDictionary = columnTypeDictionary == null ? new H2ColumnTypeDictionary() : columnTypeDictionary;
+				dialect = new H2Dialect();
 			}
 			else
 			{
@@ -217,11 +225,11 @@ public class SessionfactoryConfig
 	{
 		if (productName.equals("mysql"))
 		{
-			return new MariaDBStructure(schema);
+			return new MysqlDBStructure(schema);
 		}
 		else if (productName.equals("mariadb"))
 		{
-			return new MariaDBStructure(schema);
+			return new MysqlDBStructure(schema);
 		}
 		else if (productName.equals("h2"))
 		{
@@ -260,7 +268,7 @@ public class SessionfactoryConfig
 				{
 					throw new UnsupportedOperationException("不支持的数据库产品");
 				}
-				dao.initialize(each, sqlInterceptors, SessionfactoryConfig.this, pageParse);
+				dao.initialize(each, sqlInterceptors, SessionfactoryConfig.this, pageParse, dialect);
 				daos.put(each.getEntityClass(), dao);
 			}
 		}
@@ -339,6 +347,16 @@ public class SessionfactoryConfig
 	public TableNameCaseStrategy getTableNameCaseStrategy()
 	{
 		return tableNameCaseStrategy;
+	}
+	
+	public Dialect getDialect()
+	{
+		return dialect;
+	}
+	
+	public void setDialect(Dialect dialect)
+	{
+		this.dialect = dialect;
 	}
 	
 }

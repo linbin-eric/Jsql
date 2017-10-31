@@ -136,10 +136,10 @@ public class MysqlDAO extends BaseDAO
 		switch (generatePkStrategy)
 		{
 			case GENERATE_BY_APPLICATION:
-				ExecSqlTemplate.insert(sqlInterceptors, connection, autoGeneratePkInsertInfo.getSql(), parseParam(autoGeneratePkInsertInfo.getColumns(), entity));
+				ExecSqlTemplate.insert(dialect, sqlInterceptors, connection, autoGeneratePkInsertInfo.getSql(), parseParam(autoGeneratePkInsertInfo.getColumns(), entity));
 				break;
 			case GENERATE_BY_DATABASE:
-				Object pk = ExecSqlTemplate.databasePkGenerateInsert(pkType, pkName, sqlInterceptors, connection, autoGeneratePkInsertInfo.getSql(), parseParam(autoGeneratePkInsertInfo.getColumns(), entity));
+				Object pk = ExecSqlTemplate.databasePkGenerateInsert(dialect, pkType, pkName, sqlInterceptors, connection, autoGeneratePkInsertInfo.getSql(), parseParam(autoGeneratePkInsertInfo.getColumns(), entity));
 				unsafe.putObject(entity, pkColumnOffset, pk);
 				break;
 			default:

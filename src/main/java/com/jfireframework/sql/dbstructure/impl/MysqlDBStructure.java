@@ -15,10 +15,10 @@ import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.pkstrategy.AutoIncrement;
 
-public class MariaDBStructure extends AbstractDBStructure
+public class MysqlDBStructure extends AbstractDBStructure
 {
 	
-	public MariaDBStructure(String schema)
+	public MysqlDBStructure(String schema)
 	{
 		super(schema);
 	}

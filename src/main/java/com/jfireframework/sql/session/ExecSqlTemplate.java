@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.sql.dialect.Dialect;
 import com.jfireframework.sql.interceptor.InterceptorChain;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.page.Page;
@@ -19,13 +20,13 @@ public class ExecSqlTemplate
 	
 	interface ExecStatement
 	{
-		PreparedStatement exec(String sql, Object... params) throws Exception;
+		PreparedStatement exec(String sql, Dialect dialect, Object... params) throws Exception;
 		
 		Object returnResult();
 		
 	}
 	
-	private static Object execSql(ExecStatement execStatement, SqlInterceptor[] interceptors, Connection connection, String sql, Object... params)
+	private static Object execSql(ExecStatement execStatement, Dialect dialect, SqlInterceptor[] interceptors, Connection connection, String sql, Object... params)
 	{
 		PreparedStatement pstat = null;
 		try
@@ -43,7 +44,7 @@ public class ExecSqlTemplate
 					return chain.getResult();
 				}
 			}
-			pstat = execStatement.exec(sql, params);
+			pstat = execStatement.exec(sql, dialect, params);
 			return execStatement.returnResult();
 		}
 		catch (Exception e)
@@ -66,7 +67,7 @@ public class ExecSqlTemplate
 		}
 	}
 	
-	public static Integer count(SqlInterceptor[] interceptors, final Connection connection, String sql, Object... params)
+	public static Integer count(Dialect dialect, SqlInterceptor[] interceptors, final Connection connection, String sql, Object... params)
 	{
 		return (Integer) execSql(new ExecStatement() {
 			Integer result;
@@ -78,36 +79,27 @@ public class ExecSqlTemplate
 			}
 			
 			@Override
-			public PreparedStatement exec(String sql, Object... params) throws Exception
+			public PreparedStatement exec(String sql, Dialect dialect, Object... params) throws Exception
 			{
 				PreparedStatement preparedStatement = connection.prepareStatement(sql);
-				int index = 1;
-				for (Object each : params)
-				{
-					preparedStatement.setObject(index, each);
-					index += 1;
-				}
+				dialect.fillStatement(preparedStatement, params);
 				ResultSet executeQuery = preparedStatement.executeQuery();
 				executeQuery.next();
 				result = executeQuery.getInt(1);
 				return preparedStatement;
 			}
-		}, interceptors, connection, sql, params);
+		}, dialect, interceptors, connection, sql, params);
 	}
 	
-	public static void insert(SqlInterceptor[] interceptors, final Connection connection, String sql, Object... params)
+	public static void insert(Dialect dialect, SqlInterceptor[] interceptors, final Connection connection, String sql, Object... params)
 	{
 		execSql(new ExecStatement() {
 			
 			@Override
-			public PreparedStatement exec(String sql, Object... params) throws SQLException
+			public PreparedStatement exec(String sql, Dialect dialect, Object... params) throws SQLException
 			{
 				PreparedStatement pstat = connection.prepareStatement(sql);
-				int index = 1;
-				for (Object each : params)
-				{
-					pstat.setObject(index++, each);
-				}
+				dialect.fillStatement(pstat, params);
 				pstat.executeUpdate();
 				return pstat;
 			}
@@ -118,10 +110,10 @@ public class ExecSqlTemplate
 				return null;
 			}
 			
-		}, interceptors, connection, sql, params);
+		}, dialect, interceptors, connection, sql, params);
 	}
 	
-	public static Object databasePkGenerateInsert(final PkType idType, final String[] pkName, SqlInterceptor[] interceptors, final Connection connection, String sql, Object... params)
+	public static Object databasePkGenerateInsert(Dialect dialect, final PkType idType, final String[] pkName, SqlInterceptor[] interceptors, final Connection connection, String sql, Object... params)
 	{
 		return execSql(new ExecStatement() {
 			private Object pk;
@@ -133,14 +125,10 @@ public class ExecSqlTemplate
 			}
 			
 			@Override
-			public PreparedStatement exec(String sql, Object... params) throws SQLException
+			public PreparedStatement exec(String sql, Dialect dialect, Object... params) throws SQLException
 			{
 				PreparedStatement pstat = connection.prepareStatement(sql, pkName);
-				int index = 1;
-				for (Object each : params)
-				{
-					pstat.setObject(index++, each);
-				}
+				dialect.fillStatement(pstat, params);
 				pstat.executeUpdate();
 				ResultSet resultSet = pstat.getGeneratedKeys();
 				if (resultSet.next())
@@ -162,11 +150,11 @@ public class ExecSqlTemplate
 				}
 				return pstat;
 			}
-		}, interceptors, connection, sql, params);
+		}, dialect, interceptors, connection, sql, params);
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <T> List<T> pageQuery(SqlInterceptor[] interceptors, final PageParse parse, final Page pageStore, final ResultSetTransfer transfer, final Connection connection, String sql, Object... params)
+	public static <T> List<T> pageQuery(Dialect dialect, SqlInterceptor[] interceptors, final PageParse parse, final Page pageStore, final ResultSetTransfer transfer, final Connection connection, String sql, Object... params)
 	{
 		return (List<T>) execSql(new ExecStatement() {
 			List<T> result;
@@ -178,7 +166,7 @@ public class ExecSqlTemplate
 			}
 			
 			@Override
-			public PreparedStatement exec(String sql, Object... params) throws Exception
+			public PreparedStatement exec(String sql, Dialect dialect, Object... params) throws Exception
 			{
 				if (pageStore.isFetchSum())
 				{
@@ -186,23 +174,13 @@ public class ExecSqlTemplate
 					ExecuteSqlAndParams query = executeSqlAndParams[0];
 					ExecuteSqlAndParams count = executeSqlAndParams[1];
 					PreparedStatement prepareStatement = connection.prepareStatement(query.getSql());
-					int index = 1;
-					for (Object param : query.getParams())
-					{
-						prepareStatement.setObject(index, param);
-						index += 1;
-					}
+					dialect.fillStatement(prepareStatement, query.getParams());
 					ResultSet executeQuery = prepareStatement.executeQuery();
 					result = (List<T>) transfer.transferList(executeQuery);
 					pageStore.setData(result);
 					prepareStatement.close();
 					prepareStatement = connection.prepareStatement(count.getSql());
-					index = 1;
-					for (Object param : count.getParams())
-					{
-						prepareStatement.setObject(index, param);
-						index += 1;
-					}
+					dialect.fillStatement(prepareStatement, count.getParams());
 					executeQuery = prepareStatement.executeQuery();
 					executeQuery.next();
 					int total = executeQuery.getInt(1);
@@ -213,23 +191,18 @@ public class ExecSqlTemplate
 				{
 					ExecuteSqlAndParams query = parse.parseQeuryWithoutCount(pageStore, sql, params);
 					PreparedStatement prepareStatement = connection.prepareStatement(query.getSql());
-					int index = 1;
-					for (Object param : query.getParams())
-					{
-						prepareStatement.setObject(index, param);
-						index += 1;
-					}
+					dialect.fillStatement(prepareStatement, query.getParams());
 					ResultSet executeQuery = prepareStatement.executeQuery();
 					result = (List<T>) transfer.transferList(executeQuery);
 					pageStore.setData(result);
 					return prepareStatement;
 				}
 			}
-		}, interceptors, connection, sql, params);
+		}, dialect, interceptors, connection, sql, params);
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <T> T queryOne(SqlInterceptor[] interceptors, final ResultSetTransfer transfer, final Connection connection, String sql, Object... params)
+	public static <T> T queryOne(Dialect dialect, SqlInterceptor[] interceptors, final ResultSetTransfer transfer, final Connection connection, String sql, Object... params)
 	{
 		return (T) execSql(new ExecStatement() {
 			Object result;
@@ -241,23 +214,19 @@ public class ExecSqlTemplate
 			}
 			
 			@Override
-			public PreparedStatement exec(String sql, Object... params) throws Exception
+			public PreparedStatement exec(String sql, Dialect dialect, Object... params) throws Exception
 			{
 				PreparedStatement pstat = connection.prepareStatement(sql);
-				int index = 1;
-				for (Object each : params)
-				{
-					pstat.setObject(index++, each);
-				}
+				dialect.fillStatement(pstat, params);
 				ResultSet resultSet = pstat.executeQuery();
 				result = transfer.transfer(resultSet);
 				return pstat;
 			}
-		}, interceptors, connection, sql, params);
+		}, dialect, interceptors, connection, sql, params);
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <T> List<T> queryList(SqlInterceptor[] interceptors, final ResultSetTransfer transfer, final Connection connection, String sql, Object... params)
+	public static <T> List<T> queryList(Dialect dialect, SqlInterceptor[] interceptors, final ResultSetTransfer transfer, final Connection connection, String sql, Object... params)
 	{
 		return (List<T>) execSql(new ExecStatement() {
 			List<Object> result;
@@ -269,22 +238,18 @@ public class ExecSqlTemplate
 			}
 			
 			@Override
-			public PreparedStatement exec(String sql, Object... params) throws Exception
+			public PreparedStatement exec(String sql, Dialect dialect, Object... params) throws Exception
 			{
 				PreparedStatement pstat = connection.prepareStatement(sql);
-				int index = 1;
-				for (Object each : params)
-				{
-					pstat.setObject(index++, each);
-				}
+				dialect.fillStatement(pstat, params);
 				ResultSet resultSet = pstat.executeQuery();
 				result = transfer.transferList(resultSet);
 				return pstat;
 			}
-		}, interceptors, connection, sql, params);
+		}, dialect, interceptors, connection, sql, params);
 	}
 	
-	public static Integer update(SqlInterceptor[] interceptors, final Connection connection, String sql, Object... params)
+	public static Integer update(Dialect dialect, SqlInterceptor[] interceptors, final Connection connection, String sql, Object... params)
 	{
 		return (Integer) execSql(new ExecStatement() {
 			Integer result;
@@ -296,18 +261,14 @@ public class ExecSqlTemplate
 			}
 			
 			@Override
-			public PreparedStatement exec(String sql, Object... params) throws Exception
+			public PreparedStatement exec(String sql, Dialect dialect, Object... params) throws Exception
 			{
 				PreparedStatement pstat = connection.prepareStatement(sql);
-				int index = 1;
-				for (Object each : params)
-				{
-					pstat.setObject(index++, each);
-				}
+				dialect.fillStatement(pstat, params);
 				result = pstat.executeUpdate();
 				return pstat;
 			}
-		}, interceptors, connection, sql, params);
+		}, dialect, interceptors, connection, sql, params);
 	}
 	
 }

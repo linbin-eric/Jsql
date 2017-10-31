@@ -2,6 +2,7 @@ package com.jfireframework.sql.dao;
 
 import java.sql.Connection;
 import com.jfireframework.sql.SessionfactoryConfig;
+import com.jfireframework.sql.dialect.Dialect;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.page.PageParse;
@@ -11,7 +12,7 @@ public interface Dao extends StrategyOperation
 	/**
 	 * 初始化
 	 */
-	void initialize(TableMetaData metaData, SqlInterceptor[] sqlInterceptors, SessionfactoryConfig config, PageParse pageParse);
+	void initialize(TableMetaData metaData, SqlInterceptor[] sqlInterceptors, SessionfactoryConfig config, PageParse pageParse, Dialect dialect);
 	
 	/**
 	 * 将对象信息保存到数据库中。如果对象id值为null，进行插入操作，否则进行更新操作
