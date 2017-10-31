@@ -186,7 +186,7 @@ public class InterfaceGenerateTest
 	{
 		try
 		{
-			build("com.jfireframework1.sql.test:in~*$test_10;com.jfireframework.sql.test.vo");
+			build("com.jfireframework.sql.test:in~*$test_10;com.jfireframework.sql.test.vo");
 			Assert.fail();
 		}
 		catch (Exception e)

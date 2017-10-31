@@ -63,7 +63,6 @@ public class MysqlDAO extends BaseDAO
 			{
 				final StringGenerator stringGenerator = field.getAnnotation(GenerateStringPk.class).value().newInstance();
 				params.add(new MapField() {
-					private long offset;
 					
 					@Override
 					public void setEntityValue(Object entity, ResultSet resultSet) throws SQLException
@@ -74,7 +73,7 @@ public class MysqlDAO extends BaseDAO
 					@Override
 					public void initialize(Field field, ColumnNameStrategy colNameStrategy, FieldOperatorDictionary fieldOperatorDictionary, ColumnTypeDictionary columnTypeDictionary)
 					{
-						offset = unsafe.objectFieldOffset(field);
+						throw new UnsupportedOperationException();
 					}
 					
 					@Override
@@ -105,7 +104,7 @@ public class MysqlDAO extends BaseDAO
 					public Object fieldValue(Object entity)
 					{
 						String pk = stringGenerator.next();
-						unsafe.putObject(entity, offset, pk);
+						unsafe.putObject(entity, pkColumnOffset, pk);
 						return pk;
 					}
 					
