@@ -1,6 +1,7 @@
 package com.jfireframework.sql.dbstructure.impl;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.TRACEID;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.sql.dbstructure.column.ColumnType;
+import com.jfireframework.sql.dbstructure.column.Comment;
 import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.pkstrategy.AutoIncrement;
@@ -133,7 +135,15 @@ public class MysqlDBStructure extends AbstractDBStructure
 		MapField idInfo = tableMetaData.getIdInfo();
 		if (idInfo.getField().isAnnotationPresent(AutoIncrement.class))
 		{
-			String sql = StringUtil.format("ALTER TABLE {}.{} MODIFY COLUMN {} {}", schema, tableMetaData.getTableName(), idInfo.getColName(), getDesc(idInfo, tableMetaData) + " AUTO_INCREMENT");
+			String sql = null;
+			if (annotationUtil.isPresent(Comment.class, idInfo.getField()))
+			{
+				sql = StringUtil.format("ALTER TABLE {}.{} MODIFY COLUMN {} {} COMMENT '{}'", schema, tableMetaData.getTableName(), idInfo.getColName(), getDesc(idInfo, tableMetaData) + " AUTO_INCREMENT", annotationUtil.getAnnotation(Comment.class, idInfo.getField()).value());
+			}
+			else
+			{
+				sql = StringUtil.format("ALTER TABLE {}.{} MODIFY COLUMN {} {}", schema, tableMetaData.getTableName(), idInfo.getColName(), getDesc(idInfo, tableMetaData) + " AUTO_INCREMENT");
+			}
 			logger.debug("traceId:{} 准备执行的差异性更新sql:{}", TRACEID.currentTraceId(), sql);
 			connection.prepareStatement(sql).executeUpdate();
 		}
@@ -174,6 +184,21 @@ public class MysqlDBStructure extends AbstractDBStructure
 		ResultSet executeQuery = connection.prepareStatement(sql).executeQuery();
 		executeQuery.next();
 		return executeQuery.getInt(1) > 0;
+	}
+	
+	@Override
+	protected void setComment(MapField mapField, TableMetaData tableMetaData, Connection connection) throws SQLException
+	{
+		Comment comment = annotationUtil.getAnnotation(Comment.class, mapField.getField());
+		if (comment == null)
+		{
+			return;
+		}
+		String sql = StringUtil.format("ALTER TABLE {}.{} MODIFY COLUMN {} {}  COMMENT '{}'", schema, tableMetaData.getTableName(), mapField.getColName(), getDesc(mapField, tableMetaData), comment.value());
+		PreparedStatement prepareStatement = connection.prepareStatement(sql);
+		logger.debug("traceId:{} 执行的设置注释的语句是:{}", TRACEID.currentTraceId(), sql);
+		prepareStatement.executeUpdate();
+		prepareStatement.close();
 	}
 	
 }

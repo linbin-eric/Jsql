@@ -66,10 +66,27 @@ public abstract class AbstractDBStructure implements Structure
 		{
 			deleteExistTable(connection, tableMetaData);
 		}
+		execCreateTable(connection, tableMetaData);
+		setComments(connection, tableMetaData);
+		differentiatedUpdate(connection, tableMetaData);
+	}
+	
+	private void setComments(Connection connection, TableMetaData tableMetaData) throws SQLException
+	{
+		logger.debug("traceId:{} 准备进行注释语句的添加", TRACEID.currentTraceId());
+		for (MapField mapField : tableMetaData.getFieldInfos())
+		{
+			setComment(mapField, tableMetaData, connection);
+		}
+	}
+	
+	protected abstract void setComment(MapField mapField, TableMetaData tableMetaData, Connection connection) throws SQLException;
+	
+	private void execCreateTable(Connection connection, TableMetaData tableMetaData) throws SQLException
+	{
 		String sql = buildCreateTableSql(tableMetaData);
 		logger.debug("traceId:{} 进行表:{}的创建，创建语句是:{}", TRACEID.currentTraceId(), tableMetaData.getTableName(), sql);
 		connection.prepareStatement(sql).execute();
-		differentiatedUpdate(connection, tableMetaData);
 	}
 	
 	/**

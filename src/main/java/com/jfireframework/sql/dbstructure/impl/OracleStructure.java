@@ -1,6 +1,7 @@
 package com.jfireframework.sql.dbstructure.impl;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.TRACEID;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.sql.dbstructure.column.ColumnType;
+import com.jfireframework.sql.dbstructure.column.Comment;
 import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.metadata.TableMetaData;
 
@@ -151,6 +153,20 @@ public class OracleStructure extends AbstractDBStructure
 		ResultSet executeQuery = connection.prepareStatement(sql).executeQuery();
 		executeQuery.next();
 		return executeQuery.getInt(1) > 0;
+	}
+	
+	@Override
+	protected void setComment(MapField mapField, TableMetaData tableMetaData, Connection connection) throws SQLException
+	{
+		Comment comment = annotationUtil.getAnnotation(Comment.class, mapField.getField());
+		if (comment == null)
+		{
+			return;
+		}
+		String sql = StringUtil.format("COMMENT ON COLUMN {}.{}.{} IS '{}'", schema, tableMetaData.getTableName(), mapField.getColName(), comment.value());
+		PreparedStatement prepareStatement = connection.prepareStatement(sql);
+		prepareStatement.executeUpdate();
+		prepareStatement.close();
 	}
 	
 }

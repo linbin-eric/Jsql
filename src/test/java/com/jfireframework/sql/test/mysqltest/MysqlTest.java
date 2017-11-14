@@ -29,7 +29,7 @@ public class MysqlTest
     {
         String traceId = TRACEID.newTraceId();
         HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl("jdbc:mysql://172.18.169.18:13306");
+        dataSource.setJdbcUrl("jdbc:mysql://172.18.169.18:13306?characterEncoding=utf8");
         dataSource.setDriverClassName(Driver.class.getName());
         dataSource.setUsername("root");
         dataSource.setPassword("root");
@@ -37,7 +37,7 @@ public class MysqlTest
         config.setDataSource(dataSource);
         config.setScanPackage("com.jfireframework.sql.test.mysqltest");
         config.setSchema("test");
-        config.setTableMode("update");
+        config.setTableMode("create");
         config.setTableNameCaseStrategy(TableNameCaseStrategy.LOWER);
         SessionFactory sessionFactory = config.build();
         SqlSession session = sessionFactory.openSession();

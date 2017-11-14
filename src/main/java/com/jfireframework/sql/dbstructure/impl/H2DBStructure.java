@@ -141,4 +141,10 @@ public class H2DBStructure extends AbstractDBStructure
 		return executeQuery.getInt(1) > 0;
 	}
 	
+	@Override
+	protected void setComment(MapField mapField, TableMetaData tableMetaData, Connection connection) throws SQLException
+	{
+		// 暂不支持，该数据库找到添加注释的地方
+	}
+	
 }
