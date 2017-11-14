@@ -37,7 +37,7 @@ public class MysqlTest
         config.setDataSource(dataSource);
         config.setScanPackage("com.jfireframework.sql.test.mysqltest");
         config.setSchema("test");
-        config.setTableMode("create");
+        config.setTableMode("update");
         config.setTableNameCaseStrategy(TableNameCaseStrategy.LOWER);
         SessionFactory sessionFactory = config.build();
         SqlSession session = sessionFactory.openSession();

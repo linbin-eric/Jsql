@@ -35,7 +35,7 @@ public class OracleTest
 		SessionfactoryConfig config = new SessionfactoryConfig();
 		config.setDataSource(dataSource);
 		config.setScanPackage("com.jfireframework.sql.test.oracletest");
-		config.setTableMode("create");
+		config.setTableMode("update");
 		config.setSchema("linbin_demo");
 		SessionFactory sessionFactory = config.build();
 		SqlSession session = sessionFactory.openSession();

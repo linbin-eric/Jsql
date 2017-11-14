@@ -178,6 +178,10 @@ public abstract class AbstractDBStructure implements Structure
 		}
 		addPKConstraint(connection, tableMetaData, tableName);
 		deleteUnExistColumns(connection, tableMetaData, tableName);
+		for (MapField mapField : tableMetaData.getFieldInfos())
+		{
+			setComment(mapField, tableMetaData, connection);
+		}
 		differentiatedUpdate(connection, tableMetaData);
 	}
 	

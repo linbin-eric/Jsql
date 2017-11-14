@@ -70,21 +70,40 @@ public class OracleStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected void addColumn(Connection connection, TableMetaData tableMetaData, String tableName, MapField each) throws SQLException
+	protected void addColumn(Connection connection, TableMetaData tableMetaData, String tableName, MapField mapField) throws SQLException
 	{
 		String traceId = TRACEID.currentTraceId();
-		String sql = StringUtil.format("ALTER TABLE {} ADD {} {}", tableName, each.getColName(), getDesc(each, tableMetaData));
+		String sql = StringUtil.format("ALTER TABLE {} ADD {} {}", tableName, mapField.getColName(), getDesc(mapField, tableMetaData));
 		logger.debug("traceId:{} 执行添加列语句:{}", traceId, sql);
-		connection.prepareStatement(sql).executeUpdate();
+		PreparedStatement prepareStatement = connection.prepareStatement(sql);
+		prepareStatement.executeUpdate();
+		prepareStatement.close();
 	}
 	
 	@Override
-	protected void updateColumn(Connection connection, TableMetaData tableMetaData, String tableName, MapField each) throws SQLException
+	protected void updateColumn(Connection connection, TableMetaData tableMetaData, String tableName, MapField mapField) throws SQLException
 	{
 		String traceId = TRACEID.currentTraceId();
-		String sql = StringUtil.format("ALTER TABLE {} MODIFY {} {}", tableName, each.getColName(), getDesc(each, tableMetaData));
-		logger.debug("traceId:{} 执行执行的更新语句是:{}", traceId, sql);
-		connection.prepareStatement(sql).executeUpdate();
+		String columnType = mapField.getColumnType().type();
+		if ("BLOB".equalsIgnoreCase(columnType) || "clob".equalsIgnoreCase(columnType))
+		{
+			PreparedStatement prepareStatement = connection.prepareStatement(StringUtil.format("ALTER TABLE {} DROP COLUMN {}", tableName, mapField.getColName()));
+			prepareStatement.executeUpdate();
+			prepareStatement.close();
+			String sql = StringUtil.format("ALTER TABLE {} ADD {} {}", tableName, mapField.getColName(), getDesc(mapField, tableMetaData));
+			logger.debug("traceId:{} 执行添加列语句:{}", traceId, sql);
+			prepareStatement = connection.prepareStatement(sql);
+			prepareStatement.executeUpdate();
+			prepareStatement.close();
+		}
+		else
+		{
+			String sql = StringUtil.format("ALTER TABLE {} MODIFY {} {}", tableName, mapField.getColName(), getDesc(mapField, tableMetaData));
+			logger.debug("traceId:{} 执行执行的更新语句是:{}", traceId, sql);
+			PreparedStatement prepareStatement = connection.prepareStatement(sql);
+			prepareStatement.executeUpdate();
+			prepareStatement.close();
+		}
 	}
 	
 	@Override

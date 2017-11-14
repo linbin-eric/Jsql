@@ -21,11 +21,13 @@ public class MysqlTable
 	private int			col1;
 	private long		col2;
 	private float		col3;
+	@Comment("注释2")
 	private double		col4;
 	private String		col5;
 	private boolean		col6;
 	private Date		col7;
 	private Calendar	col8;
+	@Comment("注释3")
 	private Timestamp	col9;
 	private Time		col10;
 	private byte[]		col11;
