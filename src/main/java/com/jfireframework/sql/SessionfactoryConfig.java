@@ -193,23 +193,23 @@ public class SessionfactoryConfig
 			{
 				pageParse = new MysqlPage();
 				columnTypeDictionary = columnTypeDictionary == null ? new MysqlColumnTypeDictionary() : columnTypeDictionary;
-				dialect = new MysqlDialect();
+				dialect = dialect == null ? new MysqlDialect() : dialect;
 			}
 			else if (productName.equals("oracle"))
 			{
 				pageParse = new OracleParse();
 				columnTypeDictionary = columnTypeDictionary == null ? new OracleColumnTypeDictionary() : columnTypeDictionary;
-				dialect = new OracleDialect();
+				dialect = dialect == null ? new OracleDialect() : dialect;
 			}
 			else if (productName.equals("h2"))
 			{
 				pageParse = new MysqlPage();
 				columnTypeDictionary = columnTypeDictionary == null ? new H2ColumnTypeDictionary() : columnTypeDictionary;
-				dialect = new H2Dialect();
+				dialect = dialect == null ? new H2Dialect() : dialect;
 			}
 			else
 			{
-				logger.error("不支持分页的数据库类型：{}", productName);
+				logger.error("不支持的数据库类型：{}", productName);
 			}
 		}
 		finally
