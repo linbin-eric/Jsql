@@ -46,7 +46,8 @@ public class MysqlDBStructure extends AbstractDBStructure
 		String traceId = TRACEID.currentTraceId();
 		String sql = StringUtil.format("ALTER TABLE {}.{} MODIFY {} {}", schema, tableName, each.getColName(), getDesc(each, tableMetaData));
 		logger.debug("traceId:{} 执行的更新语句是:{}", traceId, sql);
-		connection.prepareStatement(sql).executeUpdate();
+		PreparedStatement prepareStatement = connection.prepareStatement(sql);
+		prepareStatement.executeUpdate();
 	}
 	
 	@Override
@@ -56,17 +57,24 @@ public class MysqlDBStructure extends AbstractDBStructure
 		String tableName = tableMetaData.getTableName();
 		String query = StringUtil.format("select COLUMN_NAME,COLUMN_TYPE from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME='{}' and TABLE_SCHEMA='{}' and COLUMN_KEY='PRI';", tableName, schema);
 		logger.debug("traceId:{} 准备删除主键约束，执行的sql:{}", traceId, query);
-		ResultSet executeQuery = connection.prepareStatement(query).executeQuery();
+		PreparedStatement prepareStatement = connection.prepareStatement(query);
+		ResultSet executeQuery = prepareStatement.executeQuery();
 		if (executeQuery.next())
 		{
 			String columnName = executeQuery.getString(1);
 			String columnType = executeQuery.getString(2);
-			connection.prepareStatement(StringUtil.format("ALTER TABLE {}.{} MODIFY COLUMN {} {}", schema, tableName, columnName, columnType)).executeUpdate();
+			prepareStatement.close();
+			prepareStatement = connection.prepareStatement(StringUtil.format("ALTER TABLE {}.{} MODIFY COLUMN {} {}", schema, tableName, columnName, columnType));
+			prepareStatement.executeUpdate();
+			prepareStatement.close();
 			String sql = StringUtil.format("ALTER TABLE {}.{} DROP PRIMARY  KEY", schema, tableName);
-			connection.prepareStatement(sql).executeUpdate();
+			prepareStatement = connection.prepareStatement(sql);
+			prepareStatement.executeUpdate();
+			prepareStatement.close();
 		}
 		else
 		{
+			prepareStatement.close();
 			logger.debug("traceId:{} 表:{}不存在主键", traceId, tableMetaData.getTableName());
 		}
 	}
@@ -77,7 +85,9 @@ public class MysqlDBStructure extends AbstractDBStructure
 		String traceId = TRACEID.currentTraceId();
 		String sql = StringUtil.format("ALTER TABLE {}.{} ADD {} {}", schema, tableName, each.getColName(), getDesc(each, tableMetaData));
 		logger.debug("traceId:{} 执行添加列语句:{}", traceId, sql);
-		connection.prepareStatement(sql).executeUpdate();
+		PreparedStatement prepareStatement = connection.prepareStatement(sql);
+		prepareStatement.executeUpdate();
+		prepareStatement.close();
 	}
 	
 	@Override
@@ -87,7 +97,9 @@ public class MysqlDBStructure extends AbstractDBStructure
 		String pkName = StringUtil.format("PK_{}", tableName.hashCode() & 0x7fffffff);
 		String sql = StringUtil.format("ALTER TABLE {}.{} ADD CONSTRAINT {} PRIMARY KEY ({})", schema, tableName, pkName, tableMetaData.getIdInfo().getColName());
 		logger.debug("traceId:{} 准备增加主键约束，sql为:{}", traceId, sql);
-		connection.prepareStatement(sql).executeUpdate();
+		PreparedStatement prepareStatement = connection.prepareStatement(sql);
+		prepareStatement.executeUpdate();
+		prepareStatement.close();
 	}
 	
 	@Override
@@ -99,7 +111,8 @@ public class MysqlDBStructure extends AbstractDBStructure
 			columnNames.add(each.getColName());
 		}
 		String sql = StringUtil.format("select COLUMN_NAME from INFORMATION_SCHEMA.COLUMNS where TABLE_NAME='{}' and TABLE_SCHEMA='{}'", tableName, schema);
-		ResultSet executeQuery = connection.prepareStatement(sql).executeQuery();
+		PreparedStatement prepareStatement = connection.prepareStatement(sql);
+		ResultSet executeQuery = prepareStatement.executeQuery();
 		List<String> deletes = new ArrayList<String>();
 		while (executeQuery.next())
 		{
@@ -109,9 +122,12 @@ public class MysqlDBStructure extends AbstractDBStructure
 				deletes.add(columnName);
 			}
 		}
+		prepareStatement.close();
 		for (String each : deletes)
 		{
-			connection.prepareStatement(StringUtil.format("ALTER TABLE {}.{} DROP COLUMN {}", schema, tableName, each)).executeUpdate();
+			prepareStatement = connection.prepareStatement(StringUtil.format("ALTER TABLE {}.{} DROP COLUMN {}", schema, tableName, each));
+			prepareStatement.executeUpdate();
+			prepareStatement.close();
 		}
 	}
 	
@@ -119,15 +135,20 @@ public class MysqlDBStructure extends AbstractDBStructure
 	protected boolean checkIfTableExists(Connection connection, TableMetaData metaData) throws SQLException
 	{
 		String sql = StringUtil.format("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='{}' and TABLE_SCHEMA='{}'", metaData.getTableName(), schema);
-		ResultSet executeQuery = connection.prepareStatement(sql).executeQuery();
-		return executeQuery.next();
+		PreparedStatement prepareStatement = connection.prepareStatement(sql);
+		ResultSet executeQuery = prepareStatement.executeQuery();
+		boolean result = executeQuery.next();
+		prepareStatement.close();
+		return result;
 	}
 	
 	@Override
 	protected void deleteExistTable(Connection connection, TableMetaData metaData) throws SQLException
 	{
 		String tableName = schema + "." + metaData.getTableName();
-		connection.prepareStatement("DROP TABLE IF EXISTS " + tableName).execute();
+		PreparedStatement preparedStatement = connection.prepareStatement("DROP TABLE IF EXISTS " + tableName);
+		preparedStatement.execute();
+		preparedStatement.close();
 	}
 	
 	@Override
@@ -146,7 +167,8 @@ public class MysqlDBStructure extends AbstractDBStructure
 				sql = StringUtil.format("ALTER TABLE {}.{} MODIFY COLUMN {} {}", schema, tableMetaData.getTableName(), idInfo.getColName(), getDesc(idInfo, tableMetaData) + " AUTO_INCREMENT");
 			}
 			logger.debug("traceId:{} 准备执行的差异性更新sql:{}", TRACEID.currentTraceId(), sql);
-			connection.prepareStatement(sql).executeUpdate();
+			PreparedStatement prepareStatement = connection.prepareStatement(sql);
+			prepareStatement.executeUpdate();
 		}
 	}
 	
@@ -155,9 +177,11 @@ public class MysqlDBStructure extends AbstractDBStructure
 	{
 		String sql = StringUtil.format("select COLUMN_TYPE from information_schema.`COLUMNS` where TABLE_SCHEMA='{}' and TABLE_NAME='{}' and COLUMN_NAME='{}'", schema, tableMetaData.getTableName(), each.getColName());
 		String columnType = getColumnType(each, tableMetaData);
-		ResultSet executeQuery = connection.prepareStatement(sql).executeQuery();
+		PreparedStatement preparedStatement = connection.prepareStatement(sql);
+		ResultSet executeQuery = preparedStatement.executeQuery();
 		executeQuery.next();
 		String dbColumnType = executeQuery.getString(1);
+		preparedStatement.close();
 		return dbColumnType.equalsIgnoreCase(columnType);
 	}
 	
@@ -182,9 +206,12 @@ public class MysqlDBStructure extends AbstractDBStructure
 		String traceId = TRACEID.currentTraceId();
 		String sql = StringUtil.format("select count(1) from information_schema.`COLUMNS` where TABLE_SCHEMA='{}' and TABLE_NAME='{}' and COLUMN_NAME='{}'", schema, tableMetaData.getTableName(), each.getColName());
 		logger.trace("traceId:{} 执行的判断列是否存在sql为:{}", traceId, sql);
-		ResultSet executeQuery = connection.prepareStatement(sql).executeQuery();
+		PreparedStatement preparedStatement = connection.prepareStatement(sql);
+		ResultSet executeQuery = preparedStatement.executeQuery();
 		executeQuery.next();
-		return executeQuery.getInt(1) > 0;
+		boolean result = executeQuery.getInt(1) > 0;
+		preparedStatement.close();
+		return result;
 	}
 	
 	@Override

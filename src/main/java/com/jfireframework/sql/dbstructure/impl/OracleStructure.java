@@ -31,8 +31,12 @@ public class OracleStructure extends AbstractDBStructure
 	protected boolean checkIfTableExists(Connection connection, TableMetaData metaData) throws SQLException
 	{
 		String tableName = metaData.getTableName();
-		ResultSet resultSet = connection.prepareStatement(StringUtil.format("SELECT * FROM SYS.USER_TABLES t WHERE t.TABLE_NAME='{}'", tableName)).executeQuery();
-		return resultSet.next();
+		PreparedStatement prepareStatement = connection.prepareStatement(StringUtil.format("SELECT * FROM SYS.USER_TABLES t WHERE t.TABLE_NAME='{}'", tableName));
+		ResultSet resultSet = prepareStatement.executeQuery();
+		boolean result = resultSet.next();
+		resultSet.close();
+		prepareStatement.close();
+		return result;
 	}
 	
 	@Override
@@ -44,7 +48,8 @@ public class OracleStructure extends AbstractDBStructure
 			columnNames.add(each.getColName());
 		}
 		String sql = StringUtil.format("SELECT t.COLUMN_NAME FROM user_tab_columns t WHERE t.TABLE_NAME='{}'", tableName);
-		ResultSet executeQuery = connection.prepareStatement(sql).executeQuery();
+		PreparedStatement preparedStatement = connection.prepareStatement(sql);
+		ResultSet executeQuery = preparedStatement.executeQuery();
 		List<String> deletes = new ArrayList<String>();
 		while (executeQuery.next())
 		{
@@ -54,9 +59,13 @@ public class OracleStructure extends AbstractDBStructure
 				deletes.add(columnName);
 			}
 		}
+		executeQuery.close();
+		preparedStatement.close();
 		for (String each : deletes)
 		{
-			connection.prepareStatement(StringUtil.format("ALTER TABLE {} DROP COLUMN {}", tableName, each)).executeUpdate();
+			preparedStatement = connection.prepareStatement(StringUtil.format("ALTER TABLE {} DROP COLUMN {}", tableName, each));
+			preparedStatement.executeUpdate();
+			preparedStatement.close();
 		}
 	}
 	
@@ -67,7 +76,9 @@ public class OracleStructure extends AbstractDBStructure
 		String pkName = StringUtil.format("PK_{}", tableName.hashCode() & 0x7fffffff);
 		String sql = StringUtil.format("ALTER TABLE {} ADD CONSTRAINT {} PRIMARY KEY ({})", tableName, pkName, tableMetaData.getIdInfo().getColName());
 		logger.debug("traceId:{} 准备增加主键约束，sql为:{}", traceId, sql);
-		connection.prepareStatement(sql).executeUpdate();
+		PreparedStatement preparedStatement = connection.prepareStatement(sql);
+		preparedStatement.executeUpdate();
+		preparedStatement.close();
 	}
 	
 	@Override
@@ -113,16 +124,25 @@ public class OracleStructure extends AbstractDBStructure
 		String tableName = tableMetaData.getTableName();
 		String traceId = TRACEID.currentTraceId();
 		String findPkSql = StringUtil.format("SELECT CONSTRAINT_NAME FROM SYS.USER_CONSTRAINTS WHERE TABLE_NAME='{}'", tableMetaData.getTableName());
-		ResultSet resultSet = connection.prepareStatement(findPkSql).executeQuery();
+		PreparedStatement preparedStatement = connection.prepareStatement(findPkSql);
+		ResultSet resultSet = preparedStatement.executeQuery();
 		if (resultSet.next())
 		{
 			String pkName = resultSet.getString(1);
 			resultSet.close();
+			preparedStatement.close();
 			logger.trace("traceId:{} 查询到表:{}的主键约束名称:{}", traceId, tableName, pkName);
 			String deletePkSql = "ALTER TABLE " + tableName + " DROP CONSTRAINT " + pkName;
 			logger.trace("traceId:{} 准备删除主键约束，执行:{}", traceId, deletePkSql);
-			connection.prepareStatement(deletePkSql).executeUpdate();
+			preparedStatement = connection.prepareStatement(deletePkSql);
+			preparedStatement.executeUpdate();
 			logger.trace("traceId:{} 主键约束删除完毕", traceId);
+			preparedStatement.close();
+		}
+		else
+		{
+			resultSet.close();
+			preparedStatement.close();
 		}
 	}
 	
@@ -145,7 +165,9 @@ public class OracleStructure extends AbstractDBStructure
 	protected void deleteExistTable(Connection connection, TableMetaData metaData) throws SQLException
 	{
 		String tableName = schema + "." + metaData.getTableName();
-		connection.prepareStatement("DROP TABLE " + tableName).execute();
+		PreparedStatement preparedStatement = connection.prepareStatement("DROP TABLE " + tableName);
+		preparedStatement.execute();
+		preparedStatement.close();
 	}
 	
 	@Override
@@ -158,11 +180,13 @@ public class OracleStructure extends AbstractDBStructure
 	protected boolean checkColumnDefinitionFit(Connection connection, MapField each, TableMetaData tableMetaData) throws SQLException
 	{
 		String sql = StringUtil.format("SELECT DATA_TYPE,DATA_LENGTH FROM SYS.USER_TAB_COLUMNS WHERE TABLE_NAME='{}' AND COLUMN_NAME='{}'", tableMetaData.getTableName(), each.getColName());
-		ResultSet executeQuery = connection.prepareStatement(sql).executeQuery();
+		PreparedStatement preparedStatement = connection.prepareStatement(sql);
+		ResultSet executeQuery = preparedStatement.executeQuery();
 		executeQuery.next();
 		String data_type = executeQuery.getString(1);
 		String data_length = executeQuery.getString(2);
 		ColumnType columnType = each.getColumnType();
+		preparedStatement.close();
 		return data_type.equalsIgnoreCase(columnType.type()) && data_length.equalsIgnoreCase(columnType.desc());
 	}
 	
@@ -170,9 +194,12 @@ public class OracleStructure extends AbstractDBStructure
 	protected boolean columnExist(Connection connection, MapField each, TableMetaData tableMetaData) throws SQLException
 	{
 		String sql = StringUtil.format("SELECT count(1) FROM SYS.USER_TAB_COLS WHERE TABLE_NAME='{}' AND COLUMN_NAME='{}'", tableMetaData.getTableName(), each.getColName());
-		ResultSet executeQuery = connection.prepareStatement(sql).executeQuery();
+		PreparedStatement prepareStatement = connection.prepareStatement(sql);
+		ResultSet executeQuery = prepareStatement.executeQuery();
 		executeQuery.next();
-		return executeQuery.getInt(1) > 0;
+		boolean result = executeQuery.getInt(1) > 0;
+		prepareStatement.close();
+		return result;
 	}
 	
 	@Override

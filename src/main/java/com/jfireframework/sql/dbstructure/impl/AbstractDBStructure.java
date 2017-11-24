@@ -2,6 +2,7 @@ package com.jfireframework.sql.dbstructure.impl;
 
 import java.lang.reflect.Field;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -86,7 +87,9 @@ public abstract class AbstractDBStructure implements Structure
 	{
 		String sql = buildCreateTableSql(tableMetaData);
 		logger.debug("traceId:{} 进行表:{}的创建，创建语句是:{}", TRACEID.currentTraceId(), tableMetaData.getTableName(), sql);
-		connection.prepareStatement(sql).execute();
+		PreparedStatement prepareStatement = connection.prepareStatement(sql);
+		prepareStatement.execute();
+		prepareStatement.close();
 	}
 	
 	/**
