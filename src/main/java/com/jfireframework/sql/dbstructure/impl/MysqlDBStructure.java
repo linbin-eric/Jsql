@@ -84,7 +84,8 @@ public class MysqlDBStructure extends AbstractDBStructure
 	protected void addPKConstraint(Connection connection, TableMetaData tableMetaData, String tableName) throws SQLException
 	{
 		String traceId = TRACEID.currentTraceId();
-		String sql = StringUtil.format("ALTER TABLE {}.{} ADD CONSTRAINT {} PRIMARY KEY ({})", schema, tableName, tableMetaData.getIdInfo().getColName() + "_PK", tableMetaData.getIdInfo().getColName());
+		String pkName = StringUtil.format("PK_{}", tableName.hashCode() & 0x7fffffff);
+		String sql = StringUtil.format("ALTER TABLE {}.{} ADD CONSTRAINT {} PRIMARY KEY ({})", schema, tableName, pkName, tableMetaData.getIdInfo().getColName());
 		logger.debug("traceId:{} 准备增加主键约束，sql为:{}", traceId, sql);
 		connection.prepareStatement(sql).executeUpdate();
 	}

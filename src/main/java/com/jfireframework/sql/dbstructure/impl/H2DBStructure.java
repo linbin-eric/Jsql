@@ -91,7 +91,8 @@ public class H2DBStructure extends AbstractDBStructure
 	@Override
 	protected void addPKConstraint(Connection connection, TableMetaData tableMetaData, String tableName) throws SQLException
 	{
-		String sql = StringUtil.format("ALTER TABLE {}.{} ADD CONSTRAINT {}_PK PRIMARY KEY ({})", schema, tableName, tableMetaData.getIdInfo().getColName(), tableMetaData.getIdInfo().getColName());
+		String pkName = StringUtil.format("PK_{}", tableName.hashCode() & 0x7fffffff);
+		String sql = StringUtil.format("ALTER TABLE {}.{} ADD CONSTRAINT {} PRIMARY KEY ({})", schema, tableName, pkName, tableMetaData.getIdInfo().getColName());
 		connection.prepareStatement(sql).executeUpdate();
 	}
 	
