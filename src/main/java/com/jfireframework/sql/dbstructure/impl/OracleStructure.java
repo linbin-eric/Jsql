@@ -123,7 +123,7 @@ public class OracleStructure extends AbstractDBStructure
 	{
 		String tableName = tableMetaData.getTableName();
 		String traceId = TRACEID.currentTraceId();
-		String findPkSql = StringUtil.format("SELECT CONSTRAINT_NAME FROM SYS.USER_CONSTRAINTS WHERE TABLE_NAME='{}'", tableMetaData.getTableName());
+		String findPkSql = StringUtil.format("SELECT CONSTRAINT_NAME FROM SYS.USER_CONSTRAINTS WHERE TABLE_NAME='{}' AND CONSTRAINT_TYPE='P'", tableMetaData.getTableName());
 		PreparedStatement preparedStatement = connection.prepareStatement(findPkSql);
 		ResultSet resultSet = preparedStatement.executeQuery();
 		if (resultSet.next())
