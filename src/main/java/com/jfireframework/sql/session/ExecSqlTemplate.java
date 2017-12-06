@@ -18,15 +18,15 @@ import com.jfireframework.sql.util.PkType;
 public class ExecSqlTemplate
 {
 	
-	interface ExecStatement
+	interface ExecStatement<T>
 	{
 		PreparedStatement exec(String sql, Dialect dialect, Object... params) throws Exception;
 		
-		Object returnResult();
+		T returnResult();
 		
 	}
 	
-	private static Object execSql(ExecStatement execStatement, Dialect dialect, SqlInterceptor[] interceptors, Connection connection, String sql, Object... params)
+	private static <T> T execSql(ExecStatement<T> execStatement, Dialect dialect, SqlInterceptor[] interceptors, Connection connection, String sql, Object... params)
 	{
 		PreparedStatement pstat = null;
 		try
@@ -69,11 +69,11 @@ public class ExecSqlTemplate
 	
 	public static Integer count(Dialect dialect, SqlInterceptor[] interceptors, final Connection connection, String sql, Object... params)
 	{
-		return (Integer) execSql(new ExecStatement() {
+		return (Integer) execSql(new ExecStatement<Integer>() {
 			Integer result;
 			
 			@Override
-			public Object returnResult()
+			public Integer returnResult()
 			{
 				return result;
 			}
@@ -91,23 +91,24 @@ public class ExecSqlTemplate
 		}, dialect, interceptors, connection, sql, params);
 	}
 	
-	public static void insert(Dialect dialect, SqlInterceptor[] interceptors, final Connection connection, String sql, Object... params)
+	public static Integer insert(Dialect dialect, SqlInterceptor[] interceptors, final Connection connection, String sql, Object... params)
 	{
-		execSql(new ExecStatement() {
+		return (Integer) execSql(new ExecStatement<Integer>() {
+			private Integer updated;
 			
 			@Override
 			public PreparedStatement exec(String sql, Dialect dialect, Object... params) throws SQLException
 			{
 				PreparedStatement pstat = connection.prepareStatement(sql);
 				dialect.fillStatement(pstat, params);
-				pstat.executeUpdate();
+				updated = pstat.executeUpdate();
 				return pstat;
 			}
 			
 			@Override
-			public Object returnResult()
+			public Integer returnResult()
 			{
-				return null;
+				return updated;
 			}
 			
 		}, dialect, interceptors, connection, sql, params);
@@ -115,7 +116,7 @@ public class ExecSqlTemplate
 	
 	public static Object databasePkGenerateInsert(Dialect dialect, final PkType idType, final String[] pkName, SqlInterceptor[] interceptors, final Connection connection, String sql, Object... params)
 	{
-		return execSql(new ExecStatement() {
+		return execSql(new ExecStatement<Object>() {
 			private Object pk;
 			
 			@Override
@@ -153,14 +154,13 @@ public class ExecSqlTemplate
 		}, dialect, interceptors, connection, sql, params);
 	}
 	
-	@SuppressWarnings("unchecked")
-	public static <T> List<T> pageQuery(Dialect dialect, SqlInterceptor[] interceptors, final PageParse parse, final Page pageStore, final ResultSetTransfer transfer, final Connection connection, String sql, Object... params)
+	public static <T> List<T> pageQuery(Dialect dialect, SqlInterceptor[] interceptors, final PageParse parse, final Page pageStore, final ResultSetTransfer<T> transfer, final Connection connection, String sql, Object... params)
 	{
-		return (List<T>) execSql(new ExecStatement() {
+		return (List<T>) execSql(new ExecStatement<List<T>>() {
 			List<T> result;
 			
 			@Override
-			public Object returnResult()
+			public List<T> returnResult()
 			{
 				return result;
 			}
@@ -201,14 +201,13 @@ public class ExecSqlTemplate
 		}, dialect, interceptors, connection, sql, params);
 	}
 	
-	@SuppressWarnings("unchecked")
-	public static <T> T queryOne(Dialect dialect, SqlInterceptor[] interceptors, final ResultSetTransfer transfer, final Connection connection, String sql, Object... params)
+	public static <T> T queryOne(Dialect dialect, SqlInterceptor[] interceptors, final ResultSetTransfer<T> transfer, final Connection connection, String sql, Object... params)
 	{
-		return (T) execSql(new ExecStatement() {
-			Object result;
+		return (T) execSql(new ExecStatement<T>() {
+			T result;
 			
 			@Override
-			public Object returnResult()
+			public T returnResult()
 			{
 				return result;
 			}
@@ -225,14 +224,13 @@ public class ExecSqlTemplate
 		}, dialect, interceptors, connection, sql, params);
 	}
 	
-	@SuppressWarnings("unchecked")
-	public static <T> List<T> queryList(Dialect dialect, SqlInterceptor[] interceptors, final ResultSetTransfer transfer, final Connection connection, String sql, Object... params)
+	public static <T> List<T> queryList(Dialect dialect, SqlInterceptor[] interceptors, final ResultSetTransfer<T> transfer, final Connection connection, String sql, Object... params)
 	{
-		return (List<T>) execSql(new ExecStatement() {
-			List<Object> result;
+		return (List<T>) execSql(new ExecStatement<List<T>>() {
+			List<T> result;
 			
 			@Override
-			public Object returnResult()
+			public List<T> returnResult()
 			{
 				return result;
 			}
@@ -251,11 +249,11 @@ public class ExecSqlTemplate
 	
 	public static Integer update(Dialect dialect, SqlInterceptor[] interceptors, final Connection connection, String sql, Object... params)
 	{
-		return (Integer) execSql(new ExecStatement() {
+		return (Integer) execSql(new ExecStatement<Integer>() {
 			Integer result;
 			
 			@Override
-			public Object returnResult()
+			public Integer returnResult()
 			{
 				return result;
 			}

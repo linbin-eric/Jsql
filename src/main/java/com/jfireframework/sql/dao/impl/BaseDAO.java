@@ -28,10 +28,10 @@ import com.jfireframework.sql.util.ExecuteSqlInfo;
 import com.jfireframework.sql.util.PkType;
 import sun.misc.Unsafe;
 
-public abstract class BaseDAO implements Dao
+public abstract class BaseDAO<T> implements Dao<T>
 {
 	
-	protected Class<?>				entityClass;
+	protected Class<T>				entityClass;
 	// 数据表主键的列
 	protected MapField				pkColumn;
 	// 数据表的所有列
@@ -47,8 +47,8 @@ public abstract class BaseDAO implements Dao
 	protected ExecuteSqlInfo		updateInfo;
 	protected ExecuteSqlInfo		deleteInfo;
 	protected ExecuteSqlInfo		insertInfo;
-	protected StrategyOperation		strategyOperation;
-	protected ResultSetTransfer		transfer;
+	protected StrategyOperation<T>	strategyOperation;
+	protected ResultSetTransfer<T>	transfer;
 	protected String[]				pkName;
 	protected SqlInterceptor[]		sqlInterceptors;
 	protected Dialect				dialect;
@@ -58,10 +58,11 @@ public abstract class BaseDAO implements Dao
 	/**
 	 * 初始化
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public void initialize(TableMetaData metaData, SqlInterceptor[] sqlInterceptors, SessionfactoryConfig config, PageParse pageParse, Dialect dialect)
 	{
-		this.entityClass = metaData.getEntityClass();
+		this.entityClass = (Class<T>) metaData.getEntityClass();
 		this.dialect = dialect;
 		this.sqlInterceptors = sqlInterceptors;
 		tableName = metaData.getTableName();
@@ -74,7 +75,7 @@ public abstract class BaseDAO implements Dao
 		setDeleteInfo();
 		setInsertInfo();
 		setAutoGeneratePkInsertInfo();
-		strategyOperation = new StrategyOperationImpl(entityClass, allColumns, config, sqlInterceptors, tableName, pageParse, dialect);
+		strategyOperation = new StrategyOperationImpl<T>(entityClass, allColumns, config, sqlInterceptors, tableName, pageParse, dialect);
 	}
 	
 	protected abstract void setAutoGeneratePkInsertInfo();
@@ -124,7 +125,7 @@ public abstract class BaseDAO implements Dao
 	
 	private void setTransfer(SessionfactoryConfig config)
 	{
-		transfer = new BeanTransfer();
+		transfer = new BeanTransfer<T>();
 		transfer.initialize(entityClass, config);
 	}
 	
@@ -213,11 +214,10 @@ public abstract class BaseDAO implements Dao
 		return ExecSqlTemplate.update(dialect, sqlInterceptors, connection, deleteInfo.getSql(), parseParam(deleteInfo.getColumns(), entity));
 	}
 	
-	@SuppressWarnings("unchecked")
 	@Override
-	public <T> T getById(Object pk, Connection connection)
+	public T getById(Object pk, Connection connection)
 	{
-		return (T) ExecSqlTemplate.queryOne(dialect, sqlInterceptors, transfer, connection, queryInfo.getSql(), pk);
+		return ExecSqlTemplate.queryOne(dialect, sqlInterceptors, transfer, connection, queryInfo.getSql(), pk);
 	}
 	
 	@Override
@@ -266,7 +266,7 @@ public abstract class BaseDAO implements Dao
 	}
 	
 	@Override
-	public <T> T getById(Object pk, Connection connection, LockMode mode)
+	public T getById(Object pk, Connection connection, LockMode mode)
 	{
 		String sql = mode == LockMode.SHARE ? queryInShareInfo.getSql() : queryForUpdateInfo.getSql();
 		return ExecSqlTemplate.queryOne(dialect, sqlInterceptors, transfer, connection, sql, pk);
@@ -291,19 +291,19 @@ public abstract class BaseDAO implements Dao
 	}
 	
 	@Override
-	public <T> T findOne(Connection connection, String strategy, Object... params)
+	public T findOne(Connection connection, String strategy, Object... params)
 	{
 		return strategyOperation.findOne(connection, strategy, params);
 	}
 	
 	@Override
-	public <T> List<T> findAll(Connection connection, String strategy, Object... params)
+	public List<T> findAll(Connection connection, String strategy, Object... params)
 	{
 		return strategyOperation.findAll(connection, strategy, params);
 	}
 	
 	@Override
-	public <T> List<T> findPage(Connection connection, Page page, String strategy, Object... params)
+	public List<T> findPage(Connection connection, Page page, String strategy, Object... params)
 	{
 		return strategyOperation.findPage(connection, page, strategy, params);
 	}
@@ -312,6 +312,13 @@ public abstract class BaseDAO implements Dao
 	public int count(Connection connection, String strategy, Object... params)
 	{
 		return strategyOperation.count(connection, strategy, params);
+	}
+	
+	@Override
+	public int insert(Connection connection, String strategy, Object... params)
+	{
+		// TODO Auto-generated method stub
+		return 0;
 	}
 	
 }

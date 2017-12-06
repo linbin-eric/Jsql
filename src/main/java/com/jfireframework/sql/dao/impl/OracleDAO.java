@@ -22,7 +22,7 @@ import com.jfireframework.sql.session.ExecSqlTemplate;
 import com.jfireframework.sql.util.ExecuteSqlInfo;
 import sun.misc.Unsafe;
 
-public class OracleDAO extends BaseDAO
+public class OracleDAO<T> extends BaseDAO<T>
 {
 	private static final Unsafe		unsafe	= ReflectUtil.getUnsafe();
 	protected GeneratePkStrategy	generatePkStrategy;

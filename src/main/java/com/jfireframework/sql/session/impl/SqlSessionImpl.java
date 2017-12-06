@@ -169,19 +169,19 @@ public class SqlSessionImpl implements SqlSession
 	}
 	
 	@Override
-	public <T> T query(ResultSetTransfer transfer, String sql, Object... params)
+	public <T> T query(ResultSetTransfer<T> transfer, String sql, Object... params)
 	{
 		return ExecSqlTemplate.queryOne(dialect, sqlInterceptors, transfer, connection, sql, params);
 	}
 	
 	@Override
-	public <T> List<T> queryList(ResultSetTransfer transfer, String sql, Object... params)
+	public <T> List<T> queryList(ResultSetTransfer<T> transfer, String sql, Object... params)
 	{
 		return ExecSqlTemplate.queryList(dialect, sqlInterceptors, transfer, connection, sql, params);
 	}
 	
 	@Override
-	public <T> List<T> queryList(ResultSetTransfer transfer, String sql, Page page, Object... params)
+	public <T> List<T> queryList(ResultSetTransfer<T> transfer, String sql, Page page, Object... params)
 	{
 		return ExecSqlTemplate.pageQuery(dialect, sqlInterceptors, pageParse, page, transfer, connection, sql, params);
 	}

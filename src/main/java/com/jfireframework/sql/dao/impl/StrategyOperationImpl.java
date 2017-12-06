@@ -19,27 +19,28 @@ import com.jfireframework.sql.page.PageParse;
 import com.jfireframework.sql.resultsettransfer.impl.BeanTransfer;
 import com.jfireframework.sql.session.ExecSqlTemplate;
 
-public class StrategyOperationImpl implements StrategyOperation
+public class StrategyOperationImpl<T> implements StrategyOperation<T>
 {
 	class FindStrategySql
 	{
 		String			sql;
-		BeanTransfer	transfer;
+		BeanTransfer<T>	transfer;
 	}
 	
-	private final Class<?>									ckass;
+	private final Class<T>									ckass;
 	private final Map<String, MapField>						mapFields;
-	private final ConcurrentMap<String, FindStrategySql>	findMap		= new ConcurrentHashMap<String, StrategyOperationImpl.FindStrategySql>();
+	private final ConcurrentMap<String, FindStrategySql>	findMap		= new ConcurrentHashMap<String, StrategyOperationImpl<T>.FindStrategySql>();
 	private final ConcurrentMap<String, String>				updateMap	= new ConcurrentHashMap<String, String>();
 	private final ConcurrentMap<String, String>				deleteMap	= new ConcurrentHashMap<String, String>();
 	private final ConcurrentMap<String, String>				countMap	= new ConcurrentHashMap<String, String>();
+	private final ConcurrentMap<String, String>				insertMap	= new ConcurrentHashMap<String, String>();
 	private final String									tableName;
 	private SqlInterceptor[]								sqlInterceptors;
 	private Dialect											dialect;
 	private SessionfactoryConfig							config;
 	private PageParse										pageParse;
 	
-	public StrategyOperationImpl(Class<?> ckass, MapField[] mapFields, SessionfactoryConfig config, SqlInterceptor[] sqlInterceptors, String tableName, PageParse pageParse, Dialect dialect)
+	public StrategyOperationImpl(Class<T> ckass, MapField[] mapFields, SessionfactoryConfig config, SqlInterceptor[] sqlInterceptors, String tableName, PageParse pageParse, Dialect dialect)
 	{
 		this.ckass = ckass;
 		this.dialect = dialect;
@@ -180,7 +181,7 @@ public class StrategyOperationImpl implements StrategyOperation
 		}
 		FindStrategySql findStrategySql = new FindStrategySql();
 		findStrategySql.sql = cache.toString();
-		findStrategySql.transfer = new BeanTransfer();
+		findStrategySql.transfer = new BeanTransfer<T>();
 		findStrategySql.transfer.initialize(ckass, config);
 		return findStrategySql;
 	}
@@ -214,21 +215,21 @@ public class StrategyOperationImpl implements StrategyOperation
 	}
 	
 	@Override
-	public <T> T findOne(Connection connection, String strategy, Object... params)
+	public T findOne(Connection connection, String strategy, Object... params)
 	{
 		FindStrategySql strategySql = getFind(strategy);
 		return ExecSqlTemplate.queryOne(dialect, sqlInterceptors, strategySql.transfer, connection, strategySql.sql, params);
 	}
 	
 	@Override
-	public <T> List<T> findAll(Connection connection, String strategy, Object... params)
+	public List<T> findAll(Connection connection, String strategy, Object... params)
 	{
 		FindStrategySql strategySql = getFind(strategy);
 		return ExecSqlTemplate.queryList(dialect, sqlInterceptors, strategySql.transfer, connection, strategySql.sql, params);
 	}
 	
 	@Override
-	public <T> List<T> findPage(Connection connection, Page page, String strategy, Object... params)
+	public List<T> findPage(Connection connection, Page page, String strategy, Object... params)
 	{
 		FindStrategySql strategySql = getFind(strategy);
 		return ExecSqlTemplate.pageQuery(dialect, sqlInterceptors, pageParse, page, strategySql.transfer, connection, strategySql.sql, params);
@@ -277,5 +278,44 @@ public class StrategyOperationImpl implements StrategyOperation
 			}
 			return cache.deleteEnds(4).toString();
 		}
+	}
+	
+	@Override
+	public int insert(Connection connection, String strategy, Object... params)
+	{
+		String sql = getInsert(strategy);
+		return ExecSqlTemplate.insert(dialect, sqlInterceptors, connection, sql, params);
+	}
+	
+	private String getInsert(String strategy)
+	{
+		String sql = insertMap.get(strategy);
+		if (sql == null)
+		{
+			sql = buildInsert(strategy);
+			insertMap.put(strategy, sql);
+		}
+		return sql;
+	}
+	
+	private String buildInsert(String strategy)
+	{
+		StringCache cache = new StringCache();
+		
+		cache.append("INSERT INTO ").append(tableName).append('(');
+		int count = 0;
+		for (String each : strategy.split(","))
+		{
+			MapField mapField = mapFields.get(each);
+			cache.append(mapField.getColName()).appendComma();
+			count += 1;
+		}
+		cache.deleteLast().append(") VALUES(");
+		for (int i = 0; i < count; i++)
+		{
+			cache.append("?").appendComma();
+		}
+		cache.deleteLast().append(")");
+		return cache.toString();
 	}
 }

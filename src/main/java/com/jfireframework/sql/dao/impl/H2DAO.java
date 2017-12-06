@@ -22,7 +22,7 @@ import com.jfireframework.sql.pkstrategy.GenerateStringPk.StringGenerator;
 import com.jfireframework.sql.session.ExecSqlTemplate;
 import com.jfireframework.sql.util.ExecuteSqlInfo;
 
-public class H2DAO extends BaseDAO
+public class H2DAO<T> extends BaseDAO<T>
 {
 	protected GeneratePkStrategy	generatePkStrategy;
 	protected ExecuteSqlInfo		autoGeneratePkInsertInfo;
@@ -146,5 +146,5 @@ public class H2DAO extends BaseDAO
 				break;
 		}
 	}
-	
+
 }

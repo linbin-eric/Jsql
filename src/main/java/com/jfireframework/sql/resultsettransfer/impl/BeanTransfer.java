@@ -21,16 +21,17 @@ import com.jfireframework.sql.dbstructure.name.DefaultNameStrategy;
 import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.mapfield.impl.MapFieldImpl;
 
-public class BeanTransfer extends AbstractResultsetTransfer
+public class BeanTransfer<T> extends AbstractResultsetTransfer<T>
 {
 	private Map<String, MapField>	columnNameDictory	= new HashMap<String, MapField>();
 	protected MapField[]			columns;
 	protected Class<?>				type;
 	
 	@Override
-	protected Object valueOf(ResultSet resultSet) throws Exception
+	@SuppressWarnings("unchecked")
+	protected T valueOf(ResultSet resultSet) throws Exception
 	{
-		Object entity = type.newInstance();
+		T entity = (T) type.newInstance();
 		for (MapField each : getColumns(resultSet))
 		{
 			each.setEntityValue(entity, resultSet);
@@ -72,7 +73,7 @@ public class BeanTransfer extends AbstractResultsetTransfer
 	}
 	
 	@Override
-	public void initialize(Class<?> type, SessionfactoryConfig config)
+	public void initialize(Class<T> type, SessionfactoryConfig config)
 	{
 		this.type = type;
 		ColumnNameStrategy colNameStrategy;

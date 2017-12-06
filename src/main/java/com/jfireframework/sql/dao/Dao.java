@@ -7,7 +7,7 @@ import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.page.PageParse;
 
-public interface Dao extends StrategyOperation
+public interface Dao<T> extends StrategyOperation<T>
 {
 	/**
 	 * 初始化
@@ -58,7 +58,7 @@ public interface Dao extends StrategyOperation
 	 * @param connection
 	 * @return
 	 */
-	<T> T getById(Object pk, Connection connection);
+	T getById(Object pk, Connection connection);
 	
 	/**
 	 * 在数据表该表中，使用主键查询并且返回对象，但是使用某一个锁定模式
@@ -68,7 +68,7 @@ public interface Dao extends StrategyOperation
 	 * @param mode
 	 * @return
 	 */
-	<T> T getById(Object pk, Connection connection, LockMode mode);
+	T getById(Object pk, Connection connection, LockMode mode);
 	
 	int deleteAll(Connection connection);
 	

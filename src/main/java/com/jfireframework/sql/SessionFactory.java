@@ -9,12 +9,13 @@ public interface SessionFactory
     
     /**
      * 获取对应的类型的Dao对象
+     * @param <T>
      * 
      * @param <T>
      * @param ckass
      * @return
      */
-    Dao getDao(Class<?> ckass);
+	<T> Dao<T> getDao(Class<T> ckass);
     
     /**
      * 根据给定的接口，返回符合sqlorm规范的接口实现

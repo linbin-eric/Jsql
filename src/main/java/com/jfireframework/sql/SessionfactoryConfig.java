@@ -65,7 +65,7 @@ public class SessionfactoryConfig
 	private ResultsetTransferStore				resultsetTransferStore;
 	private Set<Class<?>>						ckasses;
 	private IdentityHashMap<Class<?>, Mapper>	mappers					= new IdentityHashMap<Class<?>, Mapper>(128);
-	private IdentityHashMap<Class<?>, Dao>		daos					= new IdentityHashMap<Class<?>, Dao>();
+	private IdentityHashMap<Class<?>, Dao<?>>	daos					= new IdentityHashMap<Class<?>, Dao<?>>();
 	private MetaContext							metaContext;
 	private SqlInterceptor[]					sqlInterceptors;
 	private PageParse							pageParse;
@@ -245,13 +245,14 @@ public class SessionfactoryConfig
 		}
 	}
 	
+	@SuppressWarnings("rawtypes")
 	private void buildDao()
 	{
 		for (TableMetaData each : metaContext.metaDatas())
 		{
 			if (each.getIdInfo() != null)
 			{
-				Dao dao;
+				Dao<?> dao;
 				if (productName.equals("mysql") || productName.equals("marridb"))
 				{
 					dao = new MysqlDAO();

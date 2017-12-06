@@ -6,40 +6,40 @@ import java.util.List;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
 
-public abstract class AbstractResultsetTransfer implements ResultSetTransfer
+public abstract class AbstractResultsetTransfer<T> implements ResultSetTransfer<T>
 {
-    
-    @Override
-    public Object transfer(ResultSet resultSet) throws Exception
-    {
-        if (resultSet.next())
-        {
-            Object result = valueOf(resultSet);
-            if (resultSet.next())
-            {
-                throw new IllegalArgumentException(StringUtil.format("存在2行数据，不符合返回值要求。"));
-            }
-            else
-            {
-                return result;
-            }
-        }
-        else
-        {
-            return null;
-        }
-    }
-    
-    @Override
-    public List<Object> transferList(ResultSet resultSet) throws Exception
-    {
-        List<Object> list = new LinkedList<Object>();
-        while (resultSet.next())
-        {
-            list.add(valueOf(resultSet));
-        }
-        return list;
-    }
-    
-    protected abstract Object valueOf(ResultSet resultSet) throws Exception;
+	
+	@Override
+	public T transfer(ResultSet resultSet) throws Exception
+	{
+		if (resultSet.next())
+		{
+			T result = valueOf(resultSet);
+			if (resultSet.next())
+			{
+				throw new IllegalArgumentException(StringUtil.format("存在2行数据，不符合返回值要求。"));
+			}
+			else
+			{
+				return result;
+			}
+		}
+		else
+		{
+			return null;
+		}
+	}
+	
+	@Override
+	public List<T> transferList(ResultSet resultSet) throws Exception
+	{
+		List<T> list = new LinkedList<T>();
+		while (resultSet.next())
+		{
+			list.add(valueOf(resultSet));
+		}
+		return list;
+	}
+	
+	protected abstract T valueOf(ResultSet resultSet) throws Exception;
 }

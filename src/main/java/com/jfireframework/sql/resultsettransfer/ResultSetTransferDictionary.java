@@ -19,45 +19,48 @@ import com.jfireframework.sql.resultsettransfer.impl.UtilDateTransfer;
 
 public interface ResultSetTransferDictionary
 {
-    /**
-     * 获取对应的结果转换处理器
-     * 
-     * @param type
-     * @return
-     */
-    Class<? extends ResultSetTransfer> dictionary(Class<?> type);
-    
-    public class BuildInResultSetTransferDictionary implements ResultSetTransferDictionary
-    {
-        
-        private Map<Class<?>, Class<? extends ResultSetTransfer>> transfers = new HashMap<Class<?>, Class<? extends ResultSetTransfer>>();
-        
-        public BuildInResultSetTransferDictionary()
-        {
-            transfers.put(boolean.class, BooleanTransfer.class);
-            transfers.put(Boolean.class, BooleanTransfer.class);
-            transfers.put(double.class, DoubleTransfer.class);
-            transfers.put(Double.class, DoubleTransfer.class);
-            transfers.put(float.class, FloatTransfer.class);
-            transfers.put(Float.class, FloatTransfer.class);
-            transfers.put(int.class, IntegerTransfer.class);
-            transfers.put(Integer.class, IntegerTransfer.class);
-            transfers.put(long.class, LongTransfer.class);
-            transfers.put(Long.class, LongTransfer.class);
-            transfers.put(short.class, ShortTransfer.class);
-            transfers.put(Short.class, ShortTransfer.class);
-            transfers.put(Date.class, SqlDateTransfer.class);
-            transfers.put(java.util.Date.class, UtilDateTransfer.class);
-            transfers.put(String.class, StringTransfer.class);
-            transfers.put(Timestamp.class, TimeStampTransfer.class);
-            transfers.put(Time.class, TimeTransfer.class);
-        }
-        
-        @Override
-        public Class<? extends ResultSetTransfer> dictionary(Class<?> type)
-        {
-            return transfers.get(type);
-        }
-        
-    }
+	/**
+	 * 获取对应的结果转换处理器
+	 * 
+	 * @param <T>
+	 * 
+	 * @param type
+	 * @return
+	 */
+	<T> Class<ResultSetTransfer<T>> dictionary(Class<T> type);
+	
+	public class BuildInResultSetTransferDictionary implements ResultSetTransferDictionary
+	{
+		
+		private Map<Class<?>, Class<? extends ResultSetTransfer<?>>> transfers = new HashMap<Class<?>, Class<? extends ResultSetTransfer<?>>>();
+		
+		public BuildInResultSetTransferDictionary()
+		{
+			transfers.put(boolean.class, BooleanTransfer.class);
+			transfers.put(Boolean.class, BooleanTransfer.class);
+			transfers.put(double.class, DoubleTransfer.class);
+			transfers.put(Double.class, DoubleTransfer.class);
+			transfers.put(float.class, FloatTransfer.class);
+			transfers.put(Float.class, FloatTransfer.class);
+			transfers.put(int.class, IntegerTransfer.class);
+			transfers.put(Integer.class, IntegerTransfer.class);
+			transfers.put(long.class, LongTransfer.class);
+			transfers.put(Long.class, LongTransfer.class);
+			transfers.put(short.class, ShortTransfer.class);
+			transfers.put(Short.class, ShortTransfer.class);
+			transfers.put(Date.class, SqlDateTransfer.class);
+			transfers.put(java.util.Date.class, UtilDateTransfer.class);
+			transfers.put(String.class, StringTransfer.class);
+			transfers.put(Timestamp.class, TimeStampTransfer.class);
+			transfers.put(Time.class, TimeTransfer.class);
+		}
+		
+		@SuppressWarnings("unchecked")
+		@Override
+		public <T> Class<ResultSetTransfer<T>> dictionary(Class<T> type)
+		{
+			return (Class<ResultSetTransfer<T>>) transfers.get(type);
+		}
+		
+	}
 }
