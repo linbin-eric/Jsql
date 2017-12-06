@@ -54,6 +54,8 @@ interface CurdOp
 	 */
 	<T> void save(T entity);
 	
+	<T> void update(T entity);
+	
 	/**
 	 * 删除对象所对应的表的一条记录
 	 * 

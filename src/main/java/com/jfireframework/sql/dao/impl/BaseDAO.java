@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
+import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.annotation.Pk;
@@ -54,6 +55,21 @@ public abstract class BaseDAO<T> implements Dao<T>
 	protected Dialect				dialect;
 	protected static final Unsafe	unsafe	= ReflectUtil.getUnsafe();
 	protected static final Logger	LOGGER	= LoggerFactory.getLogger(BaseDAO.class);
+	protected String				strategyTmp;
+	protected ColumnValueFetcher[]	fetchers;
+	
+	abstract class ColumnValueFetcher
+	{
+		Field field;
+		
+		public ColumnValueFetcher(Field field)
+		{
+			field.setAccessible(true);
+			this.field = field;
+		}
+		
+		abstract Object fieldValue(Object entity);
+	}
 	
 	/**
 	 * 初始化
@@ -76,6 +92,46 @@ public abstract class BaseDAO<T> implements Dao<T>
 		setInsertInfo();
 		setAutoGeneratePkInsertInfo();
 		strategyOperation = new StrategyOperationImpl<T>(entityClass, allColumns, config, sqlInterceptors, tableName, pageParse, dialect);
+		StringCache cache = new StringCache();
+		List<ColumnValueFetcher> fetchers = new ArrayList<BaseDAO<T>.ColumnValueFetcher>();
+		for (MapField each : valueColumns)
+		{
+			cache.append(each.getFieldName()).appendComma();
+			fetchers.add(new ColumnValueFetcher(each.getField()) {
+				
+				@Override
+				Object fieldValue(Object entity)
+				{
+					try
+					{
+						return field.get(entity);
+					}
+					catch (Exception e)
+					{
+						throw new JustThrowException(e);
+					}
+				}
+				
+			});
+		}
+		cache.deleteLast().append(';').append(pkColumn.getFieldName());
+		strategyTmp = cache.toString();
+		fetchers.add(new ColumnValueFetcher(pkColumn.getField()) {
+			
+			@Override
+			public Object fieldValue(Object entity)
+			{
+				try
+				{
+					return field.get(entity);
+				}
+				catch (Exception e)
+				{
+					throw new JustThrowException(e);
+				}
+			}
+		});
+		this.fetchers = fetchers.toArray(new BaseDAO.ColumnValueFetcher[fetchers.size()]);
 	}
 	
 	protected abstract void setAutoGeneratePkInsertInfo();
@@ -262,7 +318,14 @@ public abstract class BaseDAO<T> implements Dao<T>
 	@Override
 	public int update(Object entity, Connection connection)
 	{
-		return ExecSqlTemplate.update(dialect, sqlInterceptors, connection, updateInfo.getSql(), parseParam(updateInfo.getColumns(), entity));
+		// return ExecSqlTemplate.update(dialect, sqlInterceptors, connection,
+		// updateInfo.getSql(), parseParam(updateInfo.getColumns(), entity));
+		Object[] params = new Object[fetchers.length];
+		for (int i = 0; i < fetchers.length; i++)
+		{
+			params[i] = fetchers[i].fieldValue(entity);
+		}
+		return strategyOperation.update(connection, strategyTmp, params);
 	}
 	
 	@Override

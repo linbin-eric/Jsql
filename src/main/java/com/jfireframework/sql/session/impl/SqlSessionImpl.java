@@ -228,4 +228,10 @@ public class SqlSessionImpl implements SqlSession
 		return sessionFactory.getDao(ckass).count(connection, strategy, params);
 	}
 	
+	@Override
+	public <T> void update(T entity)
+	{
+		sessionFactory.getDao(entity.getClass()).update(entity, connection);
+	}
+	
 }
