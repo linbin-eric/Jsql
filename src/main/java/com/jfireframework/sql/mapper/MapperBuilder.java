@@ -15,7 +15,7 @@ import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.parse.DefaultMethodParser;
 import com.jfireframework.sql.parse.MethodParser;
-import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore;
+import com.jfireframework.sql.transfer.resultset.ResultsetTransferStore;
 
 public class MapperBuilder
 {

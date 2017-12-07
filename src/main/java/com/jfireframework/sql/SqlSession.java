@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.util.List;
 import com.jfireframework.sql.dao.LockMode;
 import com.jfireframework.sql.page.Page;
-import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
+import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 
 interface baseOp
 {

@@ -1,5 +1,7 @@
 package com.jfireframework.sql.test;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 import org.h2.Driver;
@@ -10,13 +12,14 @@ import com.jfireframework.sql.SessionFactory;
 import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.SqlSession;
 import com.jfireframework.sql.annotation.Sql;
+import com.jfireframework.sql.constant.TableNameCaseStrategy;
+import com.jfireframework.sql.dialect.impl.H2Dialect;
 import com.jfireframework.sql.page.Page;
-import com.jfireframework.sql.resultsettransfer.UserDefinedTransfer;
-import com.jfireframework.sql.resultsettransfer.impl.EnumOrdinalTransfer;
 import com.jfireframework.sql.test.vo.User;
 import com.jfireframework.sql.test.vo.User.State;
 import com.jfireframework.sql.test.vo.User.StringEnum;
-import com.jfireframework.sql.util.TableNameCaseStrategy;
+import com.jfireframework.sql.transfer.resultset.UserDefinedTransfer;
+import com.jfireframework.sql.transfer.resultset.impl.EnumOrdinalTransfer;
 import com.zaxxer.hikari.HikariDataSource;
 
 public class MapperTest
@@ -137,6 +140,25 @@ public class MapperTest
 		config.setTableMode("create");
 		config.setSchema("PUBLIC");
 		config.setTableNameCaseStrategy(TableNameCaseStrategy.UPPER);
+		config.setDialect(new H2Dialect() {
+			protected void setUnDefinedType(PreparedStatement preparedStatement, int i, Object value) throws SQLException
+			{
+				if (value instanceof StringEnum)
+				{
+					StringEnum stringEnum = (StringEnum) value;
+					preparedStatement.setString(i, stringEnum.name());
+				}
+				else if (value instanceof Enum<?>)
+				{
+					Enum<?> enum1 = (Enum<?>) value;
+					preparedStatement.setInt(i, enum1.ordinal());
+				}
+				else
+				{
+					preparedStatement.setObject(i, value);
+				}
+			}
+		});
 		config.setScanPackage("com.jfireframework.sql.test:in~*$TestOp;com.jfireframework.sql.test.vo");
 		sessionFactory = config.build();
 		SqlSession session = sessionFactory.openSession();

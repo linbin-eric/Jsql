@@ -13,7 +13,7 @@ import com.jfireframework.sql.SessionFactory;
 import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.SqlSession;
 import com.jfireframework.sql.dbstructure.column.ColumnType;
-import com.jfireframework.sql.mapfield.MapField;
+import com.jfireframework.sql.dbstructure.column.MapColumn;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -41,14 +41,14 @@ public class OracleTest
 		SqlSession session = sessionFactory.openSession();
 		Connection connection = session.getConnection();
 		String template = "SELECT DATA_TYPE,DATA_LENGTH FROM SYS.USER_TAB_COLS WHERE TABLE_NAME='{}' AND COLUMN_NAME='{}'";
-		TableMetaData[] metaDatas = config.getMetaContext().metaDatas();
-		for (TableMetaData tableMetaData : metaDatas)
+		TableMetaData<?>[] metaDatas = config.getMetaContext().metaDatas();
+		for (TableMetaData<?> tableMetaData : metaDatas)
 		{
-			if (tableMetaData.getIdInfo() == null || tableMetaData.editable() == false)
+			if (tableMetaData.getPkColumn() == null || tableMetaData.editable() == false)
 			{
 				continue;
 			}
-			for (MapField mapField : tableMetaData.getFieldInfos())
+			for (MapColumn mapField : tableMetaData.getAllColumns().values())
 			{
 				logger.trace("traceId:{} 查询的语句是:{}", traceId, StringUtil.format(template, tableMetaData.getTableName(), mapField.getColName()));
 				ResultSet executeQuery = connection.prepareStatement(StringUtil.format(template, tableMetaData.getTableName(), mapField.getColName())).executeQuery();
@@ -95,14 +95,14 @@ public class OracleTest
 		SqlSession session = sessionFactory.openSession();
 		Connection connection = session.getConnection();
 		String template = "SELECT DATA_TYPE,DATA_LENGTH FROM SYS.USER_TAB_COLS WHERE TABLE_NAME='{}' AND COLUMN_NAME='{}'";
-		TableMetaData[] metaDatas = config.getMetaContext().metaDatas();
-		for (TableMetaData tableMetaData : metaDatas)
+		TableMetaData<?>[] metaDatas = config.getMetaContext().metaDatas();
+		for (TableMetaData<?> tableMetaData : metaDatas)
 		{
-			if (tableMetaData.getIdInfo() == null || tableMetaData.editable() == false)
+			if (tableMetaData.getPkColumn() == null || tableMetaData.editable() == false)
 			{
 				continue;
 			}
-			for (MapField mapField : tableMetaData.getFieldInfos())
+			for (MapColumn mapField : tableMetaData.getAllColumns().values())
 			{
 				logger.trace("traceId:{} 查询的语句是:{}", traceId, StringUtil.format(template, tableMetaData.getTableName(), mapField.getColName()));
 				ResultSet executeQuery = connection.prepareStatement(StringUtil.format(template, tableMetaData.getTableName(), mapField.getColName())).executeQuery();

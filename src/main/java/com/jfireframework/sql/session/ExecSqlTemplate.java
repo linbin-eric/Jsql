@@ -6,14 +6,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.sql.constant.PkType;
 import com.jfireframework.sql.dialect.Dialect;
 import com.jfireframework.sql.interceptor.InterceptorChain;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.page.PageParse;
-import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
+import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 import com.jfireframework.sql.util.ExecuteSqlAndParams;
-import com.jfireframework.sql.util.PkType;
 
 public class ExecSqlTemplate
 {

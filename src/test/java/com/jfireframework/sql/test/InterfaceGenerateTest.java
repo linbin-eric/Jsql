@@ -9,10 +9,10 @@ import org.junit.Before;
 import org.junit.Test;
 import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.annotation.Sql;
-import com.jfireframework.sql.resultsettransfer.UserDefinedTransfer;
-import com.jfireframework.sql.resultsettransfer.impl.StringTransfer;
+import com.jfireframework.sql.constant.TableNameCaseStrategy;
 import com.jfireframework.sql.test.vo.User;
-import com.jfireframework.sql.util.TableNameCaseStrategy;
+import com.jfireframework.sql.transfer.resultset.UserDefinedTransfer;
+import com.jfireframework.sql.transfer.resultset.impl.StringTransfer;
 import com.zaxxer.hikari.HikariDataSource;
 
 public class InterfaceGenerateTest

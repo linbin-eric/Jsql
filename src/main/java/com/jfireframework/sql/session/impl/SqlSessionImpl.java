@@ -12,8 +12,8 @@ import com.jfireframework.sql.dialect.Dialect;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.page.PageParse;
-import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
 import com.jfireframework.sql.session.ExecSqlTemplate;
+import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 
 public class SqlSessionImpl implements SqlSession
 {

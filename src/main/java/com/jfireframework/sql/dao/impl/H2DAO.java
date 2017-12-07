@@ -2,31 +2,27 @@ package com.jfireframework.sql.dao.impl;
 
 import java.lang.reflect.Field;
 import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.verify.Verify;
+import com.jfireframework.sql.annotation.pkstrategy.AutoIncrement;
+import com.jfireframework.sql.annotation.pkstrategy.GenerateStringPk;
+import com.jfireframework.sql.annotation.pkstrategy.GenerateStringPk.StringGenerator;
 import com.jfireframework.sql.dao.impl.MysqlDAO.GeneratePkStrategy;
-import com.jfireframework.sql.dbstructure.column.ColumnType;
-import com.jfireframework.sql.dbstructure.column.ColumnTypeDictionary;
-import com.jfireframework.sql.dbstructure.name.ColumnNameStrategy;
-import com.jfireframework.sql.mapfield.FieldOperator;
-import com.jfireframework.sql.mapfield.FieldOperatorDictionary;
-import com.jfireframework.sql.mapfield.MapField;
-import com.jfireframework.sql.pkstrategy.AutoIncrement;
-import com.jfireframework.sql.pkstrategy.GenerateStringPk;
-import com.jfireframework.sql.pkstrategy.GenerateStringPk.StringGenerator;
+import com.jfireframework.sql.dbstructure.column.MapColumn;
 import com.jfireframework.sql.session.ExecSqlTemplate;
-import com.jfireframework.sql.util.ExecuteSqlInfo;
 
 public class H2DAO<T> extends BaseDAO<T>
 {
 	protected GeneratePkStrategy	generatePkStrategy;
-	protected ExecuteSqlInfo		autoGeneratePkInsertInfo;
+	private String					generateByAppSql;
+	private FieldValueFetcher[]		generateByAppFetchers;
+	private String					generateByDatebaseSql;
+	private FieldValueFetcher[]		generateByDatebaseFetchers;
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	protected void setAutoGeneratePkInsertInfo()
 	{
@@ -35,9 +31,11 @@ public class H2DAO<T> extends BaseDAO<T>
 		{
 			StringCache cache = new StringCache();
 			cache.append("INSERT INTO ").append(tableName).append('(').append(pkColumn.getColName()).appendComma();
-			for (MapField column : valueColumns)
+			List<FieldValueFetcher> generateByDatebaseFetchers = new ArrayList<FieldValueFetcher>();
+			for (MapColumn column : valueColumns)
 			{
 				cache.append(column.getColName()).appendComma();
+				generateByDatebaseFetchers.add(new FieldValueFetcher(column.getField()));
 			}
 			cache.deleteLast().append(") VALUES(NULL,");
 			for (int i = 0; i < valueColumns.length; i++)
@@ -45,86 +43,49 @@ public class H2DAO<T> extends BaseDAO<T>
 				cache.append("?").appendComma();
 			}
 			cache.deleteLast().append(")");
-			autoGeneratePkInsertInfo = new ExecuteSqlInfo(cache.toString(), valueColumns);
+			generateByDatebaseSql = cache.toString();
+			this.generateByDatebaseFetchers = generateByDatebaseFetchers.toArray(new BaseDAO.FieldValueFetcher[generateByDatebaseFetchers.size()]);
 			generatePkStrategy = GeneratePkStrategy.GENERATE_BY_DATABASE;
 		}
 		else if (field.getType() == String.class && field.isAnnotationPresent(GenerateStringPk.class))
 		{
 			StringCache cache = new StringCache();
-			List<MapField> params = new ArrayList<MapField>();
-			cache.append("INSERT INTO ").append(tableName).append('(').append(pkColumn.getColName()).appendComma();
-			for (MapField column : valueColumns)
+			cache.append(pkColumn.getFieldName()).appendComma();
+			for (MapColumn column : valueColumns)
 			{
-				cache.append(column.getColName()).appendComma();
+				cache.append(column.getFieldName()).appendComma();
 			}
-			cache.deleteLast().append(") VALUES(?,");
+			cache.deleteLast();
 			try
 			{
 				final StringGenerator stringGenerator = field.getAnnotation(GenerateStringPk.class).value().newInstance();
-				params.add(new MapField() {
-					
-					@Override
-					public void setEntityValue(Object entity, ResultSet resultSet) throws SQLException
+				List<FieldValueFetcher> generateByAppFetchers = new ArrayList<FieldValueFetcher>();
+				generateByAppFetchers.add(new FieldValueFetcher(pkColumn.getField()) {
+					Object fieldValue(Object entity)
 					{
-						throw new UnsupportedOperationException();
-					}
-					
-					@Override
-					public void initialize(Field field, ColumnNameStrategy colNameStrategy, FieldOperatorDictionary fieldOperatorDictionary, ColumnTypeDictionary columnTypeDictionary)
-					{
-						throw new UnsupportedOperationException();
-					}
-					
-					@Override
-					public String getFieldName()
-					{
-						throw new UnsupportedOperationException();
-					}
-					
-					@Override
-					public Field getField()
-					{
-						throw new UnsupportedOperationException();
-					}
-					
-					@Override
-					public ColumnType getColumnType()
-					{
-						throw new UnsupportedOperationException();
-					}
-					
-					@Override
-					public String getColName()
-					{
-						throw new UnsupportedOperationException();
-					}
-					
-					@Override
-					public Object fieldValue(Object entity)
-					{
-						String pk = stringGenerator.next();
-						unsafe.putObject(entity, pkColumnOffset, pk);
-						return pk;
-					}
-					
-					@Override
-					public FieldOperator fieldOperator()
-					{
-						throw new UnsupportedOperationException();
+						String next = stringGenerator.next();
+						try
+						{
+							field.set(entity, next);
+							return next;
+						}
+						catch (Exception e)
+						{
+							throw new JustThrowException(e);
+						}
 					}
 				});
+				for (MapColumn each : valueColumns)
+				{
+					generateByAppFetchers.add(new FieldValueFetcher(each.getField()));
+				}
+				generateByAppSql = cache.toString();
+				this.generateByAppFetchers = generateByAppFetchers.toArray(new BaseDAO.FieldValueFetcher[generateByAppFetchers.size()]);
 			}
 			catch (Exception e)
 			{
 				throw new JustThrowException(e);
 			}
-			for (MapField column : valueColumns)
-			{
-				params.add(column);
-				cache.append("?").appendComma();
-			}
-			cache.deleteLast().append(")");
-			autoGeneratePkInsertInfo = new ExecuteSqlInfo(cache.toString(), params.toArray(new MapField[params.size()]));
 			generatePkStrategy = GeneratePkStrategy.GENERATE_BY_APPLICATION;
 		}
 	}
@@ -136,15 +97,15 @@ public class H2DAO<T> extends BaseDAO<T>
 		switch (generatePkStrategy)
 		{
 			case GENERATE_BY_APPLICATION:
-				ExecSqlTemplate.insert(dialect, sqlInterceptors, connection, autoGeneratePkInsertInfo.getSql(), parseParam(autoGeneratePkInsertInfo.getColumns(), entity));
+				strategyOperation.insert(connection, generateByAppSql, parseParams(entity, generateByAppFetchers));
 				break;
 			case GENERATE_BY_DATABASE:
-				Object pk = ExecSqlTemplate.databasePkGenerateInsert(dialect, pkType, pkName, sqlInterceptors, connection, autoGeneratePkInsertInfo.getSql(), parseParam(autoGeneratePkInsertInfo.getColumns(), entity));
+				Object pk = ExecSqlTemplate.databasePkGenerateInsert(dialect, pkType, pkName, sqlInterceptors, connection, generateByDatebaseSql, parseParams(entity, generateByDatebaseFetchers));
 				unsafe.putObject(entity, pkColumnOffset, pk);
 				break;
 			default:
 				break;
 		}
 	}
-
+	
 }

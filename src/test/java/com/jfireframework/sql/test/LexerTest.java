@@ -6,10 +6,10 @@ import org.junit.Assert;
 import org.junit.Test;
 import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.dbstructure.column.impl.MysqlColumnTypeDictionary;
-import com.jfireframework.sql.mapfield.FieldOperatorDictionary;
 import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.parse.lexer.Lexer;
 import com.jfireframework.sql.test.vo.User;
+import com.jfireframework.sql.transfer.column.ColumnTransferDictionary;
 
 public class LexerTest
 {
@@ -73,7 +73,7 @@ public class LexerTest
 		set.add(User.class);
 		SessionfactoryConfig config = new SessionfactoryConfig();
 		config.setColumnTypeDictionary(new MysqlColumnTypeDictionary());
-		config.setFieldOperatorDictionary(new FieldOperatorDictionary.BuildInFieldOperatorDictionary());
+		config.setFieldOperatorDictionary(new ColumnTransferDictionary.BuildInColumnTransferDictionary());
 		MetaContext metaContext = new MetaContext(set, config);
 		String sql = "select name FROM User";
 		Assert.assertEquals("SELECT name FROM user", new Lexer(sql).parseEntity(metaContext).toString());
@@ -86,7 +86,7 @@ public class LexerTest
 		set.add(User.class);
 		SessionfactoryConfig config = new SessionfactoryConfig();
 		config.setColumnTypeDictionary(new MysqlColumnTypeDictionary());
-		config.setFieldOperatorDictionary(new FieldOperatorDictionary.BuildInFieldOperatorDictionary());
+		config.setFieldOperatorDictionary(new ColumnTransferDictionary.BuildInColumnTransferDictionary());
 		MetaContext metaContext = new MetaContext(set, config);
 		String sql = "select name,age FROM User";
 		Assert.assertEquals("SELECT user.name2 , user.AGE FROM user", new Lexer(sql).parse(metaContext).toString());

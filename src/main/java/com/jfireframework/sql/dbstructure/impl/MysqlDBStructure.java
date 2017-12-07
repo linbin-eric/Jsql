@@ -11,11 +11,11 @@ import java.util.Set;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.TRACEID;
 import com.jfireframework.baseutil.collection.StringCache;
+import com.jfireframework.sql.annotation.pkstrategy.AutoIncrement;
 import com.jfireframework.sql.dbstructure.column.ColumnType;
 import com.jfireframework.sql.dbstructure.column.Comment;
-import com.jfireframework.sql.mapfield.MapField;
+import com.jfireframework.sql.dbstructure.column.MapColumn;
 import com.jfireframework.sql.metadata.TableMetaData;
-import com.jfireframework.sql.pkstrategy.AutoIncrement;
 
 public class MysqlDBStructure extends AbstractDBStructure
 {
@@ -26,22 +26,22 @@ public class MysqlDBStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected String buildCreateTableSql(TableMetaData tableMetaData)
+	protected String buildCreateTableSql(TableMetaData<?> tableMetaData)
 	{
 		String tableName = schema + "." + tableMetaData.getTableName();
 		StringCache cache = new StringCache();
 		cache.append("CREATE TABLE ").append(tableName).append(" (");
-		for (MapField each : tableMetaData.getFieldInfos())
+		for (MapColumn each : tableMetaData.getAllColumns().values())
 		{
 			cache.append(each.getColName()).append(' ').append(getDesc(each, tableMetaData)).appendComma();
 		}
 		String pkName = StringUtil.format("PK_{}", tableName.hashCode() & 0x7fffffff);
-		cache.append("CONSTRAINT ").append(pkName).append(" PRIMARY KEY (").append(tableMetaData.getIdInfo().getColName()).append("))");
+		cache.append("CONSTRAINT ").append(pkName).append(" PRIMARY KEY (").append(tableMetaData.getPkColumn().getColName()).append("))");
 		return cache.toString();
 	}
 	
 	@Override
-	protected void updateColumn(Connection connection, TableMetaData tableMetaData, String tableName, MapField each) throws SQLException
+	protected void updateColumn(Connection connection, TableMetaData<?> tableMetaData, String tableName, MapColumn each) throws SQLException
 	{
 		String traceId = TRACEID.currentTraceId();
 		String sql = StringUtil.format("ALTER TABLE {}.{} MODIFY {} {}", schema, tableName, each.getColName(), getDesc(each, tableMetaData));
@@ -51,7 +51,7 @@ public class MysqlDBStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected void deletePkConstraint(Connection connection, TableMetaData tableMetaData) throws SQLException
+	protected void deletePkConstraint(Connection connection, TableMetaData<?> tableMetaData) throws SQLException
 	{
 		String traceId = TRACEID.currentTraceId();
 		String tableName = tableMetaData.getTableName();
@@ -80,7 +80,7 @@ public class MysqlDBStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected void addColumn(Connection connection, TableMetaData tableMetaData, String tableName, MapField each) throws SQLException
+	protected void addColumn(Connection connection, TableMetaData<?> tableMetaData, String tableName, MapColumn each) throws SQLException
 	{
 		String traceId = TRACEID.currentTraceId();
 		String sql = StringUtil.format("ALTER TABLE {}.{} ADD {} {}", schema, tableName, each.getColName(), getDesc(each, tableMetaData));
@@ -91,11 +91,11 @@ public class MysqlDBStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected void addPKConstraint(Connection connection, TableMetaData tableMetaData, String tableName) throws SQLException
+	protected void addPKConstraint(Connection connection, TableMetaData<?> tableMetaData, String tableName) throws SQLException
 	{
 		String traceId = TRACEID.currentTraceId();
 		String pkName = StringUtil.format("PK_{}", tableName.hashCode() & 0x7fffffff);
-		String sql = StringUtil.format("ALTER TABLE {}.{} ADD CONSTRAINT {} PRIMARY KEY ({})", schema, tableName, pkName, tableMetaData.getIdInfo().getColName());
+		String sql = StringUtil.format("ALTER TABLE {}.{} ADD CONSTRAINT {} PRIMARY KEY ({})", schema, tableName, pkName, tableMetaData.getPkColumn().getColName());
 		logger.debug("traceId:{} 准备增加主键约束，sql为:{}", traceId, sql);
 		PreparedStatement prepareStatement = connection.prepareStatement(sql);
 		prepareStatement.executeUpdate();
@@ -103,10 +103,10 @@ public class MysqlDBStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected void deleteUnExistColumns(Connection connection, TableMetaData tableMetaData, String tableName) throws SQLException
+	protected void deleteUnExistColumns(Connection connection, TableMetaData<?> tableMetaData, String tableName) throws SQLException
 	{
 		Set<String> columnNames = new HashSet<String>();
-		for (MapField each : tableMetaData.getFieldInfos())
+		for (MapColumn each : tableMetaData.getAllColumns().values())
 		{
 			columnNames.add(each.getColName());
 		}
@@ -132,7 +132,7 @@ public class MysqlDBStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected boolean checkIfTableExists(Connection connection, TableMetaData metaData) throws SQLException
+	protected boolean checkIfTableExists(Connection connection, TableMetaData<?> metaData) throws SQLException
 	{
 		String sql = StringUtil.format("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='{}' and TABLE_SCHEMA='{}'", metaData.getTableName(), schema);
 		PreparedStatement prepareStatement = connection.prepareStatement(sql);
@@ -143,7 +143,7 @@ public class MysqlDBStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected void deleteExistTable(Connection connection, TableMetaData metaData) throws SQLException
+	protected void deleteExistTable(Connection connection, TableMetaData<?> metaData) throws SQLException
 	{
 		String tableName = schema + "." + metaData.getTableName();
 		PreparedStatement preparedStatement = connection.prepareStatement("DROP TABLE IF EXISTS " + tableName);
@@ -152,9 +152,9 @@ public class MysqlDBStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected void differentiatedUpdate(Connection connection, TableMetaData tableMetaData) throws SQLException
+	protected void differentiatedUpdate(Connection connection, TableMetaData<?> tableMetaData) throws SQLException
 	{
-		MapField idInfo = tableMetaData.getIdInfo();
+		MapColumn idInfo = tableMetaData.getPkColumn();
 		if (idInfo.getField().isAnnotationPresent(AutoIncrement.class))
 		{
 			String sql = null;
@@ -173,7 +173,7 @@ public class MysqlDBStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected boolean checkColumnDefinitionFit(Connection connection, MapField each, TableMetaData tableMetaData) throws SQLException
+	protected boolean checkColumnDefinitionFit(Connection connection, MapColumn each, TableMetaData<?> tableMetaData) throws SQLException
 	{
 		String sql = StringUtil.format("select COLUMN_TYPE from information_schema.`COLUMNS` where TABLE_SCHEMA='{}' and TABLE_NAME='{}' and COLUMN_NAME='{}'", schema, tableMetaData.getTableName(), each.getColName());
 		String columnType = getColumnType(each, tableMetaData);
@@ -185,7 +185,7 @@ public class MysqlDBStructure extends AbstractDBStructure
 		return dbColumnType.equalsIgnoreCase(columnType);
 	}
 	
-	private String getColumnType(MapField fieldInfo, TableMetaData tableMetaData)
+	private String getColumnType(MapColumn fieldInfo, TableMetaData<?> tableMetaData)
 	{
 		StringCache cache = new StringCache();
 		ColumnType columnType = fieldInfo.getColumnType();
@@ -201,7 +201,7 @@ public class MysqlDBStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected boolean columnExist(Connection connection, MapField each, TableMetaData tableMetaData) throws SQLException
+	protected boolean columnExist(Connection connection, MapColumn each, TableMetaData<?> tableMetaData) throws SQLException
 	{
 		String traceId = TRACEID.currentTraceId();
 		String sql = StringUtil.format("select count(1) from information_schema.`COLUMNS` where TABLE_SCHEMA='{}' and TABLE_NAME='{}' and COLUMN_NAME='{}'", schema, tableMetaData.getTableName(), each.getColName());
@@ -215,7 +215,7 @@ public class MysqlDBStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected void setComment(MapField mapField, TableMetaData tableMetaData, Connection connection) throws SQLException
+	protected void setComment(MapColumn mapField, TableMetaData<?> tableMetaData, Connection connection) throws SQLException
 	{
 		Comment comment = annotationUtil.getAnnotation(Comment.class, mapField.getField());
 		if (comment == null)

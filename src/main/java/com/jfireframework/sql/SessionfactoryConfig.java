@@ -19,6 +19,7 @@ import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.order.AescComparator;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.annotation.Sql;
+import com.jfireframework.sql.constant.TableNameCaseStrategy;
 import com.jfireframework.sql.dao.Dao;
 import com.jfireframework.sql.dao.impl.H2DAO;
 import com.jfireframework.sql.dao.impl.MysqlDAO;
@@ -36,7 +37,6 @@ import com.jfireframework.sql.dialect.impl.H2Dialect;
 import com.jfireframework.sql.dialect.impl.MysqlDialect;
 import com.jfireframework.sql.dialect.impl.OracleDialect;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
-import com.jfireframework.sql.mapfield.FieldOperatorDictionary;
 import com.jfireframework.sql.mapper.Mapper;
 import com.jfireframework.sql.mapper.MapperBuilder;
 import com.jfireframework.sql.metadata.MetaContext;
@@ -44,10 +44,10 @@ import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.page.PageParse;
 import com.jfireframework.sql.page.impl.MysqlPage;
 import com.jfireframework.sql.page.impl.OracleParse;
-import com.jfireframework.sql.resultsettransfer.ResultSetTransferDictionary;
-import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore;
 import com.jfireframework.sql.session.impl.SessionFactoryImpl;
-import com.jfireframework.sql.util.TableNameCaseStrategy;
+import com.jfireframework.sql.transfer.column.ColumnTransferDictionary;
+import com.jfireframework.sql.transfer.resultset.ResultSetTransferDictionary;
+import com.jfireframework.sql.transfer.resultset.ResultsetTransferStore;
 
 public class SessionfactoryConfig
 {
@@ -71,7 +71,7 @@ public class SessionfactoryConfig
 	private PageParse							pageParse;
 	private String								productName;
 	private ColumnTypeDictionary				columnTypeDictionary;
-	private FieldOperatorDictionary				fieldOperatorDictionary;
+	private ColumnTransferDictionary				fieldOperatorDictionary;
 	private ResultSetTransferDictionary			resultSetTransferDictionary;
 	private Dialect								dialect;
 	private TableNameCaseStrategy				tableNameCaseStrategy	= TableNameCaseStrategy.ORIGIN;
@@ -85,7 +85,7 @@ public class SessionfactoryConfig
 			Verify.notNull(dataSource, "dataSource 对象不能为空");
 			Verify.notNull(scanPackage, "sql的扫描路径不能为空");
 			resultSetTransferDictionary = resultSetTransferDictionary == null ? new ResultSetTransferDictionary.BuildInResultSetTransferDictionary() : resultSetTransferDictionary;
-			fieldOperatorDictionary = fieldOperatorDictionary == null ? new FieldOperatorDictionary.BuildInFieldOperatorDictionary() : fieldOperatorDictionary;
+			fieldOperatorDictionary = fieldOperatorDictionary == null ? new ColumnTransferDictionary.BuildInColumnTransferDictionary() : fieldOperatorDictionary;
 			resultsetTransferStore = new ResultsetTransferStore(resultSetTransferDictionary, SessionfactoryConfig.this);
 			buildClassSet();
 			initSqlInterceptor();
@@ -245,14 +245,14 @@ public class SessionfactoryConfig
 		}
 	}
 	
-	@SuppressWarnings("rawtypes")
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private void buildDao()
 	{
-		for (TableMetaData each : metaContext.metaDatas())
+		for (TableMetaData<?> each : metaContext.metaDatas())
 		{
-			if (each.getIdInfo() != null)
+			if (each.getPkColumn() != null)
 			{
-				Dao<?> dao;
+				Dao dao;
 				if (productName.equals("mysql") || productName.equals("marridb"))
 				{
 					dao = new MysqlDAO();
@@ -305,12 +305,12 @@ public class SessionfactoryConfig
 		this.columnTypeDictionary = columnTypeDictionary;
 	}
 	
-	public FieldOperatorDictionary getFieldOperatorDictionary()
+	public ColumnTransferDictionary getFieldOperatorDictionary()
 	{
 		return fieldOperatorDictionary;
 	}
 	
-	public void setFieldOperatorDictionary(FieldOperatorDictionary fieldOperatorDictionary)
+	public void setFieldOperatorDictionary(ColumnTransferDictionary fieldOperatorDictionary)
 	{
 		this.fieldOperatorDictionary = fieldOperatorDictionary;
 	}

@@ -6,7 +6,7 @@ import com.jfireframework.sql.parse.lexer.Lexer;
 import com.jfireframework.sql.parse.sqlSource.DynamicSqlSource;
 import com.jfireframework.sql.parse.sqlSource.SqlSource;
 import com.jfireframework.sql.parse.sqlSource.StaticSqlSource;
-import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore;
+import com.jfireframework.sql.transfer.resultset.ResultsetTransferStore;
 
 public class DefaultMethodParser implements MethodParser
 {

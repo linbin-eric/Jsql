@@ -15,7 +15,7 @@ import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.sql.annotation.Column;
 import com.jfireframework.sql.dbstructure.Structure;
 import com.jfireframework.sql.dbstructure.column.ColumnType;
-import com.jfireframework.sql.mapfield.MapField;
+import com.jfireframework.sql.dbstructure.column.MapColumn;
 import com.jfireframework.sql.metadata.TableMetaData;
 
 public abstract class AbstractDBStructure implements Structure
@@ -30,16 +30,16 @@ public abstract class AbstractDBStructure implements Structure
 	}
 	
 	@Override
-	public void createTable(DataSource dataSource, TableMetaData[] metaDatas) throws SQLException
+	public void createTable(DataSource dataSource, TableMetaData<?>[] metaDatas) throws SQLException
 	{
 		Connection connection = null;
 		try
 		{
 			connection = dataSource.getConnection();
 			connection.setAutoCommit(false);
-			for (TableMetaData metaData : metaDatas)
+			for (TableMetaData<?> metaData : metaDatas)
 			{
-				if (metaData.getIdInfo() == null || metaData.editable() == false)
+				if (metaData.getPkColumn() == null || metaData.editable() == false)
 				{
 					continue;
 				}
@@ -61,7 +61,7 @@ public abstract class AbstractDBStructure implements Structure
 		
 	}
 	
-	protected void createTable(Connection connection, TableMetaData tableMetaData) throws SQLException
+	protected void createTable(Connection connection, TableMetaData<?> tableMetaData) throws SQLException
 	{
 		if (checkIfTableExists(connection, tableMetaData))
 		{
@@ -72,18 +72,18 @@ public abstract class AbstractDBStructure implements Structure
 		differentiatedUpdate(connection, tableMetaData);
 	}
 	
-	private void setComments(Connection connection, TableMetaData tableMetaData) throws SQLException
+	private void setComments(Connection connection, TableMetaData<?> tableMetaData) throws SQLException
 	{
 		logger.debug("traceId:{} 准备进行注释语句的添加", TRACEID.currentTraceId());
-		for (MapField mapField : tableMetaData.getFieldInfos())
+		for (MapColumn mapField : tableMetaData.getAllColumns().values())
 		{
 			setComment(mapField, tableMetaData, connection);
 		}
 	}
 	
-	protected abstract void setComment(MapField mapField, TableMetaData tableMetaData, Connection connection) throws SQLException;
+	protected abstract void setComment(MapColumn mapField, TableMetaData<?> tableMetaData, Connection connection) throws SQLException;
 	
-	private void execCreateTable(Connection connection, TableMetaData tableMetaData) throws SQLException
+	private void execCreateTable(Connection connection, TableMetaData<?> tableMetaData) throws SQLException
 	{
 		String sql = buildCreateTableSql(tableMetaData);
 		logger.debug("traceId:{} 进行表:{}的创建，创建语句是:{}", TRACEID.currentTraceId(), tableMetaData.getTableName(), sql);
@@ -99,13 +99,13 @@ public abstract class AbstractDBStructure implements Structure
 	 * @param tableMetaData
 	 * @throws SQLException
 	 */
-	protected abstract void differentiatedUpdate(Connection connection, TableMetaData tableMetaData) throws SQLException;
+	protected abstract void differentiatedUpdate(Connection connection, TableMetaData<?> tableMetaData) throws SQLException;
 	
-	protected abstract String buildCreateTableSql(TableMetaData tableMetaData);
+	protected abstract String buildCreateTableSql(TableMetaData<?> tableMetaData);
 	
-	protected abstract void deleteExistTable(Connection connection, TableMetaData metaData) throws SQLException;
+	protected abstract void deleteExistTable(Connection connection, TableMetaData<?> metaData) throws SQLException;
 	
-	protected String getDesc(MapField fieldInfo, TableMetaData tableMetaData)
+	protected String getDesc(MapColumn fieldInfo, TableMetaData<?> tableMetaData)
 	{
 		StringCache cache = new StringCache();
 		ColumnType columnType = fieldInfo.getColumnType();
@@ -126,14 +126,14 @@ public abstract class AbstractDBStructure implements Structure
 	}
 	
 	@Override
-	public void updateTable(DataSource dataSource, TableMetaData[] metaDatas) throws SQLException
+	public void updateTable(DataSource dataSource, TableMetaData<?>[] metaDatas) throws SQLException
 	{
 		Connection connection = null;
 		try
 		{
 			connection = dataSource.getConnection();
 			connection.setAutoCommit(false);
-			for (TableMetaData metaData : metaDatas)
+			for (TableMetaData<?> metaData : metaDatas)
 			{
 				if (checkIfTableExists(connection, metaData))
 				{
@@ -156,14 +156,14 @@ public abstract class AbstractDBStructure implements Structure
 		}
 	}
 	
-	protected abstract boolean checkIfTableExists(Connection connection, TableMetaData metaData) throws SQLException;
+	protected abstract boolean checkIfTableExists(Connection connection, TableMetaData<?> metaData) throws SQLException;
 	
-	protected void updateTable(Connection connection, TableMetaData tableMetaData) throws SQLException
+	protected void updateTable(Connection connection, TableMetaData<?> tableMetaData) throws SQLException
 	{
 		String traceId = TRACEID.currentTraceId();
 		String tableName = tableMetaData.getTableName();
 		deletePkConstraint(connection, tableMetaData);
-		for (MapField each : tableMetaData.getFieldInfos())
+		for (MapColumn each : tableMetaData.getAllColumns().values())
 		{
 			if (columnExist(connection, each, tableMetaData))
 			{
@@ -181,25 +181,25 @@ public abstract class AbstractDBStructure implements Structure
 		}
 		addPKConstraint(connection, tableMetaData, tableName);
 		deleteUnExistColumns(connection, tableMetaData, tableName);
-		for (MapField mapField : tableMetaData.getFieldInfos())
+		for (MapColumn mapField : tableMetaData.getAllColumns().values())
 		{
 			setComment(mapField, tableMetaData, connection);
 		}
 		differentiatedUpdate(connection, tableMetaData);
 	}
 	
-	protected abstract boolean columnExist(Connection connection, MapField each, TableMetaData tableMetaData) throws SQLException;
+	protected abstract boolean columnExist(Connection connection, MapColumn each, TableMetaData<?> tableMetaData) throws SQLException;
 	
-	protected abstract boolean checkColumnDefinitionFit(Connection connection, MapField each, TableMetaData tableMetaData) throws SQLException;
+	protected abstract boolean checkColumnDefinitionFit(Connection connection, MapColumn each, TableMetaData<?> tableMetaData) throws SQLException;
 	
-	protected abstract void updateColumn(Connection connection, TableMetaData tableMetaData, String tableName, MapField each) throws SQLException;
+	protected abstract void updateColumn(Connection connection, TableMetaData<?> tableMetaData, String tableName, MapColumn each) throws SQLException;
 	
-	protected abstract void deletePkConstraint(Connection connection, TableMetaData tableMetaData) throws SQLException;
+	protected abstract void deletePkConstraint(Connection connection, TableMetaData<?> tableMetaData) throws SQLException;
 	
-	protected abstract void addColumn(Connection connection, TableMetaData tableMetaData, String tableName, MapField each) throws SQLException;
+	protected abstract void addColumn(Connection connection, TableMetaData<?> tableMetaData, String tableName, MapColumn each) throws SQLException;
 	
-	protected abstract void addPKConstraint(Connection connection, TableMetaData tableMetaData, String tableName) throws SQLException;
+	protected abstract void addPKConstraint(Connection connection, TableMetaData<?> tableMetaData, String tableName) throws SQLException;
 	
-	protected abstract void deleteUnExistColumns(Connection connection, TableMetaData tableMetaData, String tableName) throws SQLException;
+	protected abstract void deleteUnExistColumns(Connection connection, TableMetaData<?> tableMetaData, String tableName) throws SQLException;
 	
 }

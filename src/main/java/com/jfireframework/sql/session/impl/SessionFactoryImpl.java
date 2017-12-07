@@ -11,7 +11,7 @@ import com.jfireframework.sql.dialect.Dialect;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.mapper.Mapper;
 import com.jfireframework.sql.page.PageParse;
-import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore;
+import com.jfireframework.sql.transfer.resultset.ResultsetTransferStore;
 
 public class SessionFactoryImpl implements SessionFactory
 {

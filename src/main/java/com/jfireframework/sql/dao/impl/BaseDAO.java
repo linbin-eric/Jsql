@@ -3,80 +3,104 @@ package com.jfireframework.sql.dao.impl;
 import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.util.ArrayList;
-import java.util.LinkedList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.SessionfactoryConfig;
-import com.jfireframework.sql.annotation.Pk;
+import com.jfireframework.sql.constant.PkType;
 import com.jfireframework.sql.dao.Dao;
+import com.jfireframework.sql.dao.EntityOperator;
 import com.jfireframework.sql.dao.LockMode;
-import com.jfireframework.sql.dao.StrategyOperation;
+import com.jfireframework.sql.dbstructure.column.MapColumn;
 import com.jfireframework.sql.dialect.Dialect;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
-import com.jfireframework.sql.mapfield.MapField;
 import com.jfireframework.sql.metadata.TableMetaData;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.page.PageParse;
-import com.jfireframework.sql.resultsettransfer.ResultSetTransfer;
-import com.jfireframework.sql.resultsettransfer.impl.BeanTransfer;
 import com.jfireframework.sql.session.ExecSqlTemplate;
-import com.jfireframework.sql.util.ExecuteSqlInfo;
-import com.jfireframework.sql.util.PkType;
+import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
+import com.jfireframework.sql.transfer.resultset.impl.BeanTransfer;
 import sun.misc.Unsafe;
 
 public abstract class BaseDAO<T> implements Dao<T>
 {
+	protected class FieldValueFetcher
+	{
+		Field field;
+		
+		public FieldValueFetcher(Field field)
+		{
+			field.setAccessible(true);
+			this.field = field;
+		}
+		
+		Object fieldValue(Object entity)
+		{
+			try
+			{
+				return field.get(entity);
+			}
+			catch (Exception e)
+			{
+				throw new JustThrowException(e);
+			}
+		}
+	}
+	
+	class ExecuteSqlContext
+	{
+		String				sql;
+		FieldValueFetcher[]	fetchers;
+		
+		@SuppressWarnings("unchecked")
+		public ExecuteSqlContext(String sql, Object... fetchers)
+		{
+			this.sql = sql;
+			this.fetchers = new BaseDAO.FieldValueFetcher[fetchers.length];
+			for (int i = 0; i < fetchers.length; i++)
+			{
+				this.fetchers[i] = (BaseDAO<T>.FieldValueFetcher) fetchers[i];
+			}
+		}
+		
+		public Object[] parseParams(Object entity)
+		{
+			return BaseDAO.this.parseParams(entity, fetchers);
+		}
+	}
 	
 	protected Class<T>				entityClass;
 	// 数据表主键的列
-	protected MapField				pkColumn;
+	protected MapColumn				pkColumn;
 	// 数据表的所有列
-	protected MapField[]			allColumns;
+	protected MapColumn[]			allColumns;
 	// 数据表除了主键之外所有列
-	protected MapField[]			valueColumns;
+	protected MapColumn[]			valueColumns;
 	protected long					pkColumnOffset;
 	protected PkType				pkType;
 	protected String				tableName;
-	protected ExecuteSqlInfo		queryInfo;
-	protected ExecuteSqlInfo		queryInShareInfo;
-	protected ExecuteSqlInfo		queryForUpdateInfo;
-	protected ExecuteSqlInfo		updateInfo;
-	protected ExecuteSqlInfo		deleteInfo;
-	protected ExecuteSqlInfo		insertInfo;
-	protected StrategyOperation<T>	strategyOperation;
+	protected ExecuteSqlContext		queryInfo;
+	protected ExecuteSqlContext		updateInfo;
+	protected ExecuteSqlContext		deleteInfo;
+	protected ExecuteSqlContext		insertInfo;
+	protected EntityOperator<T>		strategyOperation;
 	protected ResultSetTransfer<T>	transfer;
 	protected String[]				pkName;
 	protected SqlInterceptor[]		sqlInterceptors;
 	protected Dialect				dialect;
 	protected static final Unsafe	unsafe	= ReflectUtil.getUnsafe();
 	protected static final Logger	LOGGER	= LoggerFactory.getLogger(BaseDAO.class);
-	protected String				strategyTmp;
-	protected ColumnValueFetcher[]	fetchers;
-	
-	abstract class ColumnValueFetcher
-	{
-		Field field;
-		
-		public ColumnValueFetcher(Field field)
-		{
-			field.setAccessible(true);
-			this.field = field;
-		}
-		
-		abstract Object fieldValue(Object entity);
-	}
 	
 	/**
 	 * 初始化
 	 */
-	@SuppressWarnings("unchecked")
 	@Override
-	public void initialize(TableMetaData metaData, SqlInterceptor[] sqlInterceptors, SessionfactoryConfig config, PageParse pageParse, Dialect dialect)
+	public void initialize(TableMetaData<T> metaData, SqlInterceptor[] sqlInterceptors, SessionfactoryConfig config, PageParse pageParse, Dialect dialect)
 	{
 		this.entityClass = (Class<T>) metaData.getEntityClass();
 		this.dialect = dialect;
@@ -86,52 +110,11 @@ public abstract class BaseDAO<T> implements Dao<T>
 		setColumnCorrelation(metaData);
 		setUpdateInfo();
 		setQuery();
-		setQueryForUpdate();
-		setQueryInShare();
 		setDeleteInfo();
 		setInsertInfo();
 		setAutoGeneratePkInsertInfo();
-		strategyOperation = new StrategyOperationImpl<T>(entityClass, allColumns, config, sqlInterceptors, tableName, pageParse, dialect);
-		StringCache cache = new StringCache();
-		List<ColumnValueFetcher> fetchers = new ArrayList<BaseDAO<T>.ColumnValueFetcher>();
-		for (MapField each : valueColumns)
-		{
-			cache.append(each.getFieldName()).appendComma();
-			fetchers.add(new ColumnValueFetcher(each.getField()) {
-				
-				@Override
-				Object fieldValue(Object entity)
-				{
-					try
-					{
-						return field.get(entity);
-					}
-					catch (Exception e)
-					{
-						throw new JustThrowException(e);
-					}
-				}
-				
-			});
-		}
-		cache.deleteLast().append(';').append(pkColumn.getFieldName());
-		strategyTmp = cache.toString();
-		fetchers.add(new ColumnValueFetcher(pkColumn.getField()) {
-			
-			@Override
-			public Object fieldValue(Object entity)
-			{
-				try
-				{
-					return field.get(entity);
-				}
-				catch (Exception e)
-				{
-					throw new JustThrowException(e);
-				}
-			}
-		});
-		this.fetchers = fetchers.toArray(new BaseDAO.ColumnValueFetcher[fetchers.size()]);
+		strategyOperation = new EntityOperatorImpl<T>();
+		strategyOperation.initialize(metaData, config, sqlInterceptors, tableName, pageParse, dialect);
 	}
 	
 	protected abstract void setAutoGeneratePkInsertInfo();
@@ -139,18 +122,14 @@ public abstract class BaseDAO<T> implements Dao<T>
 	private void setInsertInfo()
 	{
 		StringCache cache = new StringCache();
-		cache.append("INSERT INTO ").append(tableName).append('(');
-		for (MapField column : allColumns)
+		List<FieldValueFetcher> fetchers = new ArrayList<BaseDAO<T>.FieldValueFetcher>();
+		for (MapColumn column : allColumns)
 		{
-			cache.append(column.getColName()).appendComma();
+			cache.append(column.getFieldName()).appendComma();
+			fetchers.add(new FieldValueFetcher(column.getField()));
 		}
-		cache.deleteLast().append(") VALUES(");
-		for (int i = 0; i < allColumns.length; i++)
-		{
-			cache.append("?").appendComma();
-		}
-		cache.deleteLast().append(")");
-		insertInfo = new ExecuteSqlInfo(cache.toString(), allColumns);
+		cache.deleteLast();
+		insertInfo = new ExecuteSqlContext(cache.toString(), fetchers.toArray());
 	}
 	
 	/**
@@ -158,25 +137,16 @@ public abstract class BaseDAO<T> implements Dao<T>
 	 * 
 	 * @param metaData
 	 */
-	private void setColumnCorrelation(TableMetaData metaData)
+	private void setColumnCorrelation(TableMetaData<T> metaData)
 	{
-		allColumns = metaData.getFieldInfos();
-		List<MapField> columns = new ArrayList<MapField>();
-		for (MapField column : allColumns)
-		{
-			if (column.getField().isAnnotationPresent(Pk.class))
-			{
-				pkColumn = column;
-				pkColumnOffset = unsafe.objectFieldOffset(pkColumn.getField());
-				pkType = getIdType(pkColumn.getField());
-				pkName = new String[] { pkColumn.getColName() };
-			}
-			else
-			{
-				columns.add(column);
-			}
-		}
-		valueColumns = columns.toArray(new MapField[columns.size()]);
+		Collection<MapColumn> allColumns = new HashSet<MapColumn>(metaData.getAllColumns().values());
+		this.allColumns = allColumns.toArray(new MapColumn[allColumns.size()]);
+		allColumns.remove(metaData.getPkColumn());
+		valueColumns = allColumns.toArray(new MapColumn[allColumns.size()]);
+		pkColumn = metaData.getPkColumn();
+		pkColumnOffset = unsafe.objectFieldOffset(pkColumn.getField());
+		pkType = getIdType(pkColumn.getField());
+		pkName = new String[] { pkColumn.getColName() };
 	}
 	
 	private void setTransfer(SessionfactoryConfig config)
@@ -188,52 +158,26 @@ public abstract class BaseDAO<T> implements Dao<T>
 	protected void setQuery()
 	{
 		StringCache cache = new StringCache();
-		cache.append("select ");
-		for (MapField each : allColumns)
+		for (MapColumn each : allColumns)
 		{
-			cache.append(each.getColName()).append(",");
+			cache.append(each.getFieldName()).append(",");
 		}
-		cache.deleteLast().append(" from ").append(tableName).append(" where ").append(pkColumn.getColName()).append("=?");
-		queryInfo = new ExecuteSqlInfo(cache.toString(), new MapField[] { pkColumn });
+		cache.deleteLast().append(";").append(pkColumn.getFieldName());
+		queryInfo = new ExecuteSqlContext(cache.toString());
 	}
 	
 	protected void setUpdateInfo()
 	{
-		List<MapField> params = new LinkedList<MapField>();
 		StringCache cache = new StringCache();
-		cache.append("update ").append(tableName).append(" set ");
-		for (MapField each : valueColumns)
+		List<FieldValueFetcher> fetchers = new ArrayList<BaseDAO<T>.FieldValueFetcher>();
+		for (MapColumn each : valueColumns)
 		{
-			params.add(each);
-			cache.append(each.getColName()).append("=?,");
+			cache.append(each.getFieldName()).appendComma();
+			fetchers.add(new FieldValueFetcher(each.getField()));
 		}
-		cache.deleteLast().append(" where ").append(pkColumn.getColName()).append("=?");
-		params.add(pkColumn);
-		updateInfo = new ExecuteSqlInfo(cache.toString(), params.toArray(new MapField[params.size()]));
-	}
-	
-	protected void setQueryForUpdate()
-	{
-		StringCache cache = new StringCache();
-		cache.append("select ");
-		for (MapField each : allColumns)
-		{
-			cache.append(each.getColName()).append(",");
-		}
-		cache.deleteLast().append(" from ").append(tableName).append(" where ").append(pkColumn.getColName()).append("=? FOR UPDATE");
-		queryForUpdateInfo = new ExecuteSqlInfo(cache.toString(), new MapField[] { pkColumn });
-	}
-	
-	protected void setQueryInShare()
-	{
-		StringCache cache = new StringCache();
-		cache.append("select ");
-		for (MapField each : allColumns)
-		{
-			cache.append(each.getColName()).append(",");
-		}
-		cache.deleteLast().append(" from ").append(tableName).append(" where ").append(pkColumn.getColName()).append("=? LOCK IN SHARE MODE");
-		queryInShareInfo = new ExecuteSqlInfo(cache.toString(), new MapField[] { pkColumn });
+		cache.deleteLast().append(";").append(pkColumn.getFieldName());
+		fetchers.add(new FieldValueFetcher(pkColumn.getField()));
+		updateInfo = new ExecuteSqlContext(cache.toString(), fetchers.toArray());
 	}
 	
 	protected PkType getIdType(Field field)
@@ -260,26 +204,25 @@ public abstract class BaseDAO<T> implements Dao<T>
 	
 	protected void setDeleteInfo()
 	{
-		String sql = StringUtil.format("DELETE FROM {} WHERE {}=?", tableName, pkColumn.getColName());
-		deleteInfo = new ExecuteSqlInfo(sql, new MapField[] { pkColumn });
+		deleteInfo = new ExecuteSqlContext(pkColumn.getFieldName(), new FieldValueFetcher(pkColumn.getField()));
 	}
 	
 	@Override
 	public int delete(Object entity, Connection connection)
 	{
-		return ExecSqlTemplate.update(dialect, sqlInterceptors, connection, deleteInfo.getSql(), parseParam(deleteInfo.getColumns(), entity));
+		return strategyOperation.delete(connection, deleteInfo.sql, deleteInfo.parseParams(entity));
 	}
 	
 	@Override
 	public T getById(Object pk, Connection connection)
 	{
-		return ExecSqlTemplate.queryOne(dialect, sqlInterceptors, transfer, connection, queryInfo.getSql(), pk);
+		return strategyOperation.findOne(connection, queryInfo.sql, pk);
 	}
 	
 	@Override
 	public void insert(Object entity, Connection connection)
 	{
-		ExecSqlTemplate.insert(dialect, sqlInterceptors, connection, insertInfo.getSql(), parseParam(insertInfo.getColumns(), entity));
+		strategyOperation.insert(connection, insertInfo.sql, insertInfo.parseParams(entity));
 	}
 	
 	@Override
@@ -292,7 +235,7 @@ public abstract class BaseDAO<T> implements Dao<T>
 		}
 		else
 		{
-			ExecSqlTemplate.update(dialect, sqlInterceptors, connection, updateInfo.getSql(), parseParam(updateInfo.getColumns(), entity));
+			strategyOperation.update(connection, updateInfo.sql, updateInfo.parseParams(entity));
 		}
 		
 	}
@@ -305,34 +248,24 @@ public abstract class BaseDAO<T> implements Dao<T>
 	 */
 	protected abstract void autoGeneratePkInsert(Object entity, Connection connection);
 	
-	protected Object[] parseParam(MapField[] fields, Object entity)
-	{
-		Object[] params = new Object[fields.length];
-		for (int i = 0; i < params.length; i++)
-		{
-			params[i] = fields[i].fieldValue(entity);
-		}
-		return params;
-	}
-	
 	@Override
 	public int update(Object entity, Connection connection)
 	{
-		// return ExecSqlTemplate.update(dialect, sqlInterceptors, connection,
-		// updateInfo.getSql(), parseParam(updateInfo.getColumns(), entity));
-		Object[] params = new Object[fetchers.length];
-		for (int i = 0; i < fetchers.length; i++)
-		{
-			params[i] = fetchers[i].fieldValue(entity);
-		}
-		return strategyOperation.update(connection, strategyTmp, params);
+		return strategyOperation.update(connection, updateInfo.sql, updateInfo.parseParams(entity));
 	}
 	
 	@Override
 	public T getById(Object pk, Connection connection, LockMode mode)
 	{
-		String sql = mode == LockMode.SHARE ? queryInShareInfo.getSql() : queryForUpdateInfo.getSql();
-		return ExecSqlTemplate.queryOne(dialect, sqlInterceptors, transfer, connection, sql, pk);
+		switch (mode)
+		{
+			case SHARE:
+				return strategyOperation.findOneForShare(connection, queryInfo.sql, pk);
+			case UPDATE:
+				return strategyOperation.findOneForUpdate(connection, queryInfo.sql, pk);
+			default:
+				throw new NullPointerException();
+		}
 	}
 	
 	@Override
@@ -380,8 +313,17 @@ public abstract class BaseDAO<T> implements Dao<T>
 	@Override
 	public int insert(Connection connection, String strategy, Object... params)
 	{
-		// TODO Auto-generated method stub
-		return 0;
+		return strategyOperation.insert(connection, strategy, params);
+	}
+	
+	protected Object[] parseParams(Object entity, FieldValueFetcher[] fetchers)
+	{
+		Object[] params = new Object[fetchers.length];
+		for (int i = 0; i < params.length; i++)
+		{
+			params[i] = fetchers[i].fieldValue(entity);
+		}
+		return params;
 	}
 	
 }

@@ -11,10 +11,10 @@ import java.util.Set;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.TRACEID;
 import com.jfireframework.baseutil.collection.StringCache;
+import com.jfireframework.sql.annotation.pkstrategy.AutoIncrement;
 import com.jfireframework.sql.dbstructure.column.ColumnType;
-import com.jfireframework.sql.mapfield.MapField;
+import com.jfireframework.sql.dbstructure.column.MapColumn;
 import com.jfireframework.sql.metadata.TableMetaData;
-import com.jfireframework.sql.pkstrategy.AutoIncrement;
 
 public class H2DBStructure extends AbstractDBStructure
 {
@@ -24,9 +24,9 @@ public class H2DBStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected void differentiatedUpdate(Connection connection, TableMetaData tableMetaData) throws SQLException
+	protected void differentiatedUpdate(Connection connection, TableMetaData<?> tableMetaData) throws SQLException
 	{
-		MapField idFiled = tableMetaData.getIdInfo();
+		MapColumn idFiled = tableMetaData.getPkColumn();
 		if (idFiled.getField().isAnnotationPresent(AutoIncrement.class))
 		{
 			String sql = StringUtil.format("ALTER TABLE {}.{} MODIFY COLUMN {} {}", schema, tableMetaData.getTableName(), idFiled.getColName(), getDesc(idFiled, tableMetaData) + " AUTO_INCREMENT");
@@ -38,21 +38,21 @@ public class H2DBStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected String buildCreateTableSql(TableMetaData tableMetaData)
+	protected String buildCreateTableSql(TableMetaData<?> tableMetaData)
 	{
 		StringCache cache = new StringCache();
 		cache.append("CREATE TABLE ").append(schema).append('.').append(tableMetaData.getTableName()).append('(');
-		for (MapField each : tableMetaData.getFieldInfos())
+		for (MapColumn each : tableMetaData.getAllColumns().values())
 		{
 			cache.append(each.getColName()).append(' ').append(getDesc(each, tableMetaData)).appendComma();
 		}
 		String pkName = StringUtil.format("PK_{}", tableMetaData.getTableName().hashCode() & 0x7fffffff);
-		cache.append("CONSTRAINT ").append(pkName).append(" PRIMARY KEY (").append(tableMetaData.getIdInfo().getColName()).append("))");
+		cache.append("CONSTRAINT ").append(pkName).append(" PRIMARY KEY (").append(tableMetaData.getPkColumn().getColName()).append("))");
 		return cache.toString();
 	}
 	
 	@Override
-	protected void deleteExistTable(Connection connection, TableMetaData metaData) throws SQLException
+	protected void deleteExistTable(Connection connection, TableMetaData<?> metaData) throws SQLException
 	{
 		PreparedStatement prepareStatement = connection.prepareStatement(StringUtil.format("DROP TABLE {}.{}", schema, metaData.getTableName()));
 		prepareStatement.executeUpdate();
@@ -60,7 +60,7 @@ public class H2DBStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected boolean checkIfTableExists(Connection connection, TableMetaData metaData) throws SQLException
+	protected boolean checkIfTableExists(Connection connection, TableMetaData<?> metaData) throws SQLException
 	{
 		String traceId = TRACEID.currentTraceId();
 		String sql = StringUtil.format("SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA='{}' AND TABLE_NAME='{}'", schema, metaData.getTableName());
@@ -76,7 +76,7 @@ public class H2DBStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected void updateColumn(Connection connection, TableMetaData tableMetaData, String tableName, MapField each) throws SQLException
+	protected void updateColumn(Connection connection, TableMetaData<?> tableMetaData, String tableName, MapColumn each) throws SQLException
 	{
 		String sql = StringUtil.format("ALTER TABLE {}.{} MODIFY COLUMN {} {}", schema, tableMetaData.getTableName(), each.getColName(), getDesc(each, tableMetaData));
 		PreparedStatement prepareStatement = connection.prepareStatement(sql);
@@ -85,7 +85,7 @@ public class H2DBStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected void deletePkConstraint(Connection connection, TableMetaData tableMetaData) throws SQLException
+	protected void deletePkConstraint(Connection connection, TableMetaData<?> tableMetaData) throws SQLException
 	{
 		String sql = StringUtil.format("ALTER TABLE {}.{} DROP PRIMARY KEY;", schema, tableMetaData.getTableName());
 		PreparedStatement prepareStatement = connection.prepareStatement(sql);
@@ -93,7 +93,7 @@ public class H2DBStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected void addColumn(Connection connection, TableMetaData tableMetaData, String tableName, MapField each) throws SQLException
+	protected void addColumn(Connection connection, TableMetaData<?> tableMetaData, String tableName, MapColumn each) throws SQLException
 	{
 		String sql = StringUtil.format("ALTER TABLE {}.{} ADD COLUMN {} {}", schema, tableMetaData.getTableName(), each.getColName(), getDesc(each, tableMetaData));
 		PreparedStatement prepareStatement = connection.prepareStatement(sql);
@@ -102,20 +102,20 @@ public class H2DBStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected void addPKConstraint(Connection connection, TableMetaData tableMetaData, String tableName) throws SQLException
+	protected void addPKConstraint(Connection connection, TableMetaData<?> tableMetaData, String tableName) throws SQLException
 	{
 		String pkName = StringUtil.format("PK_{}", tableName.hashCode() & 0x7fffffff);
-		String sql = StringUtil.format("ALTER TABLE {}.{} ADD CONSTRAINT {} PRIMARY KEY ({})", schema, tableName, pkName, tableMetaData.getIdInfo().getColName());
+		String sql = StringUtil.format("ALTER TABLE {}.{} ADD CONSTRAINT {} PRIMARY KEY ({})", schema, tableName, pkName, tableMetaData.getPkColumn().getColName());
 		PreparedStatement preparedStatement = connection.prepareStatement(sql);
 		preparedStatement.executeUpdate();
 		preparedStatement.close();
 	}
 	
 	@Override
-	protected void deleteUnExistColumns(Connection connection, TableMetaData tableMetaData, String tableName) throws SQLException
+	protected void deleteUnExistColumns(Connection connection, TableMetaData<?> tableMetaData, String tableName) throws SQLException
 	{
 		Set<String> columnNames = new HashSet<String>();
-		for (MapField each : tableMetaData.getFieldInfos())
+		for (MapColumn each : tableMetaData.getAllColumns().values())
 		{
 			columnNames.add(each.getColName());
 		}
@@ -140,9 +140,9 @@ public class H2DBStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected boolean checkColumnDefinitionFit(Connection connection, MapField each, TableMetaData tableMetaData) throws SQLException
+	protected boolean checkColumnDefinitionFit(Connection connection, MapColumn each, TableMetaData<?> tableMetaData) throws SQLException
 	{
-		String sql = StringUtil.format("SELECT TYPE_NAME,CHARACTER_MAXIMUM_LENGTH FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='{}' AND TABLE_NAME='{}' AND COLUMN_NAME='{}'", schema, tableMetaData.getTableName(), tableMetaData.getIdInfo().getColName());
+		String sql = StringUtil.format("SELECT TYPE_NAME,CHARACTER_MAXIMUM_LENGTH FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='{}' AND TABLE_NAME='{}' AND COLUMN_NAME='{}'", schema, tableMetaData.getTableName(), tableMetaData.getPkColumn().getColName());
 		PreparedStatement prepareStatement = connection.prepareStatement(sql);
 		ResultSet executeQuery = prepareStatement.executeQuery();
 		executeQuery.next();
@@ -154,9 +154,9 @@ public class H2DBStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected boolean columnExist(Connection connection, MapField each, TableMetaData tableMetaData) throws SQLException
+	protected boolean columnExist(Connection connection, MapColumn each, TableMetaData<?> tableMetaData) throws SQLException
 	{
-		String sql = StringUtil.format("SELECT count(1) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='{}' AND TABLE_NAME='{}' AND COLUMN_NAME='{}'", schema, tableMetaData.getTableName(), tableMetaData.getIdInfo().getColName());
+		String sql = StringUtil.format("SELECT count(1) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA='{}' AND TABLE_NAME='{}' AND COLUMN_NAME='{}'", schema, tableMetaData.getTableName(), tableMetaData.getPkColumn().getColName());
 		PreparedStatement prepareStatement = connection.prepareStatement(sql);
 		ResultSet executeQuery = prepareStatement.executeQuery();
 		executeQuery.next();
@@ -166,7 +166,7 @@ public class H2DBStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected void setComment(MapField mapField, TableMetaData tableMetaData, Connection connection) throws SQLException
+	protected void setComment(MapColumn mapField, TableMetaData<?> tableMetaData, Connection connection) throws SQLException
 	{
 		// 暂不支持，该数据库找到添加注释的地方
 	}

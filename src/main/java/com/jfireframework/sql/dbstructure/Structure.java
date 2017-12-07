@@ -6,7 +6,7 @@ import com.jfireframework.sql.metadata.TableMetaData;
 
 public interface Structure
 {
-    void createTable(DataSource dataSource, TableMetaData[] metaDatas) throws SQLException;
-    
-    void updateTable(DataSource dataSource, TableMetaData[] metaDatas) throws SQLException;
+	void createTable(DataSource dataSource, TableMetaData<?>[] metaDatas) throws SQLException;
+	
+	void updateTable(DataSource dataSource, TableMetaData<?>[] metaDatas) throws SQLException;
 }

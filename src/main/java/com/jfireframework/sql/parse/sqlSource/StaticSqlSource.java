@@ -10,7 +10,7 @@ import com.jfireframework.sql.annotation.Sql;
 import com.jfireframework.sql.parse.lexer.Lexer;
 import com.jfireframework.sql.parse.lexer.token.Expression;
 import com.jfireframework.sql.parse.lexer.token.Token;
-import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore;
+import com.jfireframework.sql.transfer.resultset.ResultsetTransferStore;
 
 public class StaticSqlSource extends AbstractSqlSource
 {

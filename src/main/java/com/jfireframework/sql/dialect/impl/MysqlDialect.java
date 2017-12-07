@@ -9,7 +9,7 @@ import com.jfireframework.sql.dialect.Dialect;
 
 public class MysqlDialect implements Dialect
 {
-
+	
 	@Override
 	public void fillStatement(PreparedStatement preparedStatement, Object... params) throws SQLException
 	{
@@ -36,9 +36,13 @@ public class MysqlDialect implements Dialect
 			}
 			else
 			{
-				preparedStatement.setObject(i + 1, value);
+				setUnDefinedType(preparedStatement, i + 1, value);
 			}
 		}
 	}
 	
+	protected void setUnDefinedType(PreparedStatement preparedStatement, int i, Object value) throws SQLException
+	{
+		preparedStatement.setObject(i, value);
+	}
 }

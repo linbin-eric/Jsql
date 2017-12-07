@@ -1,7 +1,7 @@
 package com.jfireframework.sql;
 
 import com.jfireframework.sql.dao.Dao;
-import com.jfireframework.sql.resultsettransfer.ResultsetTransferStore;
+import com.jfireframework.sql.transfer.resultset.ResultsetTransferStore;
 
 public interface SessionFactory
 {

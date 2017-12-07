@@ -8,7 +8,7 @@ import java.util.Calendar;
 import com.jfireframework.sql.annotation.NameStrategy;
 import com.jfireframework.sql.annotation.Pk;
 import com.jfireframework.sql.annotation.TableEntity;
-import com.jfireframework.sql.pkstrategy.AutoIncrement;
+import com.jfireframework.sql.annotation.pkstrategy.AutoIncrement;
 
 @TableEntity(name = "test_demo")
 public class H2Table

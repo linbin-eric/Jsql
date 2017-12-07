@@ -10,9 +10,9 @@ import org.junit.Test;
 import com.jfireframework.sql.SessionFactory;
 import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.SqlSession;
+import com.jfireframework.sql.constant.TableNameCaseStrategy;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.test.vo.User;
-import com.jfireframework.sql.util.TableNameCaseStrategy;
 import com.zaxxer.hikari.HikariDataSource;
 
 public class StrategyTest

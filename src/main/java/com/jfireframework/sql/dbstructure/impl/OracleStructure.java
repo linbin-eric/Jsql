@@ -15,7 +15,7 @@ import com.jfireframework.baseutil.TRACEID;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.sql.dbstructure.column.ColumnType;
 import com.jfireframework.sql.dbstructure.column.Comment;
-import com.jfireframework.sql.mapfield.MapField;
+import com.jfireframework.sql.dbstructure.column.MapColumn;
 import com.jfireframework.sql.metadata.TableMetaData;
 
 public class OracleStructure extends AbstractDBStructure
@@ -28,7 +28,7 @@ public class OracleStructure extends AbstractDBStructure
 	private static final Logger logger = LoggerFactory.getLogger(OracleStructure.class);
 	
 	@Override
-	protected boolean checkIfTableExists(Connection connection, TableMetaData metaData) throws SQLException
+	protected boolean checkIfTableExists(Connection connection, TableMetaData<?> metaData) throws SQLException
 	{
 		String tableName = metaData.getTableName();
 		PreparedStatement prepareStatement = connection.prepareStatement(StringUtil.format("SELECT * FROM SYS.USER_TABLES t WHERE t.TABLE_NAME='{}'", tableName));
@@ -40,10 +40,10 @@ public class OracleStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected void deleteUnExistColumns(Connection connection, TableMetaData tableMetaData, String tableName) throws SQLException
+	protected void deleteUnExistColumns(Connection connection, TableMetaData<?> tableMetaData, String tableName) throws SQLException
 	{
 		Set<String> columnNames = new HashSet<String>();
-		for (MapField each : tableMetaData.getFieldInfos())
+		for (MapColumn each : tableMetaData.getAllColumns().values())
 		{
 			columnNames.add(each.getColName());
 		}
@@ -70,11 +70,11 @@ public class OracleStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected void addPKConstraint(Connection connection, TableMetaData tableMetaData, String tableName) throws SQLException
+	protected void addPKConstraint(Connection connection, TableMetaData<?> tableMetaData, String tableName) throws SQLException
 	{
 		String traceId = TRACEID.currentTraceId();
 		String pkName = StringUtil.format("PK_{}", tableName.hashCode() & 0x7fffffff);
-		String sql = StringUtil.format("ALTER TABLE {} ADD CONSTRAINT {} PRIMARY KEY ({})", tableName, pkName, tableMetaData.getIdInfo().getColName());
+		String sql = StringUtil.format("ALTER TABLE {} ADD CONSTRAINT {} PRIMARY KEY ({})", tableName, pkName, tableMetaData.getPkColumn().getColName());
 		logger.debug("traceId:{} 准备增加主键约束，sql为:{}", traceId, sql);
 		PreparedStatement preparedStatement = connection.prepareStatement(sql);
 		preparedStatement.executeUpdate();
@@ -82,7 +82,7 @@ public class OracleStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected void addColumn(Connection connection, TableMetaData tableMetaData, String tableName, MapField mapField) throws SQLException
+	protected void addColumn(Connection connection, TableMetaData<?> tableMetaData, String tableName, MapColumn mapField) throws SQLException
 	{
 		String traceId = TRACEID.currentTraceId();
 		String sql = StringUtil.format("ALTER TABLE {} ADD {} {}", tableName, mapField.getColName(), getDesc(mapField, tableMetaData));
@@ -93,7 +93,7 @@ public class OracleStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected void updateColumn(Connection connection, TableMetaData tableMetaData, String tableName, MapField mapField) throws SQLException
+	protected void updateColumn(Connection connection, TableMetaData<?> tableMetaData, String tableName, MapColumn mapField) throws SQLException
 	{
 		String traceId = TRACEID.currentTraceId();
 		String columnType = mapField.getColumnType().type();
@@ -119,7 +119,7 @@ public class OracleStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected void deletePkConstraint(Connection connection, TableMetaData tableMetaData) throws SQLException
+	protected void deletePkConstraint(Connection connection, TableMetaData<?> tableMetaData) throws SQLException
 	{
 		String tableName = tableMetaData.getTableName();
 		String traceId = TRACEID.currentTraceId();
@@ -147,22 +147,22 @@ public class OracleStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected String buildCreateTableSql(TableMetaData tableMetaData)
+	protected String buildCreateTableSql(TableMetaData<?> tableMetaData)
 	{
 		String tableName = schema + "." + tableMetaData.getTableName();
 		StringCache cache = new StringCache();
 		cache.append("CREATE TABLE ").append(tableName).append(" ( ");
-		for (MapField each : tableMetaData.getFieldInfos())
+		for (MapColumn each : tableMetaData.getAllColumns().values())
 		{
 			cache.append(" ").append(each.getColName()).append(' ').append(getDesc(each, tableMetaData)).appendComma();
 		}
 		String pkName = StringUtil.format("PK_{}", tableName.hashCode() & 0x7fffffff);
-		cache.append(" CONSTRAINT ").append(pkName).append(" PRIMARY KEY (").append(tableMetaData.getIdInfo().getColName()).append("))");
+		cache.append(" CONSTRAINT ").append(pkName).append(" PRIMARY KEY (").append(tableMetaData.getPkColumn().getColName()).append("))");
 		return cache.toString();
 	}
 	
 	@Override
-	protected void deleteExistTable(Connection connection, TableMetaData metaData) throws SQLException
+	protected void deleteExistTable(Connection connection, TableMetaData<?> metaData) throws SQLException
 	{
 		String tableName = schema + "." + metaData.getTableName();
 		PreparedStatement preparedStatement = connection.prepareStatement("DROP TABLE " + tableName);
@@ -171,13 +171,13 @@ public class OracleStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected void differentiatedUpdate(Connection connection, TableMetaData tableMetaData) throws SQLException
+	protected void differentiatedUpdate(Connection connection, TableMetaData<?> tableMetaData) throws SQLException
 	{
 		// 无需特异性更新
 	}
 	
 	@Override
-	protected boolean checkColumnDefinitionFit(Connection connection, MapField each, TableMetaData tableMetaData) throws SQLException
+	protected boolean checkColumnDefinitionFit(Connection connection, MapColumn each, TableMetaData<?> tableMetaData) throws SQLException
 	{
 		String sql = StringUtil.format("SELECT DATA_TYPE,DATA_LENGTH FROM SYS.USER_TAB_COLUMNS WHERE TABLE_NAME='{}' AND COLUMN_NAME='{}'", tableMetaData.getTableName(), each.getColName());
 		PreparedStatement preparedStatement = connection.prepareStatement(sql);
@@ -191,7 +191,7 @@ public class OracleStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected boolean columnExist(Connection connection, MapField each, TableMetaData tableMetaData) throws SQLException
+	protected boolean columnExist(Connection connection, MapColumn each, TableMetaData<?> tableMetaData) throws SQLException
 	{
 		String sql = StringUtil.format("SELECT count(1) FROM SYS.USER_TAB_COLS WHERE TABLE_NAME='{}' AND COLUMN_NAME='{}'", tableMetaData.getTableName(), each.getColName());
 		PreparedStatement prepareStatement = connection.prepareStatement(sql);
@@ -203,7 +203,7 @@ public class OracleStructure extends AbstractDBStructure
 	}
 	
 	@Override
-	protected void setComment(MapField mapField, TableMetaData tableMetaData, Connection connection) throws SQLException
+	protected void setComment(MapColumn mapField, TableMetaData<?> tableMetaData, Connection connection) throws SQLException
 	{
 		Comment comment = annotationUtil.getAnnotation(Comment.class, mapField.getField());
 		if (comment == null)

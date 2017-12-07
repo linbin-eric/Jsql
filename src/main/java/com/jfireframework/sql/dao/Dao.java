@@ -1,18 +1,20 @@
 package com.jfireframework.sql.dao;
 
 import java.sql.Connection;
+import java.util.List;
 import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.dialect.Dialect;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.metadata.TableMetaData;
+import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.page.PageParse;
 
-public interface Dao<T> extends StrategyOperation<T>
+public interface Dao<T>
 {
 	/**
 	 * 初始化
 	 */
-	void initialize(TableMetaData metaData, SqlInterceptor[] sqlInterceptors, SessionfactoryConfig config, PageParse pageParse, Dialect dialect);
+	void initialize(TableMetaData<T> metaData, SqlInterceptor[] sqlInterceptors, SessionfactoryConfig config, PageParse pageParse, Dialect dialect);
 	
 	/**
 	 * 将对象信息保存到数据库中。如果对象id值为null，进行插入操作，否则进行更新操作
@@ -71,5 +73,19 @@ public interface Dao<T> extends StrategyOperation<T>
 	T getById(Object pk, Connection connection, LockMode mode);
 	
 	int deleteAll(Connection connection);
+	
+	int insert(Connection connection, String strategy, Object... params);
+	
+	int delete(Connection connection, String strategy, Object... params);
+	
+	int update(Connection connection, String strategy, Object... params);
+	
+	T findOne(Connection connection, String strategy, Object... params);
+	
+	List<T> findAll(Connection connection, String strategy, Object... params);
+	
+	List<T> findPage(Connection connection, Page page, String strategy, Object... params);
+	
+	int count(Connection connection, String strategy, Object... params);
 	
 }
