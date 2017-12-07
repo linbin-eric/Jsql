@@ -4,7 +4,7 @@ import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class ClobOperator extends AbstractFieldOperator
+public class ClobOperator extends AbstractColumnTransfer
 {
     
     @Override

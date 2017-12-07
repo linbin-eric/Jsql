@@ -5,7 +5,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Calendar;
 
-public class CalendarOperator extends AbstractFieldOperator
+public class CalendarColumnTransfer extends AbstractColumnTransfer
 {
 	
 	@Override

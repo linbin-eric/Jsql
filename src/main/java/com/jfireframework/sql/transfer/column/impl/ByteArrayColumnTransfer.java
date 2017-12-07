@@ -4,7 +4,7 @@ import java.sql.Blob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class ByteArrayOperator extends AbstractFieldOperator
+public class ByteArrayColumnTransfer extends AbstractColumnTransfer
 {
 	
 	@Override

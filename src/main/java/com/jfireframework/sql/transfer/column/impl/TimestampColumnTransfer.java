@@ -3,7 +3,7 @@ package com.jfireframework.sql.transfer.column.impl;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class TimestampOperator extends AbstractFieldOperator
+public class TimestampColumnTransfer extends AbstractColumnTransfer
 {
     
     @Override

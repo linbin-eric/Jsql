@@ -6,7 +6,7 @@ import java.sql.SQLException;
 import java.util.Map;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 
-public class EnumNameOperator extends AbstractFieldOperator
+public class EnumNameOperator extends AbstractColumnTransfer
 {
     Map<String, ? extends Enum<?>> allEnumInstances;
     

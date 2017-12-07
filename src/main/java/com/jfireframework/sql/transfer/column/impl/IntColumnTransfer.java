@@ -3,20 +3,16 @@ package com.jfireframework.sql.transfer.column.impl;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class WDoubleOperator extends AbstractFieldOperator
+public class IntColumnTransfer extends AbstractColumnTransfer
 {
     
     @Override
     public void setEntityValue(Object entity, String dbColName, ResultSet resultSet) throws SQLException
     {
-        double value = resultSet.getDouble(dbColName);
-        if (resultSet.wasNull())
+        int value = resultSet.getInt(dbColName);
+        if (resultSet.wasNull() == false)
         {
-            unsafe.putObject(entity, offset, null);
-        }
-        else
-        {
-            unsafe.putObject(entity, offset, value);
+            unsafe.putInt(entity, offset, value);
         }
     }
     

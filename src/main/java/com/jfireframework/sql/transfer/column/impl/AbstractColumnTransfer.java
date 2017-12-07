@@ -5,7 +5,7 @@ import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.transfer.column.ColumnTransfer;
 import sun.misc.Unsafe;
 
-public abstract class AbstractFieldOperator implements ColumnTransfer
+public abstract class AbstractColumnTransfer implements ColumnTransfer
 {
     protected static final Unsafe unsafe = ReflectUtil.getUnsafe();
     protected long                offset;

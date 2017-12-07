@@ -5,7 +5,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
 
-public class DateOperator extends AbstractFieldOperator
+public class DateColumnTransfer extends AbstractColumnTransfer
 {
     
     @Override

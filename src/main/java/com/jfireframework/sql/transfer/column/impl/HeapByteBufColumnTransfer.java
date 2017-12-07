@@ -5,7 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import com.jfireframework.baseutil.collection.buffer.HeapByteBuf;
 
-public class HeapByteBufOperator extends AbstractFieldOperator
+public class HeapByteBufColumnTransfer extends AbstractColumnTransfer
 {
     
     @Override

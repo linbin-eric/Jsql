@@ -3,7 +3,7 @@ package com.jfireframework.sql.transfer.column.impl;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class BooleanOperator extends AbstractFieldOperator
+public class BooleanColumnTransfer extends AbstractColumnTransfer
 {
 	
 	@Override

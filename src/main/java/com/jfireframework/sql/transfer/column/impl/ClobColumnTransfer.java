@@ -1,18 +1,20 @@
 package com.jfireframework.sql.transfer.column.impl;
 
+import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class IntOperator extends AbstractFieldOperator
+public class ClobColumnTransfer extends AbstractColumnTransfer
 {
     
     @Override
     public void setEntityValue(Object entity, String dbColName, ResultSet resultSet) throws SQLException
     {
-        int value = resultSet.getInt(dbColName);
-        if (resultSet.wasNull() == false)
+        Clob clob = resultSet.getClob(dbColName);
+        if (clob != null)
         {
-            unsafe.putInt(entity, offset, value);
+            String subString = clob.getSubString(1, (int) clob.length());
+            unsafe.putObject(entity, offset, subString);
         }
     }
     

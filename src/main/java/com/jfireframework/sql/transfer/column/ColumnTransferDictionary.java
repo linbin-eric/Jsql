@@ -10,26 +10,26 @@ import java.util.HashMap;
 import java.util.Map;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.buffer.HeapByteBuf;
-import com.jfireframework.sql.transfer.column.impl.BooleanOperator;
-import com.jfireframework.sql.transfer.column.impl.ByteArrayOperator;
-import com.jfireframework.sql.transfer.column.impl.CalendarOperator;
-import com.jfireframework.sql.transfer.column.impl.ClobFieldOperator;
-import com.jfireframework.sql.transfer.column.impl.DateOperator;
-import com.jfireframework.sql.transfer.column.impl.DoubleOperator;
+import com.jfireframework.sql.transfer.column.impl.BooleanColumnTransfer;
+import com.jfireframework.sql.transfer.column.impl.ByteArrayColumnTransfer;
+import com.jfireframework.sql.transfer.column.impl.CalendarColumnTransfer;
+import com.jfireframework.sql.transfer.column.impl.ClobColumnTransfer;
+import com.jfireframework.sql.transfer.column.impl.DateColumnTransfer;
+import com.jfireframework.sql.transfer.column.impl.DoubleColumnTransfer;
 import com.jfireframework.sql.transfer.column.impl.EnumNameOperator;
-import com.jfireframework.sql.transfer.column.impl.FloatOperator;
-import com.jfireframework.sql.transfer.column.impl.HeapByteBufOperator;
-import com.jfireframework.sql.transfer.column.impl.IntOperator;
-import com.jfireframework.sql.transfer.column.impl.IntegerOperator;
-import com.jfireframework.sql.transfer.column.impl.LongOperator;
-import com.jfireframework.sql.transfer.column.impl.SqlDateOperator;
-import com.jfireframework.sql.transfer.column.impl.StringOperator;
-import com.jfireframework.sql.transfer.column.impl.TimeOperator;
-import com.jfireframework.sql.transfer.column.impl.TimestampOperator;
-import com.jfireframework.sql.transfer.column.impl.WBooleanOperator;
-import com.jfireframework.sql.transfer.column.impl.WDoubleOperator;
-import com.jfireframework.sql.transfer.column.impl.WFloatOperator;
-import com.jfireframework.sql.transfer.column.impl.WLongOperator;
+import com.jfireframework.sql.transfer.column.impl.FloatColumnTransfer;
+import com.jfireframework.sql.transfer.column.impl.HeapByteBufColumnTransfer;
+import com.jfireframework.sql.transfer.column.impl.IntColumnTransfer;
+import com.jfireframework.sql.transfer.column.impl.IntegerColumnTransfer;
+import com.jfireframework.sql.transfer.column.impl.LongColumnTransfer;
+import com.jfireframework.sql.transfer.column.impl.SqlDateColumnTransfer;
+import com.jfireframework.sql.transfer.column.impl.StringColumnTransfer;
+import com.jfireframework.sql.transfer.column.impl.TimeColumnTransfer;
+import com.jfireframework.sql.transfer.column.impl.TimestampColumnTransfer;
+import com.jfireframework.sql.transfer.column.impl.WBooleanColumnTransfer;
+import com.jfireframework.sql.transfer.column.impl.WDoubleColumnTransfer;
+import com.jfireframework.sql.transfer.column.impl.WFloatColumnTransfer;
+import com.jfireframework.sql.transfer.column.impl.WLongColumnTransfer;
 
 public interface ColumnTransferDictionary
 {
@@ -47,25 +47,25 @@ public interface ColumnTransferDictionary
         
         public BuildInColumnTransferDictionary()
         {
-            operators.put(boolean.class, BooleanOperator.class);
-            operators.put(Calendar.class, CalendarOperator.class);
-            operators.put(java.util.Date.class, DateOperator.class);
-            operators.put(Date.class, SqlDateOperator.class);
-            operators.put(double.class, DoubleOperator.class);
-            operators.put(float.class, FloatOperator.class);
-            operators.put(long.class, LongOperator.class);
-            operators.put(int.class, IntOperator.class);
-            operators.put(String.class, StringOperator.class);
-            operators.put(Time.class, TimeOperator.class);
-            operators.put(Timestamp.class, TimestampOperator.class);
-            operators.put(Boolean.class, WBooleanOperator.class);
-            operators.put(Double.class, WDoubleOperator.class);
-            operators.put(Float.class, WFloatOperator.class);
-            operators.put(Integer.class, IntegerOperator.class);
-            operators.put(Long.class, WLongOperator.class);
-            operators.put(byte[].class, ByteArrayOperator.class);
-            operators.put(Clob.class, ClobFieldOperator.class);
-            operators.put(HeapByteBuf.class, HeapByteBufOperator.class);
+            operators.put(boolean.class, BooleanColumnTransfer.class);
+            operators.put(Calendar.class, CalendarColumnTransfer.class);
+            operators.put(java.util.Date.class, DateColumnTransfer.class);
+            operators.put(Date.class, SqlDateColumnTransfer.class);
+            operators.put(double.class, DoubleColumnTransfer.class);
+            operators.put(float.class, FloatColumnTransfer.class);
+            operators.put(long.class, LongColumnTransfer.class);
+            operators.put(int.class, IntColumnTransfer.class);
+            operators.put(String.class, StringColumnTransfer.class);
+            operators.put(Time.class, TimeColumnTransfer.class);
+            operators.put(Timestamp.class, TimestampColumnTransfer.class);
+            operators.put(Boolean.class, WBooleanColumnTransfer.class);
+            operators.put(Double.class, WDoubleColumnTransfer.class);
+            operators.put(Float.class, WFloatColumnTransfer.class);
+            operators.put(Integer.class, IntegerColumnTransfer.class);
+            operators.put(Long.class, WLongColumnTransfer.class);
+            operators.put(byte[].class, ByteArrayColumnTransfer.class);
+            operators.put(Clob.class, ClobColumnTransfer.class);
+            operators.put(HeapByteBuf.class, HeapByteBufColumnTransfer.class);
         }
         
         @Override
