@@ -110,7 +110,7 @@ public class DynamicSqlSource extends AbstractSqlSource
 					methodBody += "builder.append(\"" + sqlCache.toString() + "\");\r\n";
 					sqlCache.clear();
 				}
-				methodBody += "builder.append(\"? \")\r\n";
+				methodBody += "builder.append(\"? \");\r\n";
 				methodBody += "list.add(" + token.getLiterals().substring(1) + ");\r\n";
 			}
 			else if (token.getTokenType() == Expression.IF)
