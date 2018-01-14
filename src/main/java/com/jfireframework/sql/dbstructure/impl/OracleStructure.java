@@ -13,8 +13,8 @@ import org.slf4j.LoggerFactory;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.TRACEID;
 import com.jfireframework.baseutil.collection.StringCache;
+import com.jfireframework.sql.Comment;
 import com.jfireframework.sql.dbstructure.column.ColumnType;
-import com.jfireframework.sql.dbstructure.column.Comment;
 import com.jfireframework.sql.dbstructure.column.MapColumn;
 import com.jfireframework.sql.metadata.TableMetaData;
 

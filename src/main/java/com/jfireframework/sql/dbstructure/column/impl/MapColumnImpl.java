@@ -2,10 +2,10 @@ package com.jfireframework.sql.dbstructure.column.impl;
 
 import java.lang.reflect.Field;
 import com.jfireframework.baseutil.StringUtil;
+import com.jfireframework.sql.annotation.UserDefinedColumnType;
 import com.jfireframework.sql.dbstructure.column.ColumnType;
 import com.jfireframework.sql.dbstructure.column.ColumnTypeDictionary;
 import com.jfireframework.sql.dbstructure.column.MapColumn;
-import com.jfireframework.sql.dbstructure.column.UserDefinedColumnType;
 import com.jfireframework.sql.dbstructure.name.ColumnNameStrategy;
 import com.jfireframework.sql.util.CommonHelper;
 

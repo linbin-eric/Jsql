@@ -9,8 +9,8 @@ import com.jfireframework.sql.annotation.Pk;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.annotation.UserDefinedColumnTransfer;
+import com.jfireframework.sql.annotation.UserDefinedColumnType;
 import com.jfireframework.sql.annotation.pkstrategy.AutoIncrement;
-import com.jfireframework.sql.dbstructure.column.UserDefinedColumnType;
 import com.jfireframework.sql.transfer.column.impl.EnumOrdinalOperator;
 
 @TableEntity(name = "user")
