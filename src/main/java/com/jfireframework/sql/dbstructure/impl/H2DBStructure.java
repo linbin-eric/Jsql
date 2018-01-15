@@ -206,14 +206,12 @@ public class H2DBStructure extends AbstractDBStructure
         }
         query.close();
         prepareStatement.close();
-        prepareStatement = connection.prepareStatement("DROP INDEX ?");
         for (String index : indexNames)
         {
-            prepareStatement.setString(1, schema + "." + index);
-            prepareStatement.addBatch();
+            prepareStatement = connection.prepareStatement("DROP INDEX " + schema + "." + index);
+            prepareStatement.executeUpdate();
+            prepareStatement.close();
         }
-        prepareStatement.executeBatch();
-        prepareStatement.close();
     }
     
 }

@@ -12,6 +12,7 @@ import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.TRACEID;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.sql.Comment;
+import com.jfireframework.sql.annotation.Index;
 import com.jfireframework.sql.annotation.Pk;
 import com.jfireframework.sql.annotation.pkstrategy.AutoIncrement;
 import com.jfireframework.sql.dbstructure.column.ColumnType;
@@ -229,6 +230,39 @@ public class MysqlDBStructure extends AbstractDBStructure
         logger.debug("traceId:{} 执行的设置注释的语句是:{}", TRACEID.currentTraceId(), sql);
         prepareStatement.executeUpdate();
         prepareStatement.close();
+    }
+    
+    @Override
+    protected void setIndex(MapColumn mapColumn, TableMetaData<?> tableMetaData, Connection connection) throws SQLException
+    {
+        Index index = mapColumn.getField().getAnnotation(Index.class);
+        String indexName = "".equals(index.indexName()) ? "IDX_" + ((tableMetaData.getTableName() + ":" + mapColumn.getColName()).hashCode() & 0x7fffffff) : index.indexName();
+        String indexType = "".equals(index.indexType()) ? "BTREE" : index.indexType();
+        String sql = StringUtil.format("CREATE INDEX {} USING HASH ON {}.{} ({})", indexName, indexType, schema, tableMetaData.getTableName(), mapColumn.getColName());
+        PreparedStatement prepareStatement = connection.prepareStatement(sql);
+        prepareStatement.executeUpdate();
+        prepareStatement.close();
+    }
+    
+    @Override
+    protected void deleteAllIndexs(Connection connection, TableMetaData<?> tableMetaData) throws SQLException
+    {
+        String sql = StringUtil.format("show index from {}.{}", schema, tableMetaData.getTableName());
+        PreparedStatement prepareStatement = connection.prepareStatement(sql);
+        ResultSet resultSet = prepareStatement.executeQuery();
+        List<String> indexNames = new ArrayList<String>();
+        while (resultSet.next())
+        {
+            indexNames.add(resultSet.getString("key_name"));
+        }
+        resultSet.close();
+        prepareStatement.close();
+        for (String indexName : indexNames)
+        {
+            prepareStatement = connection.prepareStatement(StringUtil.format("ALTER TABLE {}.{} DROP INDEX {}", schema, tableMetaData.getTableName(), indexName));
+            prepareStatement.executeUpdate();
+            prepareStatement.close();
+        }
     }
     
 }

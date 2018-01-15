@@ -25,4 +25,11 @@ public @interface Index
      * @return
      */
     boolean unique() default false;
+    
+    /**
+     * 索引类型，
+     * 
+     * @return
+     */
+    String indexType() default "";
 }

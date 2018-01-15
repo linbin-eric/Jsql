@@ -14,7 +14,7 @@ import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.dbstructure.name.ColumnNameStrategy;
 import com.jfireframework.sql.transfer.column.ColumnTransfer;
 import com.jfireframework.sql.transfer.column.ColumnTransferDictionary;
-import com.jfireframework.sql.util.CommonHelper;
+import com.jfireframework.sql.util.ColumnHelper;
 
 public class BeanTransfer<T> extends AbstractResultsetTransfer<T>
 {
@@ -82,14 +82,14 @@ public class BeanTransfer<T> extends AbstractResultsetTransfer<T>
 	{
 		ColumnTransferDictionary fieldOperatorDictionary = config.getFieldOperatorDictionary();
 		this.type = type;
-		ColumnNameStrategy columnNameStrategy = CommonHelper.columnNameStrategy(type);
+		ColumnNameStrategy columnNameStrategy = ColumnHelper.columnNameStrategy(type);
 		for (Field each : ReflectUtil.getAllFields(type))
 		{
-			if (CommonHelper.notColumnField(each))
+			if (ColumnHelper.notColumnField(each))
 			{
 				continue;
 			}
-			columnNameDictory.put(CommonHelper.columnName(each, columnNameStrategy).toLowerCase(), CommonHelper.getColumnTransfer(each, fieldOperatorDictionary));
+			columnNameDictory.put(ColumnHelper.columnName(each, columnNameStrategy).toLowerCase(), ColumnHelper.getColumnTransfer(each, fieldOperatorDictionary));
 		}
 	}
 	

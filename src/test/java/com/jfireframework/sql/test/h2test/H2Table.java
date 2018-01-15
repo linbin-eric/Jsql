@@ -5,7 +5,7 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
-import com.jfireframework.sql.annotation.NameStrategy;
+import com.jfireframework.sql.annotation.Index;
 import com.jfireframework.sql.annotation.Pk;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.annotation.pkstrategy.AutoIncrement;
@@ -17,6 +17,7 @@ public class H2Table
     @AutoIncrement
     private Integer   id;
     private int       col1;
+    @Index
     private long      col2;
     private float     col3;
     private double    col4;

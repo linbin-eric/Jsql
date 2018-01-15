@@ -13,6 +13,7 @@ import com.jfireframework.baseutil.anno.AnnotationUtil;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.sql.annotation.Column;
+import com.jfireframework.sql.annotation.Index;
 import com.jfireframework.sql.dbstructure.Structure;
 import com.jfireframework.sql.dbstructure.column.ColumnType;
 import com.jfireframework.sql.dbstructure.column.MapColumn;
@@ -78,7 +79,10 @@ public abstract class AbstractDBStructure implements Structure
         logger.debug("traceId:{} 准备添加索引", TRACEID.currentTraceId());
         for (MapColumn mapColumn : tableMetaData.getAllColumns().values())
         {
-            setIndex(mapColumn, tableMetaData, connection);
+            if (mapColumn.getField().isAnnotationPresent(Index.class))
+            {
+                setIndex(mapColumn, tableMetaData, connection);
+            }
         }
     }
     

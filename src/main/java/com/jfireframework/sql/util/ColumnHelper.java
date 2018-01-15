@@ -17,7 +17,7 @@ import com.jfireframework.sql.dbstructure.name.DefaultNameStrategy;
 import com.jfireframework.sql.transfer.column.ColumnTransfer;
 import com.jfireframework.sql.transfer.column.ColumnTransferDictionary;
 
-public class CommonHelper
+public class ColumnHelper
 {
 	
 	public static ColumnTransfer getColumnTransfer(Field field, ColumnTransferDictionary dictionary)

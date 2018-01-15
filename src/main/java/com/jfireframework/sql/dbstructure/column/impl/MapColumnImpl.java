@@ -7,7 +7,7 @@ import com.jfireframework.sql.dbstructure.column.ColumnType;
 import com.jfireframework.sql.dbstructure.column.ColumnTypeDictionary;
 import com.jfireframework.sql.dbstructure.column.MapColumn;
 import com.jfireframework.sql.dbstructure.name.ColumnNameStrategy;
-import com.jfireframework.sql.util.CommonHelper;
+import com.jfireframework.sql.util.ColumnHelper;
 
 /**
  * 基础CURD操作映射的抽象属性类
@@ -25,7 +25,7 @@ public class MapColumnImpl implements MapColumn
 	public void initialize(Field field, ColumnNameStrategy colNameStrategy, ColumnTypeDictionary columnTypeDictionary)
 	{
 		this.field = field;
-		dbColName = CommonHelper.columnName(field, colNameStrategy);
+		dbColName = ColumnHelper.columnName(field, colNameStrategy);
 		columnType = buildColumnType(field, columnTypeDictionary);
 	}
 	
