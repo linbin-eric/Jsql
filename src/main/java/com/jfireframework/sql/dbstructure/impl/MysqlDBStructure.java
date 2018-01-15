@@ -238,7 +238,7 @@ public class MysqlDBStructure extends AbstractDBStructure
         Index index = mapColumn.getField().getAnnotation(Index.class);
         String indexName = "".equals(index.indexName()) ? "IDX_" + ((tableMetaData.getTableName() + ":" + mapColumn.getColName()).hashCode() & 0x7fffffff) : index.indexName();
         String indexType = "".equals(index.indexType()) ? "BTREE" : index.indexType();
-        String sql = StringUtil.format("CREATE INDEX {} USING HASH ON {}.{} ({})", indexName, indexType, schema, tableMetaData.getTableName(), mapColumn.getColName());
+        String sql = StringUtil.format("CREATE INDEX {} USING {} ON {}.{} ({})", indexName, indexType, schema, tableMetaData.getTableName(), mapColumn.getColName());
         PreparedStatement prepareStatement = connection.prepareStatement(sql);
         prepareStatement.executeUpdate();
         prepareStatement.close();

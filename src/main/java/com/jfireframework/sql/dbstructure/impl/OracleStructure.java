@@ -241,7 +241,7 @@ public class OracleStructure extends AbstractDBStructure
     @Override
     protected void deleteAllIndexs(Connection connection, TableMetaData<?> tableMetaData) throws SQLException
     {
-        String findIndexsSql = StringUtil.format("SELECT INDEX_NAME FROM SYS.USER_INDEXES WHERE TABLE_NAME='{}'", tableMetaData.getTableName());
+        String findIndexsSql = StringUtil.format("SELECT INDEX_NAME FROM SYS.USER_IND_COLUMNS WHERE TABLE_NAME='{}'", tableMetaData.getTableName());
         PreparedStatement prepareStatement = connection.prepareStatement(findIndexsSql);
         ResultSet query = prepareStatement.executeQuery();
         List<String> indexNames = new ArrayList<String>();
@@ -253,7 +253,9 @@ public class OracleStructure extends AbstractDBStructure
         prepareStatement.close();
         for (String each : indexNames)
         {
-            prepareStatement = connection.prepareStatement(StringUtil.format("ALTER TABLE {}.{} DROP INDEX {}", schema, tableMetaData.getTableName(), each));
+            String sql = StringUtil.format("DROP INDEX {}.{}", schema, each);
+            System.out.println(sql);
+            prepareStatement = connection.prepareStatement(sql);
             prepareStatement.executeUpdate();
             prepareStatement.close();
         }
