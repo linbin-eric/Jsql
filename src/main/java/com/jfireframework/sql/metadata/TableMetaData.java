@@ -77,7 +77,7 @@ public class TableMetaData<T>
 			list.add(mapField);
 		}
 		valueColumns = list.toArray(new MapColumn[list.size()]);
-		if (pkColumn.getField() != null && pkColumn.getField().getType().isPrimitive())
+		if (pkColumn != null && pkColumn.getField().getType().isPrimitive())
 		{
 			throw new IllegalArgumentException("作为主键的属性不可以使用基本类型，必须使用包装类。请检查" + pkColumn.getField().getDeclaringClass().getName() + "." + pkColumn.getField().getName());
 		}
