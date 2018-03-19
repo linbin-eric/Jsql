@@ -2,6 +2,7 @@ package com.jfireframework.sql.test;
 
 import java.util.HashSet;
 import java.util.Set;
+import org.h2.util.New;
 import org.junit.Assert;
 import org.junit.Test;
 import com.jfireframework.sql.SessionfactoryConfig;
@@ -64,6 +65,12 @@ public class LexerTest
 		//
 		sql = "update User set name='x' <if($i>5)>WHERE name ='kx'</if> ";
 		Assert.assertEquals("UPDATE User SET name = 'x' <if($i>5)> WHERE name = 'kx' </if>", new Lexer(sql).toString());
+		//
+		sql = "select * from User where name = '1212'";
+		Assert.assertEquals("SELECT * FROM User WHERE name = '1212'", new Lexer(sql).toString());
+		//
+		sql = "select #{id} #{from} User";
+		Assert.assertEquals("SELECT id from User", new Lexer(sql).toString());
 	}
 	
 	@Test
@@ -99,5 +106,11 @@ public class LexerTest
 		//
 		sql = "select age FROM User as u WHERE u.name = ?";
 		Assert.assertEquals("SELECT u.AGE FROM user AS u WHERE u.name2 = ?", new Lexer(sql).parse(metaContext).toString());
+		//
+		sql = "insert into User (age) values(5)";
+		Assert.assertEquals("INSERT INTO user ( AGE ) VALUES ( 5 )", new Lexer(sql).parse(metaContext).toString());
+		//
+		sql = "insert into User (age) select 16 from dual where not exists (select * from user where age = $age)";
+		Assert.assertEquals("INSERT INTO user ( AGE ) SELECT 16 FROM dual WHERE NOT EXISTS ( SELECT * FROM user WHERE user.AGE = $age )", new Lexer(sql).parse(metaContext).toString());
 	}
 }

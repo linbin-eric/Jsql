@@ -13,16 +13,18 @@ import com.jfireframework.sql.parse.lexer.analyzer.Tokenizer;
 import com.jfireframework.sql.parse.lexer.token.DefaultKeyWord;
 import com.jfireframework.sql.parse.lexer.token.Expression;
 import com.jfireframework.sql.parse.lexer.token.Literals;
+import com.jfireframework.sql.parse.lexer.token.Symbol;
 import com.jfireframework.sql.parse.lexer.token.Token;
 import com.jfireframework.sql.parse.lexer.token.TokenType;
 
 public class Lexer
 {
-	private List<Token>						tokens		= new ArrayList<Token>();
+	private List<Token>						tokens				= new ArrayList<Token>();
 	private final String					sql;
-	private int								offset		= 0;
-	private Map<String, TableMetaData<?>>	entities	= new HashMap<String, TableMetaData<?>>();
-	private Map<String, String>				fieldNames	= new HashMap<String, String>();
+	private int								offset				= 0;
+	private Map<String, TableMetaData<?>>	entities			= new HashMap<String, TableMetaData<?>>();
+	private Map<String, String>				fieldNames			= new HashMap<String, String>();
+	private Map<String, String>				noPrefixFieldNames	= new HashMap<String, String>();
 	
 	public Lexer(String sql)
 	{
@@ -80,6 +82,8 @@ public class Lexer
 				{
 					fieldNames.put(entity + '.' + mapField.getFieldName(), tableMetaData.getTableName() + "." + mapField.getColName());
 					fieldNames.put(mapField.getFieldName(), tableMetaData.getTableName() + "." + mapField.getColName());
+					noPrefixFieldNames.put(entity + '.' + mapField.getFieldName(), mapField.getColName());
+					noPrefixFieldNames.put(mapField.getFieldName(), mapField.getColName());
 				}
 			}
 		}
@@ -104,6 +108,8 @@ public class Lexer
 					{
 						fieldNames.put(entityAlias + '.' + mapField.getFieldName(), entityAlias + "." + mapField.getColName());
 						fieldNames.put(mapField.getFieldName(), entityAlias + "." + mapField.getColName());
+						noPrefixFieldNames.put(entityAlias + '.' + mapField.getFieldName(), entityAlias + "." + mapField.getColName());
+						noPrefixFieldNames.put(mapField.getFieldName(), entityAlias + "." + mapField.getColName());
 					}
 				}
 			}
@@ -113,9 +119,25 @@ public class Lexer
 	
 	public Lexer parseFieldName()
 	{
+		boolean isInsert = false;
 		for (Token token : tokens)
 		{
-			token.parseFieldName(fieldNames);
+			if (token.getTokenType() == DefaultKeyWord.INSERT)
+			{
+				isInsert = true;
+			}
+			if (isInsert && token.getTokenType() == Symbol.RIGHT_PAREN)
+			{
+				isInsert = false;
+			}
+			if (isInsert)
+			{
+				token.parseFieldName(noPrefixFieldNames);
+			}
+			else
+			{
+				token.parseFieldName(fieldNames);
+			}
 		}
 		return this;
 	}
@@ -139,6 +161,10 @@ public class Lexer
 		else if (isConstantBegin())
 		{
 			currentToken = new Tokenizer(sql, offset).scanConstant();
+		}
+		else if (isEmbedStringBegin())
+		{
+			currentToken = new Tokenizer(sql, offset).scanEmbedString();
 		}
 		else if (isVariableBegin())
 		{
@@ -178,6 +204,11 @@ public class Lexer
 		}
 		offset = currentToken.getEndPosition();
 		return currentToken;
+	}
+	
+	private boolean isEmbedStringBegin()
+	{
+		return getCurrentChar(0) == '#' && getCurrentChar(1) == '{';
 	}
 	
 	/**
