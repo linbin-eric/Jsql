@@ -101,7 +101,7 @@ public class MapperTest
 		
 		/* 测试对POJO属性的提取 */
 		/* 测试page */
-		@Sql(sql = "select * from User <if( $name == \"lin\")> where name like $%name% </if>", paramNames = "name")
+		@Sql(sql = "select * from User <if( $name == )> where name like $%name% </if> ", paramNames = "name")
 		public List<User> find(String name, Page page);
 		
 		@Sql(sql = "select * from User where name like $%name%", paramNames = "name")
