@@ -47,7 +47,12 @@ public class SqlLexer
 	}
 	private Token[] tokens;
 	
-	public SqlLexer(String sql)
+	public static SqlLexer parse(String sql)
+	{
+		return new SqlLexer(sql);
+	}
+	
+	private SqlLexer(String sql)
 	{
 		int length = sql.length();
 		int offset = 0;
@@ -70,7 +75,7 @@ public class SqlLexer
 	 * 
 	 * @param transfer
 	 */
-	public void transfer(Map<String, TableTransfer> transfers)
+	public SqlLexer transfer(Map<String, TableTransfer> transfers)
 	{
 		List<TableTransfer> hit = markEntityToken(transfers);
 		transferPropertyNameToColumnName(hit);
@@ -83,6 +88,7 @@ public class SqlLexer
 				token.setListerals(transfers.get(token.getListerals()).getTableName());
 			}
 		}
+		return this;
 	}
 	
 	/**
