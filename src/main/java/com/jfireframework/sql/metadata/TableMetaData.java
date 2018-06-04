@@ -12,7 +12,7 @@ import java.util.Map;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.SessionfactoryConfig;
-import com.jfireframework.sql.annotation.NameStrategy;
+import com.jfireframework.sql.annotation.ColumnNameStrategyDefinition;
 import com.jfireframework.sql.annotation.Pk;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableEntity;
@@ -52,7 +52,7 @@ public class TableMetaData<T>
 		}
 		try
 		{
-			Class<? extends ColumnNameStrategy> columnNameStrategyClass = ckass.isAnnotationPresent(NameStrategy.class) ? ckass.getAnnotation(NameStrategy.class).value() : DefaultNameStrategy.class;
+			Class<? extends ColumnNameStrategy> columnNameStrategyClass = ckass.isAnnotationPresent(ColumnNameStrategyDefinition.class) ? ckass.getAnnotation(ColumnNameStrategyDefinition.class).value() : DefaultNameStrategy.class;
 			colNameStrategy = columnNameStrategyClass.newInstance();
 		}
 		catch (Exception e)

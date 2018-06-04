@@ -5,7 +5,7 @@ import com.jfireframework.baseutil.collection.StringCache;
 public class DefaultLowerCaseNameStrategy implements ColumnNameStrategy
 {
     @Override
-    public String toDbName(String name)
+    public String toColumnName(String name)
     {
         StringCache cache = new StringCache(20);
         int index = 0;

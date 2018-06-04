@@ -2,8 +2,8 @@ package com.jfireframework.sql.analyse.token;
 
 public class Token
 {
-	private final TokenType	tokenType;
-	private final String	literals;
+	private TokenType	tokenType;
+	private String		literals;
 	
 	public Token(KeyWord keyWord)
 	{
@@ -34,9 +34,19 @@ public class Token
 		return tokenType;
 	}
 	
-	public String content()
+	public String getListerals()
 	{
 		return literals;
+	}
+	
+	public void setListerals(String literals)
+	{
+		this.literals = literals;
+	}
+	
+	public void setTokenType(TokenType tokenType)
+	{
+		this.tokenType = tokenType;
 	}
 	
 }

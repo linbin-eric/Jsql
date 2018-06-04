@@ -19,5 +19,7 @@ public enum TokenType
     // 标识符
 	IDENTIFIER, //
     // 文本
-	TEXT,//
+	TEXT, //
+    // 表映射类
+	TABLE_ENTITY,//
 }

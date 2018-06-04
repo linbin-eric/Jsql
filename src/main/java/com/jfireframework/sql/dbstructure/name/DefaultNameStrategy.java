@@ -6,7 +6,7 @@ public class DefaultNameStrategy implements ColumnNameStrategy
 {
 	
 	@Override
-	public String toDbName(String name)
+	public String toColumnName(String name)
 	{
 		StringCache cache = new StringCache(20);
 		int index = 0;

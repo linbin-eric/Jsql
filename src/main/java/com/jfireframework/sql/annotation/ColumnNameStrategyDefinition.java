@@ -8,7 +8,7 @@ import com.jfireframework.sql.dbstructure.name.ColumnNameStrategy;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface NameStrategy
+public @interface ColumnNameStrategyDefinition
 {
-    public Class<? extends ColumnNameStrategy> value();
+	Class<? extends ColumnNameStrategy> value();
 }

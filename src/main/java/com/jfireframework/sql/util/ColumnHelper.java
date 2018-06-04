@@ -9,7 +9,7 @@ import java.util.Map;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.sql.annotation.Column;
-import com.jfireframework.sql.annotation.NameStrategy;
+import com.jfireframework.sql.annotation.ColumnNameStrategyDefinition;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.UserDefinedColumnTransfer;
 import com.jfireframework.sql.dbstructure.name.ColumnNameStrategy;
@@ -82,7 +82,7 @@ public class ColumnHelper
 	{
 		try
 		{
-			Class<? extends ColumnNameStrategy> columnNameStrategyClass = ckass.isAnnotationPresent(NameStrategy.class) ? ckass.getAnnotation(NameStrategy.class).value() : DefaultNameStrategy.class;
+			Class<? extends ColumnNameStrategy> columnNameStrategyClass = ckass.isAnnotationPresent(ColumnNameStrategyDefinition.class) ? ckass.getAnnotation(ColumnNameStrategyDefinition.class).value() : DefaultNameStrategy.class;
 			return columnNameStrategyClass.newInstance();
 		}
 		catch (Exception e)
@@ -102,12 +102,12 @@ public class ColumnHelper
 			}
 			else
 			{
-				return columnNameStrategy.toDbName(field.getName());
+				return columnNameStrategy.toColumnName(field.getName());
 			}
 		}
 		else
 		{
-			return columnNameStrategy.toDbName(field.getName());
+			return columnNameStrategy.toColumnName(field.getName());
 		}
 	}
 }
