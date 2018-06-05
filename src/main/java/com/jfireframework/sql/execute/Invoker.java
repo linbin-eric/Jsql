@@ -16,6 +16,4 @@ public interface Invoker
 	
 	Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException;
 	
-	int count(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException;
-	
 }

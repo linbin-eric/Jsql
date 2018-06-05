@@ -16,8 +16,6 @@ public interface SqlExecutor
 	
 	Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer, Invoker next) throws SQLException;
 	
-	int count(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer, Invoker next) throws SQLException;
-	
 	// 拦截器顺序，数字越大，越后执行
 	int order();
 }

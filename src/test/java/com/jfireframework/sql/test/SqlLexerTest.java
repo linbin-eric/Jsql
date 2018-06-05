@@ -5,8 +5,8 @@ import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 import com.jfireframework.sql.analyse.token.SqlLexer;
-import com.jfireframework.sql.analyse.token.transfer.TableTransfer;
 import com.jfireframework.sql.test.vo.User;
+import com.jfireframework.sql.util.TableEntityInfo;
 
 public class SqlLexerTest
 {
@@ -63,9 +63,9 @@ public class SqlLexerTest
 	@Test
 	public void test_2()
 	{
-		TableTransfer tableTransfer = new TableTransfer(User.class);
+		TableEntityInfo tableTransfer = TableEntityInfo.parse(User.class);
 		String sql = "select name FROM User";
-		Map<String, TableTransfer> map = new HashMap<String, TableTransfer>();
+		Map<String, TableEntityInfo> map = new HashMap<String, TableEntityInfo>();
 		map.put("User", tableTransfer);
 		Assert.assertEquals("SELECT name2 FROM user", SqlLexer.parse(sql).transfer(map).format());
 	}
@@ -73,8 +73,8 @@ public class SqlLexerTest
 	@Test
 	public void test_3()
 	{
-		TableTransfer tableTransfer = new TableTransfer(User.class);
-		Map<String, TableTransfer> map = new HashMap<String, TableTransfer>();
+		TableEntityInfo tableTransfer = TableEntityInfo.parse(User.class);
+		Map<String, TableEntityInfo> map = new HashMap<String, TableEntityInfo>();
 		map.put("User", tableTransfer);
 		String sql = "select name,age FROM User";
 		Assert.assertEquals("SELECT name2 , age FROM user", SqlLexer.parse(sql).transfer(map).format());

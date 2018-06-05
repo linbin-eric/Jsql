@@ -1,8 +1,9 @@
-package com.jfireframework.sql.analyse.token.transfer;
+package com.jfireframework.sql.util;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
@@ -12,14 +13,16 @@ import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.dbstructure.name.ColumnNameStrategy;
 import com.jfireframework.sql.dbstructure.name.DefaultLowerCaseNameStrategy;
 
-public class TableTransfer
+public class TableEntityInfo
 {
-	private String				className;
-	private String				classSimpleName;
-	private String				tableName;
-	private Map<String, String>	propertyNameToColumnNameMap	= new HashMap<String, String>();
+	private static final Map<Class<?>, TableEntityInfo>	store						= new ConcurrentHashMap<Class<?>, TableEntityInfo>();
 	
-	public TableTransfer(Class<?> ckass)
+	private String										className;
+	private String										classSimpleName;
+	private String										tableName;
+	private Map<String, String>							propertyNameToColumnNameMap	= new HashMap<String, String>();
+	
+	private TableEntityInfo(Class<?> ckass)
 	{
 		className = ckass.getName();
 		classSimpleName = ckass.getName();
@@ -66,4 +69,14 @@ public class TableTransfer
 		return "TableTransfer [className=" + className + ", tableName=" + tableName + "]";
 	}
 	
+	public static TableEntityInfo parse(Class<?> entityClass)
+	{
+		TableEntityInfo tableEntityInfo = store.get(entityClass);
+		if (tableEntityInfo == null)
+		{
+			tableEntityInfo = new TableEntityInfo(entityClass);
+			store.put(entityClass, tableEntityInfo);
+		}
+		return tableEntityInfo;
+	}
 }

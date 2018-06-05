@@ -132,31 +132,6 @@ public class DefaultSqlExecutor implements SqlExecutor
 	}
 	
 	@Override
-	public int count(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer, Invoker next) throws SQLException
-	{
-		PreparedStatement preparedStatement = null;
-		ResultSet resultSet = null;
-		try
-		{
-			preparedStatement = connection.prepareStatement(sql);
-			resultSet = preparedStatement.executeQuery();
-			resultSet.next();
-			return resultSet.getInt(1);
-		}
-		finally
-		{
-			if (resultSet != null)
-			{
-				resultSet.close();
-			}
-			if (preparedStatement != null)
-			{
-				preparedStatement.close();
-			}
-		}
-	}
-	
-	@Override
 	public int order()
 	{
 		return Integer.MAX_VALUE;

@@ -3,8 +3,11 @@ package com.jfireframework.sql;
 import java.sql.Connection;
 import java.util.List;
 import com.jfireframework.sql.dao.LockMode;
-import com.jfireframework.sql.model.Model;
-import com.jfireframework.sql.page.Page;
+import com.jfireframework.sql.model.CountModel;
+import com.jfireframework.sql.model.DeleteModel;
+import com.jfireframework.sql.model.InsertModel;
+import com.jfireframework.sql.model.QueryModel;
+import com.jfireframework.sql.model.UpdateModel;
 import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 
 interface ConnectionOp
@@ -99,7 +102,7 @@ interface CurdOp
 
 interface ModelOp
 {
-	<T> T findOne(Model<?> model, Object... params);
+	<T> T findOne(QueryModel model, Object... params);
 	
 	/**
 	 * 如果最后一个参数是Page，则会触发分页查询
@@ -109,24 +112,33 @@ interface ModelOp
 	 * @param params
 	 * @return
 	 */
-	<T> List<T> find(Model<?> model, Object... params);
+	<T> List<T> find(QueryModel model, Object... params);
 	
-	int update(Model<?> model, Object... params);
+	int update(UpdateModel model, Object... params);
 	
-	int delete(Model<?> model, Object... params);
+	int delete(DeleteModel model, Object... params);
 	
-	int count(Model<?> model, Object... params);
+	int count(CountModel model, Object... params);
+	
+	void insert(InsertModel model, Object... params);
 }
 
 interface SqlOp
 {
-	int update(String sql, Object... params);
+	int update(String sql, List<Object> params);
 	
-	<T> T query(ResultSetTransfer transfer, String sql, Object... params);
+	<T> T query(ResultSetTransfer transfer, String sql, List<Object> params);
 	
-	<T> List<T> queryList(ResultSetTransfer transfer, String sql, Object... params);
+	/**
+	 * 如果最后一个参数是Page，则会触发page查询
+	 * 
+	 * @param transfer
+	 * @param sql
+	 * @param params
+	 * @return
+	 */
+	<T> List<T> queryList(ResultSetTransfer transfer, String sql, List<Object> params);
 	
-	<T> List<T> queryList(ResultSetTransfer transfer, String sql, Page page, Object... params);
 }
 
 /**

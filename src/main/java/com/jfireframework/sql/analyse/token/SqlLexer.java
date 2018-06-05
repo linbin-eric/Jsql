@@ -18,7 +18,7 @@ import com.jfireframework.sql.analyse.token.parser.impl.SkipWhiteSpaceParser;
 import com.jfireframework.sql.analyse.token.parser.impl.SymbolParser;
 import com.jfireframework.sql.analyse.token.parser.impl.TemplateCharacterParser;
 import com.jfireframework.sql.analyse.token.parser.impl.TextParser;
-import com.jfireframework.sql.analyse.token.transfer.TableTransfer;
+import com.jfireframework.sql.util.TableEntityInfo;
 
 public class SqlLexer
 {
@@ -75,9 +75,9 @@ public class SqlLexer
 	 * 
 	 * @param transfer
 	 */
-	public SqlLexer transfer(Map<String, TableTransfer> transfers)
+	public SqlLexer transfer(Map<String, TableEntityInfo> transfers)
 	{
-		List<TableTransfer> hit = markEntityToken(transfers);
+		List<TableEntityInfo> hit = markEntityToken(transfers);
 		transferPropertyNameToColumnName(hit);
 		Map<String, String> entityAliasNameMap = findEntityAliasName();
 		transferPropertyNameWithAliasEntity(transfers, entityAliasNameMap);
@@ -95,7 +95,7 @@ public class SqlLexer
 	 * @param transfers
 	 * @param entityAliasNameMap
 	 */
-	private void transferPropertyNameWithAliasEntity(Map<String, TableTransfer> transfers, Map<String, String> entityAliasNameMap)
+	private void transferPropertyNameWithAliasEntity(Map<String, TableEntityInfo> transfers, Map<String, String> entityAliasNameMap)
 	{
 		Set<String> entityAliasStart = entityAliasNameMap.keySet();
 		for (Token token : tokens)
@@ -154,9 +154,9 @@ public class SqlLexer
 	 * 
 	 * @param hit
 	 */
-	private void transferPropertyNameToColumnName(List<TableTransfer> hit)
+	private void transferPropertyNameToColumnName(List<TableEntityInfo> hit)
 	{
-		for (TableTransfer tableTransfer : hit)
+		for (TableEntityInfo tableTransfer : hit)
 		{
 			Map<String, String> propertyNameToColumnNameMap = tableTransfer.getPropertyNameToColumnNameMap();
 			for (Token token : tokens)
@@ -175,9 +175,9 @@ public class SqlLexer
 	 * @param transfers
 	 * @return
 	 */
-	private List<TableTransfer> markEntityToken(Map<String, TableTransfer> transfers)
+	private List<TableEntityInfo> markEntityToken(Map<String, TableEntityInfo> transfers)
 	{
-		List<TableTransfer> hit = new LinkedList<TableTransfer>();
+		List<TableEntityInfo> hit = new LinkedList<TableEntityInfo>();
 		for (Token token : tokens)
 		{
 			if (isClassSImpleName(transfers, token))
@@ -217,7 +217,7 @@ public class SqlLexer
 	 * @param token
 	 * @return
 	 */
-	private boolean isClassSImpleName(Map<String, TableTransfer> transfers, Token token)
+	private boolean isClassSImpleName(Map<String, TableEntityInfo> transfers, Token token)
 	{
 		return token.getTokenType() == TokenType.IDENTIFIER && transfers.containsKey(token.getListerals());
 	}

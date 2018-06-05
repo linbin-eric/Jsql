@@ -1,0 +1,81 @@
+package com.jfireframework.sql.execute;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.List;
+import com.jfireframework.sql.dialect.Dialect;
+import com.jfireframework.sql.page.Page;
+import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
+
+public class MysqlPageExecutor implements SqlExecutor
+{
+	
+	@Override
+	public Object update(String sql, List<Object> params, Connection connection, Dialect dialect, Invoker next) throws SQLException
+	{
+		return next.update(sql, params, connection, dialect);
+	}
+	
+	@Override
+	public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect, Invoker next) throws SQLException
+	{
+		return next.insertWithReturnKey(sql, params, connection, dialect);
+	}
+	
+	@Override
+	public List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer, Invoker next) throws SQLException
+	{
+		Object param = params.get(params.size() - 1);
+		if (param instanceof Page == false)
+		{
+			return next.queryList(sql, params, connection, dialect, resultSetTransfer);
+		}
+		Page page = (Page) param;
+		if (page.isFetchSum())
+		{
+			String countSql = "select count(*) from (" + sql + ")";
+			PreparedStatement prepareStatement = null;
+			ResultSet resultSet = null;
+			try
+			{
+				prepareStatement = connection.prepareStatement(countSql);
+				dialect.fillStatement(prepareStatement, params);
+				resultSet = prepareStatement.executeQuery();
+				resultSet.next();
+				int total = resultSet.getInt(1);
+				page.setTotal(total);
+			}
+			finally
+			{
+				if (resultSet != null)
+				{
+					resultSet.close();
+				}
+				if (prepareStatement != null)
+				{
+					prepareStatement.close();
+				}
+			}
+		}
+		sql = sql + " limit ?,?";
+		params.remove(params.size() - 1);
+		params.add(page.getOffset());
+		params.add(page.getSize());
+		return next.queryList(sql, params, connection, dialect, resultSetTransfer);
+	}
+	
+	@Override
+	public Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer, Invoker next) throws SQLException
+	{
+		return next.queryOne(sql, params, connection, dialect, resultSetTransfer);
+	}
+	
+	@Override
+	public int order()
+	{
+		return 1000;
+	}
+	
+}
