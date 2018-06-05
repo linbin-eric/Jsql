@@ -14,11 +14,10 @@ import com.jfireframework.sql.dbstructure.name.DefaultLowerCaseNameStrategy;
 
 public class TableTransfer
 {
-	private String							className;
-	private String							classSimpleName;
-	private String							tableName;
-	private Map<String, String>				propertyNameToColumnNameMap	= new HashMap<String, String>();
-	private static final ColumnNameStrategy	defaultStrategy				= new DefaultLowerCaseNameStrategy();
+	private String				className;
+	private String				classSimpleName;
+	private String				tableName;
+	private Map<String, String>	propertyNameToColumnNameMap	= new HashMap<String, String>();
 	
 	public TableTransfer(Class<?> ckass)
 	{
@@ -29,7 +28,7 @@ public class TableTransfer
 		{
 			ColumnNameStrategy strategy = ckass.isAnnotationPresent(ColumnNameStrategyDefinition.class) ? //
 			        ckass.getAnnotation(ColumnNameStrategyDefinition.class).value().newInstance()//
-			        : defaultStrategy;
+			        : DefaultLowerCaseNameStrategy.instance;
 			for (Field field : ReflectUtil.getAllFields(ckass))
 			{
 				if (field.isAnnotationPresent(Column.class) && StringUtil.isNotBlank(field.getAnnotation(Column.class).name()))

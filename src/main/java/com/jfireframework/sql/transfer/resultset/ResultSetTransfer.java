@@ -1,14 +1,12 @@
 package com.jfireframework.sql.transfer.resultset;
 
 import java.sql.ResultSet;
-import java.util.List;
 import com.jfireframework.sql.SessionfactoryConfig;
 
-public interface ResultSetTransfer<T>
+public interface ResultSetTransfer
 {
-	void initialize(Class<T> type, SessionfactoryConfig config);
+	void initialize(Class<?> type, SessionfactoryConfig config);
 	
-	T transfer(ResultSet resultSet) throws Exception;
+	Object transfer(ResultSet resultSet);
 	
-	List<T> transferList(ResultSet resultSet) throws Exception;
 }

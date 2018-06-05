@@ -1,15 +1,23 @@
 package com.jfireframework.sql.execute;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.List;
 import com.jfireframework.sql.dialect.Dialect;
 import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 
 public interface SqlExecutor
 {
-	Object execute(String sql, List<Object> params, Connection connection, Dialect dialect);
+	Object update(String sql, List<Object> params, Connection connection, Dialect dialect, Invoker next) throws SQLException;
 	
-	Object queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer<?> resultSetTransfer);
+	String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect, Invoker next) throws SQLException;
 	
-	Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer<?> resultSetTransfer);
+	List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer, Invoker next) throws SQLException;
+	
+	Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer, Invoker next) throws SQLException;
+	
+	int count(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer, Invoker next) throws SQLException;
+	
+	// 拦截器顺序，数字越大，越后执行
+	int order();
 }

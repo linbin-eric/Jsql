@@ -3,10 +3,11 @@ package com.jfireframework.sql;
 import java.sql.Connection;
 import java.util.List;
 import com.jfireframework.sql.dao.LockMode;
+import com.jfireframework.sql.model.Model;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 
-interface baseOp
+interface ConnectionOp
 {
 	/**
 	 * 关闭session，释放数据库链接
@@ -96,30 +97,36 @@ interface CurdOp
 	
 }
 
-interface StrategyOp
+interface ModelOp
 {
-	<T> T findOne(Class<T> entityClass, String strategy, Object... params);
+	<T> T findOne(Model<?> model, Object... params);
 	
-	<T> List<T> findAll(Class<T> entityClass, String strategy, Object... params);
+	/**
+	 * 如果最后一个参数是Page，则会触发分页查询
+	 * 
+	 * @param entityClass
+	 * @param strategy
+	 * @param params
+	 * @return
+	 */
+	<T> List<T> find(Model<?> model, Object... params);
 	
-	<T> List<T> findPage(Class<T> entityClass, Page page, String strategy, Object... params);
+	int update(Model<?> model, Object... params);
 	
-	int update(Class<?> ckass, String strategy, Object... params);
+	int delete(Model<?> model, Object... params);
 	
-	int delete(Class<?> ckass, String strategy, Object... params);
-	
-	int count(Class<?> ckass, String strategy, Object... params);
+	int count(Model<?> model, Object... params);
 }
 
 interface SqlOp
 {
 	int update(String sql, Object... params);
 	
-	<T> T query(ResultSetTransfer<T> transfer, String sql, Object... params);
+	<T> T query(ResultSetTransfer transfer, String sql, Object... params);
 	
-	<T> List<T> queryList(ResultSetTransfer<T> transfer, String sql, Object... params);
+	<T> List<T> queryList(ResultSetTransfer transfer, String sql, Object... params);
 	
-	<T> List<T> queryList(ResultSetTransfer<T> transfer, String sql, Page page, Object... params);
+	<T> List<T> queryList(ResultSetTransfer transfer, String sql, Page page, Object... params);
 }
 
 /**
@@ -128,7 +135,7 @@ interface SqlOp
  * @author eric
  * 
  */
-public interface SqlSession extends baseOp, CurdOp, StrategyOp, SqlOp
+public interface SqlSession extends ConnectionOp, CurdOp, ModelOp, SqlOp
 {
 	
 }
