@@ -2,7 +2,7 @@ package com.jfireframework.sql;
 
 import java.sql.Connection;
 import java.util.List;
-import com.jfireframework.sql.dao.LockMode;
+import com.jfireframework.sql.curd.LockMode;
 import com.jfireframework.sql.model.CountModel;
 import com.jfireframework.sql.model.DeleteModel;
 import com.jfireframework.sql.model.InsertModel;
@@ -61,15 +61,13 @@ interface CurdOp
 	<T> void update(T entity);
 	
 	/**
-	 * 删除对象所对应的表的一条记录
+	 * 删除一个实体的记录
 	 * 
-	 * @param <T>
-	 * 
-	 * @param entityClass 代表数据库表的类对象
-	 * @param pk 主键
+	 * @param ckass
+	 * @param pk
 	 * @return
 	 */
-	<T> int delete(T entity);
+	<T> int delete(Class<T> ckass, Object pk);
 	
 	/**
 	 * 将一个对象以插入的形式保存到数据库
@@ -126,6 +124,15 @@ interface ModelOp
 interface SqlOp
 {
 	int update(String sql, List<Object> params);
+	
+	/**
+	 * 插入一行数据，并且以String的形式返回自动生成的主键
+	 * 
+	 * @param sql
+	 * @param params
+	 * @return
+	 */
+	String insertReturnPk(String sql, List<Object> params);
 	
 	<T> T query(ResultSetTransfer transfer, String sql, List<Object> params);
 	

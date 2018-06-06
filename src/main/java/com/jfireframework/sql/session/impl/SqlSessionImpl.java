@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.jfireframework.sql.SessionFactory;
 import com.jfireframework.sql.SqlSession;
-import com.jfireframework.sql.dao.LockMode;
+import com.jfireframework.sql.curd.LockMode;
 import com.jfireframework.sql.dialect.Dialect;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
 import com.jfireframework.sql.page.Page;

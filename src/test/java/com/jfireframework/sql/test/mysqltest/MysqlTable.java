@@ -5,11 +5,11 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
-import com.jfireframework.sql.Comment;
 import com.jfireframework.sql.annotation.Index;
 import com.jfireframework.sql.annotation.Pk;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.annotation.pkstrategy.AutoIncrement;
+import com.jfireframework.sql.dbstructure.Comment;
 
 @TableEntity(name = "test_demo")
 public class MysqlTable

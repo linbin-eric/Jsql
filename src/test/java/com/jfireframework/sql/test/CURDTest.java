@@ -18,7 +18,7 @@ import com.jfireframework.sql.SessionFactory;
 import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.SqlSession;
 import com.jfireframework.sql.constant.TableNameCaseStrategy;
-import com.jfireframework.sql.dao.LockMode;
+import com.jfireframework.sql.curd.LockMode;
 import com.jfireframework.sql.test.vo.User;
 import com.zaxxer.hikari.HikariDataSource;
 

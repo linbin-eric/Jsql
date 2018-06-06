@@ -1,4 +1,4 @@
-package com.jfireframework.sql.dao;
+package com.jfireframework.sql.curd;
 
 public enum LockMode
 {

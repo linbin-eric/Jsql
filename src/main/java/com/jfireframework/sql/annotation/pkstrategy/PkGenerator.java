@@ -5,19 +5,19 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.UUID;
 
 @Retention(RetentionPolicy.RUNTIME)
-public @interface GenerateStringPk
+public @interface PkGenerator
 {
-	Class<? extends StringGenerator> value() default UUIDGenerator.class;
+	Class<? extends Generator> value() default UUIDGenerator.class;
 	
-	interface StringGenerator
+	interface Generator
 	{
-		String next();
+		Object next();
 	}
 	
-	class UUIDGenerator implements StringGenerator
+	class UUIDGenerator implements Generator
 	{
 		@Override
-		public String next()
+		public Object next()
 		{
 			return UUID.randomUUID().toString().replace("-", "");
 		}
