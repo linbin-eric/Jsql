@@ -1,4 +1,4 @@
-package com.jfireframework.sql.execute;
+package com.jfireframework.sql.executor;
 
 import java.sql.Connection;
 import java.sql.SQLException;

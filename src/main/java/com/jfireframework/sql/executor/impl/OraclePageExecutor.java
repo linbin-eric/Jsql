@@ -1,4 +1,4 @@
-package com.jfireframework.sql.execute;
+package com.jfireframework.sql.executor.impl;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -6,10 +6,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import com.jfireframework.sql.dialect.Dialect;
+import com.jfireframework.sql.executor.Invoker;
+import com.jfireframework.sql.executor.SqlExecutor;
 import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 
-public class MysqlPageExecutor implements SqlExecutor
+public class OraclePageExecutor implements SqlExecutor
 {
 	
 	@Override
@@ -59,10 +61,10 @@ public class MysqlPageExecutor implements SqlExecutor
 				}
 			}
 		}
-		sql = sql + " limit ?,?";
+		sql = "select * from ( select a.*,rownum rn from(" + sql + ") a where rownum<=?) where rn>=?";
 		params.remove(params.size() - 1);
-		params.add(page.getOffset());
-		params.add(page.getSize());
+		params.add(page.getOffset() + page.getSize());
+		params.add(page.getOffset() + 1);
 		return next.queryList(sql, params, connection, dialect, resultSetTransfer);
 	}
 	

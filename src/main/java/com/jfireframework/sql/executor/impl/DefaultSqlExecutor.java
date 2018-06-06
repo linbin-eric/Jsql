@@ -1,4 +1,4 @@
-package com.jfireframework.sql.execute;
+package com.jfireframework.sql.executor.impl;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -8,6 +8,8 @@ import java.util.LinkedList;
 import java.util.List;
 import com.jfireframework.sql.dialect.Dialect;
 import com.jfireframework.sql.exception.NotSingleResultException;
+import com.jfireframework.sql.executor.Invoker;
+import com.jfireframework.sql.executor.SqlExecutor;
 import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 
 public class DefaultSqlExecutor implements SqlExecutor
