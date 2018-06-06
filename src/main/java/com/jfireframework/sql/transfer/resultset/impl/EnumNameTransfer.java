@@ -1,25 +1,32 @@
 package com.jfireframework.sql.transfer.resultset.impl;
 
 import java.sql.ResultSet;
-import java.util.Map;
-import com.jfireframework.baseutil.reflect.ReflectUtil;
-import com.jfireframework.sql.SessionfactoryConfig;
+import java.sql.SQLException;
+import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 
-public class EnumNameTransfer extends AbstractResultsetTransfer<Enum<?>>
+public class EnumNameTransfer implements ResultSetTransfer
 {
-	private Map<String, ? extends Enum<?>> instances;
+	@SuppressWarnings("rawtypes")
+	private Class<? extends Enum> type;
 	
+	@SuppressWarnings("unchecked")
 	@Override
-	protected Enum<?> valueOf(ResultSet resultSet) throws Exception
+	public Object transfer(ResultSet resultSet) throws SQLException
 	{
-		String result = resultSet.getString(1);
-		return result == null ? null : instances.get(result);
+		String enumName = resultSet.getString(1);
+		if (enumName == null)
+		{
+			return null;
+		}
+		return Enum.valueOf(type, enumName);
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
-	public void initialize(Class<Enum<?>> type, SessionfactoryConfig config)
+	public ResultSetTransfer initialize(Class<?> type)
 	{
-		instances = ReflectUtil.getAllEnumInstances((Class<? extends Enum<?>>) type);
+		this.type = (Class<? extends Enum<?>>) type;
+		return this;
 	}
 	
 }

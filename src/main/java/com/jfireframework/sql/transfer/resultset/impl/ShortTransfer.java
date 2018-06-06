@@ -1,20 +1,27 @@
 package com.jfireframework.sql.transfer.resultset.impl;
 
 import java.sql.ResultSet;
-import com.jfireframework.sql.SessionfactoryConfig;
+import java.sql.SQLException;
+import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 
-public class ShortTransfer extends AbstractResultsetTransfer<Short>
+public class ShortTransfer implements ResultSetTransfer
 {
 	
 	@Override
-	protected Short valueOf(ResultSet resultSet) throws Exception
+	public Object transfer(ResultSet resultSet) throws SQLException
 	{
-		return Short.valueOf(resultSet.getShort(1));
+		short s = resultSet.getShort(1);
+		if (resultSet.wasNull())
+		{
+			return null;
+		}
+		return s;
 	}
 	
 	@Override
-	public void initialize(Class<Short> type, SessionfactoryConfig config)
+	public ResultSetTransfer initialize(Class<?> type)
 	{
+		return this;
 	}
 	
 }

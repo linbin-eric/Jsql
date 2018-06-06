@@ -1,20 +1,17 @@
 package com.jfireframework.sql.transfer.column.impl;
 
 import java.lang.reflect.Field;
-import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.transfer.column.ColumnTransfer;
-import sun.misc.Unsafe;
 
 public abstract class AbstractColumnTransfer implements ColumnTransfer
 {
-    protected static final Unsafe unsafe = ReflectUtil.getUnsafe();
-    protected long                offset;
-    protected Field               field;
-    
-    @Override
-    public void initialize(Field field)
-    {
-        this.field = field;
-        offset = unsafe.objectFieldOffset(field);
-    }
+	protected Field		field;
+	protected String	columnName;
+	
+	@Override
+	public void initialize(Field field, String columnName)
+	{
+		this.field = field;
+		this.columnName = columnName;
+	}
 }

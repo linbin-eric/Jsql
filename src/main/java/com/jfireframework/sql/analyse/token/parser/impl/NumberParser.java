@@ -1,11 +1,11 @@
 package com.jfireframework.sql.analyse.token.parser.impl;
 
 import java.util.Deque;
+import com.jfireframework.jfireel.lexer.util.CharType;
 import com.jfireframework.sql.analyse.exception.IllegalFormatException;
 import com.jfireframework.sql.analyse.token.Token;
 import com.jfireframework.sql.analyse.token.TokenType;
 import com.jfireframework.sql.analyse.token.parser.TokenParser;
-import com.jfireframework.sql.parse.lexer.analyzer.CharType;
 
 public class NumberParser extends TokenParser
 {

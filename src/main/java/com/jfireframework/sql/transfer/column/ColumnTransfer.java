@@ -6,16 +6,17 @@ import java.sql.SQLException;
 
 public interface ColumnTransfer
 {
-	void initialize(Field field);
+	void initialize(Field field, String columnName);
 	
 	/**
 	 * 获取结果集中的值，并且设置到bean实例中。
 	 * 
 	 * @param entity bean实例
-	 * @param dbColName 对应的数据库列名称
 	 * @param resultSet
 	 * @throws SQLException
+	 * @throws IllegalAccessException
+	 * @throws IllegalArgumentException
 	 */
-	void setEntityValue(Object entity, String dbColName, ResultSet resultSet) throws SQLException;
+	void setEntityValue(Object entity, ResultSet resultSet) throws SQLException, IllegalArgumentException, IllegalAccessException;
 	
 }

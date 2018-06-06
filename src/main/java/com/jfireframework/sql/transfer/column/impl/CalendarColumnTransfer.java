@@ -9,18 +9,14 @@ public class CalendarColumnTransfer extends AbstractColumnTransfer
 {
 	
 	@Override
-	public void setEntityValue(Object entity, String dbColName, ResultSet resultSet) throws SQLException
+	public void setEntityValue(Object entity, ResultSet resultSet) throws SQLException, IllegalArgumentException, IllegalAccessException
 	{
-		Timestamp timestamp = resultSet.getTimestamp(dbColName);
-		if (resultSet.wasNull())
-		{
-			unsafe.putObject(entity, offset, null);
-		}
-		else
+		Timestamp timestamp = resultSet.getTimestamp(columnName);
+		if (timestamp != null)
 		{
 			Calendar calendar = Calendar.getInstance();
 			calendar.setTimeInMillis(timestamp.getTime());
-			unsafe.putObject(entity, offset, calendar);
+			field.set(entity, calendar);
 		}
 	}
 	

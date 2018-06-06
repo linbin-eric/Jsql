@@ -1,23 +1,32 @@
 package com.jfireframework.sql.transfer.resultset.impl;
 
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
-import com.jfireframework.sql.SessionfactoryConfig;
+import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 
-public class UtilDateTransfer extends AbstractResultsetTransfer<Date>
+public class UtilDateTransfer implements ResultSetTransfer
 {
 	
 	@Override
-	protected Date valueOf(ResultSet resultSet) throws Exception
+	public Object transfer(ResultSet resultSet) throws SQLException
 	{
 		Timestamp timestamp = resultSet.getTimestamp(1);
-		return new Date(timestamp.getTime());
+		if (timestamp != null)
+		{
+			return new Date(timestamp.getTime());
+		}
+		else
+		{
+			return null;
+		}
 	}
 	
 	@Override
-	public void initialize(Class<Date> type, SessionfactoryConfig config)
+	public ResultSetTransfer initialize(Class<?> type)
 	{
+		return this;
 	}
 	
 }

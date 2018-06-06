@@ -5,16 +5,15 @@ import java.sql.SQLException;
 
 public class IntColumnTransfer extends AbstractColumnTransfer
 {
-    
-    @Override
-    public void setEntityValue(Object entity, String dbColName, ResultSet resultSet) throws SQLException
-    {
-        int value = resultSet.getInt(dbColName);
-        if (resultSet.wasNull() == false)
-        {
-            unsafe.putInt(entity, offset, value);
-        }
-    }
-    
-    
+	
+	@Override
+	public void setEntityValue(Object entity, ResultSet resultSet) throws SQLException, IllegalArgumentException, IllegalAccessException
+	{
+		int value = resultSet.getInt(columnName);
+		if (resultSet.wasNull() == false)
+		{
+			field.setInt(entity, value);
+		}
+	}
+	
 }

@@ -1,4 +1,4 @@
-package com.jfireframework.sql.page;
+package com.jfireframework.sql.util;
 
 import java.util.List;
 

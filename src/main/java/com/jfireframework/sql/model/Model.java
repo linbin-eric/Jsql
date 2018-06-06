@@ -18,7 +18,7 @@ import com.jfireframework.sql.dbstructure.name.DefaultLowerCaseNameStrategy;
 
 public abstract class Model<T>
 {
-	protected Class<?>											entityClass;
+	protected Class<T>											entityClass;
 	protected List<String>										whereProperties;
 	protected boolean											frozen				= false;
 	protected String											generateSql;
@@ -116,7 +116,7 @@ public abstract class Model<T>
 	}
 	
 	@SuppressWarnings("unchecked")
-	public T from(Class<?> entityClass)
+	public T from(Class<T> entityClass)
 	{
 		if (entityClass.isAnnotationPresent(TableEntity.class) == false)
 		{
@@ -137,5 +137,10 @@ public abstract class Model<T>
 		}
 		whereProperties.add(propertyName);
 		return (T) this;
+	}
+	
+	public Class<T> getEntityClass()
+	{
+		return entityClass;
 	}
 }

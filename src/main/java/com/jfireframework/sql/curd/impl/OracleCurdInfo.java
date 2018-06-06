@@ -9,16 +9,16 @@ import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.annotation.pkstrategy.Sequence;
 import com.jfireframework.sql.util.TableEntityInfo;
 
-public class OracleCurdInfo extends AbstractCurdInfo
+public class OracleCurdInfo<T> extends AbstractCurdInfo<T>
 {
 	
-	public OracleCurdInfo(Class<?> ckass)
+	public OracleCurdInfo(Class<T> ckass)
 	{
 		super(ckass);
 	}
 	
 	@Override
-	protected void generateNative(Class<?> ckass, TableEntityInfo tableEntityInfo, Map<String, String> propertyNameToColumnNameMap, Field pkField)
+	protected void generateNative(Class<T> ckass, TableEntityInfo tableEntityInfo, Map<String, String> propertyNameToColumnNameMap, Field pkField)
 	{
 		if (Number.class.isAssignableFrom(pkField.getType()) && pkField.isAnnotationPresent(Sequence.class))
 		{

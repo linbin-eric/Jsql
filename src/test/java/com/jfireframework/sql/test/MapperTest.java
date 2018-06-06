@@ -14,12 +14,12 @@ import com.jfireframework.sql.SqlSession;
 import com.jfireframework.sql.annotation.Sql;
 import com.jfireframework.sql.constant.TableNameCaseStrategy;
 import com.jfireframework.sql.dialect.impl.H2Dialect;
-import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.test.vo.User;
 import com.jfireframework.sql.test.vo.User.State;
 import com.jfireframework.sql.test.vo.User.StringEnum;
-import com.jfireframework.sql.transfer.resultset.UserDefinedTransfer;
+import com.jfireframework.sql.transfer.resultset.ResultMap;
 import com.jfireframework.sql.transfer.resultset.impl.EnumOrdinalTransfer;
+import com.jfireframework.sql.util.Page;
 import com.zaxxer.hikari.HikariDataSource;
 
 public class MapperTest
@@ -89,11 +89,11 @@ public class MapperTest
 		@Sql(sql = "select * from User where stringEnum = $v.name()", paramNames = "v")
 		User find(StringEnum v);
 		
-		@UserDefinedTransfer(EnumOrdinalTransfer.class)
+		@ResultMap(EnumOrdinalTransfer.class)
 		@Sql(sql = "select state from User where name=$name", paramNames = "name")
 		public State findState(String name);
 		
-		@UserDefinedTransfer(EnumOrdinalTransfer.class)
+		@ResultMap(EnumOrdinalTransfer.class)
 		@Sql(sql = "select state from User where name like $%name%", paramNames = "name")
 		public List<State> findListState(String name);
 		

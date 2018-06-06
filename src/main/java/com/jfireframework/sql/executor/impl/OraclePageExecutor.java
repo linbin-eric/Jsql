@@ -6,28 +6,28 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import com.jfireframework.sql.dialect.Dialect;
-import com.jfireframework.sql.executor.Invoker;
+import com.jfireframework.sql.executor.SqlInvoker;
 import com.jfireframework.sql.executor.SqlExecutor;
-import com.jfireframework.sql.page.Page;
 import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
+import com.jfireframework.sql.util.Page;
 
 public class OraclePageExecutor implements SqlExecutor
 {
 	
 	@Override
-	public Object update(String sql, List<Object> params, Connection connection, Dialect dialect, Invoker next) throws SQLException
+	public Object update(String sql, List<Object> params, Connection connection, Dialect dialect, SqlInvoker next) throws SQLException
 	{
 		return next.update(sql, params, connection, dialect);
 	}
 	
 	@Override
-	public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect, Invoker next) throws SQLException
+	public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect, SqlInvoker next) throws SQLException
 	{
 		return next.insertWithReturnKey(sql, params, connection, dialect);
 	}
 	
 	@Override
-	public List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer, Invoker next) throws SQLException
+	public List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer, SqlInvoker next) throws SQLException
 	{
 		Object param = params.get(params.size() - 1);
 		if (param instanceof Page == false)
@@ -69,7 +69,7 @@ public class OraclePageExecutor implements SqlExecutor
 	}
 	
 	@Override
-	public Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer, Invoker next) throws SQLException
+	public Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer, SqlInvoker next) throws SQLException
 	{
 		return next.queryOne(sql, params, connection, dialect, resultSetTransfer);
 	}

@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface UserDefinedTransfer
+public @interface ResultMap
 {
-	Class<? extends ResultSetTransfer<?>> value();
+	Class<? extends ResultSetTransfer> value();
 }

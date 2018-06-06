@@ -1,31 +1,38 @@
 package com.jfireframework.sql.transfer.resultset.impl;
 
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Map;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
-import com.jfireframework.sql.SessionfactoryConfig;
+import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 
-public class EnumOrdinalTransfer extends AbstractResultsetTransfer<Enum<?>>
+public class EnumOrdinalTransfer implements ResultSetTransfer
 {
-	Enum<?>[] instances;
+	private Enum<?>[] instances;
 	
 	@Override
-	protected Enum<?> valueOf(ResultSet resultSet) throws Exception
+	public Object transfer(ResultSet resultSet) throws SQLException
 	{
-		int result = resultSet.getInt(1);
-		return resultSet.wasNull() ? null : instances[result];
+		int ordinal = resultSet.getInt(1);
+		if (resultSet.wasNull())
+		{
+			return null;
+		}
+		return instances[ordinal];
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
-	public void initialize(Class<Enum<?>> type, SessionfactoryConfig config)
+	public ResultSetTransfer initialize(Class<?> type)
 	{
 		Map<String, ? extends Enum<?>> allEnumInstances = ReflectUtil.getAllEnumInstances((Class<? extends Enum<?>>) type);
-		instances = new Enum<?>[allEnumInstances.size()];
+		Enum<?>[] instances = new Enum[allEnumInstances.size()];
 		for (Enum<?> each : allEnumInstances.values())
 		{
 			instances[each.ordinal()] = each;
 		}
-		
+		this.instances = instances;
+		return this;
 	}
 	
 }

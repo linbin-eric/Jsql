@@ -37,7 +37,6 @@ import com.jfireframework.sql.dialect.impl.H2Dialect;
 import com.jfireframework.sql.dialect.impl.MysqlDialect;
 import com.jfireframework.sql.dialect.impl.OracleDialect;
 import com.jfireframework.sql.interceptor.SqlInterceptor;
-import com.jfireframework.sql.mapper.Mapper;
 import com.jfireframework.sql.mapper.MapperBuilder;
 import com.jfireframework.sql.metadata.MetaContext;
 import com.jfireframework.sql.metadata.TableMetaData;
@@ -48,6 +47,7 @@ import com.jfireframework.sql.session.impl.SessionFactoryImpl;
 import com.jfireframework.sql.transfer.column.ColumnTransferDictionary;
 import com.jfireframework.sql.transfer.resultset.ResultSetTransferDictionary;
 import com.jfireframework.sql.transfer.resultset.ResultsetTransferStore;
+import com.jfireframework.sql.util.Mapper;
 
 public class SessionfactoryConfig
 {

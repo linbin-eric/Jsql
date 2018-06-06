@@ -9,16 +9,16 @@ import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.annotation.pkstrategy.AutoIncrement;
 import com.jfireframework.sql.util.TableEntityInfo;
 
-public class MysqlCurdInfo extends AbstractCurdInfo
+public class MysqlCurdInfo<T> extends AbstractCurdInfo<T>
 {
 	
-	public MysqlCurdInfo(Class<?> ckass)
+	public MysqlCurdInfo(Class<T> ckass)
 	{
 		super(ckass);
 	}
 	
 	@Override
-	protected void generateNative(Class<?> ckass, TableEntityInfo tableEntityInfo, Map<String, String> propertyNameToColumnNameMap, Field pkField)
+	protected void generateNative(Class<T> ckass, TableEntityInfo tableEntityInfo, Map<String, String> propertyNameToColumnNameMap, Field pkField)
 	{
 		if (Number.class.isAssignableFrom(pkField.getType()) || pkField.isAnnotationPresent(AutoIncrement.class))
 		{

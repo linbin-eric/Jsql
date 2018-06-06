@@ -10,9 +10,11 @@ import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.annotation.pkstrategy.PkGenerator;
 import com.jfireframework.sql.curd.CurdInfo;
 import com.jfireframework.sql.curd.LockMode;
+import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
+import com.jfireframework.sql.transfer.resultset.impl.BeanTransfer;
 import com.jfireframework.sql.util.TableEntityInfo;
 
-public abstract class AbstractCurdInfo implements CurdInfo
+public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
 {
 	class SqlAndFieldEntry
 	{
@@ -28,8 +30,16 @@ public abstract class AbstractCurdInfo implements CurdInfo
 	protected SqlAndFieldEntry		lockForUpdateEntry;
 	protected SqlAndFieldEntry		autoGeneratePkInsertEntry;
 	protected PkGenerator.Generator	generator;
+	protected Field					pkField;
+	private PkMode					mode	= PkMode.OTHER;
+	private ResultSetTransfer		beanTransfer;
 	
-	public AbstractCurdInfo(Class<?> ckass)
+	enum PkMode
+	{
+		STRING, INT, LONG, OTHER
+	}
+	
+	public AbstractCurdInfo(Class<T> ckass)
 	{
 		TableEntityInfo tableEntityInfo = TableEntityInfo.parse(ckass);
 		Map<String, String> propertyNameToColumnNameMap = tableEntityInfo.getPropertyNameToColumnNameMap();
@@ -47,11 +57,25 @@ public abstract class AbstractCurdInfo implements CurdInfo
 		{
 			generateNative(ckass, tableEntityInfo, propertyNameToColumnNameMap, tableEntityInfo.getPkField());
 		}
+		beanTransfer = new BeanTransfer().initialize(ckass);
+		pkField = tableEntityInfo.getPkField();
+		if (pkField.getType() == String.class)
+		{
+			mode = PkMode.STRING;
+		}
+		else if (pkField.getType() == Integer.class)
+		{
+			mode = PkMode.INT;
+		}
+		else if (pkField.getGenericType() == Long.class)
+		{
+			mode = PkMode.LONG;
+		}
 	}
 	
-	protected abstract void generateNative(Class<?> ckass, TableEntityInfo tableEntityInfo, Map<String, String> propertyNameToColumnNameMap, Field pkField);
+	protected abstract void generateNative(Class<T> ckass, TableEntityInfo tableEntityInfo, Map<String, String> propertyNameToColumnNameMap, Field pkField);
 	
-	private void generatePkGenerator(Class<?> ckass, TableEntityInfo tableEntityInfo, Map<String, String> propertyNameToColumnNameMap, Field pkField)
+	private void generatePkGenerator(Class<T> ckass, TableEntityInfo tableEntityInfo, Map<String, String> propertyNameToColumnNameMap, Field pkField)
 	{
 		try
 		{
@@ -166,7 +190,7 @@ public abstract class AbstractCurdInfo implements CurdInfo
 	}
 	
 	@Override
-	public String insert(Object entity, List<Object> params)
+	public String insert(T entity, List<Object> params)
 	{
 		try
 		{
@@ -183,7 +207,7 @@ public abstract class AbstractCurdInfo implements CurdInfo
 	}
 	
 	@Override
-	public String update(Object entity, List<Object> params)
+	public String update(T entity, List<Object> params)
 	{
 		try
 		{
@@ -200,14 +224,21 @@ public abstract class AbstractCurdInfo implements CurdInfo
 	}
 	
 	@Override
-	public String find(Class<?> ckass, Object pk, List<Object> params)
+	public String find(Object pk, List<Object> params)
 	{
 		params.add(pk);
 		return getEntry.sql;
 	}
 	
 	@Override
-	public String find(Class<?> ckass, Object pk, LockMode mode, List<Object> params)
+	public String delete(Object pk, List<Object> params)
+	{
+		params.add(pk);
+		return deleteEntry.sql;
+	}
+	
+	@Override
+	public String find(Object pk, LockMode mode, List<Object> params)
 	{
 		params.add(pk);
 		if (mode == LockMode.SHARE)
@@ -225,7 +256,7 @@ public abstract class AbstractCurdInfo implements CurdInfo
 	}
 	
 	@Override
-	public String autoGeneratePkInsert(Object entity, List<Object> params)
+	public String autoGeneratePkInsert(T entity, List<Object> params)
 	{
 		try
 		{
@@ -243,5 +274,38 @@ public abstract class AbstractCurdInfo implements CurdInfo
 		{
 			throw new JustThrowException(e);
 		}
+	}
+	
+	public void setPkValue(T entity, String pk)
+	{
+		try
+		{
+			switch (mode)
+			{
+				case INT:
+					pkField.set(entity, Integer.valueOf(pk));
+					break;
+				case STRING:
+					pkField.set(entity, pk);
+					break;
+				case LONG:
+					pkField.set(entity, Long.valueOf(pk));
+					break;
+				case OTHER:
+					break;
+				default:
+					break;
+			}
+		}
+		catch (Exception e)
+		{
+			throw new JustThrowException(e);
+		}
+	}
+	
+	@Override
+	public ResultSetTransfer getBeanTransfer()
+	{
+		return beanTransfer;
 	}
 }

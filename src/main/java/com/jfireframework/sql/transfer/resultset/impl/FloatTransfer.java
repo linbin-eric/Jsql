@@ -1,20 +1,27 @@
 package com.jfireframework.sql.transfer.resultset.impl;
 
 import java.sql.ResultSet;
-import com.jfireframework.sql.SessionfactoryConfig;
+import java.sql.SQLException;
+import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 
-public class FloatTransfer extends AbstractResultsetTransfer<Float>
+public class FloatTransfer implements ResultSetTransfer
 {
 	
 	@Override
-	protected Float valueOf(ResultSet resultSet) throws Exception
+	public Object transfer(ResultSet resultSet) throws SQLException
 	{
-		return Float.valueOf(resultSet.getFloat(1));
+		float f = resultSet.getFloat(1);
+		if (resultSet.wasNull())
+		{
+			return null;
+		}
+		return f;
 	}
 	
 	@Override
-	public void initialize(Class<Float> type, SessionfactoryConfig config)
+	public ResultSetTransfer initialize(Class<?> type)
 	{
+		return this;
 	}
 	
 }

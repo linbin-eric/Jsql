@@ -2,20 +2,26 @@ package com.jfireframework.sql.transfer.resultset.impl;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import com.jfireframework.sql.SessionfactoryConfig;
+import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 
-public class IntegerTransfer extends AbstractResultsetTransfer<Integer>
+public class IntegerTransfer implements ResultSetTransfer
 {
 	
 	@Override
-	protected Integer valueOf(ResultSet resultSet) throws SQLException
+	public Object transfer(ResultSet resultSet) throws SQLException
 	{
-		return Integer.valueOf(resultSet.getInt(1));
+		int i = resultSet.getInt(1);
+		if (resultSet.wasNull())
+		{
+			return null;
+		}
+		return i;
 	}
 	
 	@Override
-	public void initialize(Class<Integer> type, SessionfactoryConfig config)
+	public ResultSetTransfer initialize(Class<?> type)
 	{
+		return this;
 	}
 	
 }

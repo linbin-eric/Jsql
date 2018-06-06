@@ -25,6 +25,7 @@ public class TableEntityInfo
 	private String										classSimpleName;
 	private String										tableName;
 	private Map<String, String>							propertyNameToColumnNameMap;
+	private Map<String, Field>							columnNameToFieldMap;
 	private Field										pkField;
 	
 	private TableEntityInfo(Class<?> ckass)
@@ -33,6 +34,7 @@ public class TableEntityInfo
 		classSimpleName = ckass.getName();
 		tableName = ckass.getAnnotation(TableEntity.class).name();
 		Map<String, String> propertyNameToColumnNameMap = new HashMap<String, String>();
+		Map<String, Field> columnNameToFieldMap = new HashMap<String, Field>();
 		try
 		{
 			ColumnNameStrategy strategy = ckass.isAnnotationPresent(ColumnNameStrategyDefinition.class) ? //
@@ -46,11 +48,17 @@ public class TableEntityInfo
 				}
 				if (field.isAnnotationPresent(Column.class) && StringUtil.isNotBlank(field.getAnnotation(Column.class).name()))
 				{
-					propertyNameToColumnNameMap.put(field.getName(), field.getAnnotation(Column.class).name());
+					String columnName = field.getAnnotation(Column.class).name();
+					propertyNameToColumnNameMap.put(field.getName(), columnName);
+					columnNameToFieldMap.put(columnName, field);
+					field.setAccessible(true);
 				}
 				else
 				{
-					propertyNameToColumnNameMap.put(field.getName(), strategy.toColumnName(field.getName()));
+					String columnName = strategy.toColumnName(field.getName());
+					propertyNameToColumnNameMap.put(field.getName(), columnName);
+					columnNameToFieldMap.put(columnName, field);
+					field.setAccessible(true);
 				}
 				if (field.isAnnotationPresent(Pk.class))
 				{
@@ -66,6 +74,7 @@ public class TableEntityInfo
 				}
 			}
 			this.propertyNameToColumnNameMap = Collections.unmodifiableMap(propertyNameToColumnNameMap);
+			this.columnNameToFieldMap = Collections.unmodifiableMap(columnNameToFieldMap);
 		}
 		catch (Exception e)
 		{
@@ -100,6 +109,11 @@ public class TableEntityInfo
 	public Map<String, String> getPropertyNameToColumnNameMap()
 	{
 		return propertyNameToColumnNameMap;
+	}
+	
+	public Map<String, Field> getColumnNameToFieldMap()
+	{
+		return columnNameToFieldMap;
 	}
 	
 	public Field getPkField()

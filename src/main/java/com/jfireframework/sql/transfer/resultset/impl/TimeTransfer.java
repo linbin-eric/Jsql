@@ -1,21 +1,22 @@
 package com.jfireframework.sql.transfer.resultset.impl;
 
 import java.sql.ResultSet;
-import java.sql.Time;
-import com.jfireframework.sql.SessionfactoryConfig;
+import java.sql.SQLException;
+import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 
-public class TimeTransfer extends AbstractResultsetTransfer<Time>
+public class TimeTransfer implements ResultSetTransfer
 {
 	
 	@Override
-	protected Time valueOf(ResultSet resultSet) throws Exception
+	public Object transfer(ResultSet resultSet) throws SQLException
 	{
 		return resultSet.getTime(1);
 	}
 	
 	@Override
-	public void initialize(Class<Time> type, SessionfactoryConfig config)
+	public ResultSetTransfer initialize(Class<?> type)
 	{
+		return this;
 	}
 	
 }

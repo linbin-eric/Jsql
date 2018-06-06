@@ -1,8 +1,9 @@
 package com.jfireframework.sql.curd;
 
 import java.util.List;
+import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 
-public interface CurdInfo
+public interface CurdInfo<T>
 {
 	/**
 	 * 返回插入数据库的sql语句，并且将对象解析为参数填充到params中
@@ -11,7 +12,7 @@ public interface CurdInfo
 	 * @param params
 	 * @return
 	 */
-	String insert(Object entity, List<Object> params);
+	String insert(T entity, List<Object> params);
 	
 	/**
 	 * 返回主键更新数据库的sql。并且将对象解析为参数填充到params中。
@@ -20,7 +21,7 @@ public interface CurdInfo
 	 * @param params
 	 * @return
 	 */
-	String update(Object entity, List<Object> params);
+	String update(T entity, List<Object> params);
 	
 	/**
 	 * 返回插入数据库并且自动生成主键的sql语句，并且将对象解析为参数填充到params中。
@@ -29,7 +30,7 @@ public interface CurdInfo
 	 * @param params
 	 * @return
 	 */
-	String autoGeneratePkInsert(Object entity, List<Object> params);
+	String autoGeneratePkInsert(T entity, List<Object> params);
 	
 	/**
 	 * 返回通过主键查询实体的sql，并且将参数填充到params中。
@@ -39,7 +40,9 @@ public interface CurdInfo
 	 * @param params
 	 * @return
 	 */
-	String find(Class<?> ckass, Object pk, List<Object> params);
+	String find(Object pk, List<Object> params);
+	
+	String delete(Object pk, List<Object> params);
 	
 	/**
 	 * 返回通过锁模式主键查询实体的sql，并且将参数填充到params中。
@@ -50,6 +53,10 @@ public interface CurdInfo
 	 * @param params
 	 * @return
 	 */
-	String find(Class<?> ckass, Object pk, LockMode mode, List<Object> params);
+	String find(Object pk, LockMode mode, List<Object> params);
+	
+	void setPkValue(T entity, String pk);
+	
+	ResultSetTransfer getBeanTransfer();
 	
 }

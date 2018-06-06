@@ -1,20 +1,27 @@
 package com.jfireframework.sql.transfer.resultset.impl;
 
 import java.sql.ResultSet;
-import com.jfireframework.sql.SessionfactoryConfig;
+import java.sql.SQLException;
+import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 
-public class BooleanTransfer extends AbstractResultsetTransfer<Boolean>
+public class BooleanTransfer implements ResultSetTransfer
 {
 	
 	@Override
-	protected Boolean valueOf(ResultSet resultSet) throws Exception
+	public Object transfer(ResultSet resultSet) throws SQLException
 	{
-		return Boolean.valueOf(resultSet.getBoolean(1));
+		boolean b = resultSet.getBoolean(1);
+		if (resultSet.wasNull())
+		{
+			return null;
+		}
+		return b;
 	}
 	
 	@Override
-	public void initialize(Class<Boolean> type, SessionfactoryConfig config)
+	public ResultSetTransfer initialize(Class<?> type)
 	{
+		return this;
 	}
 	
 }

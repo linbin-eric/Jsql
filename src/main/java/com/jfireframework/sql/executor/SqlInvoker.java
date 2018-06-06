@@ -6,9 +6,9 @@ import java.util.List;
 import com.jfireframework.sql.dialect.Dialect;
 import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 
-public interface Invoker
+public interface SqlInvoker
 {
-	Object update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException;
+	int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException;
 	
 	String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException;
 	

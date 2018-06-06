@@ -8,18 +8,14 @@ public class ByteArrayColumnTransfer extends AbstractColumnTransfer
 {
 	
 	@Override
-	public void setEntityValue(Object entity, String dbColName, ResultSet resultSet) throws SQLException
+	public void setEntityValue(Object entity, ResultSet resultSet) throws SQLException, IllegalArgumentException, IllegalAccessException
 	{
-		Blob blob = resultSet.getBlob(dbColName);
+		Blob blob = resultSet.getBlob(columnName);
 		if (blob != null)
 		{
 			byte[] array = blob.getBytes(1, (int) blob.length());
 			blob.free();
-			unsafe.putObject(entity, offset, array);
-		}
-		else
-		{
-			unsafe.putObject(entity, offset, null);
+			field.set(blob, array);
 		}
 	}
 	

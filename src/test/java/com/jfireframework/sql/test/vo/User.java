@@ -8,10 +8,10 @@ import com.jfireframework.sql.annotation.Column;
 import com.jfireframework.sql.annotation.Pk;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableEntity;
-import com.jfireframework.sql.annotation.UserDefinedColumnTransfer;
 import com.jfireframework.sql.annotation.UserDefinedColumnType;
 import com.jfireframework.sql.annotation.pkstrategy.AutoIncrement;
-import com.jfireframework.sql.transfer.column.impl.EnumOrdinalOperator;
+import com.jfireframework.sql.transfer.column.ColumnMap;
+import com.jfireframework.sql.transfer.column.impl.EnumOrdinalTransfer;
 
 @TableEntity(name = "user")
 public class User
@@ -39,7 +39,7 @@ public class User
     private Integer       length;
     @SqlIgnore
     private int           age2;
-    @UserDefinedColumnTransfer(EnumOrdinalOperator.class)
+    @ColumnMap(EnumOrdinalTransfer.class)
     @UserDefinedColumnType(type = "INTEGER", desc = "")
     private State         state;
     private StringEnum    stringEnum;

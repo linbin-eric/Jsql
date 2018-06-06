@@ -5,16 +5,15 @@ import java.sql.SQLException;
 
 public class FloatColumnTransfer extends AbstractColumnTransfer
 {
-    
-    @Override
-    public void setEntityValue(Object entity, String dbColName, ResultSet resultSet) throws SQLException
-    {
-        float value = resultSet.getFloat(dbColName);
-        if (resultSet.wasNull() == false)
-        {
-            unsafe.putFloat(entity, offset, value);
-        }
-    }
-    
-    
+	
+	@Override
+	public void setEntityValue(Object entity, ResultSet resultSet) throws SQLException, IllegalArgumentException, IllegalAccessException
+	{
+		float value = resultSet.getFloat(columnName);
+		if (resultSet.wasNull() == false)
+		{
+			field.setFloat(entity, value);
+		}
+	}
+	
 }

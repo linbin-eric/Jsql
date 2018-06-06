@@ -7,12 +7,12 @@ public class BooleanColumnTransfer extends AbstractColumnTransfer
 {
 	
 	@Override
-	public void setEntityValue(Object entity, String dbColName, ResultSet resultSet) throws SQLException
+	public void setEntityValue(Object entity, ResultSet resultSet) throws SQLException, IllegalArgumentException, IllegalAccessException
 	{
-		boolean value = resultSet.getBoolean(dbColName);
+		boolean b = resultSet.getBoolean(columnName);
 		if (resultSet.wasNull() == false)
 		{
-			unsafe.putBoolean(entity, offset, value);
+			field.setBoolean(entity, b);
 		}
 	}
 	

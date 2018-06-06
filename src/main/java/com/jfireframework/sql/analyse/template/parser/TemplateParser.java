@@ -2,11 +2,11 @@ package com.jfireframework.sql.analyse.template.parser;
 
 import java.util.Deque;
 import com.jfireframework.baseutil.collection.StringCache;
+import com.jfireframework.jfireel.lexer.util.CharType;
 import com.jfireframework.sql.analyse.exception.IllegalFormatException;
 import com.jfireframework.sql.analyse.template.Template;
 import com.jfireframework.sql.analyse.template.execution.Execution;
 import com.jfireframework.sql.analyse.template.execution.impl.StringExecution;
-import com.jfireframework.sql.parse.lexer.analyzer.CharType;
 
 public abstract class TemplateParser
 {

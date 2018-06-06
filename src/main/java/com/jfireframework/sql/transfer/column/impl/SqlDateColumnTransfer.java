@@ -6,13 +6,15 @@ import java.sql.SQLException;
 
 public class SqlDateColumnTransfer extends AbstractColumnTransfer
 {
-    
-    @Override
-    public void setEntityValue(Object entity, String dbColName, ResultSet resultSet) throws SQLException
-    {
-        Date date = resultSet.getDate(dbColName);
-        unsafe.putObject(entity, offset, date);
-    }
-    
-    
+	
+	@Override
+	public void setEntityValue(Object entity, ResultSet resultSet) throws SQLException, IllegalArgumentException, IllegalAccessException
+	{
+		Date date = resultSet.getDate(columnName);
+		if (date != null)
+		{
+			field.set(entity, date);
+		}
+	}
+	
 }
