@@ -57,6 +57,11 @@ public interface CurdInfo<T>
 	
 	void setPkValue(T entity, String pk);
 	
+	/**
+	 * 供该CURDINFO的get操作的sql使用，其他场景不适合
+	 * 
+	 * @return
+	 */
 	ResultSetTransfer getBeanTransfer();
 	
 }

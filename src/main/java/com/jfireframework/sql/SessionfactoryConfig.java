@@ -5,10 +5,13 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
@@ -16,85 +19,51 @@ import org.slf4j.LoggerFactory;
 import com.jfireframework.baseutil.PackageScan;
 import com.jfireframework.baseutil.TRACEID;
 import com.jfireframework.baseutil.exception.JustThrowException;
-import com.jfireframework.baseutil.order.AescComparator;
+import com.jfireframework.baseutil.smc.compiler.JavaStringCompiler;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.annotation.Sql;
-import com.jfireframework.sql.constant.TableNameCaseStrategy;
-import com.jfireframework.sql.dao.Dao;
-import com.jfireframework.sql.dao.impl.H2DAO;
-import com.jfireframework.sql.dao.impl.MysqlDAO;
-import com.jfireframework.sql.dao.impl.OracleDAO;
-import com.jfireframework.sql.dbstructure.Structure;
-import com.jfireframework.sql.dbstructure.column.ColumnTypeDictionary;
-import com.jfireframework.sql.dbstructure.column.impl.H2ColumnTypeDictionary;
-import com.jfireframework.sql.dbstructure.column.impl.MysqlColumnTypeDictionary;
-import com.jfireframework.sql.dbstructure.column.impl.OracleColumnTypeDictionary;
-import com.jfireframework.sql.dbstructure.impl.H2DBStructure;
-import com.jfireframework.sql.dbstructure.impl.MysqlDBStructure;
-import com.jfireframework.sql.dbstructure.impl.OracleStructure;
+import com.jfireframework.sql.annotation.TableEntity;
+import com.jfireframework.sql.curd.CurdInfo;
+import com.jfireframework.sql.curd.impl.MysqlCurdInfo;
+import com.jfireframework.sql.curd.impl.OracleCurdInfo;
 import com.jfireframework.sql.dialect.Dialect;
 import com.jfireframework.sql.dialect.impl.H2Dialect;
 import com.jfireframework.sql.dialect.impl.MysqlDialect;
 import com.jfireframework.sql.dialect.impl.OracleDialect;
-import com.jfireframework.sql.interceptor.SqlInterceptor;
-import com.jfireframework.sql.mapper.MapperBuilder;
-import com.jfireframework.sql.metadata.MetaContext;
-import com.jfireframework.sql.metadata.TableMetaData;
-import com.jfireframework.sql.page.PageParse;
-import com.jfireframework.sql.page.impl.MysqlPage;
-import com.jfireframework.sql.page.impl.OracleParse;
+import com.jfireframework.sql.executor.SqlExecutor;
+import com.jfireframework.sql.executor.SqlInvoker;
+import com.jfireframework.sql.executor.impl.DefaultSqlExecutor;
+import com.jfireframework.sql.executor.impl.MysqlPageExecutor;
+import com.jfireframework.sql.executor.impl.OraclePageExecutor;
+import com.jfireframework.sql.mapper.Mapper;
+import com.jfireframework.sql.mapper.MapperGenerator;
 import com.jfireframework.sql.session.impl.SessionFactoryImpl;
-import com.jfireframework.sql.transfer.column.ColumnTransferDictionary;
-import com.jfireframework.sql.transfer.resultset.ResultSetTransferDictionary;
-import com.jfireframework.sql.transfer.resultset.ResultsetTransferStore;
-import com.jfireframework.sql.util.Mapper;
+import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
+import com.jfireframework.sql.util.TableEntityInfo;
+import com.jfireframework.sql.util.TableMode;
 
 public class SessionfactoryConfig
 {
-	
-	private static final String					CREATE					= "create";
-	private static final String					UPDATE					= "update";
-	private static final String					NONE					= "none";
-	protected static final Logger				logger					= LoggerFactory.getLogger(SessionfactoryConfig.class);
-	private DataSource							dataSource;
-	private ClassLoader							classLoader				= Thread.currentThread().getContextClassLoader();
-	private String								scanPackage;
-	private String								schema;
+	private DataSource				dataSource;
+	private ClassLoader				classLoader		= Thread.currentThread().getContextClassLoader();
+	private String					scanPackage;
 	// 如果值是create，则会创建表。
-	private String								tableMode				= "none";
-	private ResultsetTransferStore				resultsetTransferStore;
-	private Set<Class<?>>						ckasses;
-	private IdentityHashMap<Class<?>, Mapper>	mappers					= new IdentityHashMap<Class<?>, Mapper>(128);
-	private IdentityHashMap<Class<?>, Dao<?>>	daos					= new IdentityHashMap<Class<?>, Dao<?>>();
-	private MetaContext							metaContext;
-	private SqlInterceptor[]					sqlInterceptors;
-	private PageParse							pageParse;
-	private String								productName;
-	private ColumnTypeDictionary				columnTypeDictionary;
-	private ColumnTransferDictionary				fieldOperatorDictionary;
-	private ResultSetTransferDictionary			resultSetTransferDictionary;
-	private Dialect								dialect;
-	private TableNameCaseStrategy				tableNameCaseStrategy	= TableNameCaseStrategy.ORIGIN;
+	private TableMode				tableMode		= TableMode.NONE;
+	private List<SqlExecutor>		sqlExecutors	= new LinkedList<SqlExecutor>();
+	private Dialect					dialect;
+	protected static final Logger	logger			= LoggerFactory.getLogger(SessionfactoryConfig.class);
 	
 	public SessionFactory build()
 	{
 		TRACEID.newTraceId();
 		try
 		{
-			Verify.notNull(schema, "schema 不能为空");
 			Verify.notNull(dataSource, "dataSource 对象不能为空");
 			Verify.notNull(scanPackage, "sql的扫描路径不能为空");
-			resultSetTransferDictionary = resultSetTransferDictionary == null ? new ResultSetTransferDictionary.BuildInResultSetTransferDictionary() : resultSetTransferDictionary;
-			fieldOperatorDictionary = fieldOperatorDictionary == null ? new ColumnTransferDictionary.BuildInColumnTransferDictionary() : fieldOperatorDictionary;
-			resultsetTransferStore = new ResultsetTransferStore(resultSetTransferDictionary, SessionfactoryConfig.this);
-			buildClassSet();
-			initSqlInterceptor();
-			detectProductName();
-			initMetaContext();
-			createOrUpdateDatabase();
-			createMappers();
-			buildDao();
-			return new SessionFactoryImpl(mappers, daos, sqlInterceptors, pageParse, dataSource, resultsetTransferStore, dialect);
+			String productName = detectProductName();
+			dialect = dialect == null ? generateDialect(productName) : dialect;
+			Set<Class<?>> classSet = buildClassSet();
+			return new SessionFactoryImpl(generateMappers(classSet), generateCurdInfos(productName, classSet), generateHeadSqlInvoker(productName), dataSource, dialect);
 		}
 		catch (Exception e)
 		{
@@ -102,53 +71,171 @@ public class SessionfactoryConfig
 		}
 	}
 	
-	private void createMappers() throws InstantiationException, IllegalAccessException
+	private IdentityHashMap<Class<?>, Mapper> generateMappers(Set<Class<?>> classSet) throws InstantiationException, IllegalAccessException
 	{
-		MapperBuilder mapperBuilder = new MapperBuilder(metaContext, resultsetTransferStore);
-		nextSqlInterface: for (Class<?> each : ckasses)
+		Map<String, TableEntityInfo> tableEntityInfos = new HashMap<String, TableEntityInfo>();
+		for (Class<?> each : classSet)
+		{
+			if (each.isAnnotationPresent(TableEntity.class))
+			{
+				tableEntityInfos.put(each.getSimpleName(), TableEntityInfo.parse(each));
+			}
+		}
+		JavaStringCompiler compiler = new JavaStringCompiler(classLoader);
+		IdentityHashMap<Class<?>, Mapper> mappers = new IdentityHashMap<Class<?>, Mapper>();
+		for (Class<?> each : classSet)
 		{
 			if (each.isInterface())
 			{
+				boolean find = false;
 				for (Method method : each.getMethods())
 				{
 					if (method.isAnnotationPresent(Sql.class))
 					{
-						mappers.put(each, (Mapper) mapperBuilder.build(each).newInstance());
-						continue nextSqlInterface;
+						find = true;
+						break;
 					}
+				}
+				if (find)
+				{
+					Mapper mapper = (Mapper) MapperGenerator.generate(each, tableEntityInfos, compiler).newInstance();
+					mappers.put(each, mapper);
 				}
 			}
 		}
+		return mappers;
 	}
 	
-	private void createOrUpdateDatabase() throws SQLException
+	@SuppressWarnings({ "rawtypes", "unchecked" })
+	private IdentityHashMap<Class<?>, CurdInfo<?>> generateCurdInfos(String productName, Set<Class<?>> classSet)
 	{
-		if (NONE.equals(tableMode))
+		IdentityHashMap<Class<?>, CurdInfo<?>> curdInfos = new IdentityHashMap<Class<?>, CurdInfo<?>>();
+		for (Class<?> each : classSet)
 		{
-			return;
+			if (each.isAnnotationPresent(TableEntity.class) == false)
+			{
+				continue;
+			}
+			TableEntityInfo tableEntityInfo = TableEntityInfo.parse(each);
+			if (tableEntityInfo.getPkField() == null)
+			{
+				continue;
+			}
+			if ("mysql".equals(productName) || "h2".equalsIgnoreCase(productName))
+			{
+				curdInfos.put(each, new MysqlCurdInfo(each));
+			}
+			else if ("oracle".equals(productName))
+			{
+				curdInfos.put(each, new OracleCurdInfo(each));
+			}
 		}
-		else if (CREATE.equals(tableMode))
+		return curdInfos;
+	}
+	
+	private Dialect generateDialect(String productName)
+	{
+		if (productName.equals("mariadb") || "mysql".equals(productName))
 		{
-			Structure structure = buildStructure();
-			structure.createTable(dataSource, metaContext.metaDatas());
+			return new MysqlDialect();
 		}
-		else if (UPDATE.equals(tableMode))
+		else if (productName.equals("oracle"))
 		{
-			Structure structure = buildStructure();
-			structure.updateTable(dataSource, metaContext.metaDatas());
+			return new OracleDialect();
+		}
+		else if (productName.equals("h2"))
+		{
+			return new H2Dialect();
 		}
 		else
 		{
-			throw new UnsupportedOperationException();
+			throw new UnsupportedOperationException("不识别的数据库类型" + productName);
 		}
 	}
 	
-	private void initMetaContext()
+	private SqlInvoker generateHeadSqlInvoker(String productName)
 	{
-		metaContext = new MetaContext(ckasses, SessionfactoryConfig.this);
+		sqlExecutors.add(new DefaultSqlExecutor());
+		if ("mysql".equalsIgnoreCase(productName))
+		{
+			sqlExecutors.add(new MysqlPageExecutor());
+		}
+		else if ("oracle".equalsIgnoreCase(productName))
+		{
+			sqlExecutors.add(new OraclePageExecutor());
+		}
+		Collections.sort(sqlExecutors, new Comparator<SqlExecutor>() {
+			
+			@Override
+			public int compare(SqlExecutor o1, SqlExecutor o2)
+			{
+				return o1.order() - o2.order();
+			}
+		});
+		SqlInvoker pred = new SqlInvoker() {
+			
+			@Override
+			public int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
+			{
+				throw new UnsupportedOperationException();
+			}
+			
+			@Override
+			public Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
+			{
+				throw new UnsupportedOperationException();
+			}
+			
+			@Override
+			public List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
+			{
+				throw new UnsupportedOperationException();
+			}
+			
+			@Override
+			public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
+			{
+				throw new UnsupportedOperationException();
+			}
+		};
+		int index = sqlExecutors.size() - 1;
+		for (int i = index; i > -1; i--)
+		{
+			final SqlExecutor sqlExecutor = sqlExecutors.get(i);
+			final SqlInvoker next = pred;
+			SqlInvoker sqlInvoker = new SqlInvoker() {
+				
+				@Override
+				public int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
+				{
+					return sqlExecutor.update(sql, params, connection, dialect, next);
+				}
+				
+				@Override
+				public Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
+				{
+					return sqlExecutor.queryOne(sql, params, connection, dialect, resultSetTransfer, next);
+				}
+				
+				@Override
+				public List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
+				{
+					return sqlExecutor.queryList(sql, params, connection, dialect, resultSetTransfer, next);
+				}
+				
+				@Override
+				public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
+				{
+					return sqlExecutor.insertWithReturnKey(sql, params, connection, dialect, next);
+				}
+			};
+			pred = sqlInvoker;
+		}
+		SqlInvoker head = pred;
+		return head;
 	}
 	
-	private void buildClassSet() throws ClassNotFoundException
+	private Set<Class<?>> buildClassSet() throws ClassNotFoundException
 	{
 		Set<String> set = new HashSet<String>();
 		String[] packageNames = scanPackage.split(";");
@@ -164,53 +251,17 @@ public class SessionfactoryConfig
 		{
 			types.add(classLoader.loadClass(each));
 		}
-		ckasses = types;
+		return types;
 	}
 	
-	private void initSqlInterceptor() throws InstantiationException, IllegalAccessException
-	{
-		List<SqlInterceptor> list = new LinkedList<SqlInterceptor>();
-		for (Class<?> each : ckasses)
-		{
-			if (SqlInterceptor.class.isAssignableFrom(each) && each.isInterface() == false)
-			{
-				list.add((SqlInterceptor) each.newInstance());
-			}
-		}
-		Collections.sort(list, new AescComparator());
-		sqlInterceptors = list.toArray(new SqlInterceptor[list.size()]);
-	}
-	
-	private void detectProductName() throws SQLException
+	private String detectProductName() throws SQLException
 	{
 		Connection connection = null;
 		try
 		{
 			connection = dataSource.getConnection();
 			DatabaseMetaData md = connection.getMetaData();
-			productName = md.getDatabaseProductName().toLowerCase();
-			if (productName.equals("mariadb") || "mysql".equals(productName))
-			{
-				pageParse = new MysqlPage();
-				columnTypeDictionary = columnTypeDictionary == null ? new MysqlColumnTypeDictionary() : columnTypeDictionary;
-				dialect = dialect == null ? new MysqlDialect() : dialect;
-			}
-			else if (productName.equals("oracle"))
-			{
-				pageParse = new OracleParse();
-				columnTypeDictionary = columnTypeDictionary == null ? new OracleColumnTypeDictionary() : columnTypeDictionary;
-				dialect = dialect == null ? new OracleDialect() : dialect;
-			}
-			else if (productName.equals("h2"))
-			{
-				pageParse = new MysqlPage();
-				columnTypeDictionary = columnTypeDictionary == null ? new H2ColumnTypeDictionary() : columnTypeDictionary;
-				dialect = dialect == null ? new H2Dialect() : dialect;
-			}
-			else
-			{
-				logger.error("不支持的数据库类型：{}", productName);
-			}
+			return md.getDatabaseProductName().toLowerCase();
 		}
 		finally
 		{
@@ -221,61 +272,7 @@ public class SessionfactoryConfig
 		}
 	}
 	
-	Structure buildStructure()
-	{
-		if (productName.equals("mysql"))
-		{
-			return new MysqlDBStructure(schema);
-		}
-		else if (productName.equals("mariadb"))
-		{
-			return new MysqlDBStructure(schema);
-		}
-		else if (productName.equals("h2"))
-		{
-			return new H2DBStructure(schema);
-		}
-		else if (productName.equals("oracle"))
-		{
-			return new OracleStructure(schema);
-		}
-		else
-		{
-			throw new IllegalArgumentException("暂不支持" + productName + "数据库结构类型新建或者修改,当前支持：mysql,MariaDB,Oracle");
-		}
-	}
-	
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private void buildDao()
-	{
-		for (TableMetaData<?> each : metaContext.metaDatas())
-		{
-			if (each.getPkColumn() != null)
-			{
-				Dao dao;
-				if (productName.equals("mysql") || productName.equals("marridb"))
-				{
-					dao = new MysqlDAO();
-				}
-				else if (productName.equals("oracle"))
-				{
-					dao = new OracleDAO();
-				}
-				else if (productName.equals("h2"))
-				{
-					dao = new H2DAO();
-				}
-				else
-				{
-					throw new UnsupportedOperationException("不支持的数据库产品");
-				}
-				dao.initialize(each, sqlInterceptors, SessionfactoryConfig.this, pageParse, dialect);
-				daos.put(each.getEntityClass(), dao);
-			}
-		}
-	}
-	
-	public void setTableMode(String tableMode)
+	public void setTableMode(TableMode tableMode)
 	{
 		this.tableMode = tableMode;
 	}
@@ -293,61 +290,6 @@ public class SessionfactoryConfig
 	public void setScanPackage(String scanPackage)
 	{
 		this.scanPackage = scanPackage;
-	}
-	
-	public ColumnTypeDictionary getColumnTypeDictionary()
-	{
-		return columnTypeDictionary;
-	}
-	
-	public void setColumnTypeDictionary(ColumnTypeDictionary columnTypeDictionary)
-	{
-		this.columnTypeDictionary = columnTypeDictionary;
-	}
-	
-	public ColumnTransferDictionary getFieldOperatorDictionary()
-	{
-		return fieldOperatorDictionary;
-	}
-	
-	public void setFieldOperatorDictionary(ColumnTransferDictionary fieldOperatorDictionary)
-	{
-		this.fieldOperatorDictionary = fieldOperatorDictionary;
-	}
-	
-	public ResultSetTransferDictionary getResultSetTransferDictionary()
-	{
-		return resultSetTransferDictionary;
-	}
-	
-	public void setResultSetTransferDictionary(ResultSetTransferDictionary resultSetTransferDictionary)
-	{
-		this.resultSetTransferDictionary = resultSetTransferDictionary;
-	}
-	
-	public String getSchema()
-	{
-		return schema;
-	}
-	
-	public void setSchema(String schema)
-	{
-		this.schema = schema;
-	}
-	
-	public MetaContext getMetaContext()
-	{
-		return metaContext;
-	}
-	
-	public void setTableNameCaseStrategy(TableNameCaseStrategy tableNameCaseStrategy)
-	{
-		this.tableNameCaseStrategy = tableNameCaseStrategy;
-	}
-	
-	public TableNameCaseStrategy getTableNameCaseStrategy()
-	{
-		return tableNameCaseStrategy;
 	}
 	
 	public Dialect getDialect()

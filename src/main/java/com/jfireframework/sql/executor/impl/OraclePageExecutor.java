@@ -6,8 +6,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import com.jfireframework.sql.dialect.Dialect;
-import com.jfireframework.sql.executor.SqlInvoker;
 import com.jfireframework.sql.executor.SqlExecutor;
+import com.jfireframework.sql.executor.SqlInvoker;
 import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 import com.jfireframework.sql.util.Page;
 
@@ -15,7 +15,7 @@ public class OraclePageExecutor implements SqlExecutor
 {
 	
 	@Override
-	public Object update(String sql, List<Object> params, Connection connection, Dialect dialect, SqlInvoker next) throws SQLException
+	public int update(String sql, List<Object> params, Connection connection, Dialect dialect, SqlInvoker next) throws SQLException
 	{
 		return next.update(sql, params, connection, dialect);
 	}

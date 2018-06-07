@@ -41,10 +41,8 @@ public class SqlSessionImpl implements SqlSession
 																			};
 	private static final ResultSetTransfer					countTransfer	= new IntegerTransfer();
 	
-	public SqlSessionImpl(int transNum, boolean closed, Connection connection, SqlInvoker sqlInvoker, IdentityHashMap<Class<?>, CurdInfo<?>> curdInfoMap, Dialect dialect)
+	public SqlSessionImpl(Connection connection, SqlInvoker sqlInvoker, IdentityHashMap<Class<?>, CurdInfo<?>> curdInfoMap, Dialect dialect)
 	{
-		this.transNum = transNum;
-		this.closed = closed;
 		this.connection = connection;
 		this.sqlInvoker = sqlInvoker;
 		this.curdInfoMap = curdInfoMap;
@@ -242,7 +240,7 @@ public class SqlSessionImpl implements SqlSession
 			list.add(each);
 		}
 		String sql = model.getSql();
-		T result = query(curdInfoMap.get(model.getEntityClass()).getBeanTransfer(), sql, list);
+		T result = query(model.getBeanTransfer(), sql, list);
 		list.clear();
 		return result;
 	}
@@ -256,7 +254,7 @@ public class SqlSessionImpl implements SqlSession
 			list.add(each);
 		}
 		String sql = model.getSql();
-		List<T> result = queryList(curdInfoMap.get(model.getEntityClass()).getBeanTransfer(), sql, list);
+		List<T> result = queryList(model.getBeanTransfer(), sql, list);
 		list.clear();
 		return result;
 	}

@@ -8,15 +8,15 @@ import java.util.LinkedList;
 import java.util.List;
 import com.jfireframework.sql.dialect.Dialect;
 import com.jfireframework.sql.exception.NotSingleResultException;
-import com.jfireframework.sql.executor.SqlInvoker;
 import com.jfireframework.sql.executor.SqlExecutor;
+import com.jfireframework.sql.executor.SqlInvoker;
 import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 
 public class DefaultSqlExecutor implements SqlExecutor
 {
 	
 	@Override
-	public Object update(String sql, List<Object> params, Connection connection, Dialect dialect, SqlInvoker next) throws SQLException
+	public int update(String sql, List<Object> params, Connection connection, Dialect dialect, SqlInvoker next) throws SQLException
 	{
 		PreparedStatement prepareStatement = null;
 		try

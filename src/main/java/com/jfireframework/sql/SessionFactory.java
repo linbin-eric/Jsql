@@ -33,9 +33,4 @@ public interface SessionFactory
 	 */
 	SqlSession openSession();
 	
-	/**
-	 * 删除所有的数据
-	 */
-	void cleanAllData();
-	
 }

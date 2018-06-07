@@ -8,7 +8,7 @@ import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 
 public interface SqlExecutor
 {
-	Object update(String sql, List<Object> params, Connection connection, Dialect dialect, SqlInvoker next) throws SQLException;
+	int update(String sql, List<Object> params, Connection connection, Dialect dialect, SqlInvoker next) throws SQLException;
 	
 	String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect, SqlInvoker next) throws SQLException;
 	

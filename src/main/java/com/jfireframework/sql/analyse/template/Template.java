@@ -2,6 +2,7 @@ package com.jfireframework.sql.analyse.template;
 
 import java.util.Deque;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.sql.analyse.exception.IllegalFormatException;
@@ -114,12 +115,19 @@ public class Template
 		mode = null;
 	}
 	
-	public String render(Map<String, Object> variables)
+	/**
+	 * 解析模板文本，返回解析后的sql语句。并且填充参数到对应的params中
+	 * 
+	 * @param variables
+	 * @param params
+	 * @return
+	 */
+	public String render(Map<String, Object> variables, List<Object> params)
 	{
 		StringCache cache = LOCAL.get();
 		for (Execution execution : runtimeExecutions)
 		{
-			execution.execute(variables, cache, null);
+			execution.execute(variables, cache, params);
 		}
 		String result = cache.toString();
 		cache.clear();

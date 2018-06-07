@@ -6,36 +6,26 @@ import javax.sql.DataSource;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.sql.SessionFactory;
 import com.jfireframework.sql.SqlSession;
-import com.jfireframework.sql.dao.Dao;
+import com.jfireframework.sql.curd.CurdInfo;
 import com.jfireframework.sql.dialect.Dialect;
-import com.jfireframework.sql.interceptor.SqlInterceptor;
-import com.jfireframework.sql.page.PageParse;
-import com.jfireframework.sql.transfer.resultset.ResultsetTransferStore;
-import com.jfireframework.sql.util.Mapper;
+import com.jfireframework.sql.executor.SqlInvoker;
+import com.jfireframework.sql.mapper.Mapper;
 
 public class SessionFactoryImpl implements SessionFactory
 {
-	private final IdentityHashMap<Class<?>, Mapper>	mappers;
-	private final IdentityHashMap<Class<?>, Dao<?>>	daos;
-	private final SqlInterceptor[]					sqlInterceptors;
-	private final PageParse							pageParse;
-	private final DataSource						dataSource;
-	private final ResultsetTransferStore			resultsetTransferStore;
-	private final Dialect							dialect;
+	private final IdentityHashMap<Class<?>, Mapper>			mappers;
+	private final IdentityHashMap<Class<?>, CurdInfo<?>>	curdInfos;
+	private final SqlInvoker								invoker;
+	private final DataSource								dataSource;
+	private final Dialect									dialect;
 	
-	public SessionFactoryImpl(IdentityHashMap<Class<?>, Mapper> mappers, IdentityHashMap<Class<?>, Dao<?>> daos, SqlInterceptor[] sqlInterceptors, PageParse pageParse, DataSource dataSource, ResultsetTransferStore resultsetTransferStore, Dialect dialect)
+	public SessionFactoryImpl(IdentityHashMap<Class<?>, Mapper> mappers, IdentityHashMap<Class<?>, CurdInfo<?>> curdInfos, SqlInvoker invoker, DataSource dataSource, Dialect dialect)
 	{
-		this.resultsetTransferStore = resultsetTransferStore;
 		this.mappers = mappers;
-		this.daos = daos;
-		this.sqlInterceptors = sqlInterceptors;
-		this.pageParse = pageParse;
+		this.curdInfos = curdInfos;
+		this.invoker = invoker;
 		this.dataSource = dataSource;
 		this.dialect = dialect;
-		for (Mapper each : mappers.values())
-		{
-			each.setSessionFactory(this);
-		}
 	}
 	
 	@Override
@@ -49,7 +39,7 @@ public class SessionFactoryImpl implements SessionFactory
 	{
 		try
 		{
-			SqlSession session = new SqlSessionImpl(dataSource.getConnection(), this, sqlInterceptors, pageParse, dialect);
+			SqlSession session = new SqlSessionImpl(dataSource.getConnection(), invoker, curdInfos, dialect);
 			return session;
 		}
 		catch (SQLException e)
@@ -81,31 +71,6 @@ public class SessionFactoryImpl implements SessionFactory
 		{
 			throw new JustThrowException(e);
 		}
-	}
-	
-	@SuppressWarnings("unchecked")
-	@Override
-	public <T> Dao<T> getDao(Class<T> ckass)
-	{
-		return (Dao<T>) daos.get(ckass);
-	}
-	
-	@Override
-	public void cleanAllData()
-	{
-		SqlSession session = getOrCreateCurrentSession();
-		session.beginTransAction(0);
-		for (Dao<?> dao : daos.values())
-		{
-			dao.deleteAll(session.getConnection());
-		}
-		session.commit();
-	}
-	
-	@Override
-	public ResultsetTransferStore getResultSetTransferStore()
-	{
-		return resultsetTransferStore;
 	}
 	
 }
