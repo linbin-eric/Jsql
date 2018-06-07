@@ -13,7 +13,7 @@ import com.jfireframework.baseutil.TRACEID;
 import com.jfireframework.sql.SessionFactory;
 import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.SqlSession;
-import com.jfireframework.sql.annotation.Index;
+import com.jfireframework.sql.dbstructure.Index;
 import com.jfireframework.sql.dbstructure.column.ColumnType;
 import com.jfireframework.sql.dbstructure.column.MapColumn;
 import com.jfireframework.sql.metadata.TableMetaData;

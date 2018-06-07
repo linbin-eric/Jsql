@@ -8,8 +8,8 @@ import com.jfireframework.sql.annotation.Column;
 import com.jfireframework.sql.annotation.Pk;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableEntity;
-import com.jfireframework.sql.annotation.UserDefinedColumnType;
 import com.jfireframework.sql.annotation.pkstrategy.AutoIncrement;
+import com.jfireframework.sql.dbstructure.UserDefinedColumnType;
 import com.jfireframework.sql.transfer.column.ColumnMap;
 import com.jfireframework.sql.transfer.column.impl.EnumOrdinalTransfer;
 

@@ -1,9 +1,14 @@
-package com.jfireframework.sql.dbstructure.name;
+package com.jfireframework.sql.metadata;
 
 import com.jfireframework.baseutil.collection.StringCache;
 
-public class DefaultNameStrategy implements ColumnNameStrategy
+public class DefaultLowerCaseNameStrategy implements ColumnNameStrategy
 {
+	public static final DefaultLowerCaseNameStrategy instance = new DefaultLowerCaseNameStrategy();
+	
+	private DefaultLowerCaseNameStrategy()
+	{
+	}
 	
 	@Override
 	public String toColumnName(String name)
@@ -23,7 +28,6 @@ public class DefaultNameStrategy implements ColumnNameStrategy
 			}
 			index += 1;
 		}
-		return cache.toString().toUpperCase();
+		return cache.toString().toLowerCase();
 	}
-	
 }

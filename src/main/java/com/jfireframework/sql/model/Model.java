@@ -11,10 +11,10 @@ import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.annotation.Column;
-import com.jfireframework.sql.annotation.ColumnNameStrategyDefinition;
+import com.jfireframework.sql.annotation.ColumnNameStrategyDef;
 import com.jfireframework.sql.annotation.TableEntity;
-import com.jfireframework.sql.dbstructure.name.ColumnNameStrategy;
-import com.jfireframework.sql.dbstructure.name.DefaultLowerCaseNameStrategy;
+import com.jfireframework.sql.metadata.ColumnNameStrategy;
+import com.jfireframework.sql.metadata.DefaultLowerCaseNameStrategy;
 
 public abstract class Model<T>
 {
@@ -38,8 +38,8 @@ public abstract class Model<T>
 			ColumnNameStrategy strategy;
 			try
 			{
-				strategy = entityClass.isAnnotationPresent(ColumnNameStrategyDefinition.class) ? //
-				        entityClass.getAnnotation(ColumnNameStrategyDefinition.class).value().newInstance()//
+				strategy = entityClass.isAnnotationPresent(ColumnNameStrategyDef.class) ? //
+				        entityClass.getAnnotation(ColumnNameStrategyDef.class).value().newInstance()//
 				        : DefaultLowerCaseNameStrategy.instance;
 			}
 			catch (Exception e)

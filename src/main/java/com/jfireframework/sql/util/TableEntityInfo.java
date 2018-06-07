@@ -10,12 +10,12 @@ import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.annotation.Column;
-import com.jfireframework.sql.annotation.ColumnNameStrategyDefinition;
+import com.jfireframework.sql.annotation.ColumnNameStrategyDef;
 import com.jfireframework.sql.annotation.Pk;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableEntity;
-import com.jfireframework.sql.dbstructure.name.ColumnNameStrategy;
-import com.jfireframework.sql.dbstructure.name.DefaultLowerCaseNameStrategy;
+import com.jfireframework.sql.metadata.ColumnNameStrategy;
+import com.jfireframework.sql.metadata.DefaultLowerCaseNameStrategy;
 
 public class TableEntityInfo
 {
@@ -27,9 +27,11 @@ public class TableEntityInfo
 	private Map<String, String>							propertyNameToColumnNameMap;
 	private Map<String, Field>							columnNameToFieldMap;
 	private Field										pkField;
+	private Class<?>									ckass;
 	
 	private TableEntityInfo(Class<?> ckass)
 	{
+		this.ckass = ckass;
 		className = ckass.getName();
 		classSimpleName = ckass.getName();
 		tableName = ckass.getAnnotation(TableEntity.class).name();
@@ -37,8 +39,8 @@ public class TableEntityInfo
 		Map<String, Field> columnNameToFieldMap = new HashMap<String, Field>();
 		try
 		{
-			ColumnNameStrategy strategy = ckass.isAnnotationPresent(ColumnNameStrategyDefinition.class) ? //
-			        ckass.getAnnotation(ColumnNameStrategyDefinition.class).value().newInstance()//
+			ColumnNameStrategy strategy = ckass.isAnnotationPresent(ColumnNameStrategyDef.class) ? //
+			        ckass.getAnnotation(ColumnNameStrategyDef.class).value().newInstance()//
 			        : DefaultLowerCaseNameStrategy.instance;
 			for (Field field : ReflectUtil.getAllFields(ckass))
 			{
@@ -136,5 +138,10 @@ public class TableEntityInfo
 			store.put(entityClass, tableEntityInfo);
 		}
 		return tableEntityInfo;
+	}
+	
+	public Class<?> getEntityClass()
+	{
+		return ckass;
 	}
 }

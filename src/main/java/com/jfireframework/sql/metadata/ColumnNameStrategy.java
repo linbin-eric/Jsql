@@ -1,4 +1,4 @@
-package com.jfireframework.sql.dbstructure.name;
+package com.jfireframework.sql.metadata;
 
 public interface ColumnNameStrategy
 {
