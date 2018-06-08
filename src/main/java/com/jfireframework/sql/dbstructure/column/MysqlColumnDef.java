@@ -22,7 +22,7 @@ public @interface MysqlColumnDef
 	 */
 	String dataType() default "";
 	
-	String comment() default "";
+	boolean isNullable() default false;
 	
 	int numeric_precision() default -1;
 	

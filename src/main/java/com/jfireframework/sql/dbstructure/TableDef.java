@@ -6,7 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface TableDef
 {
-	String value();
+	String tableName();
 	
 	/**
 	 * 表注解
