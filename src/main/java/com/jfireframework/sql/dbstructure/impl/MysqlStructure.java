@@ -1,10 +1,17 @@
 package com.jfireframework.sql.dbstructure.impl;
 
 import java.lang.reflect.Field;
+import java.sql.Blob;
+import java.sql.Clob;
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.Calendar;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +38,9 @@ public class MysqlStructure implements Structure
 	private String				findColumn		= "SELECT COLUMN_NAME,DATA_TYPE,IS_NULLABLE,CHARACTER_MAXIMUM_LENGTH,NUMERIC_PRECISION,NUMERIC_SCALE,COLUMN_COMMENT from information_schema.`COLUMNS` where TABLE_SCHEMA=? and TABLE_NAME=? and COLUMN_NAME=?";
 	private String				addColumn		= "ALTER TABLE {}.{} add {}  ";
 	private String				findColumnNames	= "SELECT COLUMN_NAME from information_schema.`COLUMNS` where TABLE_SCHEMA=? and TABLE_NAME=?";
+	private String				findIndexs		= "SHOW INDEX FROM ";
+	private String				addIndex		= "CREATE INDEX {} USING {} ON {}.{} ({}) ;";
+	private String				dropIndex		= "ALTER TABLE {}.{} DROP INDEX {}";
 	private static final Logger	logger			= LoggerFactory.getLogger(MysqlStructure.class);
 	
 	@Override
@@ -72,7 +82,7 @@ public class MysqlStructure implements Structure
 	private String generateCreateTableSql(TableEntityInfo each, Map<String, String> propertyNameToColumnNameMap, TableDef tableDef, String tableName)
 	{
 		StringCache cache = new StringCache();
-		cache.append("CREATE TABLE '").append(tableName).append("' (\r\n");
+		cache.append("CREATE TABLE `").append(tableName).append("` (");
 		createBody(each, propertyNameToColumnNameMap, cache);
 		for (Field field : each.getColumnNameToFieldMap().values())
 		{
@@ -94,7 +104,7 @@ public class MysqlStructure implements Structure
 		cache.append(") ENGINE = InnoDB DEFAULT CHARSET = utf8 ");
 		if (StringUtil.isNotBlank(tableDef.comment()))
 		{
-			cache.append("comment='").append(tableDef.comment()).append("'");
+			cache.append("comment=`").append(tableDef.comment()).append("`");
 		}
 		return cache.toString();
 	}
@@ -103,7 +113,11 @@ public class MysqlStructure implements Structure
 	{
 		Index index = field.getAnnotation(Index.class);
 		String indexName = StringUtil.isNotBlank(index.indexName()) ? index.indexName() : columnName + "_idx_" + count.getAndIncrement();
-		cache.append("KEY '").append(indexName).append("' ('").append(columnName).append("') USING ").append(index.indexType()).append(",\r\n");
+		if (index.unique())
+		{
+			cache.append("UNIQUE ");
+		}
+		cache.append("KEY `").append(indexName).append("` (`").append(columnName).append("`) USING ").append(index.indexType()).append(",");
 	}
 	
 	private void setConstraint(StringCache cache, Field field, String columnName)
@@ -112,11 +126,11 @@ public class MysqlStructure implements Structure
 		switch (constraints.type())
 		{
 			case PRIMARY_KEY:
-				cache.append("PRIMARY KEY ('").append(columnName).append("'),\r\n");
+				cache.append("PRIMARY KEY (`").append(columnName).append("`),");
 				break;
 			case UNIQUE_KEY:
 				String constraintName = StringUtil.isNotBlank(constraints.name()) ? constraints.name() : columnName + "_uni_" + count.getAndIncrement();
-				cache.append("UNIQUE KEY '").append(constraintName).append("' ('").append(columnName).append("'),\r\n");
+				cache.append("UNIQUE KEY `").append(constraintName).append("` (`").append(columnName).append("`),");
 				break;
 			default:
 				break;
@@ -129,13 +143,17 @@ public class MysqlStructure implements Structure
 		{
 			MysqlColumnDef mysqlColumnDef = field.getAnnotation(MysqlColumnDef.class);
 			String columnName = decideColumnName(propertyNameToColumnNameMap, field, mysqlColumnDef);
-			cache.append('\'').append(columnName).append("' ");
+			cache.append('`').append(columnName).append("` ");
 			String columnType = decideColumnType(field, mysqlColumnDef);
 			cache.append(columnType).append(' ');
-			boolean isNullable = mysqlColumnDef != null ? mysqlColumnDef.isNullable() : false;
+			boolean isNullable = mysqlColumnDef != null ? mysqlColumnDef.isNullable() : true;
 			if (isNullable == false)
 			{
 				cache.append("NOT NULL ");
+			}
+			else
+			{
+				cache.append("NULL ");
 			}
 			if (field.isAnnotationPresent(AutoIncrement.class))
 			{
@@ -146,7 +164,7 @@ public class MysqlStructure implements Structure
 				Comment comment = field.getAnnotation(Comment.class);
 				cache.append(" COMMENT '").append(comment.value()).append('\'');
 			}
-			cache.appendComma().append("\r\n");
+			cache.appendComma();
 		}
 	}
 	
@@ -200,6 +218,22 @@ public class MysqlStructure implements Structure
 			{
 				columnType = "double";
 			}
+			else if (type == Date.class || type == java.util.Date.class || type == Timestamp.class || type == Calendar.class || type == Time.class)
+			{
+				columnType = "timestamp";
+			}
+			else if (type == Clob.class)
+			{
+				columnType = "text";
+			}
+			else if (type == Blob.class)
+			{
+				columnType = "blob";
+			}
+			else if (type == byte[].class)
+			{
+				columnType = "blob";
+			}
 			else
 			{
 				throw new UnsupportedOperationException("不支持的自动映射类型，请为属性" + field.getDeclaringClass().getName() + "." + field.getName() + "增加类定义注解");
@@ -237,13 +271,88 @@ public class MysqlStructure implements Structure
 			Map<String, String> propertyNameToColumnNameMap = each.getPropertyNameToColumnNameMap();
 			addMissingColumns(connection, schema, each, tableName, propertyNameToColumnNameMap);
 			dropNotExistColumns(connection, schema, tableName, each);
+			Map<String, String> indexs = getIndexColumnNames(connection, tableName);
+			addMissingIndex(connection, schema, each, tableName, propertyNameToColumnNameMap, indexs);
+			dropNotExistIndexs(connection, schema, tableName, indexs);
 		}
 	}
 	
-	class ConstraintInfo
+	/**
+	 * 添加表中还不存在的索引。如果该索引已经存在于表中，则从map中删除该数据
+	 * 
+	 * @param connection
+	 * @param schema
+	 * @param each
+	 * @param tableName
+	 * @param propertyNameToColumnNameMap
+	 * @param indexs
+	 * @throws SQLException
+	 */
+	private void addMissingIndex(Connection connection, String schema, TableEntityInfo each, String tableName, Map<String, String> propertyNameToColumnNameMap, Map<String, String> indexs) throws SQLException
 	{
-		String	constraintName;
-		String	constraintType;
+		for (Field field : each.getColumnNameToFieldMap().values())
+		{
+			if (field.isAnnotationPresent(Index.class))
+			{
+				String columnName = decideColumnName(propertyNameToColumnNameMap, field, field.getAnnotation(MysqlColumnDef.class));
+				if (indexs.containsKey(columnName))
+				{
+					indexs.remove(columnName);
+				}
+				else
+				{
+					addIndex(connection, schema, tableName, field, columnName);
+				}
+			}
+		}
+	}
+	
+	private void dropNotExistIndexs(Connection connection, String schema, String tableName, Map<String, String> indexs) throws SQLException
+	{
+		if (indexs.isEmpty() == false)
+		{
+			for (String indexName : indexs.values())
+			{
+				String dropIndexSql = StringUtil.format(dropIndex, schema, tableName, indexName);
+				PreparedStatement prepareStatement = connection.prepareStatement(dropIndexSql);
+				prepareStatement.executeUpdate();
+				prepareStatement.close();
+			}
+		}
+	}
+	
+	private void addIndex(Connection connection, String schema, String tableName, Field field, String columnName) throws SQLException
+	{
+		Index index = field.getAnnotation(Index.class);
+		String indexName = StringUtil.isNotBlank(index.indexName()) ? index.indexName() : columnName + "_idx_" + count.getAndIncrement();
+		String indexType = index.indexType();
+		String addIndexSql = StringUtil.format(addIndex, indexName, indexType, schema, tableName, columnName);
+		PreparedStatement prepareStatement = connection.prepareStatement(addIndexSql);
+		prepareStatement.executeUpdate();
+		prepareStatement.close();
+	}
+	
+	/**
+	 * 返回索引信息。key为列名，value为索引名称
+	 * 
+	 * @param connection
+	 * @param tableName
+	 * @return
+	 * @throws SQLException
+	 */
+	private Map<String, String> getIndexColumnNames(Connection connection, String tableName) throws SQLException
+	{
+		String showIndexSql = findIndexs + tableName;
+		PreparedStatement prepareStatement = connection.prepareStatement(showIndexSql);
+		ResultSet resultSet = prepareStatement.executeQuery();
+		Map<String, String> indexs = new HashMap<String, String>();
+		while (resultSet.next())
+		{
+			indexs.put(resultSet.getString("Column_name"), resultSet.getString("Key_name"));
+		}
+		resultSet.close();
+		prepareStatement.close();
+		return indexs;
 	}
 	
 	private void dropNotExistColumns(Connection connection, String schema, String tableName, TableEntityInfo info) throws SQLException

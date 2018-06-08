@@ -149,6 +149,7 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
 		}
 		cache.deleteLast().append(") where ").append(propertyNameToColumnNameMap.get(tableEntityInfo.getPkField().getName())).append("=?");
 		list.add(tableEntityInfo.getPkField());
+		updateEntry = new SqlAndFieldEntry();
 		updateEntry.sql = cache.toString();
 		updateEntry.fields = list.toArray(new Field[0]);
 	}

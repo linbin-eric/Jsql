@@ -26,6 +26,8 @@ import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.curd.CurdInfo;
 import com.jfireframework.sql.curd.impl.MysqlCurdInfo;
 import com.jfireframework.sql.curd.impl.OracleCurdInfo;
+import com.jfireframework.sql.dbstructure.TableDef;
+import com.jfireframework.sql.dbstructure.impl.MysqlStructure;
 import com.jfireframework.sql.dialect.Dialect;
 import com.jfireframework.sql.dialect.impl.H2Dialect;
 import com.jfireframework.sql.dialect.impl.MysqlDialect;
@@ -60,14 +62,54 @@ public class SessionfactoryConfig
 		{
 			Verify.notNull(dataSource, "dataSource 对象不能为空");
 			Verify.notNull(scanPackage, "sql的扫描路径不能为空");
-			String productName = detectProductName();
-			dialect = dialect == null ? generateDialect(productName) : dialect;
 			Set<Class<?>> classSet = buildClassSet();
+			String productName = detectProductName();
+			modifySchema(classSet, productName);
+			dialect = dialect == null ? generateDialect(productName) : dialect;
 			return new SessionFactoryImpl(generateMappers(classSet), generateCurdInfos(productName, classSet), generateHeadSqlInvoker(productName), dataSource, dialect);
 		}
 		catch (Exception e)
 		{
 			throw new JustThrowException(e);
+		}
+	}
+
+	private void modifySchema(Set<Class<?>> classSet, String productName) throws SQLException
+	{
+		Set<TableEntityInfo> tableEntityInfos = new HashSet<TableEntityInfo>();
+		for (Class<?> ckass : classSet)
+		{
+			if (ckass.isAnnotationPresent(TableDef.class))
+			{
+				tableEntityInfos.add(TableEntityInfo.parse(ckass));
+			}
+		}
+		switch (tableMode)
+		{
+			case CREATE:
+				if ("mysql".equals(productName))
+				{
+					new MysqlStructure().createTable(dataSource, tableEntityInfos);
+				}
+				else
+				{
+					
+				}
+				break;
+			case UPDATE:
+				if ("mysql".equals(productName))
+				{
+					new MysqlStructure().updateTable(dataSource, tableEntityInfos);
+				}
+				else
+				{
+					
+				}
+				break;
+			case NONE:
+				break;
+			default:
+				break;
 		}
 	}
 	
