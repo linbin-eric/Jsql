@@ -1,28 +1,18 @@
 package com.jfireframework.sql.model;
 
-import java.lang.reflect.Field;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.collection.StringCache;
-import com.jfireframework.baseutil.exception.JustThrowException;
-import com.jfireframework.baseutil.reflect.ReflectUtil;
-import com.jfireframework.sql.annotation.ColumnDef;
-import com.jfireframework.sql.annotation.ColumnNameStrategyDef;
 import com.jfireframework.sql.annotation.TableDef;
-import com.jfireframework.sql.metadata.ColumnNameStrategy;
-import com.jfireframework.sql.metadata.DefaultLowerCaseNameStrategy;
+import com.jfireframework.sql.util.TableEntityInfo;
 
 public abstract class Model<T>
 {
-    protected Class<T>                                        entityClass;
-    protected List<String>                                    whereProperties;
-    protected boolean                                         frozen           = false;
-    protected String                                          generateSql;
-    protected static final Map<Class<?>, Map<String, String>> cachedColumnName = new ConcurrentHashMap<Class<?>, Map<String, String>>();
+    protected Class<?>     entityClass;
+    protected List<String> whereProperties;
+    protected boolean      frozen = false;
+    protected String       generateSql;
     
     /**
      * 返回一个属性名和字段名的映射
@@ -31,46 +21,7 @@ public abstract class Model<T>
      */
     protected Map<String, String> getColumnNameMap()
     {
-        Map<String, String> map = cachedColumnName.get(entityClass);
-        if (map == null)
-        {
-            map = new HashMap<String, String>();
-            ColumnNameStrategy strategy;
-            try
-            {
-                strategy = entityClass.isAnnotationPresent(ColumnNameStrategyDef.class) ? //
-                        entityClass.getAnnotation(ColumnNameStrategyDef.class).value().newInstance()//
-                        : DefaultLowerCaseNameStrategy.instance;
-            }
-            catch (Exception e)
-            {
-                throw new JustThrowException(e);
-            }
-            for (Field field : ReflectUtil.getAllFields(entityClass))
-            {
-                map.put(field.getName(), getColumnName(strategy, field));
-            }
-        }
-        return map;
-    }
-    
-    /**
-     * @param strategy
-     * @param field
-     * @return
-     */
-    private String getColumnName(ColumnNameStrategy strategy, Field field)
-    {
-        String columnName;
-        if (field.isAnnotationPresent(ColumnDef.class) && StringUtil.isNotBlank(field.getAnnotation(ColumnDef.class).columnName()))
-        {
-            columnName = field.getAnnotation(ColumnDef.class).columnName();
-        }
-        else
-        {
-            columnName = strategy.toColumnName(field.getName());
-        }
-        return columnName;
+        return TableEntityInfo.parse(entityClass).getPropertyNameToColumnNameMap();
     }
     
     protected void check()
@@ -116,7 +67,7 @@ public abstract class Model<T>
     }
     
     @SuppressWarnings("unchecked")
-    public T from(Class<T> entityClass)
+    public T from(Class<?> entityClass)
     {
         if (entityClass.isAnnotationPresent(TableDef.class) == false)
         {
@@ -139,8 +90,33 @@ public abstract class Model<T>
         return (T) this;
     }
     
-    public Class<T> getEntityClass()
+    public Class<?> getEntityClass()
     {
         return entityClass;
+    }
+    
+    public static final DeleteModel delete()
+    {
+        return new DeleteModel();
+    }
+    
+    public static final QueryModel query()
+    {
+        return new QueryModel();
+    }
+    
+    public static final UpdateModel update()
+    {
+        return new UpdateModel();
+    }
+    
+    public static final InsertModel insert()
+    {
+        return new InsertModel();
+    }
+    
+    public static final CountModel count()
+    {
+        return new CountModel();
     }
 }

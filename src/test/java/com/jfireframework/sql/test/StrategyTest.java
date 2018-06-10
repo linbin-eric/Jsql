@@ -10,9 +10,10 @@ import org.junit.Test;
 import com.jfireframework.sql.SessionFactory;
 import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.SqlSession;
-import com.jfireframework.sql.constant.TableNameCaseStrategy;
+import com.jfireframework.sql.model.Model;
 import com.jfireframework.sql.test.vo.User;
 import com.jfireframework.sql.util.Page;
+import com.jfireframework.sql.util.TableMode;
 import com.zaxxer.hikari.HikariDataSource;
 
 public class StrategyTest
@@ -29,10 +30,8 @@ public class StrategyTest
         dataSource.setUsername("sa");
         dataSource.setPassword("");
         config.setDataSource(dataSource);
-        config.setSchema("PUBLIC");
-        config.setTableNameCaseStrategy(TableNameCaseStrategy.UPPER);
         config.setClassLoader(StrategyTest.class.getClassLoader());
-        config.setTableMode("create");
+        config.setTableMode(TableMode.CREATE);
         config.setScanPackage(User.class.getPackage().getName());
         sessionFactory = config.build();
     }
@@ -53,7 +52,7 @@ public class StrategyTest
         ResultSet resultSet = session.getConnection().prepareStatement("select age from user where name2 ='1221'").executeQuery();
         Assert.assertTrue(resultSet.next());
         Assert.assertEquals(12, resultSet.getInt(1));
-        session.delete(User.class, "name,age", "1221", 12);
+        session.delete(Model.delete().from(User.class).where("name").where("age").generate(), "1221", 12);
         resultSet = session.getConnection().prepareStatement("select count(*) from user").executeQuery();
         resultSet.next();
         Assert.assertEquals(0, resultSet.getInt(1));
@@ -74,10 +73,10 @@ public class StrategyTest
         user.setAge(12);
         user.setName("ll");
         session.save(user);
-        User query = session.findOne(User.class, "*;age", 12);
+        User query = session.findOne(Model.query().from(User.class).where("age"), 12);
         Assert.assertNotNull(query);
         Assert.assertEquals("ll", query.getName());
-        query = session.findOne(User.class, "name;age", 12);
+        query = session.findOne(Model.query().from(User.class).select("name").where("age").generate(), 12);
         Assert.assertNotNull(query);
         Assert.assertEquals("ll", query.getName());
         Assert.assertEquals(12, query.getAge());
@@ -85,19 +84,17 @@ public class StrategyTest
         user.setAge(19);
         user.setName("ll");
         session.save(user);
-        List<User> list = session.findAll(User.class, "*;name", "ll");
+        List<User> list = session.find(Model.query().from(User.class).where("name").generate(), "ll");
         Assert.assertEquals(2, list.size());
         Assert.assertEquals(12 + 19, list.get(0).getAge() + list.get(1).getAge());
-        Assert.assertEquals(2, session.count(User.class, "name", "ll"));
+        Assert.assertEquals(2, session.count(Model.count().from(User.class).where("name").generate(), "ll"));
         Page page = new Page();
         page.setOffset(0);
         page.setSize(1);
         page.setFetchSum(true);
-        list = session.findPage(User.class, page, "age;name", "ll");
+        list = session.find(Model.query().from(User.class).select("age").where("name").generate(), "ll", page);
         Assert.assertEquals(1, list.size());
         Assert.assertEquals(2, page.getTotal());
-        sessionFactory.cleanAllData();
-        Assert.assertEquals(0, session.count(User.class, ""));
     }
     
     /**
