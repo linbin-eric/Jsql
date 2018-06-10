@@ -27,6 +27,7 @@ import com.jfireframework.sql.curd.CurdInfo;
 import com.jfireframework.sql.curd.impl.MysqlCurdInfo;
 import com.jfireframework.sql.curd.impl.OracleCurdInfo;
 import com.jfireframework.sql.dbstructure.TableDef;
+import com.jfireframework.sql.dbstructure.impl.H2SchemaAdjustment;
 import com.jfireframework.sql.dbstructure.impl.MysqlSchemaAdjustment;
 import com.jfireframework.sql.dialect.Dialect;
 import com.jfireframework.sql.dialect.impl.H2Dialect;
@@ -79,7 +80,7 @@ public class SessionfactoryConfig
         Set<TableEntityInfo> tableEntityInfos = new HashSet<TableEntityInfo>();
         for (Class<?> ckass : classSet)
         {
-            if (ckass.isAnnotationPresent(TableDef.class))
+            if (ckass.isAnnotationPresent(TableDef.class) && ckass.getAnnotation(TableEntity.class).editable())
             {
                 tableEntityInfos.add(TableEntityInfo.parse(ckass));
             }
@@ -87,6 +88,10 @@ public class SessionfactoryConfig
         if ("mysql".equals(productName))
         {
             new MysqlSchemaAdjustment().adjust(tableMode, dataSource, tableEntityInfos);
+        }
+        else if ("h2".equalsIgnoreCase(productName))
+        {
+            new H2SchemaAdjustment().adjust(tableMode, dataSource, tableEntityInfos);
         }
     }
     

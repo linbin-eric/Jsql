@@ -17,7 +17,14 @@ public @interface TableEntity
     String name();
     
     /**
-     * 该对象可以编辑表结构。如果为true，则意味着该对象参与表结构的修改流程
+     * 表注解
+     * 
+     * @return
+     */
+    String comment() default "";
+    
+    /**
+     * 该对象可以编辑表结构。如果为true，则意味着该对象参与表结构的调整流程
      * 
      * @return
      */
