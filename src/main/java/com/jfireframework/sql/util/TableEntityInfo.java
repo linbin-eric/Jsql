@@ -1,10 +1,12 @@
 package com.jfireframework.sql.util;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.exception.JustThrowException;
@@ -26,6 +28,7 @@ public class TableEntityInfo
     private String                                      tableName;
     private Map<String, String>                         propertyNameToColumnNameMap;
     private Map<String, Field>                          columnNameToFieldMap;
+    private Map<String, Field>                          columnNameIgnoreCaseToFieldMap;
     private Field                                       pkField;
     private Class<?>                                    ckass;
     
@@ -77,6 +80,12 @@ public class TableEntityInfo
             }
             this.propertyNameToColumnNameMap = Collections.unmodifiableMap(propertyNameToColumnNameMap);
             this.columnNameToFieldMap = Collections.unmodifiableMap(columnNameToFieldMap);
+            columnNameIgnoreCaseToFieldMap = new HashMap<String, Field>();
+            for (Entry<String, Field> entry : columnNameToFieldMap.entrySet())
+            {
+                columnNameIgnoreCaseToFieldMap.put(entry.getKey().toLowerCase(), entry.getValue());
+            }
+            this.columnNameIgnoreCaseToFieldMap = Collections.unmodifiableMap(columnNameIgnoreCaseToFieldMap);
         }
         catch (Exception e)
         {
@@ -87,6 +96,11 @@ public class TableEntityInfo
     protected boolean isNotColumnField(Field field)
     {
         if (field.isAnnotationPresent(SqlIgnore.class))
+        {
+            return true;
+        }
+        int modifiers = field.getModifiers();
+        if (Modifier.isStatic(modifiers) || Modifier.isFinal(modifiers))
         {
             return true;
         }
@@ -129,6 +143,16 @@ public class TableEntityInfo
         return "TableTransfer [className=" + className + ", tableName=" + tableName + "]";
     }
     
+    public Class<?> getEntityClass()
+    {
+        return ckass;
+    }
+    
+    public Field getFieldByColumnNameIgnoreCase(String columnName)
+    {
+        return columnNameIgnoreCaseToFieldMap.get(columnName.toLowerCase());
+    }
+    
     public static TableEntityInfo parse(Class<?> entityClass)
     {
         TableEntityInfo tableEntityInfo = store.get(entityClass);
@@ -140,8 +164,4 @@ public class TableEntityInfo
         return tableEntityInfo;
     }
     
-    public Class<?> getEntityClass()
-    {
-        return ckass;
-    }
 }

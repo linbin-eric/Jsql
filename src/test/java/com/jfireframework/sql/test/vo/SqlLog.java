@@ -39,6 +39,7 @@ public class SqlLog implements SqlExecutor
     @Override
     public Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer, SqlInvoker next) throws SQLException
     {
+        logger.debug("traceId:{} 执行的sql:{}", TRACEID.currentTraceId(), sql);
         return next.queryOne(sql, params, connection, dialect, resultSetTransfer);
     }
     

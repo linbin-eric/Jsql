@@ -5,15 +5,15 @@ import java.sql.SQLException;
 
 public class LongColumnTransfer extends AbstractColumnTransfer
 {
-	
-	@Override
-	public void setEntityValue(Object entity, ResultSet resultSet) throws SQLException, IllegalArgumentException, IllegalAccessException
-	{
-		long value = resultSet.getLong(columnName);
-		if (resultSet.wasNull() == false)
-		{
-			field.setLong(entity, value);
-		}
-	}
-	
+    
+    @Override
+    public void setEntityValue(Object entity, ResultSet resultSet) throws SQLException, IllegalArgumentException, IllegalAccessException
+    {
+        long value = resultSet.getLong(columnName);
+        if (resultSet.wasNull() == false)
+        {
+            field.set(entity, value);
+        }
+    }
+    
 }

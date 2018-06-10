@@ -132,7 +132,13 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
     private void generateGetEntry(TableEntityInfo tableEntityInfo, Map<String, String> propertyNameToColumnNameMap)
     {
         StringCache cache = new StringCache();
-        cache.append("select * from ").append(tableEntityInfo.getTableName()).append(" where ").append(propertyNameToColumnNameMap.get(tableEntityInfo.getPkField().getName())).append("=?");
+        cache.append("select  ");
+        for (Entry<String, Field> entry : tableEntityInfo.getColumnNameToFieldMap().entrySet())
+        {
+            cache.append(entry.getKey()).appendComma();
+        }
+        cache.deleteLast().append(" from ");
+        cache.append(tableEntityInfo.getTableName()).append(" where ").append(propertyNameToColumnNameMap.get(tableEntityInfo.getPkField().getName())).append("=?");
         getEntry = new SqlAndFieldEntry();
         getEntry.sql = cache.toString();
         getEntry.fields = new Field[] { tableEntityInfo.getPkField() };
@@ -150,7 +156,7 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
             field.setAccessible(true);
             list.add(field);
         }
-        cache.deleteLast().append(") where ").append(propertyNameToColumnNameMap.get(tableEntityInfo.getPkField().getName())).append("=?");
+        cache.deleteLast().append(" where ").append(propertyNameToColumnNameMap.get(tableEntityInfo.getPkField().getName())).append("=?");
         list.add(tableEntityInfo.getPkField());
         updateEntry = new SqlAndFieldEntry();
         updateEntry.sql = cache.toString();
