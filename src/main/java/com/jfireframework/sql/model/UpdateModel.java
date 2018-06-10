@@ -4,7 +4,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import com.jfireframework.baseutil.collection.StringCache;
-import com.jfireframework.sql.annotation.TableEntity;
+import com.jfireframework.sql.annotation.TableDef;
 
 public class UpdateModel extends Model<UpdateModel>
 {
@@ -26,7 +26,7 @@ public class UpdateModel extends Model<UpdateModel>
 	{
 		generateBefore();
 		StringCache cache = new StringCache();
-		cache.append("update ").append(entityClass.getAnnotation(TableEntity.class).name()).append(" ");
+		cache.append("update ").append(entityClass.getAnnotation(TableDef.class).name()).append(" ");
 		if (setProperties == null)
 		{
 			throw new IllegalArgumentException("没有设置需要更新的字段");

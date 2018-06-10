@@ -22,11 +22,10 @@ import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.smc.compiler.JavaStringCompiler;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.annotation.Sql;
-import com.jfireframework.sql.annotation.TableEntity;
+import com.jfireframework.sql.annotation.TableDef;
 import com.jfireframework.sql.curd.CurdInfo;
-import com.jfireframework.sql.curd.impl.MysqlCurdInfo;
 import com.jfireframework.sql.curd.impl.OracleCurdInfo;
-import com.jfireframework.sql.dbstructure.TableDef;
+import com.jfireframework.sql.curd.impl.StandardCurdInfo;
 import com.jfireframework.sql.dbstructure.impl.H2SchemaAdjustment;
 import com.jfireframework.sql.dbstructure.impl.MysqlSchemaAdjustment;
 import com.jfireframework.sql.dialect.Dialect;
@@ -80,7 +79,7 @@ public class SessionfactoryConfig
         Set<TableEntityInfo> tableEntityInfos = new HashSet<TableEntityInfo>();
         for (Class<?> ckass : classSet)
         {
-            if (ckass.isAnnotationPresent(TableDef.class) && ckass.getAnnotation(TableEntity.class).editable())
+            if (ckass.isAnnotationPresent(TableDef.class) && ckass.getAnnotation(TableDef.class).editable())
             {
                 tableEntityInfos.add(TableEntityInfo.parse(ckass));
             }
@@ -100,7 +99,7 @@ public class SessionfactoryConfig
         Map<String, TableEntityInfo> tableEntityInfos = new HashMap<String, TableEntityInfo>();
         for (Class<?> each : classSet)
         {
-            if (each.isAnnotationPresent(TableEntity.class))
+            if (each.isAnnotationPresent(TableDef.class))
             {
                 tableEntityInfos.put(each.getSimpleName(), TableEntityInfo.parse(each));
             }
@@ -136,7 +135,7 @@ public class SessionfactoryConfig
         IdentityHashMap<Class<?>, CurdInfo<?>> curdInfos = new IdentityHashMap<Class<?>, CurdInfo<?>>();
         for (Class<?> each : classSet)
         {
-            if (each.isAnnotationPresent(TableEntity.class) == false)
+            if (each.isAnnotationPresent(TableDef.class) == false)
             {
                 continue;
             }
@@ -147,7 +146,7 @@ public class SessionfactoryConfig
             }
             if ("mysql".equals(productName) || "h2".equalsIgnoreCase(productName))
             {
-                curdInfos.put(each, new MysqlCurdInfo(each));
+                curdInfos.put(each, new StandardCurdInfo(each));
             }
             else if ("oracle".equals(productName))
             {
@@ -326,4 +325,8 @@ public class SessionfactoryConfig
         this.dialect = dialect;
     }
     
+    public void addSqlExecutor(SqlExecutor sqlExecutor)
+    {
+        sqlExecutors.add(sqlExecutor);
+    }
 }

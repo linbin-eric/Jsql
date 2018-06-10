@@ -1,15 +1,15 @@
 package com.jfireframework.sql.test.vo;
 
-import com.jfireframework.sql.annotation.Column;
+import com.jfireframework.sql.annotation.ColumnDef;
 import com.jfireframework.sql.annotation.Pk;
-import com.jfireframework.sql.annotation.TableEntity;
+import com.jfireframework.sql.annotation.TableDef;
 
-@TableEntity(name = "user", editable = false)
+@TableDef(name = "user", editable = false)
 public class User2
 {
     @Pk
     private Integer id;
-    @Column(name = "name2")
+    @ColumnDef(columnName = "name2")
     private String  name;
     private int     age;
     

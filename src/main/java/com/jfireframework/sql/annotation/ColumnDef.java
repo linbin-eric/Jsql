@@ -13,7 +13,7 @@ public @interface ColumnDef
      * 
      * @return
      */
-    int maxCharacterLength() default -1;
+    int maxCharacterLength() default 64;
     
     /**
      * 不填写的情况下使用默认的映射

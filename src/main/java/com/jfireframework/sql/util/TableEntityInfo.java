@@ -13,7 +13,7 @@ import com.jfireframework.sql.annotation.ColumnDef;
 import com.jfireframework.sql.annotation.ColumnNameStrategyDef;
 import com.jfireframework.sql.annotation.Pk;
 import com.jfireframework.sql.annotation.SqlIgnore;
-import com.jfireframework.sql.annotation.TableEntity;
+import com.jfireframework.sql.annotation.TableDef;
 import com.jfireframework.sql.metadata.ColumnNameStrategy;
 import com.jfireframework.sql.metadata.DefaultLowerCaseNameStrategy;
 
@@ -34,7 +34,7 @@ public class TableEntityInfo
         this.ckass = ckass;
         className = ckass.getName();
         classSimpleName = ckass.getName();
-        tableName = ckass.getAnnotation(TableEntity.class).name();
+        tableName = ckass.getAnnotation(TableDef.class).name();
         Map<String, String> propertyNameToColumnNameMap = new HashMap<String, String>();
         Map<String, Field> columnNameToFieldMap = new HashMap<String, Field>();
         try

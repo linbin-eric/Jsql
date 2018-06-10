@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.exception.JustThrowException;
-import com.jfireframework.sql.annotation.TableEntity;
+import com.jfireframework.sql.annotation.TableDef;
 import com.jfireframework.sql.transfer.resultset.impl.BeanTransfer;
 
 public class QueryModel extends Model<QueryModel>
@@ -59,7 +59,7 @@ public class QueryModel extends Model<QueryModel>
 				cache.deleteLast().append(' ');
 			}
 			cache.append("from ");
-			String tableName = entityClass.getAnnotation(TableEntity.class).name();
+			String tableName = entityClass.getAnnotation(TableDef.class).name();
 			cache.append(tableName);
 			setWhereColumns(cache, columnNameMap);
 			if (orderProperties != null)

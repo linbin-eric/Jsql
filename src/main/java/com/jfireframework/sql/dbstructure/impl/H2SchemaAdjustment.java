@@ -20,9 +20,9 @@ import com.jfireframework.baseutil.StringUtil;
 import com.jfireframework.baseutil.TRACEID;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.sql.annotation.ColumnDef;
+import com.jfireframework.sql.annotation.TableDef;
 import com.jfireframework.sql.annotation.pkstrategy.AutoIncrement;
 import com.jfireframework.sql.dbstructure.SchemaAdjustment;
-import com.jfireframework.sql.dbstructure.TableDef;
 import com.jfireframework.sql.util.TableEntityInfo;
 import com.jfireframework.sql.util.TableMode;
 
@@ -66,7 +66,7 @@ public class H2SchemaAdjustment implements SchemaAdjustment
         Class<?> entityClass = tableEntityInfo.getEntityClass();
         Map<String, String> propertyNameToColumnNameMap = tableEntityInfo.getPropertyNameToColumnNameMap();
         TableDef tableDef = entityClass.getAnnotation(TableDef.class);
-        String tableName = tableDef.tableName();
+        String tableName = tableDef.name();
         dropTableIfExist(connection, tableName);
         createTable(connection, tableEntityInfo, propertyNameToColumnNameMap, tableDef, tableName);
     }

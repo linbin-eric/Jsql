@@ -4,7 +4,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import com.jfireframework.baseutil.collection.StringCache;
-import com.jfireframework.sql.annotation.TableEntity;
+import com.jfireframework.sql.annotation.TableDef;
 
 public class InsertModel extends Model<InsertModel>
 {
@@ -25,7 +25,7 @@ public class InsertModel extends Model<InsertModel>
 	{
 		generateBefore();
 		StringCache cache = new StringCache();
-		cache.append("insert into ").append(entityClass.getAnnotation(TableEntity.class).name()).append(" (");
+		cache.append("insert into ").append(entityClass.getAnnotation(TableDef.class).name()).append(" (");
 		if (insertProperties == null)
 		{
 			throw new NullPointerException("需要插入的属性为空");

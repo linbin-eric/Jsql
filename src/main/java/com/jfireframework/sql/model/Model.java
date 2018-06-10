@@ -12,7 +12,7 @@ import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.annotation.ColumnDef;
 import com.jfireframework.sql.annotation.ColumnNameStrategyDef;
-import com.jfireframework.sql.annotation.TableEntity;
+import com.jfireframework.sql.annotation.TableDef;
 import com.jfireframework.sql.metadata.ColumnNameStrategy;
 import com.jfireframework.sql.metadata.DefaultLowerCaseNameStrategy;
 
@@ -118,7 +118,7 @@ public abstract class Model<T>
     @SuppressWarnings("unchecked")
     public T from(Class<T> entityClass)
     {
-        if (entityClass.isAnnotationPresent(TableEntity.class) == false)
+        if (entityClass.isAnnotationPresent(TableDef.class) == false)
         {
             throw new IllegalArgumentException("没有实体类注解");
         }
