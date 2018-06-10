@@ -27,7 +27,7 @@ import com.jfireframework.sql.curd.CurdInfo;
 import com.jfireframework.sql.curd.impl.MysqlCurdInfo;
 import com.jfireframework.sql.curd.impl.OracleCurdInfo;
 import com.jfireframework.sql.dbstructure.TableDef;
-import com.jfireframework.sql.dbstructure.impl.MysqlStructure;
+import com.jfireframework.sql.dbstructure.impl.MysqlSchemaAdjustment;
 import com.jfireframework.sql.dialect.Dialect;
 import com.jfireframework.sql.dialect.impl.H2Dialect;
 import com.jfireframework.sql.dialect.impl.MysqlDialect;
@@ -46,302 +46,279 @@ import com.jfireframework.sql.util.TableMode;
 
 public class SessionfactoryConfig
 {
-	private DataSource				dataSource;
-	private ClassLoader				classLoader		= Thread.currentThread().getContextClassLoader();
-	private String					scanPackage;
-	// 如果值是create，则会创建表。
-	private TableMode				tableMode		= TableMode.NONE;
-	private List<SqlExecutor>		sqlExecutors	= new LinkedList<SqlExecutor>();
-	private Dialect					dialect;
-	protected static final Logger	logger			= LoggerFactory.getLogger(SessionfactoryConfig.class);
-	
-	public SessionFactory build()
-	{
-		TRACEID.newTraceId();
-		try
-		{
-			Verify.notNull(dataSource, "dataSource 对象不能为空");
-			Verify.notNull(scanPackage, "sql的扫描路径不能为空");
-			Set<Class<?>> classSet = buildClassSet();
-			String productName = detectProductName();
-			modifySchema(classSet, productName);
-			dialect = dialect == null ? generateDialect(productName) : dialect;
-			return new SessionFactoryImpl(generateMappers(classSet), generateCurdInfos(productName, classSet), generateHeadSqlInvoker(productName), dataSource, dialect);
-		}
-		catch (Exception e)
-		{
-			throw new JustThrowException(e);
-		}
-	}
-
-	private void modifySchema(Set<Class<?>> classSet, String productName) throws SQLException
-	{
-		Set<TableEntityInfo> tableEntityInfos = new HashSet<TableEntityInfo>();
-		for (Class<?> ckass : classSet)
-		{
-			if (ckass.isAnnotationPresent(TableDef.class))
-			{
-				tableEntityInfos.add(TableEntityInfo.parse(ckass));
-			}
-		}
-		switch (tableMode)
-		{
-			case CREATE:
-				if ("mysql".equals(productName))
-				{
-					new MysqlStructure().createTable(dataSource, tableEntityInfos);
-				}
-				else
-				{
-					
-				}
-				break;
-			case UPDATE:
-				if ("mysql".equals(productName))
-				{
-					new MysqlStructure().updateTable(dataSource, tableEntityInfos);
-				}
-				else
-				{
-					
-				}
-				break;
-			case NONE:
-				break;
-			default:
-				break;
-		}
-	}
-	
-	private IdentityHashMap<Class<?>, Mapper> generateMappers(Set<Class<?>> classSet) throws InstantiationException, IllegalAccessException
-	{
-		Map<String, TableEntityInfo> tableEntityInfos = new HashMap<String, TableEntityInfo>();
-		for (Class<?> each : classSet)
-		{
-			if (each.isAnnotationPresent(TableEntity.class))
-			{
-				tableEntityInfos.put(each.getSimpleName(), TableEntityInfo.parse(each));
-			}
-		}
-		JavaStringCompiler compiler = new JavaStringCompiler(classLoader);
-		IdentityHashMap<Class<?>, Mapper> mappers = new IdentityHashMap<Class<?>, Mapper>();
-		for (Class<?> each : classSet)
-		{
-			if (each.isInterface())
-			{
-				boolean find = false;
-				for (Method method : each.getMethods())
-				{
-					if (method.isAnnotationPresent(Sql.class))
-					{
-						find = true;
-						break;
-					}
-				}
-				if (find)
-				{
-					Mapper mapper = (Mapper) MapperGenerator.generate(each, tableEntityInfos, compiler).newInstance();
-					mappers.put(each, mapper);
-				}
-			}
-		}
-		return mappers;
-	}
-	
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private IdentityHashMap<Class<?>, CurdInfo<?>> generateCurdInfos(String productName, Set<Class<?>> classSet)
-	{
-		IdentityHashMap<Class<?>, CurdInfo<?>> curdInfos = new IdentityHashMap<Class<?>, CurdInfo<?>>();
-		for (Class<?> each : classSet)
-		{
-			if (each.isAnnotationPresent(TableEntity.class) == false)
-			{
-				continue;
-			}
-			TableEntityInfo tableEntityInfo = TableEntityInfo.parse(each);
-			if (tableEntityInfo.getPkField() == null)
-			{
-				continue;
-			}
-			if ("mysql".equals(productName) || "h2".equalsIgnoreCase(productName))
-			{
-				curdInfos.put(each, new MysqlCurdInfo(each));
-			}
-			else if ("oracle".equals(productName))
-			{
-				curdInfos.put(each, new OracleCurdInfo(each));
-			}
-		}
-		return curdInfos;
-	}
-	
-	private Dialect generateDialect(String productName)
-	{
-		if (productName.equals("mariadb") || "mysql".equals(productName))
-		{
-			return new MysqlDialect();
-		}
-		else if (productName.equals("oracle"))
-		{
-			return new OracleDialect();
-		}
-		else if (productName.equals("h2"))
-		{
-			return new H2Dialect();
-		}
-		else
-		{
-			throw new UnsupportedOperationException("不识别的数据库类型" + productName);
-		}
-	}
-	
-	private SqlInvoker generateHeadSqlInvoker(String productName)
-	{
-		sqlExecutors.add(new DefaultSqlExecutor());
-		if ("mysql".equalsIgnoreCase(productName))
-		{
-			sqlExecutors.add(new MysqlPageExecutor());
-		}
-		else if ("oracle".equalsIgnoreCase(productName))
-		{
-			sqlExecutors.add(new OraclePageExecutor());
-		}
-		Collections.sort(sqlExecutors, new Comparator<SqlExecutor>() {
-			
-			@Override
-			public int compare(SqlExecutor o1, SqlExecutor o2)
-			{
-				return o1.order() - o2.order();
-			}
-		});
-		SqlInvoker pred = new SqlInvoker() {
-			
-			@Override
-			public int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
-			{
-				throw new UnsupportedOperationException();
-			}
-			
-			@Override
-			public Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
-			{
-				throw new UnsupportedOperationException();
-			}
-			
-			@Override
-			public List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
-			{
-				throw new UnsupportedOperationException();
-			}
-			
-			@Override
-			public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
-			{
-				throw new UnsupportedOperationException();
-			}
-		};
-		int index = sqlExecutors.size() - 1;
-		for (int i = index; i > -1; i--)
-		{
-			final SqlExecutor sqlExecutor = sqlExecutors.get(i);
-			final SqlInvoker next = pred;
-			SqlInvoker sqlInvoker = new SqlInvoker() {
-				
-				@Override
-				public int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
-				{
-					return sqlExecutor.update(sql, params, connection, dialect, next);
-				}
-				
-				@Override
-				public Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
-				{
-					return sqlExecutor.queryOne(sql, params, connection, dialect, resultSetTransfer, next);
-				}
-				
-				@Override
-				public List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
-				{
-					return sqlExecutor.queryList(sql, params, connection, dialect, resultSetTransfer, next);
-				}
-				
-				@Override
-				public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
-				{
-					return sqlExecutor.insertWithReturnKey(sql, params, connection, dialect, next);
-				}
-			};
-			pred = sqlInvoker;
-		}
-		SqlInvoker head = pred;
-		return head;
-	}
-	
-	private Set<Class<?>> buildClassSet() throws ClassNotFoundException
-	{
-		Set<String> set = new HashSet<String>();
-		String[] packageNames = scanPackage.split(";");
-		for (String packageName : packageNames)
-		{
-			for (String each : PackageScan.scan(packageName))
-			{
-				set.add(each);
-			}
-		}
-		Set<Class<?>> types = new HashSet<Class<?>>();
-		for (String each : set)
-		{
-			types.add(classLoader.loadClass(each));
-		}
-		return types;
-	}
-	
-	private String detectProductName() throws SQLException
-	{
-		Connection connection = null;
-		try
-		{
-			connection = dataSource.getConnection();
-			DatabaseMetaData md = connection.getMetaData();
-			return md.getDatabaseProductName().toLowerCase();
-		}
-		finally
-		{
-			if (connection != null)
-			{
-				connection.close();
-			}
-		}
-	}
-	
-	public void setTableMode(TableMode tableMode)
-	{
-		this.tableMode = tableMode;
-	}
-	
-	public void setDataSource(DataSource dataSource)
-	{
-		this.dataSource = dataSource;
-	}
-	
-	public void setClassLoader(ClassLoader classLoader)
-	{
-		this.classLoader = classLoader;
-	}
-	
-	public void setScanPackage(String scanPackage)
-	{
-		this.scanPackage = scanPackage;
-	}
-	
-	public Dialect getDialect()
-	{
-		return dialect;
-	}
-	
-	public void setDialect(Dialect dialect)
-	{
-		this.dialect = dialect;
-	}
-	
+    private DataSource            dataSource;
+    private ClassLoader           classLoader  = Thread.currentThread().getContextClassLoader();
+    private String                scanPackage;
+    // 如果值是create，则会创建表。
+    private TableMode             tableMode    = TableMode.NONE;
+    private List<SqlExecutor>     sqlExecutors = new LinkedList<SqlExecutor>();
+    private Dialect               dialect;
+    protected static final Logger logger       = LoggerFactory.getLogger(SessionfactoryConfig.class);
+    
+    public SessionFactory build()
+    {
+        TRACEID.newTraceId();
+        try
+        {
+            Verify.notNull(dataSource, "dataSource 对象不能为空");
+            Verify.notNull(scanPackage, "sql的扫描路径不能为空");
+            Set<Class<?>> classSet = buildClassSet();
+            String productName = detectProductName();
+            modifySchema(classSet, productName);
+            dialect = dialect == null ? generateDialect(productName) : dialect;
+            return new SessionFactoryImpl(generateMappers(classSet), generateCurdInfos(productName, classSet), generateHeadSqlInvoker(productName), dataSource, dialect);
+        }
+        catch (Exception e)
+        {
+            throw new JustThrowException(e);
+        }
+    }
+    
+    private void modifySchema(Set<Class<?>> classSet, String productName) throws SQLException
+    {
+        Set<TableEntityInfo> tableEntityInfos = new HashSet<TableEntityInfo>();
+        for (Class<?> ckass : classSet)
+        {
+            if (ckass.isAnnotationPresent(TableDef.class))
+            {
+                tableEntityInfos.add(TableEntityInfo.parse(ckass));
+            }
+        }
+        if ("mysql".equals(productName))
+        {
+            new MysqlSchemaAdjustment().adjust(tableMode, dataSource, tableEntityInfos);
+        }
+    }
+    
+    private IdentityHashMap<Class<?>, Mapper> generateMappers(Set<Class<?>> classSet) throws InstantiationException, IllegalAccessException
+    {
+        Map<String, TableEntityInfo> tableEntityInfos = new HashMap<String, TableEntityInfo>();
+        for (Class<?> each : classSet)
+        {
+            if (each.isAnnotationPresent(TableEntity.class))
+            {
+                tableEntityInfos.put(each.getSimpleName(), TableEntityInfo.parse(each));
+            }
+        }
+        JavaStringCompiler compiler = new JavaStringCompiler(classLoader);
+        IdentityHashMap<Class<?>, Mapper> mappers = new IdentityHashMap<Class<?>, Mapper>();
+        for (Class<?> each : classSet)
+        {
+            if (each.isInterface())
+            {
+                boolean find = false;
+                for (Method method : each.getMethods())
+                {
+                    if (method.isAnnotationPresent(Sql.class))
+                    {
+                        find = true;
+                        break;
+                    }
+                }
+                if (find)
+                {
+                    Mapper mapper = (Mapper) MapperGenerator.generate(each, tableEntityInfos, compiler).newInstance();
+                    mappers.put(each, mapper);
+                }
+            }
+        }
+        return mappers;
+    }
+    
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    private IdentityHashMap<Class<?>, CurdInfo<?>> generateCurdInfos(String productName, Set<Class<?>> classSet)
+    {
+        IdentityHashMap<Class<?>, CurdInfo<?>> curdInfos = new IdentityHashMap<Class<?>, CurdInfo<?>>();
+        for (Class<?> each : classSet)
+        {
+            if (each.isAnnotationPresent(TableEntity.class) == false)
+            {
+                continue;
+            }
+            TableEntityInfo tableEntityInfo = TableEntityInfo.parse(each);
+            if (tableEntityInfo.getPkField() == null)
+            {
+                continue;
+            }
+            if ("mysql".equals(productName) || "h2".equalsIgnoreCase(productName))
+            {
+                curdInfos.put(each, new MysqlCurdInfo(each));
+            }
+            else if ("oracle".equals(productName))
+            {
+                curdInfos.put(each, new OracleCurdInfo(each));
+            }
+        }
+        return curdInfos;
+    }
+    
+    private Dialect generateDialect(String productName)
+    {
+        if (productName.equals("mariadb") || "mysql".equals(productName))
+        {
+            return new MysqlDialect();
+        }
+        else if (productName.equals("oracle"))
+        {
+            return new OracleDialect();
+        }
+        else if (productName.equals("h2"))
+        {
+            return new H2Dialect();
+        }
+        else
+        {
+            throw new UnsupportedOperationException("不识别的数据库类型" + productName);
+        }
+    }
+    
+    private SqlInvoker generateHeadSqlInvoker(String productName)
+    {
+        sqlExecutors.add(new DefaultSqlExecutor());
+        if ("mysql".equalsIgnoreCase(productName))
+        {
+            sqlExecutors.add(new MysqlPageExecutor());
+        }
+        else if ("oracle".equalsIgnoreCase(productName))
+        {
+            sqlExecutors.add(new OraclePageExecutor());
+        }
+        Collections.sort(sqlExecutors, new Comparator<SqlExecutor>() {
+            
+            @Override
+            public int compare(SqlExecutor o1, SqlExecutor o2)
+            {
+                return o1.order() - o2.order();
+            }
+        });
+        SqlInvoker pred = new SqlInvoker() {
+            
+            @Override
+            public int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
+            {
+                throw new UnsupportedOperationException();
+            }
+            
+            @Override
+            public Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
+            {
+                throw new UnsupportedOperationException();
+            }
+            
+            @Override
+            public List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
+            {
+                throw new UnsupportedOperationException();
+            }
+            
+            @Override
+            public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
+            {
+                throw new UnsupportedOperationException();
+            }
+        };
+        int index = sqlExecutors.size() - 1;
+        for (int i = index; i > -1; i--)
+        {
+            final SqlExecutor sqlExecutor = sqlExecutors.get(i);
+            final SqlInvoker next = pred;
+            SqlInvoker sqlInvoker = new SqlInvoker() {
+                
+                @Override
+                public int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
+                {
+                    return sqlExecutor.update(sql, params, connection, dialect, next);
+                }
+                
+                @Override
+                public Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
+                {
+                    return sqlExecutor.queryOne(sql, params, connection, dialect, resultSetTransfer, next);
+                }
+                
+                @Override
+                public List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
+                {
+                    return sqlExecutor.queryList(sql, params, connection, dialect, resultSetTransfer, next);
+                }
+                
+                @Override
+                public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
+                {
+                    return sqlExecutor.insertWithReturnKey(sql, params, connection, dialect, next);
+                }
+            };
+            pred = sqlInvoker;
+        }
+        SqlInvoker head = pred;
+        return head;
+    }
+    
+    private Set<Class<?>> buildClassSet() throws ClassNotFoundException
+    {
+        Set<String> set = new HashSet<String>();
+        String[] packageNames = scanPackage.split(";");
+        for (String packageName : packageNames)
+        {
+            for (String each : PackageScan.scan(packageName))
+            {
+                set.add(each);
+            }
+        }
+        Set<Class<?>> types = new HashSet<Class<?>>();
+        for (String each : set)
+        {
+            types.add(classLoader.loadClass(each));
+        }
+        return types;
+    }
+    
+    private String detectProductName() throws SQLException
+    {
+        Connection connection = null;
+        try
+        {
+            connection = dataSource.getConnection();
+            DatabaseMetaData md = connection.getMetaData();
+            return md.getDatabaseProductName().toLowerCase();
+        }
+        finally
+        {
+            if (connection != null)
+            {
+                connection.close();
+            }
+        }
+    }
+    
+    public void setTableMode(TableMode tableMode)
+    {
+        this.tableMode = tableMode;
+    }
+    
+    public void setDataSource(DataSource dataSource)
+    {
+        this.dataSource = dataSource;
+    }
+    
+    public void setClassLoader(ClassLoader classLoader)
+    {
+        this.classLoader = classLoader;
+    }
+    
+    public void setScanPackage(String scanPackage)
+    {
+        this.scanPackage = scanPackage;
+    }
+    
+    public Dialect getDialect()
+    {
+        return dialect;
+    }
+    
+    public void setDialect(Dialect dialect)
+    {
+        this.dialect = dialect;
+    }
+    
 }

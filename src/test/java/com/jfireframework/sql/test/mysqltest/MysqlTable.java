@@ -5,6 +5,7 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
+import com.jfireframework.sql.annotation.ColumnDef;
 import com.jfireframework.sql.annotation.Pk;
 import com.jfireframework.sql.annotation.TableEntity;
 import com.jfireframework.sql.annotation.pkstrategy.AutoIncrement;
@@ -13,7 +14,6 @@ import com.jfireframework.sql.dbstructure.Index;
 import com.jfireframework.sql.dbstructure.TableDef;
 import com.jfireframework.sql.dbstructure.column.Constraint;
 import com.jfireframework.sql.dbstructure.column.Constraint.Type;
-import com.jfireframework.sql.dbstructure.column.MysqlColumnDef;
 
 @TableEntity(name = "test_demo")
 @TableDef(tableName = "test_demo")
@@ -23,7 +23,7 @@ public class MysqlTable
 	@AutoIncrement
 	@Comment("这是主键")
 	@Constraint(type = Type.PRIMARY_KEY)
-	@MysqlColumnDef(isNullable = false)
+	@ColumnDef(isNullable = false)
 	private Integer		id;
 	@Comment("12123注释")
 	private int			col1;
