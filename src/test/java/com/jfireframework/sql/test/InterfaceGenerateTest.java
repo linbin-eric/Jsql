@@ -9,7 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.annotation.Sql;
-import com.jfireframework.sql.constant.TableNameCaseStrategy;
+import com.jfireframework.sql.metadata.TableMode;
 import com.jfireframework.sql.test.vo.User;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -28,10 +28,8 @@ public class InterfaceGenerateTest
 		dataSource.setUsername("sa");
 		dataSource.setPassword("");
 		config.setDataSource(dataSource);
-		config.setSchema("PUBLIC");
-		config.setTableNameCaseStrategy(TableNameCaseStrategy.UPPER);
 		config.setClassLoader(InterfaceGenerateTest.class.getClassLoader());
-		config.setTableMode("create");
+		config.setTableMode(TableMode.CREATE);
 		Set<Class<?>> set = new HashSet<Class<?>>();
 		set.add(User.class);
 	}
@@ -44,7 +42,7 @@ public class InterfaceGenerateTest
 	
 	public static interface test_1
 	{
-		@Sql(sql = "select * from User as u where u.name= User.xx", paramNames = "")
+		@Sql(sql = "select * from User as u where u.name= ${T(com.jfireframework.sql.test.vo.User).xx}", paramNames = "")
 		public List<User> find3();
 	}
 	
@@ -60,34 +58,34 @@ public class InterfaceGenerateTest
 	
 	public static interface test_2
 	{
-		@Sql(sql = "select * from User where name = User.xx", paramNames = "")
+		@Sql(sql = "select * from User where name = ${T(com.jfireframework.sql.test.vo.User).xx}", paramNames = "")
 		public List<User> query();
 		
-		@Sql(sql = "update User set name = User.xx", paramNames = "")
+		@Sql(sql = "update User set name = ${T(com.jfireframework.sql.test.vo.User).xx}", paramNames = "")
 		public int update();
 	}
 	
 	public static interface test_3
 	{
-		@Sql(sql = "select * from User as u where u.name = @com.jfireframework.sql.test.vo.User.xx", paramNames = "")
+		@Sql(sql = "select * from User as u where u.name = ${T(com.jfireframework.sql.test.vo.User).xx}", paramNames = "")
 		public List<User> query();
 		
-		@Sql(sql = "update User as u set u.name = @com.jfireframework.sql.test.vo.User.xx", paramNames = "")
+		@Sql(sql = "update User as u set u.name = ${T(com.jfireframework.sql.test.vo.User).xx}", paramNames = "")
 		public int update();
 	}
 	
 	public static interface test_4
 	{
-		@Sql(sql = "select * from User <if($i>5)>where name ='kx'</if> ", paramNames = "i")
+		@Sql(sql = "select * from User <%if(i>5) {%>where name ='kx'<%}%> ", paramNames = "i")
 		public List<User> query(int i);
 		
-		@Sql(sql = "upadte User set name='x' <if($i>5)>where name ='kx'</if> ", paramNames = "i")
+		@Sql(sql = "upadte User set name='x' <%if($i>5) {%>where name ='kx'<%}%> ", paramNames = "i")
 		public int update(int i);
 	}
 	
 	public static interface test_5
 	{
-		@Sql(sql = "update User set name = $user.name <if( $user.name != null && $user.name==\"ss\" )> where name ='x' </if> ", paramNames = "user")
+		@Sql(sql = "update User set name = ${user.name} <%if( user.name != null && user.name=='ss' ) {%> where name ='x' <%}%> ", paramNames = "user")
 		public int update(User user);
 	}
 	
@@ -102,7 +100,7 @@ public class InterfaceGenerateTest
 	
 	public static interface test_6
 	{
-		@Sql(sql = "select * from User where state = State.off", paramNames = "")
+		@Sql(sql = "select * from User where state = ${T(com.jfireframework.sql.test.vo.User$State).off}", paramNames = "")
 		public User find4();
 	}
 	
@@ -117,19 +115,19 @@ public class InterfaceGenerateTest
 	
 	public static interface test_7
 	{
-		@Sql(sql = "delete from User where id in $~ids", paramNames = "ids")
+		@Sql(sql = "delete from User where id in ~{ids}", paramNames = "ids")
 		public int delete(String ids);
 		
-		@Sql(sql = "delete from User where id in $~ids", paramNames = "ids")
+		@Sql(sql = "delete from User where id in ~{ids}", paramNames = "ids")
 		public int delete(int[] ids);
 		
-		@Sql(sql = "delete from User where id in $~ids", paramNames = "ids")
+		@Sql(sql = "delete from User where id in ~{ids}", paramNames = "ids")
 		public int delete(Integer[] ids);
 		
-		@Sql(sql = "delete from User where id in $~ids", paramNames = "ids")
+		@Sql(sql = "delete from User where id in ~{ids}", paramNames = "ids")
 		public int delete(long[] ids);
 		
-		@Sql(sql = "delete from User where id in $~ids", paramNames = "ids")
+		@Sql(sql = "delete from User where id in ~{ids}", paramNames = "ids")
 		public int delete(Long[] ids);
 	}
 	
@@ -159,7 +157,7 @@ public class InterfaceGenerateTest
 	
 	public static interface test_9
 	{
-		@Sql(sql = "select count(*) from {name}", paramNames = "name")
+		@Sql(sql = "select count(*) from #{name}", paramNames = "name")
 		public int count(String name);
 	}
 	
@@ -174,12 +172,12 @@ public class InterfaceGenerateTest
 	
 	public static interface test_10
 	{
-		@Sql(sql = "select count(*) <if(name == \"s\")> from {name}", paramNames = "name")
+		@Sql(sql = "select count(*) <%if(name == 's') {%> from #{name} ", paramNames = "name")
 		public int count(String name);
 	}
 	
 	/**
-	 * 测试缺少</if>的星狂
+	 * 测试缺少</if>的情况
 	 */
 	@Test
 	public void test_10()

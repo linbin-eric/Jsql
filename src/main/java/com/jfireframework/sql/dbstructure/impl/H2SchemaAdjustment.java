@@ -22,8 +22,8 @@ import com.jfireframework.sql.annotation.TableDef;
 import com.jfireframework.sql.annotation.pkstrategy.AutoIncrement;
 import com.jfireframework.sql.dbstructure.SchemaAdjustment;
 import com.jfireframework.sql.metadata.TableEntityInfo;
-import com.jfireframework.sql.metadata.TableMode;
 import com.jfireframework.sql.metadata.TableEntityInfo.ColumnInfo;
+import com.jfireframework.sql.metadata.TableMode;
 
 public class H2SchemaAdjustment implements SchemaAdjustment
 {
@@ -41,6 +41,7 @@ public class H2SchemaAdjustment implements SchemaAdjustment
 				createTable(dataSource, tableEntityInfos);
 				break;
 			case UPDATE:
+				createTable(dataSource, tableEntityInfos);
 				break;
 			default:
 				break;
@@ -121,6 +122,10 @@ public class H2SchemaAdjustment implements SchemaAdjustment
 			{
 				columnType = "varchar(" + columnDef.maxCharacterLength() + ")";
 			}
+			else if ("datetime".equals(dataType) || "timestamp".equals(dataType))
+			{
+				columnType = dataType + "(" + columnDef.datetime_precision() + ")";
+			}
 			else
 			{
 				columnType = dataType;
@@ -149,9 +154,17 @@ public class H2SchemaAdjustment implements SchemaAdjustment
 			{
 				columnType = "DOUBLE";
 			}
-			else if (type == Date.class || type == java.util.Date.class || type == Timestamp.class || type == Calendar.class || type == Time.class)
+			else if (type == Date.class)
 			{
 				columnType = "TIMESTAMP";
+			}
+			else if (type == Time.class)
+			{
+				columnType = "TIME";
+			}
+			else if (type == java.util.Date.class || type == Timestamp.class || type == Calendar.class)
+			{
+				columnType = "TIMESTAMP(3)";
 			}
 			else if (type == Clob.class)
 			{

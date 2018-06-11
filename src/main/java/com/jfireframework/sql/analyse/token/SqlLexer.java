@@ -63,7 +63,7 @@ public class SqlLexer
 			offset = firstParser.parse(sql, offset, tmp);
 			if (pred == offset)
 			{
-				throw new UnsupportedOperationException("无法解析");
+				throw new UnsupportedOperationException("无法解析" + sql.substring(offset));
 			}
 		}
 		Collections.reverse((List<?>) tmp);

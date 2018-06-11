@@ -105,6 +105,10 @@ public class Template
 			Execution execution = new StringExecution(cache.toString());
 			executions.push(execution);
 		}
+		for (Execution each : executions)
+		{
+			each.check();
+		}
 		Deque<Execution> array = new LinkedList<Execution>();
 		while (executions.isEmpty() == false)
 		{

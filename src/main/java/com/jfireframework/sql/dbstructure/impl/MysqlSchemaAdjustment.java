@@ -30,8 +30,8 @@ import com.jfireframework.sql.dbstructure.Index;
 import com.jfireframework.sql.dbstructure.SchemaAdjustment;
 import com.jfireframework.sql.dbstructure.column.Constraint;
 import com.jfireframework.sql.metadata.TableEntityInfo;
-import com.jfireframework.sql.metadata.TableMode;
 import com.jfireframework.sql.metadata.TableEntityInfo.ColumnInfo;
+import com.jfireframework.sql.metadata.TableMode;
 
 public class MysqlSchemaAdjustment implements SchemaAdjustment
 {
@@ -93,9 +93,9 @@ public class MysqlSchemaAdjustment implements SchemaAdjustment
 				setIndex(cache, info.getField(), columnName);
 			}
 		}
-		if (cache.isCommaLast())
+		if (cache.isCommaMeaningfulLast() != -1)
 		{
-			cache.deleteLast();
+			cache.delete(cache.isCommaMeaningfulLast());
 		}
 		cache.append(") ENGINE = InnoDB DEFAULT CHARSET = utf8 ");
 		if (StringUtil.isNotBlank(tableDef.comment()))
@@ -113,7 +113,7 @@ public class MysqlSchemaAdjustment implements SchemaAdjustment
 		{
 			cache.append("UNIQUE ");
 		}
-		cache.append("KEY `").append(indexName).append("` (`").append(columnName).append("`) USING ").append(index.indexType()).append(",");
+		cache.append("KEY `").append(indexName).append("` (`").append(columnName).append("`) USING ").append(index.indexType()).append(",\r\n");
 	}
 	
 	private void setConstraint(StringCache cache, Field field, String columnName)
@@ -122,11 +122,11 @@ public class MysqlSchemaAdjustment implements SchemaAdjustment
 		switch (constraints.type())
 		{
 			case PRIMARY_KEY:
-				cache.append("PRIMARY KEY (`").append(columnName).append("`),");
+				cache.append("PRIMARY KEY (`").append(columnName).append("`),\r\n");
 				break;
 			case UNIQUE_KEY:
 				String constraintName = StringUtil.isNotBlank(constraints.name()) ? constraints.name() : columnName + "_uni_" + count.getAndIncrement();
-				cache.append("UNIQUE KEY `").append(constraintName).append("` (`").append(columnName).append("`),");
+				cache.append("UNIQUE KEY `").append(constraintName).append("` (`").append(columnName).append("`),\r\n");
 				break;
 			default:
 				break;
@@ -159,23 +159,27 @@ public class MysqlSchemaAdjustment implements SchemaAdjustment
 				Comment comment = columnInfo.getField().getAnnotation(Comment.class);
 				cache.append(" COMMENT '").append(comment.value()).append('\'');
 			}
-			cache.appendComma();
+			cache.append(",\r\n");
 		}
 	}
 	
-	private String decideColumnType(Field field, StandardColumnDef mysqlColumnDef)
+	private String decideColumnType(Field field, StandardColumnDef standardColumnDef)
 	{
 		String columnType;
-		if (mysqlColumnDef != null && StringUtil.isNotBlank(mysqlColumnDef.dataType()))
+		if (standardColumnDef != null && StringUtil.isNotBlank(standardColumnDef.dataType()))
 		{
-			String dataType = mysqlColumnDef.dataType();
+			String dataType = standardColumnDef.dataType();
 			if ("varchar".equals(dataType))
 			{
-				columnType = "varchar(" + mysqlColumnDef.maxCharacterLength() + ")";
+				columnType = "varchar(" + standardColumnDef.maxCharacterLength() + ")";
 			}
 			else if ("float".equals(dataType) || "double".equals(dataType))
 			{
-				columnType = dataType + "(" + mysqlColumnDef.numeric_precision() + "," + mysqlColumnDef.numeric_scale() + ")";
+				columnType = dataType + "(" + standardColumnDef.numeric_precision() + "," + standardColumnDef.numeric_scale() + ")";
+			}
+			else if ("datetime".equals(dataType) || "timestamp".equals(dataType))
+			{
+				columnType = dataType + "(" + standardColumnDef.datetime_precision() + ")";
 			}
 			else
 			{
@@ -205,9 +209,17 @@ public class MysqlSchemaAdjustment implements SchemaAdjustment
 			{
 				columnType = "double";
 			}
-			else if (type == Date.class || type == java.util.Date.class || type == Timestamp.class || type == Calendar.class || type == Time.class)
+			else if (type == Date.class)
 			{
 				columnType = "timestamp";
+			}
+			else if (type == Time.class)
+			{
+				columnType = "time";
+			}
+			else if (type == java.util.Date.class || type == Timestamp.class || type == Calendar.class)
+			{
+				columnType = "timestamp(3)";
 			}
 			else if (type == Clob.class)
 			{
