@@ -2,21 +2,35 @@ package com.jfireframework.sql.model;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import com.jfireframework.baseutil.collection.StringCache;
-import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.sql.annotation.TableDef;
+import com.jfireframework.sql.metadata.Page;
+import com.jfireframework.sql.metadata.TableEntityInfo;
+import com.jfireframework.sql.metadata.TableEntityInfo.ColumnInfo;
 import com.jfireframework.sql.transfer.resultset.impl.BeanTransfer;
 
-public class QueryModel extends Model<QueryModel>
+public class QueryModel extends Model
 {
-	private List<String>	selectProperties;
-	private List<String>	orderProperties;
-	private BeanTransfer	beanTransfer;
+	private List<String>		selectProperties;
+	private List<OrderByEntry>	orderByProperties;
+	private BeanTransfer		beanTransfer;
+	private Page				page;
+	
+	class OrderByEntry
+	{
+		String	orderPropertyName;
+		boolean	desc	= false;
+		
+		public OrderByEntry(String orderPropertyName, boolean desc)
+		{
+			this.orderPropertyName = orderPropertyName;
+			this.desc = desc;
+		}
+		
+	}
 	
 	public QueryModel select(String propertyName)
 	{
-		check();
 		if (selectProperties == null)
 		{
 			selectProperties = new LinkedList<String>();
@@ -25,69 +39,93 @@ public class QueryModel extends Model<QueryModel>
 		return this;
 	}
 	
-	public QueryModel orderBy(String propertyName)
+	public QueryModel orderBy(String orderPropertyName, boolean desc)
 	{
-		check();
-		if (orderProperties == null)
+		if (orderByProperties == null)
 		{
-			orderProperties = new LinkedList<String>();
+			orderByProperties = new LinkedList<OrderByEntry>();
 		}
-		orderProperties.add(propertyName);
+		orderByProperties.add(new OrderByEntry(orderPropertyName, desc));
 		return this;
 	}
 	
-	public QueryModel generate()
-	{
-		generateBefore();
-		beanTransfer = (BeanTransfer) new BeanTransfer().initialize(entityClass);
-		try
-		{
-			Map<String, String> columnNameMap = getColumnNameMap();
-			StringCache cache = new StringCache();
-			cache.append("select ");
-			if (selectProperties == null)
-			{
-				cache.append("* ");
-			}
-			else
-			{
-				for (String each : selectProperties)
-				{
-					String columnName = columnNameMap.get(each);
-					cache.append(columnName).appendComma();
-				}
-				cache.deleteLast().append(' ');
-			}
-			cache.append("from ");
-			String tableName = entityClass.getAnnotation(TableDef.class).name();
-			cache.append(tableName);
-			setWhereColumns(cache, columnNameMap);
-			if (orderProperties != null)
-			{
-				cache.append("order by ");
-				for (String each : orderProperties)
-				{
-					String columnName = columnNameMap.get(each);
-					cache.append(columnName).appendComma();
-				}
-				cache.deleteLast();
-			}
-			generateSql = cache.toString();
-			return this;
-		}
-		catch (Exception e)
-		{
-			throw new JustThrowException(e);
-		}
-	}
-	
-	public String getSql()
-	{
-		return generateSql;
-	}
-	
+	@Override
 	public BeanTransfer getBeanTransfer()
 	{
+		if (selectProperties == null)
+		{
+			selectProperties = new LinkedList<String>();
+			for (ColumnInfo columnInfo : TableEntityInfo.parse(entityClass).getPropertyNameKeyMap().values())
+			{
+				selectProperties.add(columnInfo.getPropertyName());
+			}
+		}
+		beanTransfer = new BeanTransfer();
+		beanTransfer.initialize(entityClass);
+		beanTransfer.preSetColumnTransfer(selectProperties, TableEntityInfo.parse(entityClass));
 		return beanTransfer;
+	}
+	
+	@Override
+	public String getSql()
+	{
+		StringCache cache = new StringCache();
+		cache.append("select ");
+		if (selectProperties == null)
+		{
+			selectProperties = new LinkedList<String>();
+			for (ColumnInfo columnInfo : TableEntityInfo.parse(entityClass).getPropertyNameKeyMap().values())
+			{
+				selectProperties.add(columnInfo.getPropertyName());
+			}
+		}
+		TableEntityInfo tableEntityInfo = TableEntityInfo.parse(entityClass);
+		for (String each : selectProperties)
+		{
+			String columnName = tableEntityInfo.getPropertyNameKeyMap().get(each).getColumnName();
+			cache.append(columnName).appendComma();
+		}
+		cache.deleteLast().append(' ');
+		cache.append("from ");
+		String tableName = entityClass.getAnnotation(TableDef.class).name();
+		cache.append(tableName);
+		setWhereColumns(cache);
+		if (orderByProperties != null)
+		{
+			cache.append(" order by ");
+			for (OrderByEntry each : orderByProperties)
+			{
+				String columnName = tableEntityInfo.getPropertyNameKeyMap().get(each.orderPropertyName).getColumnName();
+				cache.append(columnName).append(each.desc ? " desc" : " asc");
+				cache.appendComma();
+			}
+			cache.deleteLast();
+		}
+		return cache.toString();
+	}
+	
+	@Override
+	public List<Object> getParams()
+	{
+		List<Object> params = new LinkedList<Object>();
+		if (whereEntries != null)
+		{
+			for (WhereEntry whereEntry : whereEntries)
+			{
+				params.add(whereEntry.value);
+			}
+		}
+		if (page != null)
+		{
+			params.add(page);
+		}
+		return params;
+	}
+	
+	@Override
+	public Model setPage(Page page)
+	{
+		this.page = page;
+		return this;
 	}
 }

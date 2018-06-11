@@ -1,5 +1,7 @@
 package com.jfireframework.sql;
 
+import com.jfireframework.sql.session.SqlSession;
+
 public interface SessionFactory
 {
 	static final ThreadLocal<SqlSession> CURRENT_SESSION = new ThreadLocal<SqlSession>();

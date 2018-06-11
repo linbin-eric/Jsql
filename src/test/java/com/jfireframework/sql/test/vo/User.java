@@ -4,7 +4,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
-import com.jfireframework.sql.annotation.ColumnDef;
+import com.jfireframework.sql.annotation.StandardColumnDef;
 import com.jfireframework.sql.annotation.Pk;
 import com.jfireframework.sql.annotation.SqlIgnore;
 import com.jfireframework.sql.annotation.TableDef;
@@ -31,7 +31,7 @@ public class User
     @Pk
     @AutoIncrement
     private Integer       id;
-    @ColumnDef(columnName = "name2")
+    @StandardColumnDef(columnName = "name2")
     private String        name;
     private int           age;
     @SqlIgnore
@@ -39,9 +39,9 @@ public class User
     @SqlIgnore
     private int           age2;
     @ColumnMap(EnumOrdinalTransfer.class)
-    @ColumnDef(dataType = "integer")
+    @StandardColumnDef(dataType = "integer")
     private State         state;
-    @ColumnDef(dataType = "varchar")
+    @StandardColumnDef(dataType = "varchar")
     private StringEnum    stringEnum;
     private boolean       b          = false;
     private byte[]        barray     = new byte[] { 1, 2 };

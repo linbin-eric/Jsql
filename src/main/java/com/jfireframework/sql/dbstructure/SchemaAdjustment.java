@@ -4,8 +4,8 @@ import java.sql.SQLException;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.sql.DataSource;
-import com.jfireframework.sql.util.TableEntityInfo;
-import com.jfireframework.sql.util.TableMode;
+import com.jfireframework.sql.metadata.TableEntityInfo;
+import com.jfireframework.sql.metadata.TableMode;
 
 public interface SchemaAdjustment
 {

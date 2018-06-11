@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.jfireframework.sql.SessionFactory;
 import com.jfireframework.sql.SessionfactoryConfig;
-import com.jfireframework.sql.util.TableMode;
+import com.jfireframework.sql.metadata.TableMode;
 import com.mysql.jdbc.Driver;
 import com.zaxxer.hikari.HikariDataSource;
 

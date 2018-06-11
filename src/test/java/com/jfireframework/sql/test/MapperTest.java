@@ -10,16 +10,16 @@ import org.junit.Before;
 import org.junit.Test;
 import com.jfireframework.sql.SessionFactory;
 import com.jfireframework.sql.SessionfactoryConfig;
-import com.jfireframework.sql.SqlSession;
 import com.jfireframework.sql.annotation.Sql;
 import com.jfireframework.sql.constant.TableNameCaseStrategy;
 import com.jfireframework.sql.dialect.impl.H2Dialect;
+import com.jfireframework.sql.metadata.Page;
+import com.jfireframework.sql.session.impl.SqlSession;
 import com.jfireframework.sql.test.vo.User;
 import com.jfireframework.sql.test.vo.User.State;
 import com.jfireframework.sql.test.vo.User.StringEnum;
 import com.jfireframework.sql.transfer.resultset.ResultMap;
 import com.jfireframework.sql.transfer.resultset.impl.EnumOrdinalTransfer;
-import com.jfireframework.sql.util.Page;
 import com.zaxxer.hikari.HikariDataSource;
 
 public class MapperTest

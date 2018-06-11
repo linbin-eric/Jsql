@@ -7,6 +7,8 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.sql.transfer.column.impl.BooleanColumnTransfer;
 import com.jfireframework.sql.transfer.column.impl.ByteArrayColumnTransfer;
@@ -48,16 +50,21 @@ public class ColumnTransfers
 		buildIn.put(Time.class, TimeColumnTransfer.class);
 		buildIn.put(Timestamp.class, TimestampColumnTransfer.class);
 	}
+	private static final Map<Field, ColumnTransfer> parsed = new ConcurrentHashMap<Field, ColumnTransfer>();
 	
 	public static ColumnTransfer parse(Field field, String columnName)
 	{
+		ColumnTransfer columnTransfer = parsed.get(field);
+		if (columnTransfer != null)
+		{
+			return columnTransfer;
+		}
 		if (field.isAnnotationPresent(ColumnMap.class))
 		{
 			try
 			{
-				ColumnTransfer instance = field.getAnnotation(ColumnMap.class).value().newInstance();
-				instance.initialize(field, columnName);
-				return instance;
+				columnTransfer = field.getAnnotation(ColumnMap.class).value().newInstance();
+				columnTransfer.initialize(field, columnName);
 			}
 			catch (Exception e)
 			{
@@ -68,15 +75,14 @@ public class ColumnTransfers
 		{
 			EnumNameTransfer enumNameTransfer = new EnumNameTransfer();
 			enumNameTransfer.initialize(field, columnName);
-			return enumNameTransfer;
+			columnTransfer = enumNameTransfer;
 		}
 		else if (buildIn.containsKey(field.getType()))
 		{
 			try
 			{
-				ColumnTransfer instance = buildIn.get(field.getType()).newInstance();
-				instance.initialize(field, columnName);
-				return instance;
+				columnTransfer = buildIn.get(field.getType()).newInstance();
+				columnTransfer.initialize(field, columnName);
 			}
 			catch (Exception e)
 			{
@@ -87,5 +93,7 @@ public class ColumnTransfers
 		{
 			throw new NullPointerException("无法为字段:" + field.getDeclaringClass().getName() + "." + field.getName() + "找到对应的转换器");
 		}
+		parsed.put(field, columnTransfer);
+		return columnTransfer;
 	}
 }

@@ -1,13 +1,9 @@
-package com.jfireframework.sql;
+package com.jfireframework.sql.session;
 
 import java.sql.Connection;
 import java.util.List;
 import com.jfireframework.sql.curd.LockMode;
-import com.jfireframework.sql.model.CountModel;
-import com.jfireframework.sql.model.DeleteModel;
-import com.jfireframework.sql.model.InsertModel;
-import com.jfireframework.sql.model.QueryModel;
-import com.jfireframework.sql.model.UpdateModel;
+import com.jfireframework.sql.model.Model;
 import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 
 interface ConnectionOp
@@ -100,7 +96,7 @@ interface CurdOp
 
 interface ModelOp
 {
-	<T> T findOne(QueryModel model, Object... params);
+	<T> T findOne(Model model);
 	
 	/**
 	 * 如果最后一个参数是Page，则会触发分页查询
@@ -110,15 +106,15 @@ interface ModelOp
 	 * @param params
 	 * @return
 	 */
-	<T> List<T> find(QueryModel model, Object... params);
+	<T> List<T> find(Model model);
 	
-	int update(UpdateModel model, Object... params);
+	int update(Model model);
 	
-	int delete(DeleteModel model, Object... params);
+	int delete(Model model);
 	
-	int count(CountModel model, Object... params);
+	int count(Model model);
 	
-	void insert(InsertModel model, Object... params);
+	void insert(Model model);
 }
 
 interface SqlOp

@@ -1,15 +1,15 @@
-package com.jfireframework.sql.session.impl;
+package com.jfireframework.sql;
 
 import java.sql.SQLException;
 import java.util.IdentityHashMap;
 import javax.sql.DataSource;
 import com.jfireframework.baseutil.exception.JustThrowException;
-import com.jfireframework.sql.SessionFactory;
-import com.jfireframework.sql.SqlSession;
 import com.jfireframework.sql.curd.CurdInfo;
 import com.jfireframework.sql.dialect.Dialect;
 import com.jfireframework.sql.executor.SqlInvoker;
 import com.jfireframework.sql.mapper.Mapper;
+import com.jfireframework.sql.session.SqlSession;
+import com.jfireframework.sql.session.impl.SqlSessionImpl;
 
 public class SessionFactoryImpl implements SessionFactory
 {

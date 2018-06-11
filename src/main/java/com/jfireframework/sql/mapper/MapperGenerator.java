@@ -12,15 +12,15 @@ import com.jfireframework.baseutil.smc.compiler.JavaStringCompiler;
 import com.jfireframework.baseutil.smc.model.ClassModel;
 import com.jfireframework.baseutil.smc.model.FieldModel;
 import com.jfireframework.baseutil.smc.model.MethodModel;
-import com.jfireframework.sql.SqlSession;
 import com.jfireframework.sql.analyse.template.Template;
 import com.jfireframework.sql.analyse.token.SqlLexer;
 import com.jfireframework.sql.annotation.Sql;
+import com.jfireframework.sql.metadata.Page;
+import com.jfireframework.sql.metadata.TableEntityInfo;
+import com.jfireframework.sql.session.SqlSession;
 import com.jfireframework.sql.transfer.resultset.ResultMap;
 import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 import com.jfireframework.sql.transfer.resultset.impl.BeanTransfer;
-import com.jfireframework.sql.util.Page;
-import com.jfireframework.sql.util.TableEntityInfo;
 
 public class MapperGenerator
 {

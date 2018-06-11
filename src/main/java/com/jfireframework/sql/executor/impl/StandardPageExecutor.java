@@ -8,10 +8,10 @@ import java.util.List;
 import com.jfireframework.sql.dialect.Dialect;
 import com.jfireframework.sql.executor.SqlExecutor;
 import com.jfireframework.sql.executor.SqlInvoker;
+import com.jfireframework.sql.metadata.Page;
 import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
-import com.jfireframework.sql.util.Page;
 
-public class MysqlPageExecutor implements SqlExecutor
+public class StandardPageExecutor implements SqlExecutor
 {
 	
 	@Override
@@ -29,11 +29,12 @@ public class MysqlPageExecutor implements SqlExecutor
 	@Override
 	public List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer, SqlInvoker next) throws SQLException
 	{
-		Object param = params.get(params.size() - 1);
-		if (param instanceof Page == false)
+		Object param;
+		if (params.isEmpty() || (param = params.get(params.size() - 1)) instanceof Page == false)
 		{
 			return next.queryList(sql, params, connection, dialect, resultSetTransfer);
 		}
+		params.remove(params.size() - 1);
 		Page page = (Page) param;
 		if (page.isFetchSum())
 		{
@@ -62,7 +63,6 @@ public class MysqlPageExecutor implements SqlExecutor
 			}
 		}
 		sql = sql + " limit ?,?";
-		params.remove(params.size() - 1);
 		params.add(page.getOffset());
 		params.add(page.getSize());
 		return next.queryList(sql, params, connection, dialect, resultSetTransfer);

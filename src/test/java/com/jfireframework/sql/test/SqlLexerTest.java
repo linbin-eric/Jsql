@@ -5,8 +5,8 @@ import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 import com.jfireframework.sql.analyse.token.SqlLexer;
+import com.jfireframework.sql.metadata.TableEntityInfo;
 import com.jfireframework.sql.test.vo.User;
-import com.jfireframework.sql.util.TableEntityInfo;
 
 public class SqlLexerTest
 {

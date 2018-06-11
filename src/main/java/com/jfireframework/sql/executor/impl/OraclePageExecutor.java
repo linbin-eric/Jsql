@@ -8,8 +8,8 @@ import java.util.List;
 import com.jfireframework.sql.dialect.Dialect;
 import com.jfireframework.sql.executor.SqlExecutor;
 import com.jfireframework.sql.executor.SqlInvoker;
+import com.jfireframework.sql.metadata.Page;
 import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
-import com.jfireframework.sql.util.Page;
 
 public class OraclePageExecutor implements SqlExecutor
 {

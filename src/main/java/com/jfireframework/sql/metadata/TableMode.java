@@ -1,4 +1,4 @@
-package com.jfireframework.sql.util;
+package com.jfireframework.sql.metadata;
 
 public enum TableMode
 {

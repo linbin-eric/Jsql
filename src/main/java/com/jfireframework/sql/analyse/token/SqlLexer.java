@@ -18,7 +18,7 @@ import com.jfireframework.sql.analyse.token.parser.impl.SkipWhiteSpaceParser;
 import com.jfireframework.sql.analyse.token.parser.impl.SymbolParser;
 import com.jfireframework.sql.analyse.token.parser.impl.TemplateCharacterParser;
 import com.jfireframework.sql.analyse.token.parser.impl.TextParser;
-import com.jfireframework.sql.util.TableEntityInfo;
+import com.jfireframework.sql.metadata.TableEntityInfo;
 
 public class SqlLexer
 {
@@ -108,7 +108,7 @@ public class SqlLexer
 					if (listerals.startsWith(each))
 					{
 						String propertyName = listerals.substring(each.length());
-						String columnName = transfers.get(entityAliasNameMap.get(each)).getPropertyNameToColumnNameMap().get(propertyName);
+						String columnName = transfers.get(entityAliasNameMap.get(each)).getPropertyNameKeyMap().get(propertyName).getColumnName();
 						token.setListerals(each + columnName);
 						break;
 					}
@@ -156,14 +156,13 @@ public class SqlLexer
 	 */
 	private void transferPropertyNameToColumnName(List<TableEntityInfo> hit)
 	{
-		for (TableEntityInfo tableTransfer : hit)
+		for (TableEntityInfo info : hit)
 		{
-			Map<String, String> propertyNameToColumnNameMap = tableTransfer.getPropertyNameToColumnNameMap();
 			for (Token token : tokens)
 			{
-				if (isPropertyName(propertyNameToColumnNameMap, token))
+				if (isPropertyName(info, token))
 				{
-					token.setListerals(propertyNameToColumnNameMap.get(token.getListerals()));
+					token.setListerals(info.getPropertyNameKeyMap().get(token.getListerals()).getColumnName());
 				}
 			}
 		}
@@ -205,9 +204,9 @@ public class SqlLexer
 	 * @param token
 	 * @return
 	 */
-	private boolean isPropertyName(Map<String, String> propertyNameToColumnNameMap, Token token)
+	private boolean isPropertyName(TableEntityInfo info, Token token)
 	{
-		return token.getTokenType() == TokenType.IDENTIFIER && propertyNameToColumnNameMap.containsKey(token.getListerals());
+		return token.getTokenType() == TokenType.IDENTIFIER && info.getPropertyNameKeyMap().containsKey(token.getListerals());
 	}
 	
 	/**

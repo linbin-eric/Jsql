@@ -5,7 +5,7 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
-import com.jfireframework.sql.annotation.ColumnDef;
+import com.jfireframework.sql.annotation.StandardColumnDef;
 import com.jfireframework.sql.annotation.Pk;
 import com.jfireframework.sql.annotation.TableDef;
 import com.jfireframework.sql.annotation.pkstrategy.AutoIncrement;
@@ -21,7 +21,7 @@ public class MysqlTable
     @AutoIncrement
     @Comment("这是主键")
     @Constraint(type = Type.PRIMARY_KEY)
-    @ColumnDef(isNullable = false)
+    @StandardColumnDef(isNullable = false)
     private Integer   id;
     @Comment("12123注释")
     private int       col1;

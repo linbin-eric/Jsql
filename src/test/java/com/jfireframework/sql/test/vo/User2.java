@@ -1,6 +1,6 @@
 package com.jfireframework.sql.test.vo;
 
-import com.jfireframework.sql.annotation.ColumnDef;
+import com.jfireframework.sql.annotation.StandardColumnDef;
 import com.jfireframework.sql.annotation.Pk;
 import com.jfireframework.sql.annotation.TableDef;
 
@@ -9,7 +9,7 @@ public class User2
 {
     @Pk
     private Integer id;
-    @ColumnDef(columnName = "name2")
+    @StandardColumnDef(columnName = "name2")
     private String  name;
     private int     age;
     

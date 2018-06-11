@@ -5,45 +5,72 @@ import java.util.List;
 import java.util.Map;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.sql.annotation.TableDef;
+import com.jfireframework.sql.metadata.TableEntityInfo;
+import com.jfireframework.sql.metadata.TableEntityInfo.ColumnInfo;
 
-public class InsertModel extends Model<InsertModel>
+public class InsertModel extends Model
 {
-	private List<String> insertProperties;
+	private List<InsertEntry> insertEntries;
 	
-	public InsertModel insert(String property)
+	class InsertEntry
 	{
-		if (insertProperties == null)
+		String	propertyName;
+		Object	value;
+		
+		public InsertEntry(String propertyName, Object value)
 		{
-			insertProperties = new LinkedList<String>();
+			this.propertyName = propertyName;
+			this.value = value;
 		}
-		insertProperties.add(property);
+		
+	}
+	
+	public Model insert(String property, Object value)
+	{
+		if (insertEntries == null)
+		{
+			insertEntries = new LinkedList<InsertEntry>();
+		}
+		insertEntries.add(new InsertEntry(property, value));
 		return this;
 	}
 	
 	@Override
-	public InsertModel generate()
+	public String getSql()
 	{
-		generateBefore();
 		StringCache cache = new StringCache();
 		cache.append("insert into ").append(entityClass.getAnnotation(TableDef.class).name()).append(" (");
-		if (insertProperties == null)
+		if (insertEntries == null)
 		{
 			throw new NullPointerException("需要插入的属性为空");
 		}
-		Map<String, String> columnNameMap = getColumnNameMap();
-		for (String each : insertProperties)
+		Map<String, ColumnInfo> columnInfoMap = TableEntityInfo.parse(entityClass).getPropertyNameKeyMap();
+		for (InsertEntry each : insertEntries)
 		{
-			cache.append(columnNameMap.get(each)).appendComma();
+			cache.append(columnInfoMap.get(each.propertyName).getColumnName()).appendComma();
 		}
 		cache.deleteLast().append(") values(");
-		int size = insertProperties.size();
+		int size = insertEntries.size();
 		for (int i = 0; i < size; i++)
 		{
 			cache.append("?,");
 		}
 		cache.deleteLast().append(')');
-		generateSql = cache.toString();
-		return this;
+		return cache.toString();
+	}
+	
+	@Override
+	public List<Object> getParams()
+	{
+		List<Object> params = new LinkedList<Object>();
+		if (insertEntries != null)
+		{
+			for (InsertEntry insertEntry : insertEntries)
+			{
+				params.add(insertEntry.value);
+			}
+		}
+		return params;
 	}
 	
 }

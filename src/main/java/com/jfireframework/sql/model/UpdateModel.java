@@ -5,42 +5,75 @@ import java.util.List;
 import java.util.Map;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.sql.annotation.TableDef;
+import com.jfireframework.sql.metadata.TableEntityInfo;
+import com.jfireframework.sql.metadata.TableEntityInfo.ColumnInfo;
 
-public class UpdateModel extends Model<UpdateModel>
+public class UpdateModel extends Model
 {
-	private List<String> setProperties;
+	private List<UpdateEntry> setEntries;
 	
-	public UpdateModel set(String property)
+	class UpdateEntry
 	{
-		check();
-		if (setProperties == null)
+		String	propertyName;
+		Object	value;
+		
+		public UpdateEntry(String propertyName, Object value)
 		{
-			setProperties = new LinkedList<String>();
+			this.propertyName = propertyName;
+			this.value = value;
 		}
-		setProperties.add(property);
+		
+	}
+	
+	public UpdateModel set(String property, Object value)
+	{
+		if (setEntries == null)
+		{
+			setEntries = new LinkedList<UpdateModel.UpdateEntry>();
+		}
+		setEntries.add(new UpdateEntry(property, value));
 		return this;
 	}
 	
 	@Override
-	public UpdateModel generate()
+	public String getSql()
 	{
-		generateBefore();
 		StringCache cache = new StringCache();
 		cache.append("update ").append(entityClass.getAnnotation(TableDef.class).name()).append(" ");
-		if (setProperties == null)
+		if (setEntries == null)
 		{
 			throw new IllegalArgumentException("没有设置需要更新的字段");
 		}
 		cache.append("set ");
-		Map<String, String> columnNameMap = getColumnNameMap();
-		for (String each : setProperties)
+		Map<String, ColumnInfo> columnInfoMap = TableEntityInfo.parse(entityClass).getPropertyNameKeyMap();
+		for (UpdateEntry each : setEntries)
 		{
-			cache.append(columnNameMap.get(each)).append("=?,");
+			cache.append(columnInfoMap.get(each.propertyName).getColumnName()).append("=?,");
 		}
 		cache.deleteLast().append(' ');
-		setWhereColumns(cache, columnNameMap);
-		generateSql = cache.toString();
-		return this;
+		setWhereColumns(cache);
+		return cache.toString();
+	}
+	
+	@Override
+	public List<Object> getParams()
+	{
+		List<Object> params = new LinkedList<Object>();
+		if (setEntries != null)
+		{
+			for (UpdateEntry updateEntry : setEntries)
+			{
+				params.add(updateEntry.value);
+			}
+		}
+		if (whereEntries != null)
+		{
+			for (WhereEntry whereEntry : whereEntries)
+			{
+				params.add(whereEntry.value);
+			}
+		}
+		return params;
 	}
 	
 }

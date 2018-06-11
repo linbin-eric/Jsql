@@ -10,19 +10,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.sql.SessionFactory;
-import com.jfireframework.sql.SqlSession;
 import com.jfireframework.sql.curd.CurdInfo;
 import com.jfireframework.sql.curd.LockMode;
 import com.jfireframework.sql.dialect.Dialect;
 import com.jfireframework.sql.executor.SqlInvoker;
-import com.jfireframework.sql.model.CountModel;
-import com.jfireframework.sql.model.DeleteModel;
-import com.jfireframework.sql.model.InsertModel;
-import com.jfireframework.sql.model.QueryModel;
-import com.jfireframework.sql.model.UpdateModel;
+import com.jfireframework.sql.metadata.TableEntityInfo;
+import com.jfireframework.sql.model.Model;
+import com.jfireframework.sql.session.SqlSession;
 import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 import com.jfireframework.sql.transfer.resultset.impl.IntegerTransfer;
-import com.jfireframework.sql.util.TableEntityInfo;
 
 public class SqlSessionImpl implements SqlSession
 {
@@ -151,7 +147,7 @@ public class SqlSessionImpl implements SqlSession
 	public <T> void save(T entity)
 	{
 		TableEntityInfo tableEntityInfo = TableEntityInfo.parse(entity.getClass());
-		Field pkField = tableEntityInfo.getPkField();
+		Field pkField = tableEntityInfo.getPkInfo().getField();
 		try
 		{
 			if (pkField.get(entity) == null)
@@ -232,86 +228,44 @@ public class SqlSessionImpl implements SqlSession
 	}
 	
 	@Override
-	public <T> T findOne(QueryModel model, Object... params)
+	public <T> T findOne(Model model)
 	{
-		List<Object> list = cahcedParams.get();
-		for (Object each : params)
-		{
-			list.add(each);
-		}
-		String sql = model.getSql();
-		T result = query(model.getBeanTransfer(), sql, list);
-		list.clear();
+		T result = query(model.getBeanTransfer(), model.getSql(), model.getParams());
 		return result;
 	}
 	
 	@Override
-	public <T> List<T> find(QueryModel model, Object... params)
+	public <T> List<T> find(Model model)
 	{
-		List<Object> list = cahcedParams.get();
-		for (Object each : params)
-		{
-			list.add(each);
-		}
-		String sql = model.getSql();
-		List<T> result = queryList(model.getBeanTransfer(), sql, list);
-		list.clear();
+		List<T> result = queryList(model.getBeanTransfer(), model.getSql(), model.getParams());
 		return result;
 	}
 	
 	@Override
-	public int update(UpdateModel model, Object... params)
+	public int update(Model model)
 	{
-		List<Object> list = cahcedParams.get();
-		for (Object each : params)
-		{
-			list.add(each);
-		}
-		String sql = model.getSql();
-		int update = update(sql, list);
-		list.clear();
+		int update = update(model.getSql(), model.getParams());
 		return update;
 	}
 	
 	@Override
-	public int delete(DeleteModel model, Object... params)
+	public int delete(Model model)
 	{
-		List<Object> list = cahcedParams.get();
-		for (Object each : params)
-		{
-			list.add(each);
-		}
-		String sql = model.getSql();
-		int update = update(sql, list);
-		list.clear();
+		int update = update(model.getSql(), model.getParams());
 		return update;
 	}
 	
 	@Override
-	public int count(CountModel model, Object... params)
+	public int count(Model model)
 	{
-		List<Object> list = cahcedParams.get();
-		for (Object each : params)
-		{
-			list.add(each);
-		}
-		String sql = model.getSql();
-		int count = query(countTransfer, sql, list);
-		list.clear();
+		int count = query(countTransfer, model.getSql(), model.getParams());
 		return count;
 	}
 	
 	@Override
-	public void insert(InsertModel model, Object... params)
+	public void insert(Model model)
 	{
-		List<Object> list = cahcedParams.get();
-		for (Object each : params)
-		{
-			list.add(each);
-		}
-		String sql = model.getSql();
-		update(sql, list);
-		list.clear();
+		update(model.getSql(), model.getParams());
 	}
 	
 	@Override
