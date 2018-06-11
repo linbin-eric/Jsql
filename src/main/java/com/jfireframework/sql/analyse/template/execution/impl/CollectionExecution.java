@@ -30,6 +30,21 @@ public class CollectionExecution implements Execution
 			}
 			cache.deleteLast().append(") ");
 		}
+		else if (result instanceof String)
+		{
+			String[] split = ((String) result).split(",");
+			cache.append("(");
+			for (String each : split)
+			{
+				cache.append("?,");
+				params.add(each);
+			}
+			if (cache.isCommaLast())
+			{
+				cache.deleteLast();
+			}
+			cache.append(") ");
+		}
 		else if (result.getClass().isArray())
 		{
 			if (result.getClass().getComponentType().isPrimitive() == false)

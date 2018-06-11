@@ -2,12 +2,17 @@ package com.jfireframework.sql.mapper;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.baseutil.reflect.ReflectUtil;
+import com.jfireframework.baseutil.smc.SmcHelper;
 import com.jfireframework.baseutil.smc.compiler.JavaStringCompiler;
 import com.jfireframework.baseutil.smc.model.ClassModel;
 import com.jfireframework.baseutil.smc.model.FieldModel;
@@ -21,6 +26,18 @@ import com.jfireframework.sql.session.SqlSession;
 import com.jfireframework.sql.transfer.resultset.ResultMap;
 import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 import com.jfireframework.sql.transfer.resultset.impl.BeanTransfer;
+import com.jfireframework.sql.transfer.resultset.impl.BooleanTransfer;
+import com.jfireframework.sql.transfer.resultset.impl.DoubleTransfer;
+import com.jfireframework.sql.transfer.resultset.impl.EnumNameTransfer;
+import com.jfireframework.sql.transfer.resultset.impl.FloatTransfer;
+import com.jfireframework.sql.transfer.resultset.impl.IntegerTransfer;
+import com.jfireframework.sql.transfer.resultset.impl.LongTransfer;
+import com.jfireframework.sql.transfer.resultset.impl.ShortTransfer;
+import com.jfireframework.sql.transfer.resultset.impl.SqlDateTransfer;
+import com.jfireframework.sql.transfer.resultset.impl.StringTransfer;
+import com.jfireframework.sql.transfer.resultset.impl.TimeStampTransfer;
+import com.jfireframework.sql.transfer.resultset.impl.TimeTransfer;
+import com.jfireframework.sql.transfer.resultset.impl.UtilDateTransfer;
 
 public class MapperGenerator
 {
@@ -36,8 +53,15 @@ public class MapperGenerator
 				throw new IllegalArgumentException("类:" + method.getDeclaringClass().getName() + "有方法没有打@Sql注解");
 			}
 		}
-		ClassModel classModel = new ClassModel(ckass.getName() + "$Mapper$" + count.getAndIncrement(), Mapper.class, ckass);
-		classModel.addImport(Mapper.class, Template.class, Map.class, HashMap.class, String.class, List.class, BeanTransfer.class, SqlSession.class);
+		ClassModel classModel = new ClassModel(ckass.getSimpleName() + "$Mapper$" + count.getAndIncrement(), Mapper.class, ckass);
+		classModel.addImport(Mapper.class);
+		classModel.addImport(Template.class);
+		classModel.addImport(Map.class);
+		classModel.addImport(HashMap.class);
+		classModel.addImport(String.class);
+		classModel.addImport(BeanTransfer.class);
+		classModel.addImport(SqlSession.class);
+		classModel.addImport(List.class);
 		AtomicInteger fieldNameCount = new AtomicInteger(0);
 		for (Method method : methods)
 		{
@@ -46,7 +70,7 @@ public class MapperGenerator
 			cache.append("if(session==null){throw new NullPointerException(\"当前没有session\");\r\n}");
 			cache.append("Map<String,Object> variables = cachedVariables.get();\r\n");
 			cache.append("List<Object> params = cachedParams.get();\r\n");
-			MethodModel methodModel = new MethodModel(method);
+			MethodModel methodModel = new MethodModel(method, classModel);
 			Sql annotation = method.getAnnotation(Sql.class);
 			String formatSql = generateSqlAndTemplateField(tableEntityInfos, classModel, fieldNameCount, method, cache, annotation);
 			if (formatSql.startsWith("SELECT"))
@@ -62,7 +86,16 @@ public class MapperGenerator
 				else
 				{
 					addResultSetTransferField(classModel, method, transferFieldName, method.getReturnType());
-					cache.append(method.getReturnType().getName()).append(" result = session.query(").append(transferFieldName).append(",sql,params);\r\n");
+					String returnTypeName;
+					if (method.getReturnType().isPrimitive())
+					{
+						returnTypeName = ReflectUtil.wrapPrimitive(method.getReturnType()).getName();
+					}
+					else
+					{
+						returnTypeName = SmcHelper.getReferenceName(method.getReturnType(), classModel);
+					}
+					cache.append(returnTypeName).append(" result = session.query(").append(transferFieldName).append(",sql,params);\r\n");
 				}
 			}
 			else
@@ -97,13 +130,74 @@ public class MapperGenerator
 	 */
 	private static void addResultSetTransferField(ClassModel classModel, Method method, String transferFieldName, Class<?> itemType)
 	{
-		Class<? extends ResultSetTransfer> resultSetTransferClass = method.isAnnotationPresent(ResultMap.class) ? method.getAnnotation(ResultMap.class).value() : BeanTransfer.class;
-		if (resultSetTransferClass != BeanTransfer.class)
+		Class<? extends ResultSetTransfer> ckass = null;
+		if (method.isAnnotationPresent(ResultMap.class))
 		{
-			classModel.addImport(resultSetTransferClass);
+			ckass = method.getAnnotation(ResultMap.class).value();
 		}
-		FieldModel transferField = new FieldModel(transferFieldName, ResultSetTransfer.class, "new BeanTransfer().initialize(" + itemType.getName() + ".class)");
-		classModel.addField(transferField);
+		else if (itemType == String.class)
+		{
+			ckass = StringTransfer.class;
+		}
+		else if (Enum.class.isAssignableFrom(itemType))
+		{
+			ckass = EnumNameTransfer.class;
+		}
+		else if (itemType == Date.class)
+		{
+			ckass = SqlDateTransfer.class;
+		}
+		else if (itemType == java.util.Date.class)
+		{
+			ckass = UtilDateTransfer.class;
+		}
+		else if (itemType == Timestamp.class)
+		{
+			ckass = TimeStampTransfer.class;
+		}
+		else if (itemType == Time.class)
+		{
+			ckass = TimeTransfer.class;
+		}
+		else if (itemType.isPrimitive())
+		{
+			itemType = ReflectUtil.wrapPrimitive(itemType);
+			if (itemType == Integer.class)
+			{
+				ckass = IntegerTransfer.class;
+			}
+			else if (itemType == Long.class)
+			{
+				ckass = LongTransfer.class;
+			}
+			else if (itemType == Short.class)
+			{
+				ckass = ShortTransfer.class;
+			}
+			else if (itemType == Float.class)
+			{
+				ckass = FloatTransfer.class;
+			}
+			else if (itemType == Double.class)
+			{
+				ckass = DoubleTransfer.class;
+			}
+			else if (itemType == Boolean.class)
+			{
+				ckass = BooleanTransfer.class;
+			}
+			else
+			{
+				throw new UnsupportedOperationException("不支持的单类型转换:" + itemType.getName());
+			}
+		}
+		else
+		{
+			ckass = BeanTransfer.class;
+		}
+		classModel.addImport(ckass);
+		FieldModel fieldModel = new FieldModel(transferFieldName, ResultSetTransfer.class, "new " + SmcHelper.getReferenceName(ckass, classModel) + "().initialize(" + SmcHelper.getReferenceName(itemType, classModel) + ".class)", classModel);
+		classModel.addField(fieldModel);
 	}
 	
 	/**
@@ -121,7 +215,7 @@ public class MapperGenerator
 	{
 		String formatSql = SqlLexer.parse(annotation.sql()).transfer(tableEntityInfos).format();
 		String templateFieldName = "template_" + (fieldNameCount.getAndIncrement());
-		FieldModel fieldModel = new FieldModel(templateFieldName, Template.class, "Template.parse(\"" + formatSql + "\")");
+		FieldModel fieldModel = new FieldModel(templateFieldName, Template.class, "Template.parse(\"" + formatSql + "\")", classModel);
 		classModel.addField(fieldModel);
 		Class<?>[] parameterTypes = method.getParameterTypes();
 		String paramNames = annotation.paramNames();
@@ -132,6 +226,7 @@ public class MapperGenerator
 			for (String each : names)
 			{
 				cache.append("variables.put(\"").append(each).append("\",$").append(index).append(");\r\n");
+				index++;
 			}
 		}
 		cache.append("String sql =").append(templateFieldName).append(".render(variables,params);\r\n");

@@ -11,10 +11,11 @@ import org.junit.Test;
 import com.jfireframework.sql.SessionFactory;
 import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.annotation.Sql;
-import com.jfireframework.sql.constant.TableNameCaseStrategy;
 import com.jfireframework.sql.dialect.impl.H2Dialect;
 import com.jfireframework.sql.metadata.Page;
-import com.jfireframework.sql.session.impl.SqlSession;
+import com.jfireframework.sql.metadata.TableMode;
+import com.jfireframework.sql.session.SqlSession;
+import com.jfireframework.sql.test.vo.SqlLog;
 import com.jfireframework.sql.test.vo.User;
 import com.jfireframework.sql.test.vo.User.State;
 import com.jfireframework.sql.test.vo.User.StringEnum;
@@ -26,90 +27,90 @@ public class MapperTest
 {
 	public static interface TestOp
 	{
-		@Sql(sql = "select count(*) from {table} ", paramNames = "table")
+		@Sql(sql = "select count(*) from #{table} ", paramNames = "table")
 		public int count(String table);
 		
-		@Sql(sql = "select count(*) from {table} where name2=$name", paramNames = "table,name")
+		@Sql(sql = "select count(*) from #{table} where name2=${name}", paramNames = "table,name")
 		public int count(String table, String name);
 		
 		/** 测试$%%格式 **/
-		@Sql(sql = "select count(*) from User where name like $%name%", paramNames = "name")
+		@Sql(sql = "select count(*) from User where name like ${'%'+name+'%'}", paramNames = "name")
 		public int count2(String name);
 		
-		@Sql(sql = "select count(*) from User where name like $%name", paramNames = "name")
+		@Sql(sql = "select count(*) from User where name like ${'%'+name}", paramNames = "name")
 		public int count3(String name);
 		
-		@Sql(sql = "select count(*) from User where name like $name%", paramNames = "name")
+		@Sql(sql = "select count(*) from User where name like ${name+'%'}", paramNames = "name")
 		public int count4(String name);
 		
 		/** 测试$%%格式 **/
 		
 		/** 测试$~ **/
-		@Sql(sql = "select count(*) from User where id in $~ids", paramNames = "ids")
+		@Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
 		public int count5(String ids);
 		
-		@Sql(sql = "select count(*) from User where id in $~ids", paramNames = "ids")
+		@Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
 		public int count5(String[] ids);
 		
-		@Sql(sql = "select count(*) from User where id in $~ids", paramNames = "ids")
+		@Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
 		public int count5(int[] ids);
 		
-		@Sql(sql = "select count(*) from User where id in $~ids", paramNames = "ids")
+		@Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
 		public int count5(Integer[] ids);
 		
-		@Sql(sql = "select count(*) from User where id in $~ids", paramNames = "ids")
+		@Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
 		public int count5(long[] ids);
 		
-		@Sql(sql = "select count(*) from User where id in $~ids", paramNames = "ids")
+		@Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
 		public int count5(Long[] ids);
 		
-		@Sql(sql = "select count(*) from User where id in $~ids", paramNames = "ids")
+		@Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
 		public int count5(List<Integer> ids);
 		
-		@Sql(sql = "select count(*) from User where id in $~ids", paramNames = "ids")
+		@Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
 		public int count5_2(List<String> ids);
 		
 		/** 测试$~ **/
 		
 		/** 测试as 功能 **/
-		@Sql(sql = "select * from User as u where u.name = $name", paramNames = "name")
+		@Sql(sql = "select * from User as u where u.name = ${name}", paramNames = "name")
 		public User find(String name);
 		
-		@Sql(sql = "select age from User as u where u.name = $name", paramNames = "name")
+		@Sql(sql = "select age from User as u where u.name = ${name}", paramNames = "name")
 		public User find2(String name);
 		
-		@Sql(sql = "select age as a from User as u where u.name = $name", paramNames = "name")
+		@Sql(sql = "select age as a from User as u where u.name = ${name}", paramNames = "name")
 		public User find3(String name);
 		
 		/** 测试as类别名 **/
 		/** 测试Enum */
-		@Sql(sql = "select * from User where state =$s.ordinal()", paramNames = "s")
+		@Sql(sql = "select * from User where state =${s.ordinal()}", paramNames = "s")
 		public User find(State s);
 		
-		@Sql(sql = "select * from User where stringEnum = $v.name()", paramNames = "v")
+		@Sql(sql = "select * from User where stringEnum = ${v.name()}", paramNames = "v")
 		User find(StringEnum v);
 		
 		@ResultMap(EnumOrdinalTransfer.class)
-		@Sql(sql = "select state from User where name=$name", paramNames = "name")
+		@Sql(sql = "select state from User where name=${name}", paramNames = "name")
 		public State findState(String name);
 		
 		@ResultMap(EnumOrdinalTransfer.class)
-		@Sql(sql = "select state from User where name like $%name%", paramNames = "name")
+		@Sql(sql = "select state from User where name like ${'%'+name+'%'}", paramNames = "name")
 		public List<State> findListState(String name);
 		
 		/** 测试Enum */
 		
 		/* 测试对POJO属性的提取 */
 		/* 测试page */
-		@Sql(sql = "select * from User <if( $name == )> where name like $%name% </if> ", paramNames = "name")
+		@Sql(sql = "select * from User <%if( name != null) {%> where name like ${'%'+name+'%'} <%}%> ", paramNames = "name")
 		public List<User> find(String name, Page page);
 		
-		@Sql(sql = "select * from User where name like $%name%", paramNames = "name")
+		@Sql(sql = "select * from User where name like ${'%'+name+'%'}", paramNames = "name")
 		public List<User> find2(String name, Page page);
 		
 		/* 测试page */
 		/* 静态常量 */
-		@Sql(sql = "select * from User where name = @com.jfireframework.sql.test.vo.User.customName", paramNames = "")
+		@Sql(sql = "select * from User where name = ${T(com.jfireframework.sql.test.vo.User).customName}", paramNames = "")
 		User find3();
 		/* 静态常量 */
 		
@@ -118,7 +119,7 @@ public class MapperTest
 	public static interface TestOp2
 	{
 		/** 测试Enum */
-		@Sql(sql = "select * from User where state =$s.ordinal()", paramNames = "s")
+		@Sql(sql = "select * from User where state =${s.ordinal()}", paramNames = "s")
 		public User find(State s);
 	}
 	
@@ -137,9 +138,7 @@ public class MapperTest
 		dataSource.setPassword("");
 		config.setDataSource(dataSource);
 		config.setClassLoader(MapperTest.class.getClassLoader());
-		config.setTableMode("create");
-		config.setSchema("PUBLIC");
-		config.setTableNameCaseStrategy(TableNameCaseStrategy.UPPER);
+		config.setTableMode(TableMode.CREATE);
 		config.setDialect(new H2Dialect() {
 			protected void setUnDefinedType(PreparedStatement preparedStatement, int i, Object value) throws SQLException
 			{
@@ -160,6 +159,7 @@ public class MapperTest
 			}
 		});
 		config.setScanPackage("com.jfireframework.sql.test:in~*$TestOp;com.jfireframework.sql.test.vo");
+		config.addSqlExecutor(new SqlLog());
 		sessionFactory = config.build();
 		SqlSession session = sessionFactory.openSession();
 		User user = new User();
@@ -186,7 +186,7 @@ public class MapperTest
 	public void test_1()
 	{
 		Assert.assertEquals(2, testOp.count("user"));
-		Assert.assertEquals(1, testOp.count("user", "lin"));
+		Assert.assertEquals(1, testOp.count("user", "linbin"));
 		sessionFactory.getOrCreateCurrentSession().close();
 	}
 	

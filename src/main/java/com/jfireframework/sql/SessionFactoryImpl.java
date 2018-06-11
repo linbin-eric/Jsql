@@ -26,6 +26,10 @@ public class SessionFactoryImpl implements SessionFactory
 		this.invoker = invoker;
 		this.dataSource = dataSource;
 		this.dialect = dialect;
+		for (Mapper mapper : mappers.values())
+		{
+			mapper.setSessionFactory(this);
+		}
 	}
 	
 	@Override
@@ -55,6 +59,7 @@ public class SessionFactoryImpl implements SessionFactory
 		if (session == null)
 		{
 			session = openSession();
+			CURRENT_SESSION.set(session);
 		}
 		return session;
 	}
