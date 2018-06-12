@@ -9,13 +9,8 @@ import com.jfireframework.sql.metadata.TableMode;
 
 public interface SchemaAdjustment
 {
-    static AtomicInteger count = new AtomicInteger(0);
-    
-    void adjust(TableMode mode, DataSource dataSource, Set<TableEntityInfo> tableEntityInfos) throws SQLException;
-    
-    // void createTable(DataSource dataSource, Set<TableEntityInfo>
-    // tableEntityInfos) throws SQLException;
-    
-    // void updateTable(DataSource dataSource, Set<TableEntityInfo>
-    // tableEntityInfos) throws SQLException;
+	static AtomicInteger count = new AtomicInteger(0);
+	
+	void adjust(TableMode mode, DataSource dataSource, Set<TableEntityInfo> tableEntityInfos) throws SQLException;
+	
 }

@@ -1,5 +1,6 @@
 package com.jfireframework.sql.test;
 
+import static org.junit.Assert.assertNotNull;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Time;
@@ -18,9 +19,11 @@ import com.jfireframework.sql.SessionFactory;
 import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.curd.LockMode;
 import com.jfireframework.sql.metadata.TableMode;
+import com.jfireframework.sql.model.Model;
 import com.jfireframework.sql.session.SqlSession;
 import com.jfireframework.sql.test.vo.SqlLog;
 import com.jfireframework.sql.test.vo.User;
+import com.jfireframework.sql.test.vo.User3;
 import com.zaxxer.hikari.HikariDataSource;
 
 public class CURDTest
@@ -284,4 +287,18 @@ public class CURDTest
 		Assert.assertEquals(1, count.get());
 	}
 	
+	/**
+	 * 测试主键自动生成
+	 */
+	@Test
+	public void test()
+	{
+		SqlSession session = sessionFactory.openSession();
+		User3 user3 = new User3();
+		user3.setName("121");
+		session.save(user3);
+		User3 one = session.findOne(Model.query(User3.class).where("name", "121"));
+		assertNotNull(one.getId());
+		System.out.println(one.getId());
+	}
 }

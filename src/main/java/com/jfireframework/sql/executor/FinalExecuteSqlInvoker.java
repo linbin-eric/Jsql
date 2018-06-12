@@ -1,4 +1,4 @@
-package com.jfireframework.sql.executor.impl;
+package com.jfireframework.sql.executor;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -8,15 +8,13 @@ import java.util.LinkedList;
 import java.util.List;
 import com.jfireframework.sql.dialect.Dialect;
 import com.jfireframework.sql.exception.NotSingleResultException;
-import com.jfireframework.sql.executor.SqlExecutor;
-import com.jfireframework.sql.executor.SqlInvoker;
 import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 
-public class DefaultSqlExecutor implements SqlExecutor
+public class FinalExecuteSqlInvoker implements SqlInvoker
 {
 	
 	@Override
-	public int update(String sql, List<Object> params, Connection connection, Dialect dialect, SqlInvoker next) throws SQLException
+	public int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
 	{
 		PreparedStatement prepareStatement = null;
 		try
@@ -37,7 +35,7 @@ public class DefaultSqlExecutor implements SqlExecutor
 	}
 	
 	@Override
-	public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect, SqlInvoker next) throws SQLException
+	public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
 	{
 		PreparedStatement prepareStatement = null;
 		ResultSet generatedKeys = null;
@@ -66,7 +64,7 @@ public class DefaultSqlExecutor implements SqlExecutor
 	}
 	
 	@Override
-	public List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer, SqlInvoker next) throws SQLException
+	public List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
 	{
 		PreparedStatement prepareStatement = null;
 		ResultSet resultSet = null;
@@ -96,7 +94,7 @@ public class DefaultSqlExecutor implements SqlExecutor
 	}
 	
 	@Override
-	public Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer, SqlInvoker next) throws SQLException
+	public Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
 	{
 		PreparedStatement prepareStatement = null;
 		ResultSet executeQuery = null;
@@ -131,12 +129,6 @@ public class DefaultSqlExecutor implements SqlExecutor
 			}
 		}
 		
-	}
-	
-	@Override
-	public int order()
-	{
-		return Integer.MAX_VALUE;
 	}
 	
 }

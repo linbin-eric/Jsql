@@ -1,4 +1,4 @@
-package com.jfireframework.sql.dbstructure.column;
+package com.jfireframework.sql.dbstructure;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

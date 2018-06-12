@@ -32,9 +32,9 @@ import com.jfireframework.sql.dialect.Dialect;
 import com.jfireframework.sql.dialect.impl.H2Dialect;
 import com.jfireframework.sql.dialect.impl.MysqlDialect;
 import com.jfireframework.sql.dialect.impl.OracleDialect;
+import com.jfireframework.sql.executor.FinalExecuteSqlInvoker;
 import com.jfireframework.sql.executor.SqlExecutor;
 import com.jfireframework.sql.executor.SqlInvoker;
-import com.jfireframework.sql.executor.impl.DefaultSqlExecutor;
 import com.jfireframework.sql.executor.impl.OraclePageExecutor;
 import com.jfireframework.sql.executor.impl.StandardPageExecutor;
 import com.jfireframework.sql.mapper.Mapper;
@@ -177,7 +177,6 @@ public class SessionfactoryConfig
 	
 	private SqlInvoker generateHeadSqlInvoker(String productName)
 	{
-		sqlExecutors.add(new DefaultSqlExecutor());
 		if ("mysql".equalsIgnoreCase(productName) || "h2".equalsIgnoreCase(productName))
 		{
 			sqlExecutors.add(new StandardPageExecutor());
@@ -194,64 +193,42 @@ public class SessionfactoryConfig
 				return o1.order() - o2.order();
 			}
 		});
-		SqlInvoker pred = new SqlInvoker() {
-			
-			@Override
-			public int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
-			{
-				throw new UnsupportedOperationException();
-			}
-			
-			@Override
-			public Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
-			{
-				throw new UnsupportedOperationException();
-			}
-			
-			@Override
-			public List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
-			{
-				throw new UnsupportedOperationException();
-			}
-			
-			@Override
-			public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
-			{
-				throw new UnsupportedOperationException();
-			}
-		};
-		int index = sqlExecutors.size() - 1;
-		for (int i = index; i > -1; i--)
+		SqlInvoker pred = new FinalExecuteSqlInvoker();
+		if (sqlExecutors.isEmpty() == false)
 		{
-			final SqlExecutor sqlExecutor = sqlExecutors.get(i);
-			final SqlInvoker next = pred;
-			SqlInvoker sqlInvoker = new SqlInvoker() {
-				
-				@Override
-				public int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
-				{
-					return sqlExecutor.update(sql, params, connection, dialect, next);
-				}
-				
-				@Override
-				public Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
-				{
-					return sqlExecutor.queryOne(sql, params, connection, dialect, resultSetTransfer, next);
-				}
-				
-				@Override
-				public List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
-				{
-					return sqlExecutor.queryList(sql, params, connection, dialect, resultSetTransfer, next);
-				}
-				
-				@Override
-				public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
-				{
-					return sqlExecutor.insertWithReturnKey(sql, params, connection, dialect, next);
-				}
-			};
-			pred = sqlInvoker;
+			int index = sqlExecutors.size() - 1;
+			for (int i = index; i > -1; i--)
+			{
+				final SqlExecutor sqlExecutor = sqlExecutors.get(i);
+				final SqlInvoker next = pred;
+				SqlInvoker sqlInvoker = new SqlInvoker() {
+					
+					@Override
+					public int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
+					{
+						return sqlExecutor.update(sql, params, connection, dialect, next);
+					}
+					
+					@Override
+					public Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
+					{
+						return sqlExecutor.queryOne(sql, params, connection, dialect, resultSetTransfer, next);
+					}
+					
+					@Override
+					public List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
+					{
+						return sqlExecutor.queryList(sql, params, connection, dialect, resultSetTransfer, next);
+					}
+					
+					@Override
+					public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
+					{
+						return sqlExecutor.insertWithReturnKey(sql, params, connection, dialect, next);
+					}
+				};
+				pred = sqlInvoker;
+			}
 		}
 		SqlInvoker head = pred;
 		return head;

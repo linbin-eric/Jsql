@@ -1,6 +1,7 @@
 package com.jfireframework.sql.curd;
 
 import java.util.List;
+import com.jfireframework.sql.SessionFactory;
 import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 
 public interface CurdInfo<T>
@@ -64,4 +65,5 @@ public interface CurdInfo<T>
 	 */
 	ResultSetTransfer getBeanTransfer();
 	
+	void setSessionFactory(SessionFactory sessionFactory);
 }

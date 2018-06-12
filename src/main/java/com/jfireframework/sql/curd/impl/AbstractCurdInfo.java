@@ -5,6 +5,7 @@ import java.util.LinkedList;
 import java.util.List;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.sql.SessionFactory;
 import com.jfireframework.sql.annotation.pkstrategy.PkGenerator;
 import com.jfireframework.sql.curd.CurdInfo;
 import com.jfireframework.sql.curd.LockMode;
@@ -310,5 +311,13 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
 	public ResultSetTransfer getBeanTransfer()
 	{
 		return beanTransfer;
+	}
+	
+	public void setSessionFactory(SessionFactory sessionFactory)
+	{
+		if (generator != null)
+		{
+			generator.setSessionFactory(sessionFactory);
+		}
 	}
 }

@@ -18,7 +18,7 @@ import com.jfireframework.sql.session.SqlSession;
 import com.jfireframework.sql.test.vo.User;
 import com.zaxxer.hikari.HikariDataSource;
 
-public class StrategyTest
+public class ModelTest
 {
 	private SessionFactory sessionFactory;
 	
@@ -32,7 +32,7 @@ public class StrategyTest
 		dataSource.setUsername("sa");
 		dataSource.setPassword("");
 		config.setDataSource(dataSource);
-		config.setClassLoader(StrategyTest.class.getClassLoader());
+		config.setClassLoader(ModelTest.class.getClassLoader());
 		config.setTableMode(TableMode.CREATE);
 		config.setScanPackage(User.class.getPackage().getName());
 		sessionFactory = config.build();

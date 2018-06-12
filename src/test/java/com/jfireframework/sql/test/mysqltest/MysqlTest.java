@@ -6,9 +6,8 @@ import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
+import org.junit.Ignore;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.jfireframework.sql.SessionFactory;
 import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.metadata.TableMode;
@@ -19,9 +18,8 @@ import com.zaxxer.hikari.HikariDataSource;
 
 public class MysqlTest
 {
-	private static final Logger logger = LoggerFactory.getLogger(MysqlTest.class);
-	
 	@Test
+	@Ignore
 	public void test() throws SQLException
 	{
 		HikariDataSource dataSource = new HikariDataSource();

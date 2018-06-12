@@ -30,6 +30,10 @@ public class SessionFactoryImpl implements SessionFactory
 		{
 			mapper.setSessionFactory(this);
 		}
+		for (CurdInfo<?> curdInfo : curdInfos.values())
+		{
+			curdInfo.setSessionFactory(this);
+		}
 	}
 	
 	@Override

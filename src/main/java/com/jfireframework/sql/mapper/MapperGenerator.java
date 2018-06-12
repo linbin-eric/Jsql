@@ -67,7 +67,7 @@ public class MapperGenerator
 		{
 			StringCache cache = new StringCache();
 			cache.append("SqlSession session = sessionFactory.getCurrentSession();\r\n");
-			cache.append("if(session==null){throw new NullPointerException(\"当前没有session\");\r\n}");
+			cache.append("if(session==null){throw new NullPointerException(\"当前没有session\");}");
 			cache.append("Map<String,Object> variables = cachedVariables.get();\r\n");
 			cache.append("List<Object> params = cachedParams.get();\r\n");
 			MethodModel methodModel = new MethodModel(method, classModel);
