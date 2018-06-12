@@ -25,7 +25,6 @@ import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.sql.annotation.StandardColumnDef;
 import com.jfireframework.sql.annotation.TableDef;
 import com.jfireframework.sql.annotation.pkstrategy.AutoIncrement;
-import com.jfireframework.sql.dbstructure.Comment;
 import com.jfireframework.sql.dbstructure.Constraint;
 import com.jfireframework.sql.dbstructure.Index;
 import com.jfireframework.sql.dbstructure.SchemaAdjustment;
@@ -154,10 +153,9 @@ public class MysqlSchemaAdjustment implements SchemaAdjustment
 			{
 				cache.append("AUTO_INCREMENT ");
 			}
-			if (columnInfo.getField().isAnnotationPresent(Comment.class))
+			if (mysqlColumnDef != null && StringUtil.isNotBlank(mysqlColumnDef.comment()))
 			{
-				Comment comment = columnInfo.getField().getAnnotation(Comment.class);
-				cache.append(" COMMENT '").append(comment.value()).append('\'');
+				cache.append(" COMMENT '").append(mysqlColumnDef.comment()).append('\'');
 			}
 			cache.append(",\r\n");
 		}
@@ -385,22 +383,22 @@ public class MysqlSchemaAdjustment implements SchemaAdjustment
 	{
 		for (ColumnInfo columnInfo : each.getPropertyNameKeyMap().values())
 		{
-			StandardColumnDef mysqlColumnDef = columnInfo.getField().getAnnotation(StandardColumnDef.class);
+			StandardColumnDef columnDef = columnInfo.getField().getAnnotation(StandardColumnDef.class);
 			String columnName = columnInfo.getColumnName();
 			ColumnDefinition columnDefinition = queryColumnInfo(connection, schema, tableName, columnName);
 			if (columnDefinition == null)
 			{
-				addColumn(connection, schema, tableName, columnInfo.getField(), mysqlColumnDef, columnName);
+				addColumn(connection, schema, tableName, columnInfo.getField(), columnDef, columnName);
 			}
 		}
 	}
 	
-	private void addColumn(Connection connection, String schema, String tableName, Field field, StandardColumnDef mysqlColumnDef, String columnName) throws SQLException
+	private void addColumn(Connection connection, String schema, String tableName, Field field, StandardColumnDef columnDef, String columnName) throws SQLException
 	{
 		StringCache cache = new StringCache(StringUtil.format(addColumn, schema, tableName, columnName));
-		String columnType = decideColumnType(field, mysqlColumnDef);
+		String columnType = decideColumnType(field, columnDef);
 		cache.append(columnType).append(' ');
-		boolean isNullable = mysqlColumnDef != null ? mysqlColumnDef.isNullable() : false;
+		boolean isNullable = columnDef != null ? columnDef.isNullable() : false;
 		if (isNullable == false)
 		{
 			cache.append("NOT NULL ");
@@ -409,10 +407,9 @@ public class MysqlSchemaAdjustment implements SchemaAdjustment
 		{
 			cache.append("AUTO_INCREMENT ");
 		}
-		if (field.isAnnotationPresent(Comment.class))
+		if (columnDef != null && StringUtil.isNotBlank(columnDef.comment()))
 		{
-			Comment comment = field.getAnnotation(Comment.class);
-			cache.append(" COMMENT '").append(comment.value()).append('\'');
+			cache.append(" COMMENT '").append(columnDef.comment()).append('\'');
 		}
 		String addColumnSql = cache.toString();
 		PreparedStatement prepareStatement = connection.prepareStatement(addColumnSql);

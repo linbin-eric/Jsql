@@ -29,4 +29,6 @@ public @interface StandardColumnDef
 	int numeric_scale() default 2;
 	
 	int datetime_precision() default 6;
+	
+	String comment() default "";
 }

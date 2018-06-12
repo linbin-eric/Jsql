@@ -29,7 +29,7 @@ public class MysqlTest
 		dataSource.setPassword("root");
 		SessionfactoryConfig config = new SessionfactoryConfig();
 		config.setDataSource(dataSource);
-		config.setScanPackage("com.jfireframework.sql.test.mysqltest");
+		config.setScanPackage(MysqlTable.class.getName());
 		config.setTableMode(TableMode.CREATE);
 		SessionFactory sessionFactory = config.build();
 		java.sql.Date date = new java.sql.Date(System.currentTimeMillis());
