@@ -6,7 +6,6 @@ import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
-import org.junit.Ignore;
 import org.junit.Test;
 import com.jfireframework.sql.SessionFactory;
 import com.jfireframework.sql.SessionfactoryConfig;
@@ -19,7 +18,7 @@ import com.zaxxer.hikari.HikariDataSource;
 public class MysqlTest
 {
 	@Test
-	@Ignore
+	// @Ignore
 	public void test() throws SQLException
 	{
 		HikariDataSource dataSource = new HikariDataSource();
@@ -29,12 +28,12 @@ public class MysqlTest
 		dataSource.setPassword("root");
 		SessionfactoryConfig config = new SessionfactoryConfig();
 		config.setDataSource(dataSource);
-		config.setScanPackage(MysqlTable.class.getName());
+		config.setScanPackage(MysqlTable1.class.getPackage().getName() + ":out~*.MysqlTable2");
 		config.setTableMode(TableMode.CREATE);
 		SessionFactory sessionFactory = config.build();
 		java.sql.Date date = new java.sql.Date(System.currentTimeMillis());
 		Calendar calendar = Calendar.getInstance();
-		Model model = Model.insert(MysqlTable.class)//
+		Model model = Model.insert(MysqlTable1.class)//
 		        .insert("col1", 1)//
 		        .insert("col2", 56l)//
 		        .insert("col3", 4.65f)//
@@ -49,7 +48,7 @@ public class MysqlTest
 		        .insert("col12", "112");
 		SqlSession session = sessionFactory.getOrCreateCurrentSession();
 		session.insert(model);
-		MysqlTable one = session.findOne(Model.query(MysqlTable.class).where("col1", 1));
+		MysqlTable1 one = session.findOne(Model.query(MysqlTable1.class).where("col1", 1));
 		assertEquals(Integer.valueOf(1), one.getId());
 		assertEquals(1, one.getCol1());
 		assertEquals(56l, one.getCol2());
@@ -60,6 +59,11 @@ public class MysqlTest
 		assertEquals(date.toString(), one.getCol7().toString());
 		calendar.set(Calendar.MILLISECOND, 0);
 		assertEquals(calendar, one.getCol8());
+		config = new SessionfactoryConfig();
+		config.setDataSource(dataSource);
+		config.setScanPackage(MysqlTable1.class.getPackage().getName() + ":out~*.MysqlTable1");
+		config.setTableMode(TableMode.UPDATE);
+		config.build();
 	}
 	
 }

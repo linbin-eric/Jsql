@@ -41,7 +41,7 @@ public class MysqlSchemaAdjustment implements SchemaAdjustment
 	private String				findColumnNames	= "SELECT COLUMN_NAME from information_schema.`COLUMNS` where TABLE_SCHEMA=? and TABLE_NAME=?";
 	private String				findIndexs		= "SHOW INDEX FROM ";
 	private String				addIndex		= "CREATE INDEX {} USING {} ON {}.{} ({}) ;";
-	private String				dropIndex		= "ALTER TABLE {}.{} DROP INDEX {}";
+	private String				dropIndex		= "ALTER TABLE {}.{} DROP INDEX `{}`";
 	private static final Logger	logger			= LoggerFactory.getLogger(MysqlSchemaAdjustment.class);
 	
 	private void createTable(DataSource dataSource, Set<TableEntityInfo> tableEntityInfos) throws SQLException
@@ -312,6 +312,7 @@ public class MysqlSchemaAdjustment implements SchemaAdjustment
 			for (String indexName : indexs.values())
 			{
 				String dropIndexSql = StringUtil.format(dropIndex, schema, tableName, indexName);
+				logger.debug("traceId:{} 准备删除索引:{}", TRACEID.currentTraceId(), dropIndexSql);
 				PreparedStatement prepareStatement = connection.prepareStatement(dropIndexSql);
 				prepareStatement.executeUpdate();
 				prepareStatement.close();
@@ -389,6 +390,18 @@ public class MysqlSchemaAdjustment implements SchemaAdjustment
 			if (columnDefinition == null)
 			{
 				addColumn(connection, schema, tableName, columnInfo.getField(), columnDef, columnName);
+			}
+			else
+			{
+				String columnType = decideColumnType(columnInfo.getField(), columnDef);
+				if (columnType.toLowerCase().startsWith(columnDefinition.dataType.toLowerCase()) == false)
+				{
+					String dropColumnSqlPrefix = "ALTER TABLE " + tableName + " DROP COLUMN ";
+					PreparedStatement ps = connection.prepareStatement(dropColumnSqlPrefix + columnDefinition.columnName);
+					ps.execute();
+					ps.close();
+					addColumn(connection, schema, tableName, columnInfo.getField(), columnDef, columnName);
+				}
 			}
 		}
 	}

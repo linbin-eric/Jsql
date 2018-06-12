@@ -14,7 +14,7 @@ import com.jfireframework.sql.dbstructure.Constraint.Type;
 import com.jfireframework.sql.dbstructure.Index;
 
 @TableDef(name = "test_demo")
-public class MysqlTable
+public class MysqlTable1
 {
 	@Pk
 	@AutoIncrement
