@@ -79,22 +79,13 @@ public class MapperGenerator
 				if (List.class.isAssignableFrom(method.getReturnType()))
 				{
 					Class<?> componentClass = (Class<?>) ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0];
-					classModel.addImport(componentClass);
 					addResultSetTransferField(classModel, method, transferFieldName, componentClass);
 					cache.append("List result = session.queryList(").append(transferFieldName).append(",sql,params);\r\n");
 				}
 				else
 				{
 					addResultSetTransferField(classModel, method, transferFieldName, method.getReturnType());
-					String returnTypeName;
-					if (method.getReturnType().isPrimitive())
-					{
-						returnTypeName = ReflectUtil.wrapPrimitive(method.getReturnType()).getName();
-					}
-					else
-					{
-						returnTypeName = SmcHelper.getReferenceName(method.getReturnType(), classModel);
-					}
+					String returnTypeName = method.getReturnType().isPrimitive() ? ReflectUtil.wrapPrimitive(method.getReturnType()).getName() : SmcHelper.getReferenceName(method.getReturnType(), classModel);
 					cache.append(returnTypeName).append(" result = session.query(").append(transferFieldName).append(",sql,params);\r\n");
 				}
 			}

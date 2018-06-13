@@ -1,5 +1,6 @@
 package com.jfireframework.sql.test;
 
+import static org.junit.Assert.assertEquals;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.LinkedList;
@@ -53,10 +54,25 @@ public class MapperTest
 		public int count5(String[] ids);
 		
 		@Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
+		public int count5(double[] ids);
+		
+		@Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
+		public int count5(char[] ids);
+		
+		@Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
 		public int count5(int[] ids);
 		
 		@Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
+		public int count5(float[] ids);
+		
+		@Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
 		public int count5(Integer[] ids);
+		
+		@Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
+		public int count5(byte[] ids);
+		
+		@Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
+		public int count5(short[] ids);
 		
 		@Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
 		public int count5(long[] ids);
@@ -66,6 +82,9 @@ public class MapperTest
 		
 		@Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
 		public int count5(List<Integer> ids);
+		
+		@Sql(sql = "select count(*) from User where b in ~{booleans}", paramNames = "booleans")
+		public int count5(boolean[] booleans);
 		
 		@Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
 		public int count5_2(List<String> ids);
@@ -210,12 +229,18 @@ public class MapperTest
 	{
 		Assert.assertEquals(2, testOp.count5("1,2"));
 		Assert.assertEquals(2, testOp.count5(new String[] { "1", "2" }));
+		Assert.assertEquals(2, testOp.count5(new char[] { '1', '2' }));
 		Assert.assertEquals(2, testOp.count5("1,2,"));
 		Assert.assertEquals(2, testOp.count5(new int[] { 1, 2 }));
 		Assert.assertEquals(2, testOp.count5(new Integer[] { 1, 2 }));
+		Assert.assertEquals(2, testOp.count5(new byte[] { 1, 2 }));
+		Assert.assertEquals(2, testOp.count5(new short[] { 1, 2 }));
+		Assert.assertEquals(2, testOp.count5(new double[] { 1, 2 }));
 		Assert.assertEquals(2, testOp.count5(new Integer[] { 1, 2 }));
 		Assert.assertEquals(2, testOp.count5(new long[] { 1, 2 }));
 		Assert.assertEquals(2, testOp.count5(new Long[] { 1l, 2l }));
+		Assert.assertEquals(2, testOp.count5(new float[] { 1, 2 }));
+		assertEquals(2, testOp.count5(new boolean[] { true, false }));
 		List<Integer> ids = new LinkedList<Integer>();
 		ids.add(1);
 		ids.add(2);
