@@ -1,6 +1,7 @@
 package com.jfireframework.sql.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.LinkedList;
@@ -121,8 +122,8 @@ public class MapperTest
 		
 		/* 测试对POJO属性的提取 */
 		/* 测试page */
-		@Sql(sql = "select * from User <%if( name != null) {%> where name like ${'%'+name+'%'} <%}%> ", paramNames = "name")
-		public List<User> find(String name, Page page);
+		@Sql(sql = "select * from User <%if( name != null) {%> where name like ${'%'+name+'%'} <%} else {%> where id=${id} <%}%> ", paramNames = "name,id")
+		public List<User> find(String name, int id, Page page);
 		
 		@Sql(sql = "select * from User where name like ${'%'+name+'%'}", paramNames = "name")
 		public List<User> find2(String name, Page page);
@@ -132,6 +133,14 @@ public class MapperTest
 		@Sql(sql = "select * from User where name = ${T(com.jfireframework.sql.test.vo.User).customName}", paramNames = "")
 		User find3();
 		/* 静态常量 */
+		
+		/* 测试语句 */
+		@Sql(sql = "select * from User where <% if(id==1) {%> id=1 <%}else if(id==2) {%> id=2 <%} else {%> id=3 <%}%>", paramNames = "id")
+		public User find(int id);
+		
+		@Sql(sql = "select * from User where id=#{id}", paramNames = "id")
+		public User find_1(int id);
+		/* 测试语句 */
 		
 	}
 	
@@ -291,11 +300,14 @@ public class MapperTest
 		page.setOffset(0);
 		page.setSize(1);
 		page.setFetchSum(true);
-		List<User> users = testOp.find("linb", page);
+		List<User> users = testOp.find("linb", 0, page);
 		Assert.assertEquals(1, page.getTotal());
 		Assert.assertEquals(1, users.size());
 		users = testOp.find2("lin", page);
 		Assert.assertEquals(2, page.getTotal());
+		Assert.assertEquals(1, users.size());
+		users = testOp.find(null, 1, page);
+		Assert.assertEquals(1, page.getTotal());
 		Assert.assertEquals(1, users.size());
 		sessionFactory.getCurrentSession().close();
 	}
@@ -310,5 +322,18 @@ public class MapperTest
 		user.setName(User.customName);
 		sessionFactory.getCurrentSession().save(user);
 		Assert.assertEquals(user.getId(), testOp.find3().getId());
+	}
+	
+	@Test
+	public void test_9()
+	{
+		User user = testOp.find(1);
+		assertEquals("lin", user.getName());
+		user = testOp.find_1(1);
+		assertEquals("lin", user.getName());
+		user = testOp.find(2);
+		assertEquals("linbin", user.getName());
+		user = testOp.find(3);
+		assertNull(user);
 	}
 }
