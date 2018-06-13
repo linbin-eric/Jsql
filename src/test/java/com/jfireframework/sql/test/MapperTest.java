@@ -1,9 +1,14 @@
 package com.jfireframework.sql.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import org.h2.Driver;
@@ -140,7 +145,33 @@ public class MapperTest
 		
 		@Sql(sql = "select * from User where id=#{id}", paramNames = "id")
 		public User find_1(int id);
+		
 		/* 测试语句 */
+		/* 测试Transfer */
+		@Sql(sql = "select b from User where id=1", paramNames = "")
+		boolean findByTransfer();
+		
+		@Sql(sql = "select stringEnum from User where id=1", paramNames = "")
+		StringEnum findByTransfer_1();
+		
+		@Sql(sql = "select time from User where id=1", paramNames = "")
+		Time findByTransfer_2();
+		
+		@Sql(sql = "select timestamp from User where id=1", paramNames = "")
+		Timestamp findByTransfer_3();
+		
+		@Sql(sql = "select name from User where id=1", paramNames = "")
+		String findByTransfer_4();
+		
+		@Sql(sql = "select date from User where id=1", paramNames = "")
+		Date findByTransfer_5();
+		
+		@Sql(sql = "select sqlDate from User where id=1", paramNames = "")
+		java.sql.Date findByTransfer_6();
+		
+		@Sql(sql = "select F11 from User where id=1", paramNames = "")
+		float findByTransfer_7();
+		/* 测试Transfer */
 		
 	}
 	
@@ -195,11 +226,13 @@ public class MapperTest
 		user.setName("lin");
 		user.setLength(18);
 		user.setState(State.off);
+		user.setB(true);
 		user.setStringEnum(StringEnum.v1);
 		session.save(user);
 		user.setId(null);
 		user.setState(null);
 		user.setName("linbin");
+		user.setB(false);
 		user.setStringEnum(StringEnum.v2);
 		session.save(user);
 		session.close();
@@ -335,5 +368,20 @@ public class MapperTest
 		assertEquals("linbin", user.getName());
 		user = testOp.find(3);
 		assertNull(user);
+	}
+	
+	@Test
+	public void test_10()
+	{
+		boolean b = testOp.findByTransfer();
+		assertTrue(b);
+		StringEnum stringEnum = testOp.findByTransfer_1();
+		assertEquals(StringEnum.v1, stringEnum);
+		assertNotNull(testOp.findByTransfer_2());
+		assertNotNull(testOp.findByTransfer_3());
+		assertEquals("lin", testOp.findByTransfer_4());
+		assertNotNull(testOp.findByTransfer_5());
+		assertNotNull(testOp.findByTransfer_6());
+		assertEquals(5.69f, testOp.findByTransfer_7(), 0.0001);
 	}
 }
