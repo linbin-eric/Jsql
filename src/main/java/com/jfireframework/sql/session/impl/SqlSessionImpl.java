@@ -8,7 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.SessionFactory;
 import com.jfireframework.sql.curd.CurdInfo;
 import com.jfireframework.sql.curd.LockMode;
@@ -62,7 +62,7 @@ public class SqlSessionImpl implements SqlSession
 		}
 		catch (SQLException e)
 		{
-			throw new JustThrowException(e);
+			ReflectUtil.throwException(e);
 		}
 	}
 	
@@ -81,7 +81,7 @@ public class SqlSessionImpl implements SqlSession
 		catch (SQLException e)
 		{
 			logger.error("事务提交出现异常，请确认当前连接是否仍然还在事务内。请不要在一个事务内开启两个连接");
-			throw new JustThrowException(e);
+			ReflectUtil.throwException(e);
 		}
 	}
 	
@@ -94,7 +94,7 @@ public class SqlSessionImpl implements SqlSession
 		}
 		catch (SQLException e)
 		{
-			throw new JustThrowException(e);
+			ReflectUtil.throwException(e);
 		}
 	}
 	
@@ -166,7 +166,7 @@ public class SqlSessionImpl implements SqlSession
 		}
 		catch (Exception e)
 		{
-			throw new JustThrowException(e);
+			ReflectUtil.throwException(e);
 		}
 	}
 	
@@ -277,7 +277,8 @@ public class SqlSessionImpl implements SqlSession
 		}
 		catch (SQLException e)
 		{
-			throw new JustThrowException(e);
+			ReflectUtil.throwException(e);
+			return 0;
 		}
 	}
 	
@@ -290,7 +291,8 @@ public class SqlSessionImpl implements SqlSession
 		}
 		catch (SQLException e)
 		{
-			throw new JustThrowException(e);
+			ReflectUtil.throwException(e);
+			return null;
 		}
 	}
 	
@@ -304,7 +306,8 @@ public class SqlSessionImpl implements SqlSession
 		}
 		catch (SQLException e)
 		{
-			throw new JustThrowException(e);
+			ReflectUtil.throwException(e);
+			return null;
 		}
 	}
 	
@@ -318,7 +321,8 @@ public class SqlSessionImpl implements SqlSession
 		}
 		catch (SQLException e)
 		{
-			throw new JustThrowException(e);
+			ReflectUtil.throwException(e);
+			return null;
 		}
 	}
 	

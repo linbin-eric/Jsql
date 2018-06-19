@@ -4,16 +4,18 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import com.jfireframework.baseutil.StringUtil;
-import com.jfireframework.baseutil.exception.JustThrowException;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
-import com.jfireframework.sql.annotation.StandardColumnDef;
 import com.jfireframework.sql.annotation.ColumnNameStrategyDef;
 import com.jfireframework.sql.annotation.Pk;
 import com.jfireframework.sql.annotation.SqlIgnore;
+import com.jfireframework.sql.annotation.StandardColumnDef;
 import com.jfireframework.sql.annotation.TableDef;
 
 public class TableEntityInfo
@@ -41,7 +43,7 @@ public class TableEntityInfo
 			ColumnNameStrategy strategy = ckass.isAnnotationPresent(ColumnNameStrategyDef.class) ? //
 			        ckass.getAnnotation(ColumnNameStrategyDef.class).value().newInstance()//
 			        : DefaultLowerCaseNameStrategy.instance;
-			for (Field field : ReflectUtil.getAllFields(ckass))
+			for (Field field : getAllFields(ckass))
 			{
 				if (isNotColumnField(field))
 				{
@@ -75,8 +77,43 @@ public class TableEntityInfo
 		}
 		catch (Exception e)
 		{
-			throw new JustThrowException(e);
+			ReflectUtil.throwException(e);
 		}
+	}
+	
+	/**
+	 * 获取该类的所有field对象，如果子类重写了父类的field，则只包含子类的field
+	 * 
+	 * @param entityClass
+	 * @return
+	 */
+	Field[] getAllFields(Class<?> entityClass)
+	{
+		Set<Field> set = new TreeSet<Field>(new Comparator<Field>() {
+			// 只需要去重，并且希望父类的field在返回数组中排在后面，所以比较全部返回1
+			@Override
+			public int compare(Field o1, Field o2)
+			{
+				if (o1.getName().equals(o2.getName()))
+				{
+					return 0;
+				}
+				else
+				{
+					return 1;
+				}
+			}
+		});
+		while (entityClass != Object.class && entityClass != null)
+		{
+			for (Field each : entityClass.getDeclaredFields())
+			{
+				set.add(each);
+			}
+			entityClass = entityClass.getSuperclass();
+		}
+		return set.toArray(new Field[set.size()]);
+		
 	}
 	
 	protected boolean isNotColumnField(Field field)

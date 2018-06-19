@@ -18,7 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.jfireframework.baseutil.PackageScan;
 import com.jfireframework.baseutil.TRACEID;
-import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.baseutil.smc.compiler.JavaStringCompiler;
 import com.jfireframework.baseutil.verify.Verify;
 import com.jfireframework.sql.annotation.Sql;
@@ -69,7 +69,8 @@ public class SessionfactoryConfig
 		}
 		catch (Exception e)
 		{
-			throw new JustThrowException(e);
+			ReflectUtil.throwException(e);
+			return null;
 		}
 	}
 	

@@ -6,7 +6,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
-import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.metadata.TableEntityInfo;
 import com.jfireframework.sql.metadata.TableEntityInfo.ColumnInfo;
 import com.jfireframework.sql.transfer.column.ColumnTransfer;
@@ -52,7 +52,8 @@ public class BeanTransfer implements ResultSetTransfer
 		}
 		catch (Exception e)
 		{
-			throw new JustThrowException(e);
+			ReflectUtil.throwException(e);
+			return null;
 		}
 	}
 	

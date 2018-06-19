@@ -3,7 +3,7 @@ package com.jfireframework.sql;
 import java.sql.SQLException;
 import java.util.IdentityHashMap;
 import javax.sql.DataSource;
-import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.curd.CurdInfo;
 import com.jfireframework.sql.dialect.Dialect;
 import com.jfireframework.sql.executor.SqlInvoker;
@@ -78,7 +78,8 @@ public class SessionFactoryImpl implements SessionFactory
 		}
 		catch (Exception e)
 		{
-			throw new JustThrowException(e);
+			ReflectUtil.throwException(e);
+			return null;
 		}
 	}
 	

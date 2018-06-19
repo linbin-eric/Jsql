@@ -9,7 +9,7 @@ import java.util.Date;
 import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.transfer.column.impl.BooleanColumnTransfer;
 import com.jfireframework.sql.transfer.column.impl.ByteArrayColumnTransfer;
 import com.jfireframework.sql.transfer.column.impl.CalendarColumnTransfer;
@@ -68,7 +68,7 @@ public class ColumnTransfers
 			}
 			catch (Exception e)
 			{
-				throw new JustThrowException(e);
+				ReflectUtil.throwException(e);
 			}
 		}
 		else if (field.getType().isEnum())
@@ -86,7 +86,7 @@ public class ColumnTransfers
 			}
 			catch (Exception e)
 			{
-				throw new JustThrowException(e);
+				ReflectUtil.throwException(e);
 			}
 		}
 		else

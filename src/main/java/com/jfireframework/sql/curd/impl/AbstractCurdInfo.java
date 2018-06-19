@@ -4,7 +4,7 @@ import java.lang.reflect.Field;
 import java.util.LinkedList;
 import java.util.List;
 import com.jfireframework.baseutil.collection.StringCache;
-import com.jfireframework.baseutil.exception.JustThrowException;
+import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.SessionFactory;
 import com.jfireframework.sql.annotation.pkstrategy.PkGenerator;
 import com.jfireframework.sql.curd.CurdInfo;
@@ -106,7 +106,7 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
 		}
 		catch (Exception e)
 		{
-			throw new JustThrowException(e);
+			ReflectUtil.throwException(e);
 		}
 	}
 	
@@ -205,7 +205,8 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
 		}
 		catch (Exception e)
 		{
-			throw new JustThrowException(e);
+			ReflectUtil.throwException(e);
+			return null;
 		}
 	}
 	
@@ -222,7 +223,8 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
 		}
 		catch (Exception e)
 		{
-			throw new JustThrowException(e);
+			ReflectUtil.throwException(e);
+			return null;
 		}
 	}
 	
@@ -275,7 +277,8 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
 		}
 		catch (Exception e)
 		{
-			throw new JustThrowException(e);
+			ReflectUtil.throwException(e);
+			return null;
 		}
 	}
 	
@@ -303,7 +306,7 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
 		}
 		catch (Exception e)
 		{
-			throw new JustThrowException(e);
+			ReflectUtil.throwException(e);
 		}
 	}
 	
