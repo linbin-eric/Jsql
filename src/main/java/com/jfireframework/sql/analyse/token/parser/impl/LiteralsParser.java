@@ -1,7 +1,7 @@
 package com.jfireframework.sql.analyse.token.parser.impl;
 
 import java.util.Deque;
-import com.jfireframework.jfireel.lexer.util.CharType;
+import com.jfireframework.jfireel.expression.util.CharType;
 import com.jfireframework.sql.analyse.exception.IllegalFormatException;
 import com.jfireframework.sql.analyse.token.KeyWord;
 import com.jfireframework.sql.analyse.token.Token;

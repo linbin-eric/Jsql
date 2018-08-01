@@ -1,7 +1,7 @@
 package com.jfireframework.sql.analyse.token.parser;
 
 import java.util.Deque;
-import com.jfireframework.jfireel.lexer.util.CharType;
+import com.jfireframework.jfireel.expression.util.CharType;
 import com.jfireframework.sql.analyse.token.Token;
 
 public abstract class TokenParser

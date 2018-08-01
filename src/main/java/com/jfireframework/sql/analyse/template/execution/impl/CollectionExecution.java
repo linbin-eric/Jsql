@@ -4,7 +4,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import com.jfireframework.baseutil.collection.StringCache;
-import com.jfireframework.jfireel.lexer.Expression;
+import com.jfireframework.jfireel.expression.Expression;
 import com.jfireframework.sql.analyse.template.execution.Execution;
 
 public class CollectionExecution implements Execution

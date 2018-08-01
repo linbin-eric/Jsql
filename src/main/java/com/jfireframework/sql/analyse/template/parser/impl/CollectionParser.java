@@ -2,7 +2,7 @@ package com.jfireframework.sql.analyse.template.parser.impl;
 
 import java.util.Deque;
 import com.jfireframework.baseutil.collection.StringCache;
-import com.jfireframework.jfireel.lexer.Expression;
+import com.jfireframework.jfireel.expression.Expression;
 import com.jfireframework.sql.analyse.exception.IllegalFormatException;
 import com.jfireframework.sql.analyse.template.ScanMode;
 import com.jfireframework.sql.analyse.template.Template;
