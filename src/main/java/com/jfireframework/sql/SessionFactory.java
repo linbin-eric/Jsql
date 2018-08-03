@@ -7,14 +7,6 @@ public interface SessionFactory
 	static final ThreadLocal<SqlSession> CURRENT_SESSION = new ThreadLocal<SqlSession>();
 	
 	/**
-	 * 根据给定的接口，返回符合sqlorm规范的接口实现
-	 * 
-	 * @param entityClass
-	 * @return
-	 */
-	<T> T getMapper(Class<T> entityClass);
-	
-	/**
 	 * 获得当前线程内的SqlSession
 	 * 
 	 * @return

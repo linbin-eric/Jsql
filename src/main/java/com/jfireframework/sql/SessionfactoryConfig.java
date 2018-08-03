@@ -94,7 +94,8 @@ public class SessionfactoryConfig
 		}
 	}
 	
-	private IdentityHashMap<Class<?>, Mapper> generateMappers(Set<Class<?>> classSet) throws InstantiationException, IllegalAccessException
+    @SuppressWarnings("unchecked")
+    private IdentityHashMap<Class<?>, Class<? extends Mapper>> generateMappers(Set<Class<?>> classSet) throws InstantiationException, IllegalAccessException
 	{
 		Map<String, TableEntityInfo> tableEntityInfos = new HashMap<String, TableEntityInfo>();
 		for (Class<?> each : classSet)
@@ -105,7 +106,7 @@ public class SessionfactoryConfig
 			}
 		}
 		JavaStringCompiler compiler = new JavaStringCompiler(classLoader);
-		IdentityHashMap<Class<?>, Mapper> mappers = new IdentityHashMap<Class<?>, Mapper>();
+        IdentityHashMap<Class<?>, Class<? extends Mapper>> mappers = new IdentityHashMap<Class<?>, Class<? extends Mapper>>();
 		for (Class<?> each : classSet)
 		{
 			if (each.isInterface())
@@ -121,8 +122,8 @@ public class SessionfactoryConfig
 				}
 				if (find)
 				{
-					Mapper mapper = (Mapper) MapperGenerator.generate(each, tableEntityInfos, compiler).newInstance();
-					mappers.put(each, mapper);
+                    Class<? extends Mapper> mapperClass = (Class<? extends Mapper>) MapperGenerator.generate(each, tableEntityInfos, compiler);
+                    mappers.put(each, mapperClass);
 				}
 			}
 		}

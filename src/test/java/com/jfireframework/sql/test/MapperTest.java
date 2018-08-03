@@ -184,7 +184,7 @@ public class MapperTest
 	
 	private SessionFactory			sessionFactory;
 	private SessionfactoryConfig	config;
-	private TestOp					testOp;
+    private TestOp               testOp;
 	
 	@Before
 	public void before() throws ClassNotFoundException, InstantiationException, IllegalAccessException
@@ -236,8 +236,8 @@ public class MapperTest
 		user.setStringEnum(StringEnum.v2);
 		session.save(user);
 		session.close();
-		testOp = sessionFactory.getMapper(TestOp.class);
-		sessionFactory.getOrCreateCurrentSession();
+        SqlSession sqlSession = sessionFactory.getOrCreateCurrentSession();
+        testOp = sqlSession.getMapper(TestOp.class);
 	}
 	
 	/**

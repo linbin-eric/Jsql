@@ -14,13 +14,13 @@ interface ConnectionOp
 	void close();
 	
 	/**
-	 * 启动事务
-	 */
+     * 启动事务，设置提交模式为非自动提交
+     */
 	void beginTransAction();
 	
 	/**
-	 * 依据事务传播策略进行事务提交请求操作（在单一事务传播情况下，内嵌事务的提交只会消耗提交数，不会真的执行提交操作）
-	 */
+     * 提交事务，并且设置提交模式为自动提交
+     */
 	void commit();
 	
 	/**
@@ -29,8 +29,8 @@ interface ConnectionOp
 	void flush();
 	
 	/**
-	 * 事务回滚
-	 */
+     * 事务回滚.并且设置当前数据库提交模式为自动提交
+     */
 	void rollback();
 	
 	/**
@@ -152,5 +152,5 @@ interface SqlOp
  */
 public interface SqlSession extends ConnectionOp, CurdOp, ModelOp, SqlOp
 {
-	
+    <T> T getMapper(Class<T> mapperClass);
 }
