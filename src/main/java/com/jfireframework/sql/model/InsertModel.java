@@ -36,7 +36,7 @@ public class InsertModel extends Model
 	}
 	
 	@Override
-	public String getSql()
+    public String _getSql()
 	{
 		StringCache cache = new StringCache();
 		cache.append("insert into ").append(entityClass.getAnnotation(TableDef.class).name()).append(" (");

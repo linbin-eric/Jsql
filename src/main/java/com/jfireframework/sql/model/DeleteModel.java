@@ -9,7 +9,7 @@ public class DeleteModel extends Model
 {
 	
 	@Override
-	public String getSql()
+    public String _getSql()
 	{
 		StringCache cache = new StringCache();
 		cache.append("delete from ").append(entityClass.getAnnotation(TableDef.class).name()).append(" ");

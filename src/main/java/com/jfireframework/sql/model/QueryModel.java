@@ -67,7 +67,7 @@ public class QueryModel extends Model
 	}
 	
 	@Override
-	public String getSql()
+    public String _getSql()
 	{
 		StringCache cache = new StringCache();
 		cache.append("select ");

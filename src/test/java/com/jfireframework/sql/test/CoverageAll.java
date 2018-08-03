@@ -8,5 +8,5 @@ import org.junit.runners.Suite.SuiteClasses;
 @RunWith(Suite.class)
 public class CoverageAll
 {
-	
+    
 }
