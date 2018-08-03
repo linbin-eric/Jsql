@@ -9,7 +9,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
-import com.jfireframework.sql.SessionFactory;
 import com.jfireframework.sql.curd.CurdInfo;
 import com.jfireframework.sql.curd.LockMode;
 import com.jfireframework.sql.dialect.Dialect;
@@ -138,7 +137,6 @@ public class SqlSessionImpl implements SqlSession
         try
         {
             closed = true;
-            SessionFactory.CURRENT_SESSION.remove();
             connection.close();
             logger.trace("关闭session");
         }

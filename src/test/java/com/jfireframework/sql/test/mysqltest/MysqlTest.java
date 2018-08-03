@@ -46,7 +46,7 @@ public class MysqlTest
 		        .insert("col10", new Time(System.currentTimeMillis()))//
 		        .insert("col11", new byte[10])//
 		        .insert("col12", "112");
-		SqlSession session = sessionFactory.getOrCreateCurrentSession();
+        SqlSession session = sessionFactory.openSession();
 		session.insert(model);
 		MysqlTable1 one = session.findOne(Model.query(MysqlTable1.class).where("col1", 1));
 		assertEquals(Integer.valueOf(1), one.getId());

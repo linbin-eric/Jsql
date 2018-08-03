@@ -32,12 +32,6 @@ public class SessionFactoryImpl implements SessionFactory
     }
     
     @Override
-    public SqlSession getCurrentSession()
-    {
-        return CURRENT_SESSION.get();
-    }
-    
-    @Override
     public SqlSession openSession()
     {
         try
@@ -49,18 +43,6 @@ public class SessionFactoryImpl implements SessionFactory
         {
             throw new RuntimeException(e);
         }
-    }
-    
-    @Override
-    public SqlSession getOrCreateCurrentSession()
-    {
-        SqlSession session = getCurrentSession();
-        if (session == null)
-        {
-            session = openSession();
-            CURRENT_SESSION.set(session);
-        }
-        return session;
     }
     
 }
