@@ -1,7 +1,5 @@
 package com.jfireframework.sql;
 
-import java.util.IdentityHashMap;
-import javax.sql.DataSource;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.curd.CurdInfo;
 import com.jfireframework.sql.dialect.Dialect;
@@ -10,14 +8,17 @@ import com.jfireframework.sql.mapper.Mapper;
 import com.jfireframework.sql.session.SqlSession;
 import com.jfireframework.sql.session.impl.SqlSessionImpl;
 
+import javax.sql.DataSource;
+import java.util.IdentityHashMap;
+
 public class SessionFactoryImpl implements SessionFactory
 {
     private final IdentityHashMap<Class<?>, Class<? extends Mapper>> mappers;
-    private final IdentityHashMap<Class<?>, CurdInfo<?>>             curdInfos;
-    private final SqlInvoker                                         invoker;
-    private final DataSource                                         dataSource;
-    private final Dialect                                            dialect;
-    
+    private final IdentityHashMap<Class<?>, CurdInfo<?>> curdInfos;
+    private final SqlInvoker invoker;
+    private final DataSource dataSource;
+    private final Dialect dialect;
+
     public SessionFactoryImpl(IdentityHashMap<Class<?>, Class<? extends Mapper>> mappers, IdentityHashMap<Class<?>, CurdInfo<?>> curdInfos, SqlInvoker invoker, DataSource dataSource, Dialect dialect)
     {
         this.mappers = mappers;
@@ -30,19 +31,18 @@ public class SessionFactoryImpl implements SessionFactory
             curdInfo.setSessionFactory(this);
         }
     }
-    
+
     @Override
     public SqlSession openSession()
     {
         try
         {
             return new SqlSessionImpl(dataSource.getConnection(), invoker, curdInfos, mappers, dialect);
-        }
-        catch (Throwable e)
+        } catch (Throwable e)
         {
             ReflectUtil.throwException(e);
             return null;
         }
     }
-    
+
 }

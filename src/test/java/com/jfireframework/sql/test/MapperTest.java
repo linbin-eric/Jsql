@@ -1,21 +1,5 @@
 package com.jfireframework.sql.test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.Time;
-import java.sql.Timestamp;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
-import org.h2.Driver;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 import com.jfireframework.sql.SessionFactory;
 import com.jfireframework.sql.SessionfactoryConfig;
 import com.jfireframework.sql.annotation.Sql;
@@ -30,6 +14,21 @@ import com.jfireframework.sql.test.vo.User.StringEnum;
 import com.jfireframework.sql.transfer.resultset.ResultMap;
 import com.jfireframework.sql.transfer.resultset.impl.EnumOrdinalTransfer;
 import com.zaxxer.hikari.HikariDataSource;
+import org.h2.Driver;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 public class MapperTest
 {
@@ -37,163 +36,172 @@ public class MapperTest
     {
         @Sql(sql = "select count(*) from #{table} ", paramNames = "table")
         public int count(String table);
-        
+
         @Sql(sql = "select count(*) from #{table} where name2=${name}", paramNames = "table,name")
         public int count(String table, String name);
-        
-        /** 测试$%%格式 **/
+
+        /**
+         * 测试$%%格式
+         **/
         @Sql(sql = "select count(*) from User where name like ${'%'+name+'%'}", paramNames = "name")
         public int count2(String name);
-        
+
         @Sql(sql = "select count(*) from User where name like ${'%'+name}", paramNames = "name")
         public int count3(String name);
-        
+
         @Sql(sql = "select count(*) from User where name like ${name+'%'}", paramNames = "name")
         public int count4(String name);
-        
         /** 测试$%%格式 **/
-        
-        /** 测试$~ **/
+
+        /**
+         * 测试$~
+         **/
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
         public int count5(String ids);
-        
+
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
         public int count5(String[] ids);
-        
+
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
         public int count5(double[] ids);
-        
+
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
         public int count5(char[] ids);
-        
+
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
         public int count5(int[] ids);
-        
+
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
         public int count5(float[] ids);
-        
+
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
         public int count5(Integer[] ids);
-        
+
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
         public int count5(byte[] ids);
-        
+
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
         public int count5(short[] ids);
-        
+
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
         public int count5(long[] ids);
-        
+
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
         public int count5(Long[] ids);
-        
+
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
         public int count5(List<Integer> ids);
-        
+
         @Sql(sql = "select count(*) from User where b in ~{booleans}", paramNames = "booleans")
         public int count5(boolean[] booleans);
-        
+
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
         public int count5_2(List<String> ids);
-        
         /** 测试$~ **/
-        
-        /** 测试as 功能 **/
+
+        /**
+         * 测试as 功能
+         **/
         @Sql(sql = "select * from User as u where u.name = ${name}", paramNames = "name")
         public User find(String name);
-        
+
         @Sql(sql = "select age from User as u where u.name = ${name}", paramNames = "name")
         public User find2(String name);
-        
+
         @Sql(sql = "select age as a from User as u where u.name = ${name}", paramNames = "name")
         public User find3(String name);
-        
         /** 测试as类别名 **/
-        /** 测试Enum */
+        /**
+         * 测试Enum
+         */
         @Sql(sql = "select * from User where state =${s.ordinal()}", paramNames = "s")
         public User find(State s);
-        
+
         @Sql(sql = "select * from User where stringEnum = ${v.name()}", paramNames = "v")
         User find(StringEnum v);
-        
+
         @ResultMap(EnumOrdinalTransfer.class)
         @Sql(sql = "select state from User where name=${name}", paramNames = "name")
         public State findState(String name);
-        
+
         @ResultMap(EnumOrdinalTransfer.class)
         @Sql(sql = "select state from User where name like ${'%'+name+'%'}", paramNames = "name")
         public List<State> findListState(String name);
-        
-        /** 测试Enum */
-        
+
+        /**
+         * 测试Enum
+         */
+
         /* 测试对POJO属性的提取 */
         /* 测试page */
         @Sql(sql = "select * from User <%if( name != null) {%> where name like ${'%'+name+'%'} <%} else {%> where id=${id} <%}%> ", paramNames = "name,id")
         public List<User> find(String name, int id, Page page);
-        
+
         @Sql(sql = "select * from User where name like ${'%'+name+'%'}", paramNames = "name")
         public List<User> find2(String name, Page page);
-        
+
         /* 测试page */
         /* 静态常量 */
         @Sql(sql = "select * from User where name = ${T(com.jfireframework.sql.test.vo.User).customName}", paramNames = "")
         User find3();
         /* 静态常量 */
-        
+
         /* 测试语句 */
         @Sql(sql = "select * from User where <% if(id==1) {%> id=1 <%}else if(id==2) {%> id=2 <%} else {%> id=3 <%}%>", paramNames = "id")
         public User find(int id);
-        
+
         @Sql(sql = "select * from User where id=#{id}", paramNames = "id")
         public User find_1(int id);
-        
+
         /* 测试语句 */
         /* 测试Transfer */
         @Sql(sql = "select b from User where id=1", paramNames = "")
         boolean findByTransfer();
-        
+
         @Sql(sql = "select stringEnum from User where id=1", paramNames = "")
         StringEnum findByTransfer_1();
-        
+
         @Sql(sql = "select time from User where id=1", paramNames = "")
         Time findByTransfer_2();
-        
+
         @Sql(sql = "select timestamp from User where id=1", paramNames = "")
         Timestamp findByTransfer_3();
-        
+
         @Sql(sql = "select name from User where id=1", paramNames = "")
         String findByTransfer_4();
-        
+
         @Sql(sql = "select date from User where id=1", paramNames = "")
         Date findByTransfer_5();
-        
+
         @Sql(sql = "select sqlDate from User where id=1", paramNames = "")
         java.sql.Date findByTransfer_6();
-        
+
         @Sql(sql = "select F11 from User where id=1", paramNames = "")
         float findByTransfer_7();
         /* 测试Transfer */
-        
+
     }
-    
+
     public static interface TestOp2
     {
-        /** 测试Enum */
+        /**
+         * 测试Enum
+         */
         @Sql(sql = "select * from User where state =${s.ordinal()}", paramNames = "s")
         public User find(State s);
     }
-    
-    private SessionFactory       sessionFactory;
+
+    private SessionFactory sessionFactory;
     private SessionfactoryConfig config;
-    private TestOp               testOp;
-    SqlSession                   sqlSession;
-    
+    private TestOp testOp;
+    SqlSession sqlSession;
+
     @After
     public void after()
     {
         sqlSession.close();
     }
-    
+
     @Before
     public void before() throws ClassNotFoundException, InstantiationException, IllegalAccessException
     {
@@ -206,15 +214,16 @@ public class MapperTest
         config.setDataSource(dataSource);
         config.setClassLoader(MapperTest.class.getClassLoader());
         config.setTableMode(TableMode.CREATE);
-        config.setDialect(new H2Dialect() {
+        config.setDialect(new H2Dialect()
+        {
             protected void setUnDefinedType(PreparedStatement preparedStatement, int i, Object value) throws SQLException
             {
-                if (value instanceof StringEnum)
+                if ( value instanceof StringEnum )
                 {
                     StringEnum stringEnum = (StringEnum) value;
                     preparedStatement.setString(i, stringEnum.name());
                 }
-                else if (value instanceof Enum<?>)
+                else if ( value instanceof Enum<?> )
                 {
                     Enum<?> enum1 = (Enum<?>) value;
                     preparedStatement.setInt(i, enum1.ordinal());
@@ -247,7 +256,7 @@ public class MapperTest
         sqlSession = sessionFactory.openSession();
         testOp = sqlSession.getMapper(TestOp.class);
     }
-    
+
     /**
      * 测试{}符号
      */
@@ -257,7 +266,7 @@ public class MapperTest
         Assert.assertEquals(2, testOp.count("user"));
         Assert.assertEquals(1, testOp.count("user", "linbin"));
     }
-    
+
     /**
      * 测试$%%的格式
      */
@@ -268,7 +277,7 @@ public class MapperTest
         Assert.assertEquals(2, testOp.count3("in"));
         Assert.assertEquals(1, testOp.count4("linb"));
     }
-    
+
     /**
      * 测试$~的格式
      */
@@ -276,19 +285,19 @@ public class MapperTest
     public void test_3()
     {
         Assert.assertEquals(2, testOp.count5("1,2"));
-        Assert.assertEquals(2, testOp.count5(new String[] { "1", "2" }));
-        Assert.assertEquals(2, testOp.count5(new char[] { '1', '2' }));
+        Assert.assertEquals(2, testOp.count5(new String[]{"1", "2"}));
+        Assert.assertEquals(2, testOp.count5(new char[]{'1', '2'}));
         Assert.assertEquals(2, testOp.count5("1,2,"));
-        Assert.assertEquals(2, testOp.count5(new int[] { 1, 2 }));
-        Assert.assertEquals(2, testOp.count5(new Integer[] { 1, 2 }));
-        Assert.assertEquals(2, testOp.count5(new byte[] { 1, 2 }));
-        Assert.assertEquals(2, testOp.count5(new short[] { 1, 2 }));
-        Assert.assertEquals(2, testOp.count5(new double[] { 1, 2 }));
-        Assert.assertEquals(2, testOp.count5(new Integer[] { 1, 2 }));
-        Assert.assertEquals(2, testOp.count5(new long[] { 1, 2 }));
-        Assert.assertEquals(2, testOp.count5(new Long[] { 1l, 2l }));
-        Assert.assertEquals(2, testOp.count5(new float[] { 1, 2 }));
-        assertEquals(2, testOp.count5(new boolean[] { true, false }));
+        Assert.assertEquals(2, testOp.count5(new int[]{1, 2}));
+        Assert.assertEquals(2, testOp.count5(new Integer[]{1, 2}));
+        Assert.assertEquals(2, testOp.count5(new byte[]{1, 2}));
+        Assert.assertEquals(2, testOp.count5(new short[]{1, 2}));
+        Assert.assertEquals(2, testOp.count5(new double[]{1, 2}));
+        Assert.assertEquals(2, testOp.count5(new Integer[]{1, 2}));
+        Assert.assertEquals(2, testOp.count5(new long[]{1, 2}));
+        Assert.assertEquals(2, testOp.count5(new Long[]{1l, 2l}));
+        Assert.assertEquals(2, testOp.count5(new float[]{1, 2}));
+        assertEquals(2, testOp.count5(new boolean[]{true, false}));
         List<Integer> ids = new LinkedList<Integer>();
         ids.add(1);
         ids.add(2);
@@ -298,7 +307,7 @@ public class MapperTest
         ids2.add("2");
         Assert.assertEquals(2, testOp.count5_2(ids2));
     }
-    
+
     /**
      * 测试类的as别名功能
      */
@@ -312,7 +321,7 @@ public class MapperTest
          */
         Assert.assertEquals(12, testOp.find3("lin").getAge());
     }
-    
+
     /**
      * 测试enum
      */
@@ -326,7 +335,7 @@ public class MapperTest
         Assert.assertEquals(State.off, list.get(0));
         Assert.assertEquals("lin", testOp.find(StringEnum.v1).getName());
     }
-    
+
     /**
      * 测试page功能
      */
@@ -347,7 +356,7 @@ public class MapperTest
         Assert.assertEquals(1, page.getTotal());
         Assert.assertEquals(1, users.size());
     }
-    
+
     /**
      * 测试静态常量
      */
@@ -359,7 +368,7 @@ public class MapperTest
         sqlSession.save(user);
         Assert.assertEquals(user.getId(), testOp.find3().getId());
     }
-    
+
     @Test
     public void test_9()
     {
@@ -372,7 +381,7 @@ public class MapperTest
         user = testOp.find(3);
         assertNull(user);
     }
-    
+
     @Test
     public void test_10()
     {

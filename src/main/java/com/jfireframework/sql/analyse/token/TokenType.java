@@ -3,23 +3,22 @@ package com.jfireframework.sql.analyse.token;
 public enum TokenType
 {
     // 关键字
-	KEYWORD, //
+    KEYWORD, //
     // 数字
-	NUMBER, //
+    NUMBER, //
     // 执行语句
-	EXECUTION, //
+    EXECUTION, //
     // 表达式
-	EXPRESSION, //
+    EXPRESSION, //
     // 模板字符串
-	TEMPLATE_CHARACTERS,
-    // 自动集合
-	AUTO_COLLECTION, //
+    TEMPLATE_CHARACTERS, // 自动集合
+AUTO_COLLECTION, //
     // 符号
-	SYMBOL, //
+    SYMBOL, //
     // 标识符
-	IDENTIFIER, //
+    IDENTIFIER, //
     // 文本
-	TEXT, //
+    TEXT, //
     // 表映射类
-	TABLE_ENTITY,//
+    TABLE_ENTITY,//
 }

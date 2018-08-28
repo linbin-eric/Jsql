@@ -5,8 +5,8 @@ import java.sql.SQLException;
 
 public interface ResultSetTransfer
 {
-	ResultSetTransfer initialize(Class<?> type);
-	
-	Object transfer(ResultSet resultSet) throws SQLException;
-	
+    ResultSetTransfer initialize(Class<?> type);
+
+    Object transfer(ResultSet resultSet) throws SQLException;
+
 }

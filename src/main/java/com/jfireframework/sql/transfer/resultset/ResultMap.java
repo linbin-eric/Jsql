@@ -9,5 +9,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface ResultMap
 {
-	Class<? extends ResultSetTransfer> value();
+    Class<? extends ResultSetTransfer> value();
 }

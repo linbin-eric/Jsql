@@ -1,13 +1,5 @@
 package com.jfireframework.sql.session.impl;
 
-import java.lang.reflect.Field;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.IdentityHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.jfireframework.baseutil.reflect.ReflectUtil;
 import com.jfireframework.sql.curd.CurdInfo;
 import com.jfireframework.sql.curd.LockMode;
@@ -19,25 +11,37 @@ import com.jfireframework.sql.model.Model;
 import com.jfireframework.sql.session.SqlSession;
 import com.jfireframework.sql.transfer.resultset.ResultSetTransfer;
 import com.jfireframework.sql.transfer.resultset.impl.IntegerTransfer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.lang.reflect.Field;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.IdentityHashMap;
+import java.util.LinkedList;
+import java.util.List;
 
 public class SqlSessionImpl implements SqlSession
 {
-    private boolean                                                  transactionActive = false;
-    private boolean                                                  closed            = false;
+    private boolean transactionActive = false;
+    private boolean closed = false;
     private final IdentityHashMap<Class<?>, Class<? extends Mapper>> mappers;
-    private final Connection                                         connection;
-    private final SqlInvoker                                         sqlInvoker;
-    private final IdentityHashMap<Class<?>, CurdInfo<?>>             curdInfoMap;
-    private final Dialect                                            dialect;
-    private final static Logger                                      logger            = LoggerFactory.getLogger(SqlSession.class);
-    private static final ThreadLocal<List<Object>>                   cahcedParams      = new ThreadLocal<List<Object>>() {
-                                                                                           protected java.util.List<Object> initialValue()
-                                                                                           {
-                                                                                               return new LinkedList<Object>();
-                                                                                           };
-                                                                                       };
-    private static final ResultSetTransfer                           countTransfer     = new IntegerTransfer();
-    
+    private final Connection connection;
+    private final SqlInvoker sqlInvoker;
+    private final IdentityHashMap<Class<?>, CurdInfo<?>> curdInfoMap;
+    private final Dialect dialect;
+    private final static Logger logger = LoggerFactory.getLogger(SqlSession.class);
+    private static final ThreadLocal<List<Object>> cahcedParams = new ThreadLocal<List<Object>>()
+    {
+        protected java.util.List<Object> initialValue()
+        {
+            return new LinkedList<Object>();
+        }
+
+        ;
+    };
+    private static final ResultSetTransfer countTransfer = new IntegerTransfer();
+
     public SqlSessionImpl(Connection connection, SqlInvoker sqlInvoker, IdentityHashMap<Class<?>, CurdInfo<?>> curdInfoMap, IdentityHashMap<Class<?>, Class<? extends Mapper>> mappers, Dialect dialect)
     {
         this.connection = connection;
@@ -46,38 +50,37 @@ public class SqlSessionImpl implements SqlSession
         this.dialect = dialect;
         this.mappers = mappers;
     }
-    
+
     @Override
     public void beginTransAction()
     {
         checkIfClosed();
         try
         {
-            if (transactionActive != false)
+            if ( transactionActive != false )
             {
                 return;
             }
             connection.setAutoCommit(false);
-        }
-        catch (SQLException e)
+        } catch (SQLException e)
         {
             ReflectUtil.throwException(e);
         }
     }
-    
+
     private void checkIfClosed()
     {
-        if (closed)
+        if ( closed )
         {
             throw new IllegalStateException("当前Session已经关闭，不能执行其他操作");
         }
     }
-    
+
     @Override
     public void commit()
     {
         checkIfClosed();
-        if (transactionActive == false)
+        if ( transactionActive == false )
         {
             throw new IllegalStateException("当前链接未开启事务，无法进行提交");
         }
@@ -86,13 +89,12 @@ public class SqlSessionImpl implements SqlSession
             connection.commit();
             connection.setAutoCommit(true);
             transactionActive = false;
-        }
-        catch (SQLException e)
+        } catch (SQLException e)
         {
             ReflectUtil.throwException(e);
         }
     }
-    
+
     @Override
     public void flush()
     {
@@ -100,18 +102,17 @@ public class SqlSessionImpl implements SqlSession
         try
         {
             connection.commit();
-        }
-        catch (SQLException e)
+        } catch (SQLException e)
         {
             ReflectUtil.throwException(e);
         }
     }
-    
+
     @Override
     public void rollback()
     {
         checkIfClosed();
-        if (transactionActive == false)
+        if ( transactionActive == false )
         {
             throw new IllegalStateException("当前链接未开启事务，无需回滚");
         }
@@ -120,17 +121,16 @@ public class SqlSessionImpl implements SqlSession
             connection.rollback();
             connection.setAutoCommit(true);
             transactionActive = false;
-        }
-        catch (SQLException e)
+        } catch (SQLException e)
         {
             ReflectUtil.throwException(e);
         }
     }
-    
+
     @Override
     public void close()
     {
-        if (transactionActive)
+        if ( transactionActive )
         {
             throw new IllegalStateException("当前链接仍然开启着事务，需要先执行提交");
         }
@@ -139,19 +139,18 @@ public class SqlSessionImpl implements SqlSession
             closed = true;
             connection.close();
             logger.trace("关闭session");
-        }
-        catch (SQLException e)
+        } catch (SQLException e)
         {
             throw new RuntimeException("关闭", e);
         }
     }
-    
+
     @Override
     public Connection getConnection()
     {
         return connection;
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public <T> void save(T entity)
@@ -160,7 +159,7 @@ public class SqlSessionImpl implements SqlSession
         Field pkField = tableEntityInfo.getPkInfo().getField();
         try
         {
-            if (pkField.get(entity) == null)
+            if ( pkField.get(entity) == null )
             {
                 CurdInfo<T> curdInfo = (CurdInfo<T>) curdInfoMap.get(entity.getClass());
                 List<Object> list = cahcedParams.get();
@@ -173,13 +172,12 @@ public class SqlSessionImpl implements SqlSession
             {
                 update(entity);
             }
-        }
-        catch (Exception e)
+        } catch (Exception e)
         {
             ReflectUtil.throwException(e);
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public <T> void update(T entity)
@@ -190,7 +188,7 @@ public class SqlSessionImpl implements SqlSession
         update(sql, list);
         list.clear();
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public <T> int delete(Class<T> ckass, Object pk)
@@ -202,8 +200,8 @@ public class SqlSessionImpl implements SqlSession
         list.clear();
         return update;
     }
-    
-    @SuppressWarnings({ "unchecked" })
+
+    @SuppressWarnings({"unchecked"})
     @Override
     public <T> void insert(T entity)
     {
@@ -213,7 +211,7 @@ public class SqlSessionImpl implements SqlSession
         update(sql, list);
         list.clear();
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public <T> T get(Class<T> entityClass, Object pk)
@@ -225,7 +223,7 @@ public class SqlSessionImpl implements SqlSession
         list.clear();
         return result;
     }
-    
+
     @Override
     public <T> T get(Class<T> entityClass, Object pk, LockMode mode)
     {
@@ -236,48 +234,48 @@ public class SqlSessionImpl implements SqlSession
         list.clear();
         return result;
     }
-    
+
     @Override
     public <T> T findOne(Model model)
     {
         T result = query(model.getBeanTransfer(), model.getSql(), model.getParams());
         return result;
     }
-    
+
     @Override
     public <T> List<T> find(Model model)
     {
         List<T> result = queryList(model.getBeanTransfer(), model.getSql(), model.getParams());
         return result;
     }
-    
+
     @Override
     public int update(Model model)
     {
         int update = update(model.getSql(), model.getParams());
         return update;
     }
-    
+
     @Override
     public int delete(Model model)
     {
         int update = update(model.getSql(), model.getParams());
         return update;
     }
-    
+
     @Override
     public int count(Model model)
     {
         int count = query(countTransfer, model.getSql(), model.getParams());
         return count;
     }
-    
+
     @Override
     public void insert(Model model)
     {
         update(model.getSql(), model.getParams());
     }
-    
+
     @Override
     public int update(String sql, List<Object> params)
     {
@@ -285,14 +283,13 @@ public class SqlSessionImpl implements SqlSession
         try
         {
             return sqlInvoker.update(sql, params, connection, dialect);
-        }
-        catch (SQLException e)
+        } catch (SQLException e)
         {
             ReflectUtil.throwException(e);
             return 0;
         }
     }
-    
+
     @Override
     public String insertReturnPk(String sql, List<Object> params)
     {
@@ -300,14 +297,13 @@ public class SqlSessionImpl implements SqlSession
         try
         {
             return sqlInvoker.insertWithReturnKey(sql, params, connection, dialect);
-        }
-        catch (SQLException e)
+        } catch (SQLException e)
         {
             ReflectUtil.throwException(e);
             return null;
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public <T> T query(ResultSetTransfer transfer, String sql, List<Object> params)
@@ -316,14 +312,13 @@ public class SqlSessionImpl implements SqlSession
         try
         {
             return (T) sqlInvoker.queryOne(sql, params, connection, dialect, transfer);
-        }
-        catch (SQLException e)
+        } catch (SQLException e)
         {
             ReflectUtil.throwException(e);
             return null;
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public <T> List<T> queryList(ResultSetTransfer transfer, String sql, List<Object> params)
@@ -332,14 +327,13 @@ public class SqlSessionImpl implements SqlSession
         try
         {
             return (List<T>) sqlInvoker.queryList(sql, params, connection, dialect, transfer);
-        }
-        catch (SQLException e)
+        } catch (SQLException e)
         {
             ReflectUtil.throwException(e);
             return null;
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public <T> T getMapper(Class<T> mapperClass)
@@ -350,12 +344,11 @@ public class SqlSessionImpl implements SqlSession
             Mapper mapper = ckass.newInstance();
             mapper.setSession(this);
             return (T) mapper;
-        }
-        catch (Throwable e)
+        } catch (Throwable e)
         {
             ReflectUtil.throwException(e);
             return null;
         }
     }
-    
+
 }

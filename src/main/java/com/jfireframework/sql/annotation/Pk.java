@@ -7,8 +7,6 @@ import java.lang.annotation.Target;
 
 /**
  * 表明该字段是一个数据库的主键
- * 
- * 
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)

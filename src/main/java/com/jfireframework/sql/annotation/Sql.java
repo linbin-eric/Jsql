@@ -11,10 +11,8 @@ import java.lang.annotation.Target;
  * 如果方法的返回类型是对象并且不是基本类型,则返回的数据是单行,并且将该行数据转换成为对象实例
  * 如果返回的类型是List<T>的形式,则根据T的类型做一进步判断.是基本类型,则数据应该是多行单列,取出即可.如果是对象类型,则按照对象实例进行转换
  * 如果返回类型是List<Object[]>,则使用注解中returnTypes的值对结果进行获取.并且这些类型都必须是基本类型
- * 
- * 
+ *
  * @author 林斌（eric@jfire.cn）
- * 
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
@@ -22,16 +20,16 @@ public @interface Sql
 {
     /**
      * 查询语句
-     * 
+     *
      * @return
      */
     public String sql();
-    
+
     /**
      * 方法的形参名称
-     * 
+     *
      * @return
      */
     public String paramNames();
-    
+
 }

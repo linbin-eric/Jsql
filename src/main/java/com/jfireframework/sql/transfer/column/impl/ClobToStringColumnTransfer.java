@@ -6,15 +6,15 @@ import java.sql.SQLException;
 
 public class ClobToStringColumnTransfer extends AbstractColumnTransfer
 {
-	@Override
-	public void setEntityValue(Object entity, ResultSet resultSet) throws SQLException, IllegalArgumentException, IllegalAccessException
-	{
-		Clob clob = resultSet.getClob(columnName);
-		if (clob != null)
-		{
-			String subString = clob.getSubString(1, (int) clob.length());
-			field.set(entity, subString);
-		}
-	}
-	
+    @Override
+    public void setEntityValue(Object entity, ResultSet resultSet) throws SQLException, IllegalArgumentException, IllegalAccessException
+    {
+        Clob clob = resultSet.getClob(columnName);
+        if ( clob != null )
+        {
+            String subString = clob.getSubString(1, (int) clob.length());
+            field.set(entity, subString);
+        }
+    }
+
 }
