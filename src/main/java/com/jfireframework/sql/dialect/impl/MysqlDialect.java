@@ -44,7 +44,7 @@ public class MysqlDialect implements Dialect
         }
     }
 
-    protected void setUnDefinedType(PreparedStatement preparedStatement, int i, Object value) throws SQLException
+    private void setUnDefinedType(PreparedStatement preparedStatement, int i, Object value) throws SQLException
     {
         preparedStatement.setObject(i, value);
     }

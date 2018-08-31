@@ -43,7 +43,7 @@ public class SessionfactoryConfig
     private String scanPackage;
     // 如果值是create，则会创建表。
     private TableMode tableMode = TableMode.NONE;
-    private List<SqlExecutor> sqlExecutors = new LinkedList<SqlExecutor>();
+    private final List<SqlExecutor> sqlExecutors = new LinkedList<SqlExecutor>();
     private Dialect dialect;
     protected static final Logger logger = LoggerFactory.getLogger(SessionfactoryConfig.class);
 
@@ -87,7 +87,7 @@ public class SessionfactoryConfig
     }
 
     @SuppressWarnings("unchecked")
-    private IdentityHashMap<Class<?>, Class<? extends Mapper>> generateMappers(Set<Class<?>> classSet) throws InstantiationException, IllegalAccessException
+    private IdentityHashMap<Class<?>, Class<? extends Mapper>> generateMappers(Set<Class<?>> classSet)
     {
         Map<String, TableEntityInfo> tableEntityInfos = new HashMap<String, TableEntityInfo>();
         for (Class<?> each : classSet)
@@ -200,37 +200,35 @@ public class SessionfactoryConfig
         {
             final SqlExecutor sqlExecutor = sqlExecutors.get(i);
             final SqlInvoker next = pred;
-            SqlInvoker sqlInvoker = new SqlInvoker()
+            pred = new SqlInvoker()
             {
 
                 @Override
-                public int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
+                public int update(String sql, List<Object> params, Connection connection, Dialect dialect1) throws SQLException
                 {
-                    return sqlExecutor.update(sql, params, connection, dialect, next);
+                    return sqlExecutor.update(sql, params, connection, dialect1, next);
                 }
 
                 @Override
-                public Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
+                public Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect1, ResultSetTransfer resultSetTransfer) throws SQLException
                 {
-                    return sqlExecutor.queryOne(sql, params, connection, dialect, resultSetTransfer, next);
+                    return sqlExecutor.queryOne(sql, params, connection, dialect1, resultSetTransfer, next);
                 }
 
                 @Override
-                public List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
+                public List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect1, ResultSetTransfer resultSetTransfer) throws SQLException
                 {
-                    return sqlExecutor.queryList(sql, params, connection, dialect, resultSetTransfer, next);
+                    return sqlExecutor.queryList(sql, params, connection, dialect1, resultSetTransfer, next);
                 }
 
                 @Override
-                public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
+                public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect1) throws SQLException
                 {
-                    return sqlExecutor.insertWithReturnKey(sql, params, connection, dialect, next);
+                    return sqlExecutor.insertWithReturnKey(sql, params, connection, dialect1, next);
                 }
             };
-            pred = sqlInvoker;
         }
-        SqlInvoker head = pred;
-        return head;
+        return pred;
     }
 
     private Set<Class<?>> buildClassSet() throws ClassNotFoundException

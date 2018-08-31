@@ -89,8 +89,7 @@ public class MapperGenerator
         Thread.currentThread().getContextClassLoader();
         try
         {
-            Class<?> compile = compiler.compile(classModel);
-            return compile;
+            return compiler.compile(classModel);
         } catch (Exception e)
         {
             ReflectUtil.throwException(e);

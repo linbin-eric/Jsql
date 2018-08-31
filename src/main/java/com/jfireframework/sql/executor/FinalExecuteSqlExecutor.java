@@ -11,6 +11,7 @@ import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 
+@SuppressWarnings("ALL")
 public class FinalExecuteSqlExecutor implements SqlExecutor
 {
 

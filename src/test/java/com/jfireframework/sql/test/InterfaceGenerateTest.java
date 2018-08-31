@@ -183,7 +183,7 @@ public class InterfaceGenerateTest
         {
             build("com.jfireframework.sql.test:in~*$test_10;com.jfireframework.sql.test.vo", test_10.class);
             Assert.fail();
-        } catch (Exception e)
+        } catch (Exception ignored)
         {
         }
     }

@@ -21,7 +21,6 @@ import java.util.Set;
 
 public class H2SchemaAdjustment implements SchemaAdjustment
 {
-    private String dropTable = "DROP TABLE IF EXISTS ";
     private static final Logger logger = LoggerFactory.getLogger(H2SchemaAdjustment.class);
 
     @Override
@@ -42,7 +41,7 @@ public class H2SchemaAdjustment implements SchemaAdjustment
         }
     }
 
-    protected void createTable(DataSource dataSource, Set<TableEntityInfo> tableEntityInfos) throws SQLException
+    private void createTable(DataSource dataSource, Set<TableEntityInfo> tableEntityInfos) throws SQLException
     {
         Connection connection = dataSource.getConnection();
         connection.setAutoCommit(false);
@@ -66,6 +65,7 @@ public class H2SchemaAdjustment implements SchemaAdjustment
 
     private void dropTableIfExist(Connection connection, String tableName) throws SQLException
     {
+        String dropTable = "DROP TABLE IF EXISTS ";
         PreparedStatement prepareStatement = connection.prepareStatement(dropTable + tableName);
         prepareStatement.executeUpdate();
         prepareStatement.close();

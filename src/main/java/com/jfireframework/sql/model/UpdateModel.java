@@ -15,10 +15,10 @@ public class UpdateModel extends Model
 
     class UpdateEntry
     {
-        String propertyName;
-        Object value;
+        final String propertyName;
+        final Object value;
 
-        public UpdateEntry(String propertyName, Object value)
+        UpdateEntry(String propertyName, Object value)
         {
             this.propertyName = propertyName;
             this.value = value;

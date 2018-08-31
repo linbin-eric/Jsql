@@ -9,7 +9,7 @@ import java.util.Map;
 
 public class ExpressionExecution implements Execution
 {
-    private Expression expression;
+    private final Expression expression;
 
     public ExpressionExecution(Expression expression)
     {

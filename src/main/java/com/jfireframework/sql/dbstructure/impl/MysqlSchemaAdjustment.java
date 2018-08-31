@@ -23,14 +23,14 @@ import java.util.*;
 
 public class MysqlSchemaAdjustment implements SchemaAdjustment
 {
-    private String findDatabase = "select database()";
-    private String findTable = "SELECT count(*) from information_schema.TABLES where TABLE_SCHEMA=? and TABLE_NAME=?";
-    private String findColumn = "SELECT COLUMN_NAME,DATA_TYPE,IS_NULLABLE,CHARACTER_MAXIMUM_LENGTH,NUMERIC_PRECISION,NUMERIC_SCALE,COLUMN_COMMENT from information_schema.`COLUMNS` where TABLE_SCHEMA=? and TABLE_NAME=? and COLUMN_NAME=?";
-    private String addColumn = "ALTER TABLE {}.{} add {}  ";
-    private String findColumnNames = "SELECT COLUMN_NAME from information_schema.`COLUMNS` where TABLE_SCHEMA=? and TABLE_NAME=?";
-    private String findIndexs = "SHOW INDEX FROM ";
-    private String addIndex = "CREATE INDEX {} USING {} ON {}.{} ({}) ;";
-    private String dropIndex = "ALTER TABLE {}.{} DROP INDEX `{}`";
+    private final String findDatabase = "select database()";
+    private final String findTable = "SELECT count(*) from information_schema.TABLES where TABLE_SCHEMA=? and TABLE_NAME=?";
+    private final String findColumn = "SELECT COLUMN_NAME,DATA_TYPE,IS_NULLABLE,CHARACTER_MAXIMUM_LENGTH,NUMERIC_PRECISION,NUMERIC_SCALE,COLUMN_COMMENT from information_schema.`COLUMNS` where TABLE_SCHEMA=? and TABLE_NAME=? and COLUMN_NAME=?";
+    private final String addColumn = "ALTER TABLE {}.{} add {}  ";
+    private final String findColumnNames = "SELECT COLUMN_NAME from information_schema.`COLUMNS` where TABLE_SCHEMA=? and TABLE_NAME=?";
+    private final String findIndexs = "SHOW INDEX FROM ";
+    private final String addIndex = "CREATE INDEX {} USING {} ON {}.{} ({}) ;";
+    private final String dropIndex = "ALTER TABLE {}.{} DROP INDEX `{}`";
     private static final Logger logger = LoggerFactory.getLogger(MysqlSchemaAdjustment.class);
 
     private void createTable(DataSource dataSource, Set<TableEntityInfo> tableEntityInfos) throws SQLException
@@ -129,7 +129,7 @@ public class MysqlSchemaAdjustment implements SchemaAdjustment
             cache.append('`').append(columnInfo.getColumnName()).append("` ");
             String columnType = decideColumnType(columnInfo.getField(), mysqlColumnDef);
             cache.append(columnType).append(' ');
-            boolean isNullable = mysqlColumnDef != null ? mysqlColumnDef.isNullable() : true;
+            boolean isNullable = mysqlColumnDef == null || mysqlColumnDef.isNullable();
             if ( isNullable == false )
             {
                 cache.append("NOT NULL ");
@@ -271,7 +271,6 @@ public class MysqlSchemaAdjustment implements SchemaAdjustment
      * @param schema
      * @param each
      * @param tableName
-     * @param propertyNameToColumnNameMap
      * @param indexs
      * @throws SQLException
      */
@@ -400,7 +399,7 @@ public class MysqlSchemaAdjustment implements SchemaAdjustment
         StringCache cache = new StringCache(StringUtil.format(addColumn, schema, tableName, columnName));
         String columnType = decideColumnType(field, columnDef);
         cache.append(columnType).append(' ');
-        boolean isNullable = columnDef != null ? columnDef.isNullable() : false;
+        boolean isNullable = columnDef != null && columnDef.isNullable();
         if ( isNullable == false )
         {
             cache.append("NOT NULL ");
@@ -474,8 +473,7 @@ public class MysqlSchemaAdjustment implements SchemaAdjustment
         PreparedStatement prepareStatement = connection.prepareStatement(findDatabase);
         ResultSet resultSet = prepareStatement.executeQuery();
         resultSet.next();
-        String schema = resultSet.getString(1);
-        return schema;
+        return resultSet.getString(1);
     }
 
     @Override

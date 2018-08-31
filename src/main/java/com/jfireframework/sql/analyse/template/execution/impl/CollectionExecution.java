@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class CollectionExecution implements Execution
 {
-    private Expression expression;
+    private final Expression expression;
 
     public CollectionExecution(Expression expression)
     {

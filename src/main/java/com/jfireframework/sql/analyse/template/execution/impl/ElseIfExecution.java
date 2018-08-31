@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class ElseIfExecution implements WithBodyExecution
 {
-    private Expression expression;
+    private final Expression expression;
     private Execution[] body;
 
     public ElseIfExecution(Expression expression)

@@ -9,7 +9,7 @@ import java.util.Map;
 
 public class EnumOrdinalTransfer extends AbstractColumnTransfer
 {
-    Enum<?>[] allEnumInstances;
+    private Enum<?>[] allEnumInstances;
 
     @Override
     @SuppressWarnings({"unchecked"})

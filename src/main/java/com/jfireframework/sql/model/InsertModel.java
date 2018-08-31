@@ -15,10 +15,10 @@ public class InsertModel extends Model
 
     class InsertEntry
     {
-        String propertyName;
-        Object value;
+        final String propertyName;
+        final Object value;
 
-        public InsertEntry(String propertyName, Object value)
+        InsertEntry(String propertyName, Object value)
         {
             this.propertyName = propertyName;
             this.value = value;

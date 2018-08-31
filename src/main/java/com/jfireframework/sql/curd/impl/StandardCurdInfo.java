@@ -3,7 +3,6 @@ package com.jfireframework.sql.curd.impl;
 import com.jfireframework.baseutil.collection.StringCache;
 import com.jfireframework.sql.annotation.pkstrategy.AutoIncrement;
 import com.jfireframework.sql.metadata.TableEntityInfo;
-import com.jfireframework.sql.metadata.TableEntityInfo.ColumnInfo;
 
 import java.lang.reflect.Field;
 import java.util.LinkedList;
@@ -26,16 +25,7 @@ public class StandardCurdInfo<T> extends AbstractCurdInfo<T>
             StringCache cache = new StringCache();
             cache.append("insert into ").append(tableEntityInfo.getTableName()).append(" (");
             List<Field> list = new LinkedList<Field>();
-            for (ColumnInfo info : tableEntityInfo.getPropertyNameKeyMap().values())
-            {
-                Field field = info.getField();
-                if ( field.equals(pkField) )
-                {
-                    continue;
-                }
-                cache.append(info.getColumnName()).appendComma();
-                list.add(field);
-            }
+            concatNonPkColumnNames(tableEntityInfo, pkField, cache, list);
             cache.deleteLast().append(") values (");
             int size = list.size();
             for (int i = 0; i < size; i++)

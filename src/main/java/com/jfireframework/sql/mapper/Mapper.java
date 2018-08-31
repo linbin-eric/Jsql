@@ -20,8 +20,6 @@ public abstract class Mapper
         {
             return new HashMap<String, Object>();
         }
-
-        ;
     };
     protected static final ThreadLocal<List<Object>> cachedParams = new ThreadLocal<List<Object>>()
     {
@@ -29,8 +27,6 @@ public abstract class Mapper
         {
             return new LinkedList<Object>();
         }
-
-        ;
     };
 
     protected SqlSession session;

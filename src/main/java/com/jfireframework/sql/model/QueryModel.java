@@ -14,15 +14,15 @@ public class QueryModel extends Model
 {
     private List<String> selectProperties;
     private List<OrderByEntry> orderByProperties;
-    private BeanTransfer beanTransfer;
+    private volatile BeanTransfer beanTransfer;
     private Page page;
 
     class OrderByEntry
     {
-        String orderPropertyName;
-        boolean desc = false;
+        final String orderPropertyName;
+        final boolean desc;
 
-        public OrderByEntry(String orderPropertyName, boolean desc)
+        OrderByEntry(String orderPropertyName, boolean desc)
         {
             this.orderPropertyName = orderPropertyName;
             this.desc = desc;
@@ -61,9 +61,18 @@ public class QueryModel extends Model
                 selectProperties.add(columnInfo.getPropertyName());
             }
         }
-        beanTransfer = new BeanTransfer();
-        beanTransfer.initialize(entityClass);
-        beanTransfer.preSetColumnTransfer(selectProperties, TableEntityInfo.parse(entityClass));
+        if ( beanTransfer == null )
+        {
+            synchronized (this)
+            {
+                if ( beanTransfer == null )
+                {
+                    beanTransfer = new BeanTransfer();
+                    beanTransfer.initialize(entityClass);
+                    beanTransfer.preSetColumnTransfer(selectProperties, TableEntityInfo.parse(entityClass));
+                }
+            }
+        }
         return beanTransfer;
     }
 

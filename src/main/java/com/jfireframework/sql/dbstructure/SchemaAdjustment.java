@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public interface SchemaAdjustment
 {
-    static AtomicInteger count = new AtomicInteger(0);
+    AtomicInteger count = new AtomicInteger(0);
 
     void adjust(TableMode mode, DataSource dataSource, Set<TableEntityInfo> tableEntityInfos) throws SQLException;
 

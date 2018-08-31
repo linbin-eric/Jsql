@@ -22,13 +22,9 @@ public class Template
         {
             return new StringCache();
         }
-
-        ;
     };
-    private Deque<Execution> executions = new LinkedList<Execution>();
     private Execution[] runtimeExecutions;
-    private ScanMode mode = ScanMode.LITERALS;
-    private Invoker head = DEFAULT_HEAD;
+    private ScanMode mode;
     private static final Invoker DEFAULT_HEAD;
 
     static
@@ -58,16 +54,15 @@ public class Template
         {
             final TemplateParser parser = parsers[i];
             final Invoker next = pred;
-            Invoker invoker = new Invoker()
+            pred = new Invoker()
             {
 
                 @Override
-                public int scan(String sentence, int offset, Deque<Execution> executions, Template template, StringCache cache)
+                public int scan(String sentence, int offset, Deque<Execution> executions1, Template template, StringCache cache)
                 {
-                    return parser.parse(sentence, offset, executions, template, cache, next);
+                    return parser.parse(sentence, offset, executions1, template, cache, next);
                 }
             };
-            pred = invoker;
         }
         DEFAULT_HEAD = pred;
     }
@@ -88,9 +83,10 @@ public class Template
         int offset = 0;
         int length = sentence.length();
         mode = ScanMode.LITERALS;
+        Deque<Execution> executions = new LinkedList<Execution>();
         while (offset < length)
         {
-            int result = head.scan(sentence, offset, executions, this, cache);
+            int result = DEFAULT_HEAD.scan(sentence, offset, executions, this, cache);
             if ( result == offset )
             {
                 throw new IllegalFormatException("没有解析器可以识别", sentence.substring(0, offset));

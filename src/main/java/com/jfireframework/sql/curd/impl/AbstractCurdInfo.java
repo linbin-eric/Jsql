@@ -24,29 +24,29 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
         ValueAccessor[] valueAccessors;
     }
 
-    protected SqlAndFieldEntry insertEntry;
-    protected SqlAndFieldEntry deleteEntry;
-    protected SqlAndFieldEntry updateEntry;
-    protected SqlAndFieldEntry getEntry;
-    protected SqlAndFieldEntry lockInShareEntry;
-    protected SqlAndFieldEntry lockForUpdateEntry;
-    protected SqlAndFieldEntry autoGeneratePkInsertEntry;
-    protected PkGenerator.Generator generator;
+    private SqlAndFieldEntry insertEntry;
+    private SqlAndFieldEntry deleteEntry;
+    private SqlAndFieldEntry updateEntry;
+    private SqlAndFieldEntry getEntry;
+    private SqlAndFieldEntry lockInShareEntry;
+    private SqlAndFieldEntry lockForUpdateEntry;
+    SqlAndFieldEntry autoGeneratePkInsertEntry;
+    private PkGenerator.Generator generator;
     private PkMode mode = PkMode.OTHER;
-    private ResultSetTransfer beanTransfer;
-    private Field pkField;
+    private final ResultSetTransfer beanTransfer;
+    private final Field pkField;
 
     enum PkMode
     {
         STRING, INT, LONG, OTHER
     }
 
-    public AbstractCurdInfo(Class<T> ckass)
+    AbstractCurdInfo(Class<T> ckass)
     {
         TableEntityInfo tableEntityInfo = TableEntityInfo.parse(ckass);
-        generateInsertEntry(ckass, tableEntityInfo);
+        generateInsertEntry(tableEntityInfo);
         generateDeleteEntry(tableEntityInfo);
-        generateUpadteEntry(ckass, tableEntityInfo);
+        generateUpdateEntry(tableEntityInfo);
         generateGetEntry(tableEntityInfo);
         generateLockInShareEntry(tableEntityInfo);
         generateLockForUpdateEntry(tableEntityInfo);
@@ -85,16 +85,7 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
             StringCache cache = new StringCache();
             List<Field> list = new LinkedList<Field>();
             cache.append("insert into ").append(tableEntityInfo.getTableName()).append(" (").append(tableEntityInfo.getPkInfo().getColumnName()).appendComma();
-            for (ColumnInfo info : tableEntityInfo.getPropertyNameKeyMap().values())
-            {
-                Field field = info.getField();
-                if ( field.equals(pkField) )
-                {
-                    continue;
-                }
-                cache.append(info.getColumnName()).appendComma();
-                list.add(field);
-            }
+            concatNonPkColumnNames(tableEntityInfo, pkField, cache, list);
             cache.deleteLast().append(") values (?,");
             int size = list.size();
             for (int i = 0; i < size; i++)
@@ -108,6 +99,20 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
         } catch (Exception e)
         {
             ReflectUtil.throwException(e);
+        }
+    }
+
+     void concatNonPkColumnNames(TableEntityInfo tableEntityInfo, Field pkField, StringCache cache, List<Field> list)
+    {
+        for (ColumnInfo info : tableEntityInfo.getPropertyNameKeyMap().values())
+        {
+            Field field = info.getField();
+            if ( field.equals(pkField) )
+            {
+                continue;
+            }
+            cache.append(info.getColumnName()).appendComma();
+            list.add(field);
         }
     }
 
@@ -130,7 +135,7 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
         lockForUpdateEntry.valueAccessors = buildValueAccessor(tableEntityInfo.getPkInfo().getField());
     }
 
-    ValueAccessor[] buildValueAccessor(Field field)
+    private ValueAccessor[] buildValueAccessor(Field field)
     {
         return new ValueAccessor[]{new ValueAccessor(field)};
     }
@@ -159,7 +164,7 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
         getEntry.valueAccessors = buildValueAccessor(tableEntityInfo.getPkInfo().getField());
     }
 
-    private void generateUpadteEntry(Class<?> ckass, TableEntityInfo tableEntityInfo)
+    private void generateUpdateEntry(TableEntityInfo tableEntityInfo)
     {
         StringCache cache = new StringCache();
         cache.append("update ").append(tableEntityInfo.getTableName()).append(" set ");
@@ -186,7 +191,7 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
         deleteEntry.valueAccessors = buildValueAccessor(tableEntityInfo.getPkInfo().getField());
     }
 
-    private void generateInsertEntry(Class<?> ckass, TableEntityInfo tableEntityInfo)
+    private void generateInsertEntry(TableEntityInfo tableEntityInfo)
     {
         StringCache cache = new StringCache();
         List<Field> list = new LinkedList<Field>();
@@ -211,13 +216,18 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
     @Override
     public String insert(T entity, List<Object> params)
     {
+        return fillParamsAndReturnSql(entity, params, insertEntry);
+    }
+
+    private String fillParamsAndReturnSql(T entity, List<Object> params, SqlAndFieldEntry entry)
+    {
         try
         {
-            for (ValueAccessor field : insertEntry.valueAccessors)
+            for (ValueAccessor field : entry.valueAccessors)
             {
                 params.add(field.get(entity));
             }
-            return insertEntry.sql;
+            return entry.sql;
         } catch (Exception e)
         {
             ReflectUtil.throwException(e);
@@ -228,18 +238,7 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
     @Override
     public String update(T entity, List<Object> params)
     {
-        try
-        {
-            for (ValueAccessor field : updateEntry.valueAccessors)
-            {
-                params.add(field.get(entity));
-            }
-            return updateEntry.sql;
-        } catch (Exception e)
-        {
-            ReflectUtil.throwException(e);
-            return null;
-        }
+        return fillParamsAndReturnSql(entity, params, updateEntry);
     }
 
     @Override

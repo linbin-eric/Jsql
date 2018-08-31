@@ -12,8 +12,8 @@ import java.util.Map;
 public class ForEachExecution implements WithBodyExecution
 {
     private Execution[] body;
-    private String itemName;
-    private Expression collection;
+    private final String itemName;
+    private final Expression collection;
 
     public ForEachExecution(String itemName, Expression collection)
     {

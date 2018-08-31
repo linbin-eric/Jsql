@@ -11,7 +11,7 @@ public class Page
     /**
      * 是否需要查询总数
      */
-    protected boolean fetchSum = false;
+    private boolean fetchSum = false;
 
     public int getTotal()
     {

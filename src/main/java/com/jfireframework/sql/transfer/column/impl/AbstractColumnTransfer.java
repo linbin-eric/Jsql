@@ -6,8 +6,8 @@ import java.lang.reflect.Field;
 
 public abstract class AbstractColumnTransfer implements ColumnTransfer
 {
-    protected Field field;
-    protected String columnName;
+    Field field;
+    String columnName;
 
     @Override
     public void initialize(Field field, String columnName)

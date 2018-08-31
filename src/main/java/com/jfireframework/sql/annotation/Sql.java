@@ -23,13 +23,13 @@ public @interface Sql
      *
      * @return
      */
-    public String sql();
+    String sql();
 
     /**
      * 方法的形参名称
      *
      * @return
      */
-    public String paramNames();
+    String paramNames();
 
 }

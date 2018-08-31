@@ -62,11 +62,7 @@ public abstract class TemplateParser
     {
         char c1 = getChar(offset, sentence);
         char c2 = getChar(offset + 1, sentence);
-        if ( c1 != '<' || c2 != '%' )
-        {
-            return false;
-        }
-        return true;
+        return c1 == '<' && c2 == '%';
     }
 
     /**
@@ -74,7 +70,6 @@ public abstract class TemplateParser
      *
      * @param sentence
      * @param offset
-     * @param leftBracketIndex
      * @return
      */
     protected int findEndRightBracket(String sentence, int offset)

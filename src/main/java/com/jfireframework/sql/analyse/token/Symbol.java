@@ -46,7 +46,7 @@ public enum Symbol
     MONKEYS_AT("@"), //
     POUND("#");
 
-    private static Map<String, Symbol> symbols = new HashMap<String, Symbol>(128);
+    private static final Map<String, Symbol> symbols = new HashMap<String, Symbol>(128);
 
     static
     {
@@ -56,7 +56,7 @@ public enum Symbol
         }
     }
 
-    private Symbol(String literals)
+    Symbol(String literals)
     {
         this.literals = literals;
     }

@@ -13,7 +13,7 @@ import java.util.List;
 
 public class OraclePageExecutor implements SqlExecutor
 {
-    private ResultSetTransfer countResultTransfer = new IntegerTransfer();
+    private final ResultSetTransfer countResultTransfer = new IntegerTransfer();
 
     @Override
     public int update(String sql, List<Object> params, Connection connection, Dialect dialect, SqlInvoker next) throws SQLException

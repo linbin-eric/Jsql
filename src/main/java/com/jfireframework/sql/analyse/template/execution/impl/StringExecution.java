@@ -8,7 +8,7 @@ import java.util.Map;
 
 public class StringExecution implements Execution
 {
-    private String literals;
+    private final String literals;
 
     public StringExecution(String literals)
     {

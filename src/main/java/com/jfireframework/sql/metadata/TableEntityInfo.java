@@ -13,13 +13,13 @@ public class TableEntityInfo
 {
     private static final Map<Class<?>, TableEntityInfo> store = new ConcurrentHashMap<Class<?>, TableEntityInfo>();
 
-    private String className;
-    private String classSimpleName;
-    private String tableName;
+    private final String className;
+    private final String classSimpleName;
+    private final String tableName;
     private Map<String, ColumnInfo> propertyNameKeyMap;
     private Map<String, ColumnInfo> columnNameIgnoreCaseKeyMap;
     private ColumnInfo pkInfo;
-    private Class<?> ckass;
+    private final Class<?> ckass;
 
     private TableEntityInfo(Class<?> ckass)
     {
@@ -77,7 +77,7 @@ public class TableEntityInfo
      * @param entityClass
      * @return
      */
-    Field[] getAllFields(Class<?> entityClass)
+    private Field[] getAllFields(Class<?> entityClass)
     {
         Set<Field> set = new TreeSet<Field>(new Comparator<Field>()
         {
@@ -107,7 +107,7 @@ public class TableEntityInfo
 
     }
 
-    protected boolean isNotColumnField(Field field)
+    private boolean isNotColumnField(Field field)
     {
         if ( field.isAnnotationPresent(SqlIgnore.class) )
         {
@@ -119,11 +119,7 @@ public class TableEntityInfo
             return true;
         }
         Class<?> type = field.getType();
-        if ( Collection.class.isAssignableFrom(type) || Map.class.isAssignableFrom(type) )
-        {
-            return true;
-        }
-        return false;
+        return Collection.class.isAssignableFrom(type) || Map.class.isAssignableFrom(type);
     }
 
     public String getClassSimpleName()
@@ -184,7 +180,7 @@ public class TableEntityInfo
             return columnName;
         }
 
-        public void setColumnName(String columnName)
+        void setColumnName(String columnName)
         {
             this.columnName = columnName;
         }
@@ -194,7 +190,7 @@ public class TableEntityInfo
             return propertyName;
         }
 
-        public void setPropertyName(String propertyName)
+        void setPropertyName(String propertyName)
         {
             this.propertyName = propertyName;
         }
@@ -204,7 +200,7 @@ public class TableEntityInfo
             return field;
         }
 
-        public void setField(Field field)
+        void setField(Field field)
         {
             this.field = field;
         }

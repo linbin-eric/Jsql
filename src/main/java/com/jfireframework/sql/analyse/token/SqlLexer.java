@@ -9,7 +9,7 @@ import java.util.*;
 
 public class SqlLexer
 {
-    private static TokenParser firstParser;
+    private static final TokenParser firstParser;
 
     static
     {
@@ -62,7 +62,7 @@ public class SqlLexer
     /**
      * 将类名，属性名转换为表名和列名
      *
-     * @param transfer
+     * @param transfers
      */
     public SqlLexer transfer(Map<String, TableEntityInfo> transfers)
     {
@@ -189,7 +189,6 @@ public class SqlLexer
     /**
      * 该标识符文本内容是一个实体类的属性名称
      *
-     * @param propertyNameToColumnNameMap
      * @param token
      * @return
      */

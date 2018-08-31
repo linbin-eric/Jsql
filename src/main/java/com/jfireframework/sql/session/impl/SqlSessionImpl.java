@@ -37,8 +37,6 @@ public class SqlSessionImpl implements SqlSession
         {
             return new LinkedList<Object>();
         }
-
-        ;
     };
     private static final ResultSetTransfer countTransfer = new IntegerTransfer();
 
@@ -238,36 +236,31 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> T findOne(Model model)
     {
-        T result = query(model.getBeanTransfer(), model.getSql(), model.getParams());
-        return result;
+        return query(model.getBeanTransfer(), model.getSql(), model.getParams());
     }
 
     @Override
     public <T> List<T> find(Model model)
     {
-        List<T> result = queryList(model.getBeanTransfer(), model.getSql(), model.getParams());
-        return result;
+        return queryList(model.getBeanTransfer(), model.getSql(), model.getParams());
     }
 
     @Override
     public int update(Model model)
     {
-        int update = update(model.getSql(), model.getParams());
-        return update;
+        return update(model.getSql(), model.getParams());
     }
 
     @Override
     public int delete(Model model)
     {
-        int update = update(model.getSql(), model.getParams());
-        return update;
+        return update(model.getSql(), model.getParams());
     }
 
     @Override
     public int count(Model model)
     {
-        int count = query(countTransfer, model.getSql(), model.getParams());
-        return count;
+        return query(countTransfer, model.getSql(), model.getParams());
     }
 
     @Override

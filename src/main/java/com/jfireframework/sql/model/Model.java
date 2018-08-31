@@ -13,21 +13,21 @@ import java.util.Map;
 
 public abstract class Model
 {
-    protected Class<?> entityClass;
-    protected List<WhereEntry> whereEntries;
-    protected String generatedSql;
+    Class<?> entityClass;
+    List<WhereEntry> whereEntries;
+    private String generatedSql;
 
-    protected Model()
+    Model()
     {
         // TODO Auto-generated constructor stub
     }
 
     class WhereEntry
     {
-        String propertyName;
-        Object value;
+        final String propertyName;
+        final Object value;
 
-        public WhereEntry(String propertyName, Object value)
+        WhereEntry(String propertyName, Object value)
         {
             this.propertyName = propertyName;
             this.value = value;
@@ -37,9 +37,8 @@ public abstract class Model
 
     /**
      * @param cache
-     * @param columnNameMap
      */
-    protected void setWhereColumns(StringCache cache)
+    void setWhereColumns(StringCache cache)
     {
         if ( whereEntries != null )
         {
@@ -84,7 +83,7 @@ public abstract class Model
         throw new UnsupportedOperationException();
     }
 
-    protected Model from(Class<?> entityClass)
+    Model from(Class<?> entityClass)
     {
         if ( entityClass.isAnnotationPresent(TableDef.class) == false )
         {
@@ -123,27 +122,27 @@ public abstract class Model
 
     public abstract List<Object> getParams();
 
-    public static final Model delete(Class<?> ckass)
+    public static Model delete(Class<?> ckass)
     {
         return new DeleteModel().from(ckass);
     }
 
-    public static final Model query(Class<?> ckass)
+    public static Model query(Class<?> ckass)
     {
         return new QueryModel().from(ckass);
     }
 
-    public static final Model update(Class<?> ckass)
+    public static Model update(Class<?> ckass)
     {
         return new UpdateModel().from(ckass);
     }
 
-    public static final Model insert(Class<?> ckass)
+    public static Model insert(Class<?> ckass)
     {
         return new InsertModel().from(ckass);
     }
 
-    public static final Model count(Class<?> ckass)
+    public static Model count(Class<?> ckass)
     {
         return new CountModel().from(ckass);
     }

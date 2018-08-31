@@ -124,7 +124,7 @@ public enum KeyWord
     MERGE, //
     TEMPORARY;
 
-    private static Map<String, KeyWord> keywords = new HashMap<String, KeyWord>(128);
+    private static final Map<String, KeyWord> keywords = new HashMap<String, KeyWord>(128);
 
     static
     {
