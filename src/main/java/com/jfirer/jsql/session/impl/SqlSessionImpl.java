@@ -1,5 +1,6 @@
 package com.jfirer.jsql.session.impl;
 
+import com.jfirer.baseutil.reflect.ReflectUtil;
 import com.jfirer.jsql.curd.CurdInfo;
 import com.jfirer.jsql.curd.LockMode;
 import com.jfirer.jsql.dialect.Dialect;
@@ -10,7 +11,6 @@ import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.session.SqlSession;
 import com.jfirer.jsql.transfer.resultset.ResultSetTransfer;
 import com.jfirer.jsql.transfer.resultset.impl.IntegerTransfer;
-import com.jfirer.baseutil.reflect.ReflectUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,22 +23,22 @@ import java.util.List;
 
 public class SqlSessionImpl implements SqlSession
 {
-    private boolean transactionActive = false;
-    private boolean closed = false;
-    private final IdentityHashMap<Class<?>, Class<? extends Mapper>> mappers;
-    private final Connection connection;
-    private final SqlInvoker sqlInvoker;
-    private final IdentityHashMap<Class<?>, CurdInfo<?>> curdInfoMap;
-    private final Dialect dialect;
-    private final static Logger logger = LoggerFactory.getLogger(SqlSession.class);
-    private static final ThreadLocal<List<Object>> cahcedParams  = new ThreadLocal<List<Object>>()
+    private              boolean                                            transactionActive = false;
+    private              boolean                                            closed            = false;
+    private final        IdentityHashMap<Class<?>, Class<? extends Mapper>> mappers;
+    private final        Connection                                         connection;
+    private final        SqlInvoker                                         sqlInvoker;
+    private final        IdentityHashMap<Class<?>, CurdInfo<?>>             curdInfoMap;
+    private final        Dialect                                            dialect;
+    private final static Logger                                             logger            = LoggerFactory.getLogger(SqlSession.class);
+    private static final ThreadLocal<List<Object>>                          cahcedParams      = new ThreadLocal<List<Object>>()
     {
         protected java.util.List<Object> initialValue()
         {
             return new ArrayList<Object>();
         }
     };
-    private static final ResultSetTransfer         countTransfer = new IntegerTransfer();
+    private static final ResultSetTransfer                                  countTransfer     = new IntegerTransfer();
 
     public SqlSessionImpl(Connection connection, SqlInvoker sqlInvoker, IdentityHashMap<Class<?>, CurdInfo<?>> curdInfoMap, IdentityHashMap<Class<?>, Class<? extends Mapper>> mappers, Dialect dialect)
     {
@@ -55,12 +55,14 @@ public class SqlSessionImpl implements SqlSession
         checkIfClosed();
         try
         {
-            if ( transactionActive != false )
+            if (transactionActive != false)
             {
                 return;
             }
+            transactionActive = true;
             connection.setAutoCommit(false);
-        } catch (SQLException e)
+        }
+        catch (SQLException e)
         {
             ReflectUtil.throwException(e);
         }
@@ -68,7 +70,7 @@ public class SqlSessionImpl implements SqlSession
 
     private void checkIfClosed()
     {
-        if ( closed )
+        if (closed)
         {
             throw new IllegalStateException("当前Session已经关闭，不能执行其他操作");
         }
@@ -78,7 +80,7 @@ public class SqlSessionImpl implements SqlSession
     public void commit()
     {
         checkIfClosed();
-        if ( transactionActive == false )
+        if (transactionActive == false)
         {
             throw new IllegalStateException("当前链接未开启事务，无法进行提交");
         }
@@ -87,7 +89,8 @@ public class SqlSessionImpl implements SqlSession
             connection.commit();
             connection.setAutoCommit(true);
             transactionActive = false;
-        } catch (SQLException e)
+        }
+        catch (SQLException e)
         {
             ReflectUtil.throwException(e);
         }
@@ -100,7 +103,8 @@ public class SqlSessionImpl implements SqlSession
         try
         {
             connection.commit();
-        } catch (SQLException e)
+        }
+        catch (SQLException e)
         {
             ReflectUtil.throwException(e);
         }
@@ -110,7 +114,7 @@ public class SqlSessionImpl implements SqlSession
     public void rollback()
     {
         checkIfClosed();
-        if ( transactionActive == false )
+        if (transactionActive == false)
         {
             throw new IllegalStateException("当前链接未开启事务，无需回滚");
         }
@@ -119,7 +123,8 @@ public class SqlSessionImpl implements SqlSession
             connection.rollback();
             connection.setAutoCommit(true);
             transactionActive = false;
-        } catch (SQLException e)
+        }
+        catch (SQLException e)
         {
             ReflectUtil.throwException(e);
         }
@@ -128,7 +133,7 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public void close()
     {
-        if ( transactionActive )
+        if (transactionActive)
         {
             throw new IllegalStateException("当前链接仍然开启着事务，需要先执行提交");
         }
@@ -137,7 +142,8 @@ public class SqlSessionImpl implements SqlSession
             closed = true;
             connection.close();
             logger.trace("关闭session");
-        } catch (SQLException e)
+        }
+        catch (SQLException e)
         {
             throw new RuntimeException("关闭", e);
         }
@@ -157,12 +163,12 @@ public class SqlSessionImpl implements SqlSession
         Field           pkField         = tableEntityInfo.getPkInfo().getField();
         try
         {
-            if ( pkField.get(entity) == null )
+            if (pkField.get(entity) == null)
             {
-                CurdInfo<T> curdInfo = (CurdInfo<T>) curdInfoMap.get(entity.getClass());
-                List<Object> list = cahcedParams.get();
-                String sql = curdInfo.autoGeneratePkInsert(entity, list);
-                String pk = insertReturnPk(sql, list);
+                CurdInfo<T>  curdInfo = (CurdInfo<T>) curdInfoMap.get(entity.getClass());
+                List<Object> list     = cahcedParams.get();
+                String       sql      = curdInfo.autoGeneratePkInsert(entity, list);
+                String       pk       = insertReturnPk(sql, list);
                 curdInfo.setPkValue(entity, pk);
                 list.clear();
             }
@@ -170,7 +176,8 @@ public class SqlSessionImpl implements SqlSession
             {
                 update(entity);
             }
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             ReflectUtil.throwException(e);
         }
@@ -180,9 +187,9 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> void update(T entity)
     {
-        CurdInfo<T> curdInfo = (CurdInfo<T>) curdInfoMap.get(entity.getClass());
-        List<Object> list = cahcedParams.get();
-        String sql = curdInfo.update(entity, list);
+        CurdInfo<T>  curdInfo = (CurdInfo<T>) curdInfoMap.get(entity.getClass());
+        List<Object> list     = cahcedParams.get();
+        String       sql      = curdInfo.update(entity, list);
         update(sql, list);
         list.clear();
     }
@@ -191,10 +198,10 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> int delete(Class<T> ckass, Object pk)
     {
-        List<Object> list = cahcedParams.get();
-        CurdInfo<T> curdInfo = (CurdInfo<T>) curdInfoMap.get(ckass);
-        String sql = curdInfo.delete(pk, list);
-        int update = update(sql, list);
+        List<Object> list     = cahcedParams.get();
+        CurdInfo<T>  curdInfo = (CurdInfo<T>) curdInfoMap.get(ckass);
+        String       sql      = curdInfo.delete(pk, list);
+        int          update   = update(sql, list);
         list.clear();
         return update;
     }
@@ -203,9 +210,9 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> void insert(T entity)
     {
-        List<Object> list = cahcedParams.get();
-        CurdInfo<T> curdInfo = (CurdInfo<T>) curdInfoMap.get(entity.getClass());
-        String sql = curdInfo.insert(entity, list);
+        List<Object> list     = cahcedParams.get();
+        CurdInfo<T>  curdInfo = (CurdInfo<T>) curdInfoMap.get(entity.getClass());
+        String       sql      = curdInfo.insert(entity, list);
         update(sql, list);
         list.clear();
     }
@@ -214,10 +221,10 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> T get(Class<T> entityClass, Object pk)
     {
-        List<Object> list = cahcedParams.get();
-        CurdInfo<T> curdInfo = (CurdInfo<T>) curdInfoMap.get(entityClass);
-        String sql = curdInfo.find(pk, list);
-        T result = query(curdInfo.getBeanTransfer(), sql, list);
+        List<Object> list     = cahcedParams.get();
+        CurdInfo<T>  curdInfo = (CurdInfo<T>) curdInfoMap.get(entityClass);
+        String       sql      = curdInfo.find(pk, list);
+        T            result   = query(curdInfo.getBeanTransfer(), sql, list);
         list.clear();
         return result;
     }
@@ -225,10 +232,10 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> T get(Class<T> entityClass, Object pk, LockMode mode)
     {
-        List<Object> list = cahcedParams.get();
-        CurdInfo<?> curdInfo = curdInfoMap.get(entityClass);
-        String sql = curdInfo.find(pk, mode, list);
-        T result = query(curdInfo.getBeanTransfer(), sql, list);
+        List<Object> list     = cahcedParams.get();
+        CurdInfo<?>  curdInfo = curdInfoMap.get(entityClass);
+        String       sql      = curdInfo.find(pk, mode, list);
+        T            result   = query(curdInfo.getBeanTransfer(), sql, list);
         list.clear();
         return result;
     }
@@ -276,7 +283,8 @@ public class SqlSessionImpl implements SqlSession
         try
         {
             return sqlInvoker.update(sql, params, connection, dialect);
-        } catch (SQLException e)
+        }
+        catch (SQLException e)
         {
             ReflectUtil.throwException(e);
             return 0;
@@ -290,7 +298,8 @@ public class SqlSessionImpl implements SqlSession
         try
         {
             return sqlInvoker.insertWithReturnKey(sql, params, connection, dialect);
-        } catch (SQLException e)
+        }
+        catch (SQLException e)
         {
             ReflectUtil.throwException(e);
             return null;
@@ -305,7 +314,8 @@ public class SqlSessionImpl implements SqlSession
         try
         {
             return (T) sqlInvoker.queryOne(sql, params, connection, dialect, transfer);
-        } catch (SQLException e)
+        }
+        catch (SQLException e)
         {
             ReflectUtil.throwException(e);
             return null;
@@ -320,7 +330,8 @@ public class SqlSessionImpl implements SqlSession
         try
         {
             return (List<T>) sqlInvoker.queryList(sql, params, connection, dialect, transfer);
-        } catch (SQLException e)
+        }
+        catch (SQLException e)
         {
             ReflectUtil.throwException(e);
             return null;
@@ -333,15 +344,15 @@ public class SqlSessionImpl implements SqlSession
     {
         try
         {
-            Class<? extends Mapper> ckass = mappers.get(mapperClass);
-            Mapper mapper = ckass.newInstance();
+            Class<? extends Mapper> ckass  = mappers.get(mapperClass);
+            Mapper                  mapper = ckass.newInstance();
             mapper.setSession(this);
             return (T) mapper;
-        } catch (Throwable e)
+        }
+        catch (Throwable e)
         {
             ReflectUtil.throwException(e);
             return null;
         }
     }
-
 }
