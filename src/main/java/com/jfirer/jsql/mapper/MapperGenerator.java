@@ -119,28 +119,42 @@ public class MapperGenerator
                 {
                     throw new IllegalArgumentException("方法：" + method.toGenericString() + "不匹配操作符");
                 }
-                if (Operator.By.name().equals(operatorName))
+                Operator operator = Operator.valueOf(operatorName);
+                switch (operator)
                 {
-                    index += 2;
-                    content = methodName.substring(index);
-                    String propername = propertyNames.find(content);
-                    if (propername == null)
+                    case By:
                     {
-                        throw new IllegalArgumentException("方法：" + method.toGenericString() + "中：" + propername + "不匹配属性名");
+                        index += 2;
+                        content = methodName.substring(index);
+                        String propername = propertyNames.find(content);
+                        if (propername == null)
+                        {
+                            throw new IllegalArgumentException("方法：" + method.toGenericString() + "中：" + propername + "不匹配属性名");
+                        }
+                        index += propername.length();
+                        propername = propername.substring(0, 1).toLowerCase() + propername.substring(1);
+                        TableEntityInfo.ColumnInfo columnInfo = tableEntityInfo.getPropertyNameKeyMap().get(propername);
+                        builder.append(columnInfo.getColumnName()).append(" ");
+                        operatorName = operatrors.find(methodName.substring(index));
+                        if (operatorName != null && (Operator.And.name().equals(operatorName) || Operator.Or.equals(operatorName)))
+                        {
+                            builder.append(" = ? ");
+                        }
+                        break;
                     }
-                    index += propername.length();
-                    propername = propername.substring(0, 1).toLowerCase() + propername.substring(1);
-                    TableEntityInfo.ColumnInfo columnInfo = tableEntityInfo.getPropertyNameKeyMap().get(propername);
-                    builder.append(columnInfo.getColumnName()).append(" ");
-                    operatorName = operatrors.find(methodName.substring(index));
-                    if (operatorName != null && (Operator.And.name().equals(operatorName) || Operator.Or.equals(operatorName)))
+                    case And:
+                    case Or:
                     {
-                        builder.append(" = ? ");
+                        builder.append(" ").append(operatorName.toLowerCase()).append(' ');
+                        index += operatorName.length();
+                        break;
                     }
-                }
-                else if (Operator.And.name().equals(operatorName) || Operator.Or.equals(operatorName))
-                {
-                    builder.append(" ").append(operatorName.toLowerCase()).append(' ');
+                    case LessThan:
+                    {
+                        builder.append(" < ? ");
+                        break;
+                    }
+                    case LessThanEqual:
                 }
             }
         }
@@ -148,9 +162,18 @@ public class MapperGenerator
 
     enum Operator
     {
-        And, Or, Between, LessThan, LessThanEqual, GreaterThan, GreaterThanEqual, After, Before,//
-        IsNull, IsNotNull, Like, NotLike, StartingWith, EndingWith, Containing, OrderBy, In, NotIn,//
-        True, False, By
+        And("and"), Or("or"),//
+        By("by"),//
+        Between("between"), LessThan("<"), LessThanEqual("<="), GreaterThan(">"), GreaterThanEqual(">="), After(">"), Before("<"),//
+        Like("like"), NotLike("not like"), StartingWith(""), EndingWith, Containing, OrderBy, In, NotIn,//
+        True, False, IsNull, IsNotNull,
+        ;
+        private String literal;
+
+        Operator(String literal)
+        {
+            this.literal = literal;
+        }
     }
 
     static class TriTree extends HashMap<Character, TriTree>
