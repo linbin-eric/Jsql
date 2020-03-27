@@ -1,41 +1,15 @@
 package com.jfirer.jsql.mapper;
 
-import com.jfirer.jsql.session.SqlSession;
-
-import java.util.*;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * 用来给生成接口对象的类作为继承用 方便在其中设置sqlSession
- *
- * @author linbin
+ * 标记当前的接口是一个Mapper接口，Jsql会根据注解或者方法名为其提供实现
  */
-public abstract class Mapper
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface Mapper
 {
-    protected static final ThreadLocal<Map<String, Object>> cachedVariables = new ThreadLocal<Map<String, Object>>()
-    {
-        protected java.util.Map<String, Object> initialValue()
-        {
-            return new HashMap<String, Object>();
-        }
-    };
-    protected static final ThreadLocal<List<Object>> cachedParams = new ThreadLocal<List<Object>>()
-    {
-        protected java.util.List<Object> initialValue()
-        {
-            return new ArrayList<Object>();
-        }
-    };
-
-    protected SqlSession session;
-
-    public SqlSession getSession()
-    {
-        return session;
-    }
-
-    public void setSession(SqlSession session)
-    {
-        this.session = session;
-    }
-
 }

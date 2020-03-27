@@ -15,7 +15,6 @@ import com.jfirer.baseutil.smc.compiler.CompileHelper;
 import com.jfirer.baseutil.smc.model.ClassModel;
 import com.jfirer.baseutil.smc.model.FieldModel;
 import com.jfirer.baseutil.smc.model.MethodModel;
-import com.jfirer.jsql.transfer.resultset.impl.*;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -41,8 +40,8 @@ public class MapperGenerator
                 throw new IllegalArgumentException("类:" + method.getDeclaringClass().getName() + "有方法没有打@Sql注解");
             }
         }
-        ClassModel classModel = new ClassModel(ckass.getSimpleName() + "$Mapper$" + count.getAndIncrement(), Mapper.class, ckass);
-        classModel.addImport(Mapper.class);
+        ClassModel classModel = new ClassModel(ckass.getSimpleName() + "$Mapper$" + count.getAndIncrement(), AbstractMapper.class, ckass);
+        classModel.addImport(AbstractMapper.class);
         classModel.addImport(Template.class);
         classModel.addImport(Map.class);
         classModel.addImport(HashMap.class);

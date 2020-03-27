@@ -16,6 +16,7 @@ import com.jfirer.jsql.executor.SqlExecutor;
 import com.jfirer.jsql.executor.SqlInvoker;
 import com.jfirer.jsql.executor.impl.OraclePageExecutor;
 import com.jfirer.jsql.executor.impl.StandardPageExecutor;
+import com.jfirer.jsql.mapper.AbstractMapper;
 import com.jfirer.jsql.mapper.Mapper;
 import com.jfirer.jsql.mapper.MapperGenerator;
 import com.jfirer.jsql.metadata.TableEntityInfo;
@@ -88,7 +89,7 @@ public class SessionfactoryConfig
     }
 
     @SuppressWarnings("unchecked")
-    private IdentityHashMap<Class<?>, Class<? extends Mapper>> generateMappers(Set<Class<?>> classSet)
+    private IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> generateMappers(Set<Class<?>> classSet)
     {
         Map<String, TableEntityInfo> tableEntityInfos = new HashMap<String, TableEntityInfo>();
         for (Class<?> each : classSet)
@@ -98,26 +99,14 @@ public class SessionfactoryConfig
                 tableEntityInfos.put(each.getSimpleName(), TableEntityInfo.parse(each));
             }
         }
-        CompileHelper                                      compiler = new CompileHelper(classLoader);
-        IdentityHashMap<Class<?>, Class<? extends Mapper>> mappers  = new IdentityHashMap<Class<?>, Class<? extends Mapper>>();
+        CompileHelper                                              compiler = new CompileHelper(classLoader);
+        IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> mappers  = new IdentityHashMap<Class<?>, Class<? extends AbstractMapper>>();
         for (Class<?> each : classSet)
         {
-            if (each.isInterface())
+            if (each.isInterface() && each.isAnnotationPresent(Mapper.class))
             {
-                boolean find = false;
-                for (Method method : each.getMethods())
-                {
-                    if (method.isAnnotationPresent(Sql.class))
-                    {
-                        find = true;
-                        break;
-                    }
-                }
-                if (find)
-                {
-                    Class<? extends Mapper> mapperClass = (Class<? extends Mapper>) MapperGenerator.generate(each, tableEntityInfos, compiler);
-                    mappers.put(each, mapperClass);
-                }
+                Class<? extends AbstractMapper> mapperClass = (Class<? extends AbstractMapper>) MapperGenerator.generate(each, tableEntityInfos, compiler);
+                mappers.put(each, mapperClass);
             }
         }
         return mappers;
