@@ -18,6 +18,7 @@ import org.junit.Test;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.List;
 
 public class JpaModeTest
 {
@@ -76,7 +77,8 @@ public class JpaModeTest
         user.setStringEnum(User.StringEnum.v1);
         session.save(user);
         user.setId(null);
-        user.setState(null);
+        user.setAge(13);
+        user.setState(User.State.off);
         user.setName("linbin");
         user.setB(false);
         user.setStringEnum(User.StringEnum.v2);
@@ -85,17 +87,73 @@ public class JpaModeTest
         sqlSession = sessionFactory.openSession();
     }
 
-    @Mapper
-    public static interface UserOp extends Repository<User>
-    {
-        public User findByAge(int age);
-    }
-
     @Test
     public void test()
     {
         UserOp userOp = sqlSession.getMapper(UserOp.class);
         User   user   = userOp.findByAge(12);
-        Assert.assertEquals(18, user.getLength().intValue());
+        Assert.assertTrue(user.isB());
+        user = userOp.findByAgeAndByName(12, "lin");
+        Assert.assertTrue(user.isB());
+        user = userOp.findByAgeGreaterThan(12);
+        Assert.assertEquals("linbin", user.getName());
+        user = userOp.findByNameStartingWith("linb");
+        Assert.assertEquals(13, user.getAge());
+        user = userOp.findByNameEndingWith("nbin");
+        Assert.assertEquals(13, user.getAge());
+        user = userOp.findByNameContaining("nb");
+        Assert.assertEquals(13, user.getAge());
+        user = userOp.findByAgeGreaterThanEqual(13);
+        Assert.assertEquals("linbin", user.getName());
+        user = userOp.findByAgeLessThan(13);
+        Assert.assertEquals("lin", user.getName());
+        user = userOp.findByAgeLessThanEqual(12);
+        Assert.assertEquals("lin", user.getName());
+        user = userOp.findByAgeIn(new int[]{9, 12}).get(0);
+        Assert.assertEquals("lin", user.getName());
+        user = userOp.findByAgeNotIn(new int[]{9, 13}).get(0);
+        Assert.assertEquals("lin", user.getName());
+        user = userOp.findByStateOrderByAgeDesc(User.State.off.ordinal()).get(0);
+        Assert.assertEquals("linbin", user.getName());
+        userOp.updateAgeByAge(14, 12);
+        user = userOp.findByAge(14);
+        Assert.assertEquals("lin", user.getName());
+        System.out.println(user.getName() + ":" + user.getAge());
+        int result = userOp.updateAgeAndNameByAge(1, "linnew", 14);
+        Assert.assertEquals(1, result);
+        user = userOp.findByAge(1);
+        Assert.assertNotNull(user);
+    }
+
+    @Mapper
+    public static interface UserOp extends Repository<User>
+    {
+        User findByAge(int age);
+
+        User findByAgeAndByName(int age, String name);
+
+        User findByAgeGreaterThan(int age);
+
+        User findByNameStartingWith(String name);
+
+        User findByNameEndingWith(String name);
+
+        User findByNameContaining(String name);
+
+        User findByAgeGreaterThanEqual(int age);
+
+        User findByAgeLessThan(int age);
+
+        User findByAgeLessThanEqual(int age);
+
+        List<User> findByAgeIn(int[] ages);
+
+        List<User> findByAgeNotIn(int[] ages);
+
+        List<User> findByStateOrderByAgeDesc(int state);
+
+        void updateAgeByAge(int newAge, int oldAge);
+
+        int updateAgeAndNameByAge(int newAge, String name, int oldAge);
     }
 }

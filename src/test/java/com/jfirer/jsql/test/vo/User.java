@@ -41,23 +41,38 @@ public class User
     private int age2;
     @ColumnMap(EnumOrdinalTransfer.class)
     @StandardColumnDef(dataType = "integer")
-    private State state;
+    private State         state;
     @StandardColumnDef(dataType = "varchar")
-    private StringEnum stringEnum;
-    private boolean b = false;
-    private byte[] barray = new byte[]{1, 2};
-    private Calendar calendar = Calendar.getInstance();
-    private Date date = new Date();
-    private double d1 = 2.53d;
-    private float f1 = 5.36f;
-    private long l1 = 23l;
-    private java.sql.Date sqlDate = new java.sql.Date(now);
-    private Time time = new Time(now);
-    private Timestamp timestamp = new Timestamp(now);
-    private Boolean B11 = false;
-    private Double D11 = 6.32d;
-    private Float F11 = 5.69f;
-    private Long L11 = 5625l;
+    private StringEnum    stringEnum;
+    private boolean       b         = false;
+    private byte[]        barray    = new byte[]{1, 2};
+    private Calendar      calendar  = Calendar.getInstance();
+    private Date          date      = new Date();
+    private double        d1        = 2.53d;
+    private float         f1        = 5.36f;
+    private long          l1        = 23l;
+    private java.sql.Date sqlDate   = new java.sql.Date(now);
+    private Time          time      = new Time(now);
+    private Timestamp     timestamp = new Timestamp(now);
+    private Boolean       B11       = false;
+    private Double        D11       = 6.32d;
+    private Float         F11       = 5.69f;
+    private Long          L11       = 5625l;
+
+    public static long getNow()
+    {
+        return now;
+    }
+
+    public static String getCustomName()
+    {
+        return customName;
+    }
+
+    public static String getXx()
+    {
+        return xx;
+    }
 
     public double getD1()
     {

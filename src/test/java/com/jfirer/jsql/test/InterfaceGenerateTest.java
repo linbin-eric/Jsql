@@ -3,6 +3,7 @@ package com.jfirer.jsql.test;
 import com.jfirer.jsql.SessionFactory;
 import com.jfirer.jsql.SessionfactoryConfig;
 import com.jfirer.jsql.annotation.Sql;
+import com.jfirer.jsql.mapper.Mapper;
 import com.jfirer.jsql.metadata.TableMode;
 import com.jfirer.jsql.session.SqlSession;
 import com.jfirer.jsql.test.vo.User;
@@ -45,10 +46,13 @@ public class InterfaceGenerateTest
         session.getMapper(ckass);
     }
 
-    public static interface test_1
+    /**
+     *
+     */
+    @Test
+    public void test_4()
     {
-        @Sql(sql = "select * from User as u where u.name= ${T(com.jfirer.jsql.test.vo.User).xx}", paramNames = "")
-        public List<User> find3();
+        build("com.jfirer.jsql.test:in~*$test_4;com.jfirer.jsql.test.vo", test_4.class);
     }
 
     /**
@@ -60,13 +64,20 @@ public class InterfaceGenerateTest
         build("com.jfirer.jsql.test:in~*$test_1;com.jfirer.jsql.test.vo", test_1.class);
     }
 
-    public static interface test_2
+    /**
+     * 测试缺少</if>的情况
+     */
+    @Test
+    public void test_10()
     {
-        @Sql(sql = "select * from User where name = ${T(com.jfirer.jsql.test.vo.User).xx}", paramNames = "")
-        public List<User> query();
-
-        @Sql(sql = "update User set name = ${T(com.jfirer.jsql.test.vo.User).xx}", paramNames = "")
-        public int update();
+        try
+        {
+            build("com.jfirer.jsql.test:in~*$test_10;com.jfirer.jsql.test.vo", test_10.class);
+            Assert.fail();
+        }
+        catch (Exception ignored)
+        {
+        }
     }
 
     /**
@@ -78,6 +89,24 @@ public class InterfaceGenerateTest
         build("com.jfirer.jsql.test:in~*$test_2;com.jfirer.jsql.test.vo", test_2.class);
     }
 
+    @Mapper
+    public static interface test_1
+    {
+        @Sql(sql = "select * from User as u where u.name= ${T(com.jfirer.jsql.test.vo.User).xx}", paramNames = "")
+        public List<User> find3();
+    }
+
+    @Mapper
+    public static interface test_2
+    {
+        @Sql(sql = "select * from User where name = ${T(com.jfirer.jsql.test.vo.User).xx}", paramNames = "")
+        public List<User> query();
+
+        @Sql(sql = "update User set name = ${T(com.jfirer.jsql.test.vo.User).xx}", paramNames = "")
+        public int update();
+    }
+
+    @Mapper
     public static interface test_4
     {
         @Sql(sql = "select * from User <%if(i>5) {%>where name ='kx'<%}%> ", paramNames = "i")
@@ -85,20 +114,6 @@ public class InterfaceGenerateTest
 
         @Sql(sql = "update User set name = ${user.name} <%if( user.name != null && user.name=='ss' ) {%> where name ='x' <%}%> ", paramNames = "user")
         public int update(User user);
-    }
-
-    /**
-     */
-    @Test
-    public void test_4()
-    {
-        build("com.jfirer.jsql.test:in~*$test_4;com.jfirer.jsql.test.vo", test_4.class);
-    }
-
-    public static interface test_6
-    {
-        @Sql(sql = "select * from User where state = ${T(com.jfirer.jsql.test.vo.User$State).off}", paramNames = "")
-        public User find4();
     }
 
     /**
@@ -110,6 +125,23 @@ public class InterfaceGenerateTest
         build("com.jfirer.jsql.test:in~*$test_6;com.jfirer.jsql.test.vo", test_6.class);
     }
 
+    @Mapper
+    public static interface test_6
+    {
+        @Sql(sql = "select * from User where state = ${T(com.jfirer.jsql.test.vo.User$State).off}", paramNames = "")
+        public User find4();
+    }
+
+    /**
+     * 测试对$~符号
+     */
+    @Test
+    public void test_7()
+    {
+        build("com.jfirer.jsql.test:in~*$test_7;com.jfirer.jsql.test.vo", test_7.class);
+    }
+
+    @Mapper
     public static interface test_7
     {
         @Sql(sql = "delete from User where id in ~{ids}", paramNames = "ids")
@@ -129,21 +161,6 @@ public class InterfaceGenerateTest
     }
 
     /**
-     * 测试对$~符号
-     */
-    @Test
-    public void test_7()
-    {
-        build("com.jfirer.jsql.test:in~*$test_7;com.jfirer.jsql.test.vo", test_7.class);
-    }
-
-    public static interface test_8
-    {
-        @Sql(sql = "select count(*) from user", paramNames = "")
-        public int count();
-    }
-
-    /**
      * 测试返回值是int类型
      */
     @Test
@@ -152,10 +169,11 @@ public class InterfaceGenerateTest
         build("com.jfirer.jsql.test:in~*$test_8;com.jfirer.jsql.test.vo", test_8.class);
     }
 
-    public static interface test_9
+    @Mapper
+    public static interface test_8
     {
-        @Sql(sql = "select count(*) from #{name}", paramNames = "name")
-        public int count(String name);
+        @Sql(sql = "select count(*) from user", paramNames = "")
+        public int count();
     }
 
     /**
@@ -167,27 +185,21 @@ public class InterfaceGenerateTest
         build("com.jfirer.jsql.test:in~*$test_9;com.jfirer.jsql.test.vo", test_9.class);
     }
 
+    @Mapper
+    public static interface test_9
+    {
+        @Sql(sql = "select count(*) from #{name}", paramNames = "name")
+        public int count(String name);
+    }
+
+    @Mapper
     public static interface test_10
     {
         @Sql(sql = "select count(*) <%if(name == 's') {%> from #{name} ", paramNames = "name")
         public int count(String name);
     }
 
-    /**
-     * 测试缺少</if>的情况
-     */
-    @Test
-    public void test_10()
-    {
-        try
-        {
-            build("com.jfirer.jsql.test:in~*$test_10;com.jfirer.jsql.test.vo", test_10.class);
-            Assert.fail();
-        } catch (Exception ignored)
-        {
-        }
-    }
-
+    @Mapper
     public static interface test_11
     {
         @Sql(sql = "select sum(age) from User", paramNames = "")

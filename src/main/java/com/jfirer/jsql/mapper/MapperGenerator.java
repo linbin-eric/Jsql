@@ -33,19 +33,19 @@ public class MapperGenerator
 
     public static Class<?> generate(Class<?> ckass, Map<String, TableEntityInfo> tableEntityInfos, CompileHelper compiler)
     {
-        ClassModel    classModel     = buildClassModelAndImportNecessaryClass(ckass);
-        AtomicInteger fieldNameCount = new AtomicInteger(0);
+        ClassModel      classModel      = buildClassModelAndImportNecessaryClass(ckass);
+        AtomicInteger   fieldNameCount  = new AtomicInteger(0);
+        TableEntityInfo tableEntityInfo = null;
+        TriTree         operators       = null;
+        TriTree         propertyNames   = null;
         for (Method method : ckass.getDeclaredMethods())
         {
             StringBuilder methodBody = new StringBuilder();
             methodBody.append("if(session==null){throw new NullPointerException(\"当前没有session\");}");
             methodBody.append("Map<String,Object> variables = cachedVariables.get();\r\n");
             methodBody.append("List<Object> params = cachedParams.get();\r\n");
-            MethodModel     methodModel     = new MethodModel(method, classModel);
-            TableEntityInfo tableEntityInfo = null;
-            TriTree         operators       = null;
-            TriTree         propertyNames   = null;
-            String          formatSql;
+            MethodModel methodModel = new MethodModel(method, classModel);
+            String      formatSql;
             if (method.isAnnotationPresent(Sql.class))
             {
                 formatSql = generateSqlAndTemplateField(tableEntityInfos, classModel, fieldNameCount, method, methodBody);
@@ -79,7 +79,14 @@ public class MapperGenerator
             }
             methodBody.append("params.clear();\r\n");
             methodBody.append("variables.clear();\r\n");
-            methodBody.append("return result;\r\n");
+            if (method.getReturnType() == void.class || method.getReturnType() == Void.class)
+            {
+                ;
+            }
+            else
+            {
+                methodBody.append("return result;\r\n");
+            }
             methodModel.setBody(methodBody.toString());
             classModel.putMethodModel(methodModel);
         }
@@ -160,201 +167,231 @@ public class MapperGenerator
     private static String generateSqlByJpaMode(TableEntityInfo tableEntityInfo, TriTree operators, TriTree propertyNames, Method method)
     {
         String        methodName = method.getName();
-        int           paramIndex = 0;
         StringBuilder sql        = new StringBuilder();
+        int           paramIndex = 0;
+        int           length     = methodName.length();
+        int           index      = 0;
         if (methodName.startsWith("find"))
         {
-            sql.append("select * from ").append(tableEntityInfo.getClassSimpleName()).append(" where ");
-            int length = methodName.length();
-            int index  = 4;
+            sql.append("select * from ").append(tableEntityInfo.getTableName());
+            index = 4;
+        }
+        else
+        {
+            sql.append("update ").append(tableEntityInfo.getTableName()).append(" set ");
+            index = 6;
+            boolean propertyNameNow = true;
             while (index < length)
             {
-                String content      = methodName.substring(index);
-                String operatorName = operators.find(content);
-                if (operatorName == null)
+                if (propertyNameNow)
                 {
-                    throw new IllegalArgumentException("方法：" + method.toGenericString() + "不匹配操作符");
+                    String                     propertyName = propertyNames.find(methodName.substring(index));
+                    TableEntityInfo.ColumnInfo columnInfo   = tableEntityInfo.getPropertyNameKeyMap().get(propertyName.substring(0, 1).toLowerCase() + propertyName.substring(1));
+                    sql.append(columnInfo.getColumnName()).append(" = ${name").append(paramIndex++).append("} ");
+                    index += propertyName.length();
+                    propertyNameNow = false;
                 }
-                Operator operator = Operator.valueOf(operatorName);
-                switch (operator)
+                else
                 {
-                    case By:
+                    propertyNameNow = true;
+                    String   operatorName = operators.find(methodName.substring(index));
+                    Operator operator     = Operator.valueOf(operatorName);
+                    if (operator == null)
                     {
-                        index += 2;
-                        content = methodName.substring(index);
-                        String propername = propertyNames.find(content);
-                        if (propername == null)
-                        {
-                            throw new IllegalArgumentException("方法：" + method.toGenericString() + "中：" + propername + "不匹配属性名");
-                        }
-                        index += propername.length();
-                        propername = propername.substring(0, 1).toLowerCase() + propername.substring(1);
-                        TableEntityInfo.ColumnInfo columnInfo = tableEntityInfo.getPropertyNameKeyMap().get(propername);
-                        sql.append(columnInfo.getPropertyName()).append(" ");
-                        operatorName = operators.find(methodName.substring(index));
-                        if (operatorName != null && (Operator.And.name().equals(operatorName) || Operator.Or.equals(operatorName)))
-                        {
-                            sql.append(" = ${name").append(paramIndex).append("} ");
-                            paramIndex++;
-                            index += propername.length();
-                        }
-                        else if (index == length)
-                        {
-                            sql.append(" = ${name").append(paramIndex).append("} ");
-                        }
                         break;
                     }
-                    case And:
-                    case Or:
+                    else if (operator == Operator.And)
                     {
-                        sql.append(" ").append(operatorName.toLowerCase()).append(' ');
+                        sql.append(" , ");
                         index += operatorName.length();
+                    }
+                    else if (operator == Operator.By)
+                    {
                         break;
                     }
-                    case Before:
-                    case LessThan:
+                    else
                     {
-                        sql.append(" < ${name").append(paramIndex).append("} ");
-                        paramIndex++;
-                        index += operatorName.length();
-                        break;
+                        throw new IllegalArgumentException("方法：" + method.toGenericString() + "方法名错误，当前是更新模式。更新结束只能是And，By两种");
                     }
-                    case LessThanEqual:
-                    {
-                        sql.append(" <= ${name").append(paramIndex).append("} ");
-                        paramIndex++;
-                        index += operatorName.length();
-                        break;
-                    }
-                    case Like:
-                    {
-                        sql.append(" like ${name").append(paramIndex).append("} ");
-                        paramIndex++;
-                        index += operatorName.length();
-                        break;
-                    }
-                    case True:
-                    {
-                        sql.append(" is true ");
-                        index += operatorName.length();
-                        break;
-                    }
-                    case False:
-                    {
-                        sql.append(" is false ");
-                        index += operatorName.length();
-                        break;
-                    }
-                    case GreaterThan:
-                    case After:
-                    {
-                        sql.append(" > ${name").append(paramIndex).append("} ");
-                        paramIndex++;
-                        index += operatorName.length();
-                        break;
-                    }
-                    case In:
-                    {
-                        sql.append(" in ${name").append(paramIndex).append("} ");
-                        paramIndex++;
-                        index += operatorName.length();
-                        break;
-                    }
-                    case NotIn:
-                    {
-                        sql.append(" not in ${name").append(paramIndex).append("} ");
-                        paramIndex++;
-                        index += operatorName.length();
-                        break;
-                    }
-                    case IsNull:
-                    {
-                        sql.append(" is null ");
-                        index += operatorName.length();
-                        break;
-                    }
-                    case Between:
-                    {
-                        sql.append(" between ${name").append(paramIndex++).append("} and $name").append(paramIndex++).append("} ");
-                        index += operatorName.length();
-                        break;
-                    }
-                    case NotLike:
-                    {
-                        sql.append(" not like ${name").append(paramIndex).append("} ");
-                        paramIndex++;
-                        index += operatorName.length();
-                        break;
-                    }
-                    case IsNotNull:
-                    {
-                        sql.append(" is not null ");
-                        index += operatorName.length();
-                        break;
-                    }
-                    case OrderBy:
-                    {
-                        sql.append(" order by ");
-                        index += operatorName.length();
-                        String                     propertyName = propertyNames.find(methodName.substring(index));
-                        TableEntityInfo.ColumnInfo columnInfo   = tableEntityInfo.getPropertyNameKeyMap().get(propertyName.substring(0, 1) + propertyName.substring(1));
-                        sql.append(columnInfo.getPropertyName());
-                        index += propertyName.length();
-                        String nextOperator = operators.find(methodName.substring(index));
-                        if (Operator.Desc.name().equals(nextOperator) || Operator.Asc.name().equals(nextOperator))
-                        {
-                            sql.append(' ').append(operatorName.toLowerCase()).append(' ');
-                        }
-                        else
-                        {
-                            throw new IllegalArgumentException("方法：" + method.toString() + "命名中,[" + methodName.substring(index - propertyName.length() - operatorName.length()) + "]部分，无法找到对应的属性名或者缺少排序指示Desc或Asc");
-                        }
-                        index += nextOperator.length();
-                    }
-                    case Containing:
-                    {
-                        sql.append(" like ${%name").append(paramIndex++).append("%} ");
-                        index += operatorName.length();
-                        break;
-                    }
-                    case EndingWith:
-                    {
-                        sql.append(" like ${%name").append(paramIndex++).append("} ");
-                        index += operatorName.length();
-                        break;
-                    }
-                    case StartingWith:
-                    {
-                        sql.append(" like ${name").append(paramIndex++).append("%} ");
-                        index += operatorName.length();
-                        break;
-                    }
-                    case GreaterThanEqual:
-                    {
-                        sql.append(" >= ${name").append(paramIndex).append("} ");
-                        paramIndex++;
-                        index += operatorName.length();
-                        break;
-                    }
-                    case Asc:
-                    case Desc:
-                        throw new IllegalStateException("不应该解析到这个词");
                 }
             }
         }
+        sql.append(" where ");
+        while (index < length)
+        {
+            String content      = methodName.substring(index);
+            String operatorName = operators.find(content);
+            if (operatorName == null)
+            {
+                throw new IllegalArgumentException("方法：" + method.toGenericString() + "不匹配操作符");
+            }
+            Operator operator = Operator.valueOf(operatorName);
+            switch (operator)
+            {
+                case By:
+                {
+                    index += 2;
+                    content = methodName.substring(index);
+                    String propername = propertyNames.find(content);
+                    if (propername == null)
+                    {
+                        throw new IllegalArgumentException("方法：" + method.toGenericString() + "中：" + propername + "不匹配属性名");
+                    }
+                    index += propername.length();
+                    propername = propername.substring(0, 1).toLowerCase() + propername.substring(1);
+                    TableEntityInfo.ColumnInfo columnInfo = tableEntityInfo.getPropertyNameKeyMap().get(propername);
+                    sql.append(columnInfo.getColumnName()).append(" ");
+                    operatorName = operators.find(methodName.substring(index));
+                    if (operatorName != null && (Operator.And.name().equals(operatorName) || Operator.Or.equals(operatorName) || Operator.OrderBy.name().equals(operatorName)))
+                    {
+                        sql.append(" = ${name").append(paramIndex).append("} ");
+                        paramIndex++;
+                    }
+                    else if (index == length)
+                    {
+                        sql.append(" = ${name").append(paramIndex).append("} ");
+                    }
+                    break;
+                }
+                case And:
+                case Or:
+                {
+                    sql.append(" ").append(operatorName.toLowerCase()).append(' ');
+                    index += operatorName.length();
+                    break;
+                }
+                case Before:
+                case LessThan:
+                {
+                    sql.append(" < ${name").append(paramIndex).append("} ");
+                    paramIndex++;
+                    index += operatorName.length();
+                    break;
+                }
+                case LessThanEqual:
+                {
+                    sql.append(" <= ${name").append(paramIndex).append("} ");
+                    paramIndex++;
+                    index += operatorName.length();
+                    break;
+                }
+                case Like:
+                {
+                    sql.append(" like ${name").append(paramIndex).append("} ");
+                    paramIndex++;
+                    index += operatorName.length();
+                    break;
+                }
+                case True:
+                {
+                    sql.append(" is true ");
+                    index += operatorName.length();
+                    break;
+                }
+                case False:
+                {
+                    sql.append(" is false ");
+                    index += operatorName.length();
+                    break;
+                }
+                case GreaterThan:
+                case After:
+                {
+                    sql.append(" > ${name").append(paramIndex).append("} ");
+                    paramIndex++;
+                    index += operatorName.length();
+                    break;
+                }
+                case In:
+                {
+                    sql.append(" in ~{name").append(paramIndex).append("} ");
+                    paramIndex++;
+                    index += operatorName.length();
+                    break;
+                }
+                case NotIn:
+                {
+                    sql.append(" not in ~{name").append(paramIndex).append("} ");
+                    paramIndex++;
+                    index += operatorName.length();
+                    break;
+                }
+                case IsNull:
+                {
+                    sql.append(" is null ");
+                    index += operatorName.length();
+                    break;
+                }
+                case Between:
+                {
+                    sql.append(" between ${name").append(paramIndex++).append("} and $name").append(paramIndex++).append("} ");
+                    index += operatorName.length();
+                    break;
+                }
+                case NotLike:
+                {
+                    sql.append(" not like ${name").append(paramIndex).append("} ");
+                    paramIndex++;
+                    index += operatorName.length();
+                    break;
+                }
+                case IsNotNull:
+                {
+                    sql.append(" is not null ");
+                    index += operatorName.length();
+                    break;
+                }
+                case OrderBy:
+                {
+                    sql.append(" order by ");
+                    index += operatorName.length();
+                    String                     propertyName = propertyNames.find(methodName.substring(index));
+                    TableEntityInfo.ColumnInfo columnInfo   = tableEntityInfo.getPropertyNameKeyMap().get(propertyName.substring(0, 1).toLowerCase() + propertyName.substring(1));
+                    sql.append(columnInfo.getColumnName());
+                    index += propertyName.length();
+                    String nextOperator = operators.find(methodName.substring(index));
+                    if (Operator.Desc.name().equals(nextOperator) || Operator.Asc.name().equals(nextOperator))
+                    {
+                        sql.append(' ').append(nextOperator.toLowerCase()).append(' ');
+                    }
+                    else
+                    {
+                        throw new IllegalArgumentException("方法：" + method.toString() + "命名中,[" + methodName.substring(index - propertyName.length() - operatorName.length()) + "]部分，无法找到对应的属性名或者缺少排序指示Desc或Asc");
+                    }
+                    index += nextOperator.length();
+                    break;
+                }
+                case Containing:
+                {
+                    sql.append(" like ${'%'+name").append(paramIndex++).append("+'%'} ");
+                    index += operatorName.length();
+                    break;
+                }
+                case EndingWith:
+                {
+                    sql.append(" like ${'%'+name").append(paramIndex++).append("} ");
+                    index += operatorName.length();
+                    break;
+                }
+                case StartingWith:
+                {
+                    sql.append(" like ${name").append(paramIndex++).append("+'%'} ");
+                    index += operatorName.length();
+                    break;
+                }
+                case GreaterThanEqual:
+                {
+                    sql.append(" >= ${name").append(paramIndex).append("} ");
+                    paramIndex++;
+                    index += operatorName.length();
+                    break;
+                }
+                case Asc:
+                case Desc:
+                    throw new IllegalStateException("不应该解析到这个词");
+            }
+        }
         return sql.toString();
-    }
-
-    /**
-     * 通过方法上的Sql注解为其生成具体的方法体。
-     *
-     * @param tableEntityInfos
-     * @param classModel
-     * @param fieldNameCount
-     * @param method
-     */
-    private static void generateByAnnotation(Map<String, TableEntityInfo> tableEntityInfos, ClassModel classModel, AtomicInteger fieldNameCount, Method method)
-    {
     }
 
     /**
@@ -445,7 +482,6 @@ public class MapperGenerator
      * @param fieldNameCount
      * @param method
      * @param cache
-     * @param annotation
      * @return
      */
     private static String generateSqlAndTemplateField(Map<String, TableEntityInfo> tableEntityInfos, ClassModel classModel, AtomicInteger fieldNameCount, Method method, StringBuilder cache)

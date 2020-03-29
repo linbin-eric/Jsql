@@ -1,10 +1,10 @@
 package com.jfirer.jsql.test.vo;
 
+import com.jfirer.baseutil.TRACEID;
 import com.jfirer.jsql.dialect.Dialect;
 import com.jfirer.jsql.executor.SqlExecutor;
 import com.jfirer.jsql.executor.SqlInvoker;
 import com.jfirer.jsql.transfer.resultset.ResultSetTransfer;
-import com.jfirer.baseutil.TRACEID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +19,7 @@ public class SqlLog implements SqlExecutor
     @Override
     public int update(String sql, List<Object> params, Connection connection, Dialect dialect, SqlInvoker next) throws SQLException
     {
-        logger.debug("traceId:{} 执行的sql:{}", TRACEID.currentTraceId(), sql);
+        logger.debug("traceId:{} 执行的sql:{},参数：{}", TRACEID.currentTraceId(), sql, params);
         return next.update(sql, params, connection, dialect);
     }
 
@@ -49,5 +49,4 @@ public class SqlLog implements SqlExecutor
     {
         return 2000;
     }
-
 }
