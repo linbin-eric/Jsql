@@ -1,6 +1,11 @@
 package com.jfirer.jsql.mapper;
 
-import com.jfirer.jfireel.expression.token.Operator;
+import com.jfirer.baseutil.reflect.ReflectUtil;
+import com.jfirer.baseutil.smc.SmcHelper;
+import com.jfirer.baseutil.smc.compiler.CompileHelper;
+import com.jfirer.baseutil.smc.model.ClassModel;
+import com.jfirer.baseutil.smc.model.FieldModel;
+import com.jfirer.baseutil.smc.model.MethodModel;
 import com.jfirer.jsql.analyse.template.Template;
 import com.jfirer.jsql.analyse.token.SqlLexer;
 import com.jfirer.jsql.annotation.Sql;
@@ -10,14 +15,7 @@ import com.jfirer.jsql.session.SqlSession;
 import com.jfirer.jsql.transfer.resultset.ResultMap;
 import com.jfirer.jsql.transfer.resultset.ResultSetTransfer;
 import com.jfirer.jsql.transfer.resultset.impl.*;
-import com.jfirer.baseutil.reflect.ReflectUtil;
-import com.jfirer.baseutil.smc.SmcHelper;
-import com.jfirer.baseutil.smc.compiler.CompileHelper;
-import com.jfirer.baseutil.smc.model.ClassModel;
-import com.jfirer.baseutil.smc.model.FieldModel;
-import com.jfirer.baseutil.smc.model.MethodModel;
 
-import javax.swing.*;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -35,29 +33,56 @@ public class MapperGenerator
 
     public static Class<?> generate(Class<?> ckass, Map<String, TableEntityInfo> tableEntityInfos, CompileHelper compiler)
     {
-        Method[] methods = ckass.getMethods();
-        for (Method method : methods)
-        {
-            if (method.isAnnotationPresent(Sql.class) == false)
-            {
-//                throw new IllegalArgumentException("类:" + method.getDeclaringClass().getName() + "有方法没有打@Sql注解");
-            }
-        }
-        ClassModel classModel = new ClassModel(ckass.getSimpleName() + "$Mapper$" + count.getAndIncrement(), AbstractMapper.class, ckass);
-        classModel.addImport(AbstractMapper.class);
-        classModel.addImport(Template.class);
-        classModel.addImport(Map.class);
-        classModel.addImport(HashMap.class);
-        classModel.addImport(String.class);
-        classModel.addImport(BeanTransfer.class);
-        classModel.addImport(SqlSession.class);
-        classModel.addImport(List.class);
+        ClassModel    classModel     = buildClassModelAndImportNecessaryClass(ckass);
         AtomicInteger fieldNameCount = new AtomicInteger(0);
-        for (Method method : methods)
+        for (Method method : ckass.getDeclaredMethods())
         {
-            generateByAnnotation(tableEntityInfos, classModel, fieldNameCount, method);
+            StringBuilder methodBody = new StringBuilder();
+            methodBody.append("if(session==null){throw new NullPointerException(\"当前没有session\");}");
+            methodBody.append("Map<String,Object> variables = cachedVariables.get();\r\n");
+            methodBody.append("List<Object> params = cachedParams.get();\r\n");
+            MethodModel     methodModel     = new MethodModel(method, classModel);
+            TableEntityInfo tableEntityInfo = null;
+            TriTree         operators       = null;
+            TriTree         propertyNames   = null;
+            String          formatSql;
+            if (method.isAnnotationPresent(Sql.class))
+            {
+                formatSql = generateSqlAndTemplateField(tableEntityInfos, classModel, fieldNameCount, method, methodBody);
+            }
+            else
+            {
+                tableEntityInfo = tableEntityInfo == null ? getTableEntityInfoFromInterface(ckass, tableEntityInfos) : tableEntityInfo;
+                operators = operators == null ? getOperators() : operators;
+                propertyNames = propertyNames == null ? getPropertyNames(tableEntityInfo) : propertyNames;
+                formatSql = generateSqlAndTemplateField(tableEntityInfo, operators, propertyNames, classModel, fieldNameCount, method, methodBody);
+            }
+            if (formatSql.startsWith("SELECT") || formatSql.startsWith("select"))
+            {
+                String transferFieldName = "transfer_" + (fieldNameCount.getAndIncrement());
+                if (List.class.isAssignableFrom(method.getReturnType()))
+                {
+                    Class<?> componentClass = (Class<?>) ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0];
+                    addResultSetTransferField(classModel, method, transferFieldName, componentClass);
+                    methodBody.append("List result = session.queryList(").append(transferFieldName).append(",sql,params);\r\n");
+                }
+                else
+                {
+                    addResultSetTransferField(classModel, method, transferFieldName, method.getReturnType());
+                    String returnTypeName = method.getReturnType().isPrimitive() ? ReflectUtil.wrapPrimitive(method.getReturnType()).getName() : SmcHelper.getReferenceName(method.getReturnType(), classModel);
+                    methodBody.append(returnTypeName).append(" result = session.query(").append(transferFieldName).append(",sql,params);\r\n");
+                }
+            }
+            else
+            {
+                methodBody.append("int result = session.update(sql,params);\r\n");
+            }
+            methodBody.append("params.clear();\r\n");
+            methodBody.append("variables.clear();\r\n");
+            methodBody.append("return result;\r\n");
+            methodModel.setBody(methodBody.toString());
+            classModel.putMethodModel(methodModel);
         }
-        Thread.currentThread().getContextClassLoader();
         try
         {
             return compiler.compile(classModel);
@@ -69,15 +94,21 @@ public class MapperGenerator
         }
     }
 
-    /**
-     * 通过类似JPA的形式生成具体实现
-     *
-     * @param tableEntityInfos
-     * @param classModel
-     * @param fieldNameCount
-     * @param method
-     */
-    private static void generateByJpaMode(Class ckass, Map<String, TableEntityInfo> tableEntityInfos, ClassModel classModel, AtomicInteger fieldNameCount, Method method)
+    private static ClassModel buildClassModelAndImportNecessaryClass(Class<?> ckass)
+    {
+        ClassModel classModel = new ClassModel(ckass.getSimpleName() + "$Mapper$" + count.getAndIncrement(), AbstractMapper.class, ckass);
+        classModel.addImport(AbstractMapper.class);
+        classModel.addImport(Template.class);
+        classModel.addImport(Map.class);
+        classModel.addImport(HashMap.class);
+        classModel.addImport(String.class);
+        classModel.addImport(BeanTransfer.class);
+        classModel.addImport(SqlSession.class);
+        classModel.addImport(List.class);
+        return classModel;
+    }
+
+    private static TableEntityInfo getTableEntityInfoFromInterface(Class ckass, Map<String, TableEntityInfo> tableEntityInfos)
     {
         Class entityClass = null;
         for (Type each : ckass.getGenericInterfaces())
@@ -92,29 +123,54 @@ public class MapperGenerator
         {
             throw new NullPointerException("接口：" + ckass.getName() + "没有继承Repository，无法实现JPA模式方法");
         }
+        TableEntityInfo tableEntityInfo = tableEntityInfos.get(entityClass.getSimpleName());
+        if (tableEntityInfo == null)
+        {
+            throw new NullPointerException();
+        }
+        return tableEntityInfo;
+    }
+
+    private static TriTree getOperators()
+    {
         TriTree operatrors = new TriTree();
         for (Operator each : Operator.values())
         {
             operatrors.set(each.name());
         }
-        TriTree         propertyNames   = new TriTree();
-        TableEntityInfo tableEntityInfo = tableEntityInfos.get(entityClass.getSimpleName());
+        return operatrors;
+    }
+
+    private static TriTree getPropertyNames(TableEntityInfo tableEntityInfo)
+    {
+        TriTree propertyNames = new TriTree();
         for (String each : tableEntityInfo.getPropertyNameKeyMap().keySet())
         {
             String transferPropertyName = each.substring(0, 1).toUpperCase() + each.substring(1);
             propertyNames.set(transferPropertyName);
         }
-        String methodName = method.getName();
+        return propertyNames;
+    }
+
+    /**
+     * 通过类似JPA的形式生成具体实现
+     *
+     * @return
+     */
+    private static String generateSqlByJpaMode(TableEntityInfo tableEntityInfo, TriTree operators, TriTree propertyNames, Method method)
+    {
+        String        methodName = method.getName();
+        int           paramIndex = 0;
+        StringBuilder sql        = new StringBuilder();
         if (methodName.startsWith("find"))
         {
-            StringBuilder builder = new StringBuilder();
-            builder.append("select * from ").append(tableEntityInfo.getTableName()).append(" ");
+            sql.append("select * from ").append(tableEntityInfo.getClassSimpleName()).append(" where ");
             int length = methodName.length();
             int index  = 4;
             while (index < length)
             {
                 String content      = methodName.substring(index);
-                String operatorName = operatrors.find(content);
+                String operatorName = operators.find(content);
                 if (operatorName == null)
                 {
                     throw new IllegalArgumentException("方法：" + method.toGenericString() + "不匹配操作符");
@@ -134,92 +190,159 @@ public class MapperGenerator
                         index += propername.length();
                         propername = propername.substring(0, 1).toLowerCase() + propername.substring(1);
                         TableEntityInfo.ColumnInfo columnInfo = tableEntityInfo.getPropertyNameKeyMap().get(propername);
-                        builder.append(columnInfo.getColumnName()).append(" ");
-                        operatorName = operatrors.find(methodName.substring(index));
+                        sql.append(columnInfo.getPropertyName()).append(" ");
+                        operatorName = operators.find(methodName.substring(index));
                         if (operatorName != null && (Operator.And.name().equals(operatorName) || Operator.Or.equals(operatorName)))
                         {
-                            builder.append(" = ? ");
+                            sql.append(" = ${name").append(paramIndex).append("} ");
+                            paramIndex++;
+                            index += propername.length();
+                        }
+                        else if (index == length)
+                        {
+                            sql.append(" = ${name").append(paramIndex).append("} ");
                         }
                         break;
                     }
                     case And:
                     case Or:
                     {
-                        builder.append(" ").append(operatorName.toLowerCase()).append(' ');
+                        sql.append(" ").append(operatorName.toLowerCase()).append(' ');
                         index += operatorName.length();
                         break;
                     }
+                    case Before:
                     case LessThan:
                     {
-                        builder.append(" < ? ");
+                        sql.append(" < ${name").append(paramIndex).append("} ");
+                        paramIndex++;
+                        index += operatorName.length();
                         break;
                     }
                     case LessThanEqual:
+                    {
+                        sql.append(" <= ${name").append(paramIndex).append("} ");
+                        paramIndex++;
+                        index += operatorName.length();
+                        break;
+                    }
+                    case Like:
+                    {
+                        sql.append(" like ${name").append(paramIndex).append("} ");
+                        paramIndex++;
+                        index += operatorName.length();
+                        break;
+                    }
+                    case True:
+                    {
+                        sql.append(" is true ");
+                        index += operatorName.length();
+                        break;
+                    }
+                    case False:
+                    {
+                        sql.append(" is false ");
+                        index += operatorName.length();
+                        break;
+                    }
+                    case GreaterThan:
+                    case After:
+                    {
+                        sql.append(" > ${name").append(paramIndex).append("} ");
+                        paramIndex++;
+                        index += operatorName.length();
+                        break;
+                    }
+                    case In:
+                    {
+                        sql.append(" in ${name").append(paramIndex).append("} ");
+                        paramIndex++;
+                        index += operatorName.length();
+                        break;
+                    }
+                    case NotIn:
+                    {
+                        sql.append(" not in ${name").append(paramIndex).append("} ");
+                        paramIndex++;
+                        index += operatorName.length();
+                        break;
+                    }
+                    case IsNull:
+                    {
+                        sql.append(" is null ");
+                        index += operatorName.length();
+                        break;
+                    }
+                    case Between:
+                    {
+                        sql.append(" between ${name").append(paramIndex++).append("} and $name").append(paramIndex++).append("} ");
+                        index += operatorName.length();
+                        break;
+                    }
+                    case NotLike:
+                    {
+                        sql.append(" not like ${name").append(paramIndex).append("} ");
+                        paramIndex++;
+                        index += operatorName.length();
+                        break;
+                    }
+                    case IsNotNull:
+                    {
+                        sql.append(" is not null ");
+                        index += operatorName.length();
+                        break;
+                    }
+                    case OrderBy:
+                    {
+                        sql.append(" order by ");
+                        index += operatorName.length();
+                        String                     propertyName = propertyNames.find(methodName.substring(index));
+                        TableEntityInfo.ColumnInfo columnInfo   = tableEntityInfo.getPropertyNameKeyMap().get(propertyName.substring(0, 1) + propertyName.substring(1));
+                        sql.append(columnInfo.getPropertyName());
+                        index += propertyName.length();
+                        String nextOperator = operators.find(methodName.substring(index));
+                        if (Operator.Desc.name().equals(nextOperator) || Operator.Asc.name().equals(nextOperator))
+                        {
+                            sql.append(' ').append(operatorName.toLowerCase()).append(' ');
+                        }
+                        else
+                        {
+                            throw new IllegalArgumentException("方法：" + method.toString() + "命名中,[" + methodName.substring(index - propertyName.length() - operatorName.length()) + "]部分，无法找到对应的属性名或者缺少排序指示Desc或Asc");
+                        }
+                        index += nextOperator.length();
+                    }
+                    case Containing:
+                    {
+                        sql.append(" like ${%name").append(paramIndex++).append("%} ");
+                        index += operatorName.length();
+                        break;
+                    }
+                    case EndingWith:
+                    {
+                        sql.append(" like ${%name").append(paramIndex++).append("} ");
+                        index += operatorName.length();
+                        break;
+                    }
+                    case StartingWith:
+                    {
+                        sql.append(" like ${name").append(paramIndex++).append("%} ");
+                        index += operatorName.length();
+                        break;
+                    }
+                    case GreaterThanEqual:
+                    {
+                        sql.append(" >= ${name").append(paramIndex).append("} ");
+                        paramIndex++;
+                        index += operatorName.length();
+                        break;
+                    }
+                    case Asc:
+                    case Desc:
+                        throw new IllegalStateException("不应该解析到这个词");
                 }
             }
         }
-    }
-
-    enum Operator
-    {
-        And("and"), Or("or"),//
-        By("by"),//
-        Between("between"), LessThan("<"), LessThanEqual("<="), GreaterThan(">"), GreaterThanEqual(">="), After(">"), Before("<"),//
-        Like("like"), NotLike("not like"), StartingWith(""), EndingWith, Containing, OrderBy, In, NotIn,//
-        True, False, IsNull, IsNotNull,
-        ;
-        private String literal;
-
-        Operator(String literal)
-        {
-            this.literal = literal;
-        }
-    }
-
-    static class TriTree extends HashMap<Character, TriTree>
-    {
-        String destination;
-
-        private void put(String content, int index)
-        {
-            if (content.length() == index + 1)
-            {
-                destination = content;
-            }
-            else
-            {
-                index++;
-                char    c         = content.charAt(index);
-                TriTree symolTree = get(c);
-                if (symolTree == null)
-                {
-                    symolTree = new TriTree();
-                    put(c, symolTree);
-                }
-                symolTree.put(content, index);
-            }
-        }
-
-        private String get(String content, int index)
-        {
-            if (index == content.length() - 1)
-            {
-                return content.equals(destination) ? destination : null;
-            }
-            index++;
-            TriTree symolTree = get(content.charAt(index));
-            return symolTree == null ? destination : symolTree.get(content, index);
-        }
-
-        public String find(String content)
-        {
-            return get(content, -1);
-        }
-
-        public void set(String content)
-        {
-            put(content, -1);
-        }
+        return sql.toString();
     }
 
     /**
@@ -232,38 +355,6 @@ public class MapperGenerator
      */
     private static void generateByAnnotation(Map<String, TableEntityInfo> tableEntityInfos, ClassModel classModel, AtomicInteger fieldNameCount, Method method)
     {
-        StringBuilder cache = new StringBuilder();
-        cache.append("if(session==null){throw new NullPointerException(\"当前没有session\");}");
-        cache.append("Map<String,Object> variables = cachedVariables.get();\r\n");
-        cache.append("List<Object> params = cachedParams.get();\r\n");
-        MethodModel methodModel = new MethodModel(method, classModel);
-        Sql         annotation  = method.getAnnotation(Sql.class);
-        String      formatSql   = generateSqlAndTemplateField(tableEntityInfos, classModel, fieldNameCount, method, cache, annotation);
-        if (formatSql.startsWith("SELECT"))
-        {
-            String transferFieldName = "transfer_" + (fieldNameCount.getAndIncrement());
-            if (List.class.isAssignableFrom(method.getReturnType()))
-            {
-                Class<?> componentClass = (Class<?>) ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0];
-                addResultSetTransferField(classModel, method, transferFieldName, componentClass);
-                cache.append("List result = session.queryList(").append(transferFieldName).append(",sql,params);\r\n");
-            }
-            else
-            {
-                addResultSetTransferField(classModel, method, transferFieldName, method.getReturnType());
-                String returnTypeName = method.getReturnType().isPrimitive() ? ReflectUtil.wrapPrimitive(method.getReturnType()).getName() : SmcHelper.getReferenceName(method.getReturnType(), classModel);
-                cache.append(returnTypeName).append(" result = session.query(").append(transferFieldName).append(",sql,params);\r\n");
-            }
-        }
-        else
-        {
-            cache.append("int result = session.update(sql,params);\r\n");
-        }
-        cache.append("params.clear();\r\n");
-        cache.append("variables.clear();\r\n");
-        cache.append("return result;\r\n");
-        methodModel.setBody(cache.toString());
-        classModel.putMethodModel(methodModel);
     }
 
     /**
@@ -357,8 +448,9 @@ public class MapperGenerator
      * @param annotation
      * @return
      */
-    private static String generateSqlAndTemplateField(Map<String, TableEntityInfo> tableEntityInfos, ClassModel classModel, AtomicInteger fieldNameCount, Method method, StringBuilder cache, Sql annotation)
+    private static String generateSqlAndTemplateField(Map<String, TableEntityInfo> tableEntityInfos, ClassModel classModel, AtomicInteger fieldNameCount, Method method, StringBuilder cache)
     {
+        Sql        annotation        = method.getAnnotation(Sql.class);
         String     formatSql         = SqlLexer.parse(annotation.sql()).transfer(tableEntityInfos).format();
         String     templateFieldName = "template_" + (fieldNameCount.getAndIncrement());
         FieldModel fieldModel        = new FieldModel(templateFieldName, Template.class, "Template.parse(\"" + formatSql + "\")", classModel);
@@ -381,5 +473,83 @@ public class MapperGenerator
             cache.append("params.add($").append(parameterTypes.length - 1).append(");\r\n");
         }
         return formatSql;
+    }
+
+    private static String generateSqlAndTemplateField(TableEntityInfo tableEntityInfo, TriTree operators, TriTree propertyNames, ClassModel classModel, AtomicInteger fieldNameCount, Method method, StringBuilder cache)
+    {
+        String     formatSql         = generateSqlByJpaMode(tableEntityInfo, operators, propertyNames, method);
+        String     templateFieldName = "template_" + (fieldNameCount.getAndIncrement());
+        FieldModel fieldModel        = new FieldModel(templateFieldName, Template.class, "Template.parse(\"" + formatSql + "\")", classModel);
+        classModel.addField(fieldModel);
+        Class<?>[] parameterTypes = method.getParameterTypes();
+        if (parameterTypes.length != 0)
+        {
+            int length = parameterTypes.length;
+            for (int i = 0; i < length; i++)
+            {
+                cache.append("variables.put(\"name").append(i).append("\",$").append(i).append(");\r\n");
+            }
+        }
+        cache.append("String sql =").append(templateFieldName).append(".render(variables,params);\r\n");
+        if (parameterTypes.length != 0 && parameterTypes[parameterTypes.length - 1] == Page.class)
+        {
+            cache.append("params.add($").append(parameterTypes.length - 1).append(");\r\n");
+        }
+        return formatSql;
+    }
+
+    enum Operator
+    {
+        And, Or,//
+        By,//
+        Between, LessThan, LessThanEqual, GreaterThan, GreaterThanEqual, After, Before,//
+        Like, NotLike, StartingWith, EndingWith, Containing, In, NotIn,//
+        True, False, IsNull, IsNotNull, OrderBy, Desc, Asc
+    }
+
+    static class TriTree extends HashMap<Character, TriTree>
+    {
+        String destination;
+
+        private void put(String content, int index)
+        {
+            if (content.length() == index + 1)
+            {
+                destination = content;
+            }
+            else
+            {
+                index++;
+                char    c         = content.charAt(index);
+                TriTree symolTree = get(c);
+                if (symolTree == null)
+                {
+                    symolTree = new TriTree();
+                    put(c, symolTree);
+                }
+                symolTree.put(content, index);
+            }
+        }
+
+        private String get(String content, int index)
+        {
+            if (index == content.length() - 1)
+            {
+                return content.equals(destination) ? destination : null;
+            }
+            index++;
+            TriTree symolTree = get(content.charAt(index));
+            return symolTree == null ? destination : symolTree.get(content, index);
+        }
+
+        public String find(String content)
+        {
+            return get(content, -1);
+        }
+
+        public void set(String content)
+        {
+            put(content, -1);
+        }
     }
 }

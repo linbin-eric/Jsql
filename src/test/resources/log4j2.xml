@@ -34,7 +34,7 @@
     <Loggers>
         <Root level="error">
         </Root>
-        <Logger name="com.jfireframework" level="debug">
+        <Logger name="com.jfirer" level="debug">
             <AppenderRef ref="Console"/>
         </Logger>
     </Loggers>

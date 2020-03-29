@@ -1,6 +1,5 @@
 package com.jfirer.jsql.metadata;
 
-import com.jfirer.jsql.annotation.*;
 import com.jfirer.baseutil.StringUtil;
 import com.jfirer.baseutil.reflect.ReflectUtil;
 import com.jfirer.jsql.annotation.*;
@@ -14,21 +13,21 @@ public class TableEntityInfo
 {
     private static final Map<Class<?>, TableEntityInfo> store = new ConcurrentHashMap<Class<?>, TableEntityInfo>();
 
-    private final String className;
-    private final String classSimpleName;
-    private final String tableName;
-    private Map<String, ColumnInfo> propertyNameKeyMap;
-    private Map<String, ColumnInfo> columnNameIgnoreCaseKeyMap;
-    private ColumnInfo pkInfo;
-    private final Class<?> ckass;
+    private final String                  className;
+    private final String                  classSimpleName;
+    private final String                  tableName;
+    private       Map<String, ColumnInfo> propertyNameKeyMap;
+    private       Map<String, ColumnInfo> columnNameIgnoreCaseKeyMap;
+    private       ColumnInfo              pkInfo;
+    private final Class<?>                ckass;
 
     private TableEntityInfo(Class<?> ckass)
     {
         this.ckass = ckass;
         className = ckass.getName();
-        classSimpleName = ckass.getName();
+        classSimpleName = ckass.getSimpleName();
         tableName = ckass.getAnnotation(TableDef.class).name();
-        Map<String, ColumnInfo> propertyNameKeyMap = new HashMap<String, TableEntityInfo.ColumnInfo>();
+        Map<String, ColumnInfo> propertyNameKeyMap         = new HashMap<String, TableEntityInfo.ColumnInfo>();
         Map<String, ColumnInfo> columnNameIgnoreCaseKeyMap = new HashMap<String, TableEntityInfo.ColumnInfo>();
         try
         {
@@ -37,21 +36,21 @@ public class TableEntityInfo
                     : DefaultLowerCaseNameStrategy.instance;
             for (Field field : getAllFields(ckass))
             {
-                if ( isNotColumnField(field) )
+                if (isNotColumnField(field))
                 {
                     continue;
                 }
                 field.setAccessible(true);
-                String columnName = field.isAnnotationPresent(StandardColumnDef.class) && StringUtil.isNotBlank(field.getAnnotation(StandardColumnDef.class).columnName()) ? field.getAnnotation(StandardColumnDef.class).columnName() : strategy.toColumnName(field.getName());
+                String     columnName = field.isAnnotationPresent(StandardColumnDef.class) && StringUtil.isNotBlank(field.getAnnotation(StandardColumnDef.class).columnName()) ? field.getAnnotation(StandardColumnDef.class).columnName() : strategy.toColumnName(field.getName());
                 ColumnInfo columnInfo = new ColumnInfo();
                 columnInfo.setColumnName(columnName);
                 columnInfo.setField(field);
                 columnInfo.setPropertyName(field.getName());
                 propertyNameKeyMap.put(field.getName(), columnInfo);
                 columnNameIgnoreCaseKeyMap.put(columnName.toLowerCase(), columnInfo);
-                if ( field.isAnnotationPresent(Pk.class) )
+                if (field.isAnnotationPresent(Pk.class))
                 {
-                    if ( pkInfo == null )
+                    if (pkInfo == null)
                     {
                         pkInfo = new ColumnInfo();
                         pkInfo.setField(field);
@@ -66,7 +65,8 @@ public class TableEntityInfo
             }
             this.propertyNameKeyMap = Collections.unmodifiableMap(propertyNameKeyMap);
             this.columnNameIgnoreCaseKeyMap = Collections.unmodifiableMap(columnNameIgnoreCaseKeyMap);
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             ReflectUtil.throwException(e);
         }
@@ -86,7 +86,7 @@ public class TableEntityInfo
             @Override
             public int compare(Field o1, Field o2)
             {
-                if ( o1.getName().equals(o2.getName()) )
+                if (o1.getName().equals(o2.getName()))
                 {
                     return 0;
                 }
@@ -105,17 +105,16 @@ public class TableEntityInfo
             entityClass = entityClass.getSuperclass();
         }
         return set.toArray(new Field[set.size()]);
-
     }
 
     private boolean isNotColumnField(Field field)
     {
-        if ( field.isAnnotationPresent(SqlIgnore.class) )
+        if (field.isAnnotationPresent(SqlIgnore.class))
         {
             return true;
         }
         int modifiers = field.getModifiers();
-        if ( Modifier.isStatic(modifiers) || Modifier.isFinal(modifiers) )
+        if (Modifier.isStatic(modifiers) || Modifier.isFinal(modifiers))
         {
             return true;
         }
@@ -162,7 +161,7 @@ public class TableEntityInfo
     public static TableEntityInfo parse(Class<?> entityClass)
     {
         TableEntityInfo tableEntityInfo = store.get(entityClass);
-        if ( tableEntityInfo == null )
+        if (tableEntityInfo == null)
         {
             tableEntityInfo = new TableEntityInfo(entityClass);
             store.put(entityClass, tableEntityInfo);
@@ -174,7 +173,7 @@ public class TableEntityInfo
     {
         String columnName;
         String propertyName;
-        Field field;
+        Field  field;
 
         public String getColumnName()
         {
@@ -205,7 +204,5 @@ public class TableEntityInfo
         {
             this.field = field;
         }
-
     }
-
 }

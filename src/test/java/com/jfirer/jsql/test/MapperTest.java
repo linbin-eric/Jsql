@@ -4,6 +4,7 @@ import com.jfirer.jsql.SessionFactory;
 import com.jfirer.jsql.SessionfactoryConfig;
 import com.jfirer.jsql.annotation.Sql;
 import com.jfirer.jsql.dialect.impl.H2Dialect;
+import com.jfirer.jsql.mapper.Mapper;
 import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.metadata.TableMode;
 import com.jfirer.jsql.session.SqlSession;
@@ -30,6 +31,7 @@ import static org.junit.Assert.*;
 
 public class MapperTest
 {
+    @Mapper
     public static interface TestOp
     {
         @Sql(sql = "select count(*) from #{table} ", paramNames = "table")
@@ -177,9 +179,9 @@ public class MapperTest
         @Sql(sql = "select F11 from User where id=1", paramNames = "")
         float findByTransfer_7();
         /* 测试Transfer */
-
     }
 
+    @Mapper
     public static interface TestOp2
     {
         /**
@@ -216,12 +218,12 @@ public class MapperTest
         {
             protected void setUnDefinedType(PreparedStatement preparedStatement, int i, Object value) throws SQLException
             {
-                if ( value instanceof User.StringEnum)
+                if (value instanceof User.StringEnum)
                 {
                     User.StringEnum stringEnum = (User.StringEnum) value;
                     preparedStatement.setString(i, stringEnum.name());
                 }
-                else if ( value instanceof Enum<?> )
+                else if (value instanceof Enum<?>)
                 {
                     Enum<?> enum1 = (Enum<?>) value;
                     preparedStatement.setInt(i, enum1.ordinal());
@@ -236,7 +238,7 @@ public class MapperTest
         config.addSqlExecutor(new SqlLog());
         sessionFactory = config.build();
         SqlSession session = sessionFactory.openSession();
-        User user = new User();
+        User       user    = new User();
         user.setAge(12);
         user.setName("lin");
         user.setLength(18);
