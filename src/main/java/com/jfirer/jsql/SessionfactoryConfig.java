@@ -1,6 +1,13 @@
 package com.jfirer.jsql;
 
-import com.jfirer.jsql.annotation.Sql;
+import com.jfirer.baseutil.PackageScan;
+import com.jfirer.baseutil.TRACEID;
+import com.jfirer.baseutil.Verify;
+import com.jfirer.baseutil.bytecode.support.AnnotationContext;
+import com.jfirer.baseutil.bytecode.support.AnnotationContextFactory;
+import com.jfirer.baseutil.bytecode.support.SupportOverrideAttributeAnnotationContextFactory;
+import com.jfirer.baseutil.reflect.ReflectUtil;
+import com.jfirer.baseutil.smc.compiler.CompileHelper;
 import com.jfirer.jsql.annotation.TableDef;
 import com.jfirer.jsql.curd.CurdInfo;
 import com.jfirer.jsql.curd.impl.OracleCurdInfo;
@@ -22,16 +29,10 @@ import com.jfirer.jsql.mapper.MapperGenerator;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.metadata.TableMode;
 import com.jfirer.jsql.transfer.resultset.ResultSetTransfer;
-import com.jfirer.baseutil.PackageScan;
-import com.jfirer.baseutil.TRACEID;
-import com.jfirer.baseutil.Verify;
-import com.jfirer.baseutil.reflect.ReflectUtil;
-import com.jfirer.baseutil.smc.compiler.CompileHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -91,10 +92,12 @@ public class SessionfactoryConfig
     @SuppressWarnings("unchecked")
     private IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> generateMappers(Set<Class<?>> classSet)
     {
-        Map<String, TableEntityInfo> tableEntityInfos = new HashMap<String, TableEntityInfo>();
+        AnnotationContextFactory     annotationContextFactory = new SupportOverrideAttributeAnnotationContextFactory();
+        Map<String, TableEntityInfo> tableEntityInfos         = new HashMap<String, TableEntityInfo>();
         for (Class<?> each : classSet)
         {
-            if (each.isAnnotationPresent(TableDef.class))
+            AnnotationContext annotationContext = annotationContextFactory.get(each);
+            if (annotationContext.isAnnotationPresent(TableDef.class))
             {
                 tableEntityInfos.put(each.getSimpleName(), TableEntityInfo.parse(each));
             }
@@ -103,10 +106,14 @@ public class SessionfactoryConfig
         IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> mappers  = new IdentityHashMap<Class<?>, Class<? extends AbstractMapper>>();
         for (Class<?> each : classSet)
         {
-            if (each.isInterface() && each.isAnnotationPresent(Mapper.class))
+            if (each.isInterface())
             {
-                Class<? extends AbstractMapper> mapperClass = (Class<? extends AbstractMapper>) MapperGenerator.generate(each, tableEntityInfos, compiler);
-                mappers.put(each, mapperClass);
+                AnnotationContext annotationContext = annotationContextFactory.get(each);
+                if (annotationContext.isAnnotationPresent(Mapper.class))
+                {
+                    Class<? extends AbstractMapper> mapperClass = (Class<? extends AbstractMapper>) MapperGenerator.generate(each, tableEntityInfos, compiler);
+                    mappers.put(each, mapperClass);
+                }
             }
         }
         return mappers;
