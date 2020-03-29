@@ -176,6 +176,16 @@ public class MapperGenerator
             sql.append("select * from ").append(tableEntityInfo.getTableName());
             index = 4;
         }
+        else if (methodName.startsWith("count"))
+        {
+            sql.append("select count(*) from ").append(tableEntityInfo.getTableName());
+            index = 4;
+        }
+        else if (methodName.startsWith("delete"))
+        {
+            sql.append("delete from ").append(tableEntityInfo.getTableName());
+            index = 6;
+        }
         else
         {
             sql.append("update ").append(tableEntityInfo.getTableName()).append(" set ");
