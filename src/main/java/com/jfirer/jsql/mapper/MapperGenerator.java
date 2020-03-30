@@ -245,9 +245,20 @@ public class MapperGenerator
                     String propername = propertyNames.find(content);
                     if (propername == null)
                     {
-                        throw new IllegalArgumentException("方法：" + method.toGenericString() + "中：" + propername + "不匹配属性名");
+                        if (content.startsWith("Pk"))
+                        {
+                            propername = tableEntityInfo.getPkInfo().getPropertyName();
+                            index += 2;
+                        }
+                        else
+                        {
+                            throw new IllegalArgumentException("方法：" + method.toGenericString() + "中：" + propername + "不匹配属性名");
+                        }
                     }
-                    index += propername.length();
+                    else
+                    {
+                        index += propername.length();
+                    }
                     propername = propername.substring(0, 1).toLowerCase() + propername.substring(1);
                     TableEntityInfo.ColumnInfo columnInfo = tableEntityInfo.getPropertyNameKeyMap().get(propername);
                     sql.append(columnInfo.getColumnName()).append(" ");

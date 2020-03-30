@@ -40,14 +40,15 @@ import java.util.*;
 
 public class SessionfactoryConfig
 {
-    private                DataSource        dataSource;
-    private                ClassLoader       classLoader  = Thread.currentThread().getContextClassLoader();
-    private                String            scanPackage;
+    private                DataSource               dataSource;
+    private                ClassLoader              classLoader              = Thread.currentThread().getContextClassLoader();
+    private                String                   scanPackage;
     // 如果值是create，则会创建表。
-    private                TableMode         tableMode    = TableMode.NONE;
-    private final          List<SqlExecutor> sqlExecutors = new LinkedList<SqlExecutor>();
-    private                Dialect           dialect;
-    protected static final Logger            logger       = LoggerFactory.getLogger(SessionfactoryConfig.class);
+    private                TableMode                tableMode                = TableMode.NONE;
+    private final          List<SqlExecutor>        sqlExecutors             = new LinkedList<SqlExecutor>();
+    private                Dialect                  dialect;
+    protected static final Logger                   logger                   = LoggerFactory.getLogger(SessionfactoryConfig.class);
+    private                AnnotationContextFactory annotationContextFactory = new SupportOverrideAttributeAnnotationContextFactory();
 
     public SessionFactory build()
     {
@@ -56,11 +57,11 @@ public class SessionfactoryConfig
         {
             Verify.notNull(dataSource, "dataSource 对象不能为空");
             Verify.notNull(scanPackage, "sql的扫描路径不能为空");
-            Set<Class<?>> classSet    = buildClassSet();
-            String        productName = detectProductName();
-            modifySchema(classSet, productName);
+            Set<String> classSet    = buildClassSet();
+            String      productName = detectProductName();
+            modifySchema(classSet, productName, annotationContextFactory);
             dialect = dialect == null ? generateDialect(productName) : dialect;
-            return new SessionFactoryImpl(generateMappers(classSet), generateCurdInfos(productName, classSet), generateHeadSqlInvoker(productName), dataSource, dialect);
+            return new SessionFactoryImpl(generateMappers(classSet, annotationContextFactory), generateCurdInfos(productName, classSet,annotationContextFactory), generateHeadSqlInvoker(productName), dataSource, dialect);
         }
         catch (Exception e)
         {
@@ -69,14 +70,22 @@ public class SessionfactoryConfig
         }
     }
 
-    private void modifySchema(Set<Class<?>> classSet, String productName) throws SQLException
+    private void modifySchema(Set<String> classSet, String productName, AnnotationContextFactory annotationContextFactory) throws SQLException
     {
         Set<TableEntityInfo> tableEntityInfos = new HashSet<TableEntityInfo>();
-        for (Class<?> ckass : classSet)
+        for (String ckass : classSet)
         {
-            if (ckass.isAnnotationPresent(TableDef.class) && ckass.getAnnotation(TableDef.class).editable())
+            AnnotationContext annotationContext = annotationContextFactory.get(ckass.replace('.', '/'), classLoader);
+            if (annotationContext.isAnnotationPresent(TableDef.class) && annotationContext.getAnnotation(TableDef.class).editable())
             {
-                tableEntityInfos.add(TableEntityInfo.parse(ckass));
+                try
+                {
+                    tableEntityInfos.add(TableEntityInfo.parse(classLoader.loadClass(ckass)));
+                }
+                catch (ClassNotFoundException e)
+                {
+                    ReflectUtil.throwException(e);
+                }
             }
         }
         if ("mysql".equals(productName))
@@ -90,29 +99,41 @@ public class SessionfactoryConfig
     }
 
     @SuppressWarnings("unchecked")
-    private IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> generateMappers(Set<Class<?>> classSet)
+    private IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> generateMappers(Set<String> classSet, AnnotationContextFactory annotationContextFactory)
     {
-        AnnotationContextFactory     annotationContextFactory = new SupportOverrideAttributeAnnotationContextFactory();
-        Map<String, TableEntityInfo> tableEntityInfos         = new HashMap<String, TableEntityInfo>();
-        for (Class<?> each : classSet)
+        Map<String, TableEntityInfo> tableEntityInfos = new HashMap<String, TableEntityInfo>();
+        for (String each : classSet)
         {
-            AnnotationContext annotationContext = annotationContextFactory.get(each);
+            AnnotationContext annotationContext = annotationContextFactory.get(each.replace('.', '/'));
             if (annotationContext.isAnnotationPresent(TableDef.class))
             {
-                tableEntityInfos.put(each.getSimpleName(), TableEntityInfo.parse(each));
+                try
+                {
+                    Class ckass = classLoader.loadClass(each);
+                    tableEntityInfos.put(ckass.getSimpleName(), TableEntityInfo.parse(ckass));
+                }
+                catch (ClassNotFoundException e)
+                {
+                    ReflectUtil.throwException(e);
+                }
             }
         }
         CompileHelper                                              compiler = new CompileHelper(classLoader);
         IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> mappers  = new IdentityHashMap<Class<?>, Class<? extends AbstractMapper>>();
-        for (Class<?> each : classSet)
+        for (String each : classSet)
         {
-            if (each.isInterface())
+            AnnotationContext annotationContext = annotationContextFactory.get(each.replace('.', '/'));
+            if (annotationContext.isAnnotationPresent(Mapper.class))
             {
-                AnnotationContext annotationContext = annotationContextFactory.get(each);
-                if (annotationContext.isAnnotationPresent(Mapper.class))
+                try
                 {
-                    Class<? extends AbstractMapper> mapperClass = (Class<? extends AbstractMapper>) MapperGenerator.generate(each, tableEntityInfos, compiler);
-                    mappers.put(each, mapperClass);
+                    Class<?>                        ckass       = classLoader.loadClass(each);
+                    Class<? extends AbstractMapper> mapperClass = (Class<? extends AbstractMapper>) MapperGenerator.generate(ckass, tableEntityInfos, compiler);
+                    mappers.put(ckass, mapperClass);
+                }
+                catch (ClassNotFoundException e)
+                {
+                    ReflectUtil.throwException(e);
                 }
             }
         }
@@ -120,27 +141,35 @@ public class SessionfactoryConfig
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private IdentityHashMap<Class<?>, CurdInfo<?>> generateCurdInfos(String productName, Set<Class<?>> classSet)
+    private IdentityHashMap<Class<?>, CurdInfo<?>> generateCurdInfos(String productName, Set<String> classSet, AnnotationContextFactory annotationContextFactory)
     {
         IdentityHashMap<Class<?>, CurdInfo<?>> curdInfos = new IdentityHashMap<Class<?>, CurdInfo<?>>();
-        for (Class<?> each : classSet)
+        for (String each : classSet)
         {
-            if (each.isAnnotationPresent(TableDef.class) == false)
+            if (annotationContextFactory.get(each.replace('.', '/')).isAnnotationPresent(TableDef.class) == false)
             {
                 continue;
             }
-            TableEntityInfo tableEntityInfo = TableEntityInfo.parse(each);
-            if (tableEntityInfo.getPkInfo() == null)
+            try
             {
-                continue;
+                Class           ckass           = classLoader.loadClass(each);
+                TableEntityInfo tableEntityInfo = TableEntityInfo.parse(ckass);
+                if (tableEntityInfo.getPkInfo() == null)
+                {
+                    continue;
+                }
+                if ("mysql".equals(productName) || "h2".equalsIgnoreCase(productName))
+                {
+                    curdInfos.put(ckass, new StandardCurdInfo(ckass));
+                }
+                else if ("oracle".equals(productName))
+                {
+                    curdInfos.put(ckass, new OracleCurdInfo(ckass));
+                }
             }
-            if ("mysql".equals(productName) || "h2".equalsIgnoreCase(productName))
+            catch (ClassNotFoundException e)
             {
-                curdInfos.put(each, new StandardCurdInfo(each));
-            }
-            else if ("oracle".equals(productName))
-            {
-                curdInfos.put(each, new OracleCurdInfo(each));
+                ReflectUtil.throwException(e);
             }
         }
         return curdInfos;
@@ -228,7 +257,7 @@ public class SessionfactoryConfig
         return pred;
     }
 
-    private Set<Class<?>> buildClassSet() throws ClassNotFoundException
+    private Set<String> buildClassSet() throws ClassNotFoundException
     {
         Set<String> set          = new HashSet<String>();
         String[]    packageNames = scanPackage.split(";");
@@ -239,12 +268,7 @@ public class SessionfactoryConfig
                 set.add(each);
             }
         }
-        Set<Class<?>> types = new HashSet<Class<?>>();
-        for (String each : set)
-        {
-            types.add(classLoader.loadClass(each));
-        }
-        return types;
+        return set;
     }
 
     private String detectProductName() throws SQLException

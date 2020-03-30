@@ -93,6 +93,8 @@ public class JpaModeTest
         UserOp userOp = sqlSession.getMapper(UserOp.class);
         User   user   = userOp.findByAge(12);
         Assert.assertTrue(user.isB());
+        user = userOp.findByPk(1);
+        Assert.assertTrue(user.isB());
         user = userOp.findByAgeAndByName(12, "lin");
         Assert.assertTrue(user.isB());
         user = userOp.findByAgeGreaterThan(12);
@@ -155,5 +157,7 @@ public class JpaModeTest
         void updateAgeByAge(int newAge, int oldAge);
 
         int updateAgeAndNameByAge(int newAge, String name, int oldAge);
+
+        User findByPk(int id);
     }
 }
