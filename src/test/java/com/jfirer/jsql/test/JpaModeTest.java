@@ -95,6 +95,10 @@ public class JpaModeTest
         Assert.assertTrue(user.isB());
         user = userOp.findByPk(1);
         Assert.assertTrue(user.isB());
+        userOp.updateAgeByPk(13,1);
+        user = userOp.findByPk(1);
+        Assert.assertEquals(13,user.getAge());
+        userOp.updateAgeByPk(12,1);
         user = userOp.findByAgeAndByName(12, "lin");
         Assert.assertTrue(user.isB());
         user = userOp.findByAgeGreaterThan(12);
@@ -159,5 +163,7 @@ public class JpaModeTest
         int updateAgeAndNameByAge(int newAge, String name, int oldAge);
 
         User findByPk(int id);
+
+        void updateAgeByPk(int age, int id);
     }
 }
