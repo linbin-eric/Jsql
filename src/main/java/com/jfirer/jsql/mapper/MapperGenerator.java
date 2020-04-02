@@ -195,8 +195,12 @@ public class MapperGenerator
             {
                 if (propertyNameNow)
                 {
-                    String                     propertyName = propertyNames.find(methodName.substring(index));
-                    TableEntityInfo.ColumnInfo columnInfo   = tableEntityInfo.getPropertyNameKeyMap().get(propertyName.substring(0, 1).toLowerCase() + propertyName.substring(1));
+                    String propertyName = propertyNames.find(methodName.substring(index));
+                    if (propertyName == null)
+                    {
+                        throw new IllegalArgumentException("方法：" + method.toGenericString() + "无法找到[" + methodName.substring(index) + "]相匹配的属性名");
+                    }
+                    TableEntityInfo.ColumnInfo columnInfo = tableEntityInfo.getPropertyNameKeyMap().get(propertyName.substring(0, 1).toLowerCase() + propertyName.substring(1));
                     sql.append(columnInfo.getColumnName()).append(" = ${name").append(paramIndex++).append("} ");
                     index += propertyName.length();
                     propertyNameNow = false;

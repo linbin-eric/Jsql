@@ -25,6 +25,12 @@ public interface CurdInfo<T>
      */
     String update(T entity, List<Object> params);
 
+    class AutoGeneratePkAndSql
+    {
+        public String sql;
+        public String generatePkValue;
+    }
+
     /**
      * 返回插入数据库并且自动生成主键的sql语句，并且将对象解析为参数填充到params中。
      *
@@ -32,7 +38,7 @@ public interface CurdInfo<T>
      * @param params
      * @return
      */
-    String autoGeneratePkInsert(T entity, List<Object> params);
+    AutoGeneratePkAndSql autoGeneratePkInsert(T entity, List<Object> params);
 
     /**
      * 返回通过主键查询实体的sql，并且将参数填充到params中。

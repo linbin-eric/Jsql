@@ -4,10 +4,7 @@ import com.jfirer.jsql.dialect.Dialect;
 import com.jfirer.jsql.exception.NotSingleResultException;
 import com.jfirer.jsql.transfer.resultset.ResultSetTransfer;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -42,7 +39,7 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
         ResultSet generatedKeys = null;
         try
         {
-            prepareStatement = connection.prepareStatement(sql);
+            prepareStatement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             dialect.fillStatement(prepareStatement, params);
             prepareStatement.executeUpdate();
             generatedKeys = prepareStatement.getGeneratedKeys();

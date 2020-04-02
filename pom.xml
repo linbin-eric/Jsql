@@ -35,7 +35,7 @@
     <dependencies>
         <dependency>
             <groupId>com.jfirer</groupId>
-            <artifactId>jfireEl</artifactId>
+            <artifactId>jfireEL</artifactId>
             <version>1.0</version>
         </dependency>
         <dependency>

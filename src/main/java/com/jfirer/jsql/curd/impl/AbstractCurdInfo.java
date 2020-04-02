@@ -29,10 +29,10 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
     private SqlAndFieldEntry lockInShareEntry;
     private SqlAndFieldEntry lockForUpdateEntry;
     SqlAndFieldEntry autoGeneratePkInsertEntry;
-    private PkGenerator.Generator generator;
-    private       PkMode            mode = PkMode.OTHER;
-    private final ResultSetTransfer beanTransfer;
-    private final Field             pkField;
+    private       PkGenerator.Generator generator;
+    private       PkMode                mode = PkMode.OTHER;
+    private final ResultSetTransfer     beanTransfer;
+    private final Field                 pkField;
 
     enum PkMode
     {
@@ -48,7 +48,7 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
         generateGetEntry(tableEntityInfo);
         generateLockInShareEntry(tableEntityInfo);
         generateLockForUpdateEntry(tableEntityInfo);
-        if ( tableEntityInfo.getPkInfo().getField().isAnnotationPresent(PkGenerator.class) )
+        if (tableEntityInfo.getPkInfo().getField().isAnnotationPresent(PkGenerator.class))
         {
             generatePkGenerator(tableEntityInfo);
         }
@@ -58,15 +58,15 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
         }
         beanTransfer = new BeanTransfer().initialize(ckass);
         pkField = tableEntityInfo.getPkInfo().getField();
-        if ( pkField.getType() == String.class )
+        if (pkField.getType() == String.class)
         {
             mode = PkMode.STRING;
         }
-        else if ( pkField.getType() == Integer.class )
+        else if (pkField.getType() == Integer.class)
         {
             mode = PkMode.INT;
         }
-        else if ( pkField.getGenericType() == Long.class )
+        else if (pkField.getGenericType() == Long.class)
         {
             mode = PkMode.LONG;
         }
@@ -81,33 +81,34 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
             Field pkField = tableEntityInfo.getPkInfo().getField();
             generator = pkField.getAnnotation(PkGenerator.class).value().newInstance();
             StringBuilder cache = new StringBuilder();
-            List<Field> list = new LinkedList<Field>();
+            List<Field>   list  = new LinkedList<Field>();
             cache.append("insert into ").append(tableEntityInfo.getTableName()).append(" (").append(tableEntityInfo.getPkInfo().getColumnName()).append(',');
             concatNonPkColumnNames(tableEntityInfo, pkField, cache, list);
-            cache.setLength(cache.length()-1);
+            cache.setLength(cache.length() - 1);
             cache.append(") values (?,");
             int size = list.size();
             for (int i = 0; i < size; i++)
             {
                 cache.append("?,");
             }
-            cache.setLength(cache.length()-1);
+            cache.setLength(cache.length() - 1);
             cache.append(")");
             autoGeneratePkInsertEntry = new SqlAndFieldEntry();
             autoGeneratePkInsertEntry.sql = cache.toString();
             autoGeneratePkInsertEntry.valueAccessors = buildValueAccessors(list);
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             ReflectUtil.throwException(e);
         }
     }
 
-     void concatNonPkColumnNames(TableEntityInfo tableEntityInfo, Field pkField, StringBuilder cache, List<Field> list)
+    void concatNonPkColumnNames(TableEntityInfo tableEntityInfo, Field pkField, StringBuilder cache, List<Field> list)
     {
         for (TableEntityInfo.ColumnInfo info : tableEntityInfo.getPropertyNameKeyMap().values())
         {
             Field field = info.getField();
-            if ( field.equals(pkField) )
+            if (field.equals(pkField))
             {
                 continue;
             }
@@ -157,7 +158,7 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
         {
             cache.append(info.getColumnName()).append(',');
         }
-        cache.setLength(cache.length()-1);
+        cache.setLength(cache.length() - 1);
         cache.append(" from ");
         cache.append(tableEntityInfo.getTableName()).append(" where ").append(tableEntityInfo.getPkInfo().getColumnName()).append("=?");
         getEntry = new SqlAndFieldEntry();
@@ -175,7 +176,7 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
             cache.append(info.getColumnName()).append("=?,");
             list.add(info.getField());
         }
-        cache.setLength(cache.length()-1);
+        cache.setLength(cache.length() - 1);
         cache.append(" where ").append(tableEntityInfo.getPkInfo().getColumnName()).append("=?");
         list.add(tableEntityInfo.getPkInfo().getField());
         updateEntry = new SqlAndFieldEntry();
@@ -196,21 +197,21 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
     private void generateInsertEntry(TableEntityInfo tableEntityInfo)
     {
         StringBuilder cache = new StringBuilder();
-        List<Field> list = new LinkedList<Field>();
+        List<Field>   list  = new LinkedList<Field>();
         cache.append("insert into ").append(tableEntityInfo.getTableName()).append(" (");
         for (TableEntityInfo.ColumnInfo columnInfo : tableEntityInfo.getPropertyNameKeyMap().values())
         {
             cache.append(columnInfo.getColumnName()).append(',');
             list.add(columnInfo.getField());
         }
-        cache.setLength(cache.length()-1);
+        cache.setLength(cache.length() - 1);
         cache.append(") values(");
         int size = list.size();
         for (int i = 0; i < size; i++)
         {
             cache.append("?,");
         }
-        cache.setLength(cache.length()-1);
+        cache.setLength(cache.length() - 1);
         cache.append(')');
         insertEntry = new SqlAndFieldEntry();
         insertEntry.sql = cache.toString();
@@ -232,7 +233,8 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
                 params.add(field.get(entity));
             }
             return entry.sql;
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             ReflectUtil.throwException(e);
             return null;
@@ -263,11 +265,11 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
     public String find(Object pk, LockMode mode, List<Object> params)
     {
         params.add(pk);
-        if ( mode == LockMode.SHARE )
+        if (mode == LockMode.SHARE)
         {
             return lockInShareEntry.sql;
         }
-        else if ( mode == LockMode.UPDATE )
+        else if (mode == LockMode.UPDATE)
         {
             return lockForUpdateEntry.sql;
         }
@@ -278,20 +280,25 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
     }
 
     @Override
-    public String autoGeneratePkInsert(T entity, List<Object> params)
+    public AutoGeneratePkAndSql autoGeneratePkInsert(T entity, List<Object> params)
     {
         try
         {
-            if ( generator != null )
+            AutoGeneratePkAndSql autoGeneratePk = new AutoGeneratePkAndSql();
+            if (generator != null)
             {
-                params.add(generator.next());
+                Object pk = generator.next();
+                params.add(pk);
+                autoGeneratePk.generatePkValue = pk instanceof String ? (String) pk : String.valueOf(pk);
             }
             for (ValueAccessor field : autoGeneratePkInsertEntry.valueAccessors)
             {
                 params.add(field.get(entity));
             }
-            return autoGeneratePkInsertEntry.sql;
-        } catch (Exception e)
+            autoGeneratePk.sql = autoGeneratePkInsertEntry.sql;
+            return autoGeneratePk;
+        }
+        catch (Exception e)
         {
             ReflectUtil.throwException(e);
             return null;
@@ -319,7 +326,8 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
                 default:
                     break;
             }
-        } catch (Exception e)
+        }
+        catch (Exception e)
         {
             ReflectUtil.throwException(e);
         }
@@ -333,7 +341,7 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
 
     public void setSessionFactory(SessionFactory sessionFactory)
     {
-        if ( generator != null )
+        if (generator != null)
         {
             generator.setSessionFactory(sessionFactory);
         }

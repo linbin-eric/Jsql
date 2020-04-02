@@ -23,22 +23,22 @@ import java.util.List;
 
 public class SqlSessionImpl implements SqlSession
 {
-    private              boolean                                            transactionActive = false;
+    private              boolean                                                    transactionActive = false;
     private              boolean                                                    closed            = false;
     private final        IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> mappers;
     private final        Connection                                                 connection;
-    private final        SqlInvoker                                         sqlInvoker;
-    private final        IdentityHashMap<Class<?>, CurdInfo<?>>             curdInfoMap;
-    private final        Dialect                                            dialect;
-    private final static Logger                                             logger            = LoggerFactory.getLogger(SqlSession.class);
-    private static final ThreadLocal<List<Object>>                          cahcedParams      = new ThreadLocal<List<Object>>()
+    private final        SqlInvoker                                                 sqlInvoker;
+    private final        IdentityHashMap<Class<?>, CurdInfo<?>>                     curdInfoMap;
+    private final        Dialect                                                    dialect;
+    private final static Logger                                                     logger            = LoggerFactory.getLogger(SqlSession.class);
+    private static final ThreadLocal<List<Object>>                                  cahcedParams      = new ThreadLocal<List<Object>>()
     {
         protected java.util.List<Object> initialValue()
         {
             return new ArrayList<Object>();
         }
     };
-    private static final ResultSetTransfer                                  countTransfer     = new IntegerTransfer();
+    private static final ResultSetTransfer                                          countTransfer     = new IntegerTransfer();
 
     public SqlSessionImpl(Connection connection, SqlInvoker sqlInvoker, IdentityHashMap<Class<?>, CurdInfo<?>> curdInfoMap, IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> mappers, Dialect dialect)
     {
@@ -165,11 +165,19 @@ public class SqlSessionImpl implements SqlSession
         {
             if (pkField.get(entity) == null)
             {
-                CurdInfo<T>  curdInfo = (CurdInfo<T>) curdInfoMap.get(entity.getClass());
-                List<Object> list     = cahcedParams.get();
-                String       sql      = curdInfo.autoGeneratePkInsert(entity, list);
-                String       pk       = insertReturnPk(sql, list);
-                curdInfo.setPkValue(entity, pk);
+                CurdInfo<T>             curdInfo       = (CurdInfo<T>) curdInfoMap.get(entity.getClass());
+                List<Object>                  list           = cahcedParams.get();
+                CurdInfo.AutoGeneratePkAndSql autoGeneratePk = curdInfo.autoGeneratePkInsert(entity, list);
+                String                        sql            = autoGeneratePk.sql;
+                String                  pk             = insertReturnPk(sql, list);
+                if (autoGeneratePk.generatePkValue != null)
+                {
+                    curdInfo.setPkValue(entity, autoGeneratePk.generatePkValue);
+                }
+                else
+                {
+                    curdInfo.setPkValue(entity, pk);
+                }
                 list.clear();
             }
             else
