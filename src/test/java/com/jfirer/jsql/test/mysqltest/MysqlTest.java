@@ -7,6 +7,7 @@ import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.session.SqlSession;
 import com.mysql.jdbc.Driver;
 import com.zaxxer.hikari.HikariDataSource;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.sql.SQLException;
@@ -20,7 +21,7 @@ import static org.junit.Assert.assertTrue;
 public class MysqlTest
 {
     @Test
-    // @Ignore
+    @Ignore
     public void test() throws SQLException
     {
         HikariDataSource dataSource = new HikariDataSource();
@@ -67,5 +68,4 @@ public class MysqlTest
         config.setTableMode(TableMode.UPDATE);
         config.build();
     }
-
 }
