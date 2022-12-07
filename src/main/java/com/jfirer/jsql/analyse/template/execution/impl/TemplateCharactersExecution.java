@@ -18,7 +18,22 @@ public class TemplateCharactersExecution implements Execution
     @Override
     public boolean execute(Map<String, Object> variables, StringBuilder cache, List<Object> params)
     {
-        cache.append(expression.calculate(variables));
+        Object calculate = expression.calculate(variables);
+        if (calculate instanceof StringBuffer buffer)
+        {
+            cache.append(((StringBuffer) calculate));
+        }
+        else if (calculate instanceof String s)
+        {
+            cache.append(((String) calculate));
+        }
+        else if (calculate instanceof char[] array)
+        {
+            cache.append(((char[]) calculate));
+        }
+        else{
+            cache.append(calculate.toString());
+        }
         return true;
     }
 

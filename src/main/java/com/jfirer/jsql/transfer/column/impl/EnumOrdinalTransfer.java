@@ -1,6 +1,5 @@
 package com.jfirer.jsql.transfer.column.impl;
 
-
 import com.jfirer.baseutil.reflect.ReflectUtil;
 
 import java.lang.reflect.Field;
@@ -17,22 +16,16 @@ public class EnumOrdinalTransfer extends AbstractColumnTransfer
     public void initialize(Field field, String columnName)
     {
         super.initialize(field, columnName);
-        Map<String, ? extends Enum<?>> instances = ReflectUtil.getAllEnumInstances((Class<? extends Enum<?>>) field.getType());
-        allEnumInstances = new Enum[instances.size()];
-        for (Enum<?> each : instances.values())
-        {
-            allEnumInstances[each.ordinal()] = each;
-        }
+        allEnumInstances = (Enum<?>[]) field.getType().getEnumConstants();
     }
 
     @Override
     public void setEntityValue(Object entity, ResultSet resultSet) throws SQLException, IllegalArgumentException, IllegalAccessException
     {
         int value = resultSet.getInt(columnName);
-        if ( resultSet.wasNull() == false )
+        if (resultSet.wasNull() == false)
         {
             field.set(entity, allEnumInstances[value]);
         }
     }
-
 }

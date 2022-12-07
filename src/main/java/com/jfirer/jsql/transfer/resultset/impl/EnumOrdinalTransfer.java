@@ -26,14 +26,16 @@ public class EnumOrdinalTransfer implements ResultSetTransfer
     @Override
     public ResultSetTransfer initialize(Class<?> type)
     {
-        Map<String, ? extends Enum<?>> allEnumInstances = ReflectUtil.getAllEnumInstances((Class<? extends Enum<?>>) type);
-        Enum<?>[] instances = new Enum[allEnumInstances.size()];
-        for (Enum<?> each : allEnumInstances.values())
-        {
-            instances[each.ordinal()] = each;
-        }
-        this.instances = instances;
+        instances= (Enum<?>[]) type.getEnumConstants();
         return this;
+//        Map<String, ? extends Enum<?>> allEnumInstances = ReflectUtil.getAllEnumInstances((Class<? extends Enum<?>>) type);
+//        Enum<?>[] instances = new Enum[allEnumInstances.size()];
+//        for (Enum<?> each : allEnumInstances.values())
+//        {
+//            instances[each.ordinal()] = each;
+//        }
+//        this.instances = instances;
+//        return this;
     }
 
 }

@@ -12,9 +12,9 @@ import java.util.Map;
 public class IfExecution implements WithBodyExecution
 {
 
-    private final Expression  conditionLexer;
-    private       Execution[] body;
-    private Execution elseExecution;
+    private final Expression      conditionLexer;
+    private       Execution[]     body;
+    private       Execution       elseExecution;
     private final List<Execution> elseIfExecutions = new LinkedList<Execution>();
 
     public IfExecution(Expression conditionLexer)
@@ -26,11 +26,11 @@ public class IfExecution implements WithBodyExecution
     public boolean execute(Map<String, Object> variables, StringBuilder cache, List<Object> params)
     {
         Object result = conditionLexer.calculate(variables);
-        if ( result == null )
+        if (result == null)
         {
             throw new IllegalArgumentException("参数不存在，导致无法计算条件表达式");
         }
-        if ( (Boolean) result )
+        if ((Boolean) result)
         {
             for (Execution each : body)
             {
@@ -41,12 +41,12 @@ public class IfExecution implements WithBodyExecution
         {
             for (Execution execution : elseIfExecutions)
             {
-                if ( execution.execute(variables, cache, params) )
+                if (execution.execute(variables, cache, params))
                 {
                     return true;
                 }
             }
-            if ( elseExecution != null )
+            if (elseExecution != null)
             {
                 elseExecution.execute(variables, cache, params);
             }
@@ -67,7 +67,7 @@ public class IfExecution implements WithBodyExecution
     @Override
     public void check()
     {
-        if ( body == null )
+        if (body == null)
         {
             throw new MethodBodyNotCompleteException();
         }
@@ -84,5 +84,4 @@ public class IfExecution implements WithBodyExecution
     {
         return body == null;
     }
-
 }
