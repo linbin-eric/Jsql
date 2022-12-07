@@ -9,8 +9,8 @@ import com.jfirer.jsql.mapper.AbstractMapper;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.session.SqlSession;
-import com.jfirer.jsql.transfer.resultset.ResultSetTransfer;
-import com.jfirer.jsql.transfer.resultset.impl.IntegerTransfer;
+import com.jfirer.jsql.transfer.ResultSetTransfer;
+import com.jfirer.jsql.transfer.impl.IntegerTransfer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,9 +26,9 @@ public class SqlSessionImpl implements SqlSession
     private              boolean                                                    transactionActive = false;
     private              boolean                                                    closed            = false;
     private final        IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> mappers;
-    private final Connection                             connection;
-    private final SqlExecutor                            headSqlExecutor;
-    private final IdentityHashMap<Class<?>, CurdInfo<?>> curdInfoMap;
+    private final        Connection                                                 connection;
+    private final        SqlExecutor                                                headSqlExecutor;
+    private final        IdentityHashMap<Class<?>, CurdInfo<?>>                     curdInfoMap;
     private final        Dialect                                                    dialect;
     private final static Logger                                                     logger            = LoggerFactory.getLogger(SqlSession.class);
     private static final ThreadLocal<List<Object>>                                  cahcedParams      = new ThreadLocal<List<Object>>()
@@ -38,7 +38,7 @@ public class SqlSessionImpl implements SqlSession
             return new ArrayList<Object>();
         }
     };
-    private static final ResultSetTransfer                                          countTransfer     = new IntegerTransfer();
+    private static final ResultSetTransfer                                          countTransfer     = new IntegerTransfer(1);
 
     public SqlSessionImpl(Connection connection, SqlExecutor headSqlExecutor, IdentityHashMap<Class<?>, CurdInfo<?>> curdInfoMap, IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> mappers, Dialect dialect)
     {
@@ -165,11 +165,11 @@ public class SqlSessionImpl implements SqlSession
         {
             if (pkField.get(entity) == null)
             {
-                CurdInfo<T>             curdInfo       = (CurdInfo<T>) curdInfoMap.get(entity.getClass());
+                CurdInfo<T>                   curdInfo       = (CurdInfo<T>) curdInfoMap.get(entity.getClass());
                 List<Object>                  list           = cahcedParams.get();
                 CurdInfo.AutoGeneratePkAndSql autoGeneratePk = curdInfo.autoGeneratePkInsert(entity, list);
                 String                        sql            = autoGeneratePk.sql;
-                String                  pk             = insertReturnPk(sql, list);
+                String                        pk             = insertReturnPk(sql, list);
                 if (autoGeneratePk.generatePkValue != null)
                 {
                     curdInfo.setPkValue(entity, autoGeneratePk.generatePkValue);

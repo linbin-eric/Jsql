@@ -5,8 +5,8 @@ import com.jfirer.jsql.annotation.pkstrategy.PkGenerator;
 import com.jfirer.jsql.curd.CurdInfo;
 import com.jfirer.jsql.curd.LockMode;
 import com.jfirer.jsql.metadata.TableEntityInfo;
-import com.jfirer.jsql.transfer.resultset.ResultSetTransfer;
-import com.jfirer.jsql.transfer.resultset.impl.BeanTransfer;
+import com.jfirer.jsql.transfer.ResultSetTransfer;
+import com.jfirer.jsql.transfer.impl.BeanTransfer;
 import com.jfirer.baseutil.reflect.ReflectUtil;
 import com.jfirer.baseutil.reflect.ValueAccessor;
 
@@ -56,7 +56,7 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
         {
             generateNative(tableEntityInfo);
         }
-        beanTransfer = new BeanTransfer().initialize(ckass);
+        beanTransfer = new BeanTransfer().awareType(ckass);
         pkField = tableEntityInfo.getPkInfo().getField();
         if (pkField.getType() == String.class)
         {

@@ -1,12 +1,11 @@
-package com.jfirer.jsql.transfer.resultset;
+package com.jfirer.jsql.transfer;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public interface ResultSetTransfer
 {
-    ResultSetTransfer initialize(Class<?> type);
-
     Object transfer(ResultSet resultSet) throws SQLException;
 
+    ResultSetTransfer awareType(Class type);
 }

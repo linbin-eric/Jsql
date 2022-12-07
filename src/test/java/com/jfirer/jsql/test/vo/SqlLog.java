@@ -2,9 +2,8 @@ package com.jfirer.jsql.test.vo;
 
 import com.jfirer.baseutil.TRACEID;
 import com.jfirer.jsql.dialect.Dialect;
-import com.jfirer.jsql.executor.SqlExecutor;
 import com.jfirer.jsql.executor.impl.NextHolder;
-import com.jfirer.jsql.transfer.resultset.ResultSetTransfer;
+import com.jfirer.jsql.transfer.ResultSetTransfer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

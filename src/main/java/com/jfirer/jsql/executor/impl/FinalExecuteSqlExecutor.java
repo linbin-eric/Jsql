@@ -3,15 +3,20 @@ package com.jfirer.jsql.executor.impl;
 import com.jfirer.jsql.dialect.Dialect;
 import com.jfirer.jsql.exception.NotSingleResultException;
 import com.jfirer.jsql.executor.SqlExecutor;
-import com.jfirer.jsql.transfer.resultset.ResultSetTransfer;
+import com.jfirer.jsql.transfer.ResultSetTransfer;
 
 import java.sql.*;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 @SuppressWarnings("ALL")
 public class FinalExecuteSqlExecutor implements SqlExecutor
 {
+    record MatchKey(String sql, Class<?> ckass) {}
+
+    ConcurrentMap<MatchKey, ResultSetTransfer> map = new ConcurrentHashMap<>();
 
     @Override
     public int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
@@ -24,9 +29,10 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
             int count = prepareStatement.executeUpdate();
             prepareStatement.close();
             return count;
-        } finally
+        }
+        finally
         {
-            if ( prepareStatement != null )
+            if (prepareStatement != null)
             {
                 prepareStatement.close();
             }
@@ -37,7 +43,7 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
     public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
     {
         PreparedStatement prepareStatement = null;
-        ResultSet generatedKeys = null;
+        ResultSet         generatedKeys    = null;
         try
         {
             prepareStatement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
@@ -48,13 +54,14 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
             generatedKeys.close();
             prepareStatement.close();
             return pk;
-        } finally
+        }
+        finally
         {
-            if ( generatedKeys != null )
+            if (generatedKeys != null)
             {
                 generatedKeys.close();
             }
-            if ( prepareStatement != null )
+            if (prepareStatement != null)
             {
                 prepareStatement.close();
             }
@@ -65,7 +72,7 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
     public List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
     {
         PreparedStatement prepareStatement = null;
-        ResultSet resultSet = null;
+        ResultSet         resultSet        = null;
         try
         {
             prepareStatement = connection.prepareStatement(sql);
@@ -77,13 +84,14 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
                 list.add(resultSetTransfer.transfer(resultSet));
             }
             return list;
-        } finally
+        }
+        finally
         {
-            if ( resultSet != null )
+            if (resultSet != null)
             {
                 resultSet.close();
             }
-            if ( prepareStatement != null )
+            if (prepareStatement != null)
             {
                 prepareStatement.close();
             }
@@ -94,18 +102,18 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
     public Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
     {
         PreparedStatement prepareStatement = null;
-        ResultSet executeQuery = null;
+        ResultSet         executeQuery     = null;
         try
         {
             prepareStatement = connection.prepareStatement(sql);
             dialect.fillStatement(prepareStatement, params);
             executeQuery = prepareStatement.executeQuery();
-            if ( executeQuery.next() == false )
+            if (executeQuery.next() == false)
             {
                 return null;
             }
             Object result = resultSetTransfer.transfer(executeQuery);
-            if ( executeQuery.next() == false )
+            if (executeQuery.next() == false)
             {
                 return result;
             }
@@ -113,18 +121,18 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
             {
                 throw new NotSingleResultException();
             }
-        } finally
+        }
+        finally
         {
-            if ( executeQuery != null )
+            if (executeQuery != null)
             {
                 executeQuery.close();
             }
-            if ( prepareStatement != null )
+            if (prepareStatement != null)
             {
                 prepareStatement.close();
             }
         }
-
     }
 
     @Override

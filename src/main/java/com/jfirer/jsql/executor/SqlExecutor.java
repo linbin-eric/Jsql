@@ -1,7 +1,7 @@
 package com.jfirer.jsql.executor;
 
 import com.jfirer.jsql.dialect.Dialect;
-import com.jfirer.jsql.transfer.resultset.ResultSetTransfer;
+import com.jfirer.jsql.transfer.ResultSetTransfer;
 
 import java.sql.Connection;
 import java.sql.SQLException;

@@ -10,8 +10,8 @@ import com.jfirer.jsql.metadata.TableMode;
 import com.jfirer.jsql.session.SqlSession;
 import com.jfirer.jsql.test.vo.SqlLog;
 import com.jfirer.jsql.test.vo.User;
-import com.jfirer.jsql.transfer.resultset.ResultMap;
-import com.jfirer.jsql.transfer.resultset.impl.EnumOrdinalTransfer;
+import com.jfirer.jsql.transfer.CustomTransfer;
+import com.jfirer.jsql.transfer.impl.EnumOrdinalTransfer;
 import com.zaxxer.hikari.HikariDataSource;
 import org.h2.Driver;
 import org.junit.After;
@@ -120,11 +120,11 @@ public class MapperTest
         @Sql(sql = "select * from User where stringEnum = ${v.name()}", paramNames = "v")
         User find(User.StringEnum v);
 
-        @ResultMap(EnumOrdinalTransfer.class)
+        @CustomTransfer(EnumOrdinalTransfer.class)
         @Sql(sql = "select state from User where name=${name}", paramNames = "name")
         public User.State findState(String name);
 
-        @ResultMap(EnumOrdinalTransfer.class)
+        @CustomTransfer(EnumOrdinalTransfer.class)
         @Sql(sql = "select state from User where name like ${'%'+name+'%'}", paramNames = "name")
         public List<User.State> findListState(String name);
 

@@ -3,7 +3,7 @@ package com.jfirer.jsql.model;
 import com.jfirer.jsql.annotation.TableDef;
 import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.metadata.TableEntityInfo;
-import com.jfirer.jsql.transfer.resultset.impl.BeanTransfer;
+import com.jfirer.jsql.transfer.impl.BeanTransfer;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -65,9 +65,7 @@ public class QueryModel extends Model
             {
                 if ( beanTransfer == null )
                 {
-                    beanTransfer = new BeanTransfer();
-                    beanTransfer.initialize(entityClass);
-                    beanTransfer.preSetColumnTransfer(selectProperties, TableEntityInfo.parse(entityClass));
+                    beanTransfer = (BeanTransfer) new BeanTransfer().awareType(entityClass);
                 }
             }
         }

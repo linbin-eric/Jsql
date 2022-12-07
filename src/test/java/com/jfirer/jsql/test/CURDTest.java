@@ -26,6 +26,7 @@ import java.util.TimeZone;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class CURDTest
@@ -99,8 +100,8 @@ public class CURDTest
     @Test
     public void test_insert() throws SQLException
     {
-        SqlSession session = sessionFactory.openSession();
-        ResultSet resultSet = session.getConnection().prepareStatement("select count(*) from user").executeQuery();
+        SqlSession session   = sessionFactory.openSession();
+        ResultSet  resultSet = session.getConnection().prepareStatement("select count(*) from user").executeQuery();
         Assert.assertTrue(resultSet.next());
         Assert.assertEquals(0, resultSet.getInt(1));
         User user = new User();
@@ -122,7 +123,7 @@ public class CURDTest
     public void test_insert_with_id() throws SQLException
     {
         SqlSession session = sessionFactory.openSession();
-        User user = new User();
+        User       user    = new User();
         user.setId(12);
         user.setAge(12);
         session.insert(user);
@@ -145,7 +146,7 @@ public class CURDTest
     {
         test_save_insert();
         SqlSession session = sessionFactory.openSession();
-        User query = session.get(User.class, 1);
+        User       query   = session.get(User.class, 1);
         Assert.assertNotNull(query);
         Assert.assertEquals(1, query.getId().intValue());
         Assert.assertEquals(new Date(User.now).getTime(), query.getDate().getTime(), 1);
@@ -160,7 +161,10 @@ public class CURDTest
         Assert.assertEquals(2.53d, query.getD1(), 0.001);
         Assert.assertEquals(5.36f, query.getF1(), 0.001);
         Assert.assertEquals(23l, query.getL1());
-        Assert.assertEquals(new Timestamp(User.now), query.getTimestamp());
+        Assert.assertEquals(new Timestamp(User.now).getTime(), query.getTimestamp().getTime(), 1);
+        assertEquals(User.now, query.getN());
+        assertEquals(User.now, new Timestamp(User.now).getTime());
+        assertEquals(User.now, query.getTimestamp().getTime(), 40);
         Assert.assertEquals(Boolean.FALSE, query.getB11());
         Assert.assertEquals(6.32d, query.getD11(), 0.001);
         Assert.assertEquals(5.69f, query.getF11(), 0.001);
@@ -221,14 +225,13 @@ public class CURDTest
     public void test_get_locksharemode() throws SQLException, InterruptedException
     {
         test_insert();
-        final AtomicInteger count = new AtomicInteger(0);
-        final SessionFactory one = sessionFactory;
+        final AtomicInteger  count = new AtomicInteger(0);
+        final SessionFactory one   = sessionFactory;
         final CountDownLatch latch = new CountDownLatch(2);
         for (int i = 0; i < 2; i++)
         {
             new Thread(new Runnable()
             {
-
                 @Override
                 public void run()
                 {
@@ -256,14 +259,13 @@ public class CURDTest
     public void test_get_lockforupdate() throws SQLException, InterruptedException
     {
         test_insert();
-        final AtomicInteger count = new AtomicInteger(0);
-        final SessionFactory one = sessionFactory;
+        final AtomicInteger  count = new AtomicInteger(0);
+        final SessionFactory one   = sessionFactory;
         final CountDownLatch latch = new CountDownLatch(2);
         for (int i = 0; i < 2; i++)
         {
             new Thread(new Runnable()
             {
-
                 @Override
                 public void run()
                 {
@@ -275,7 +277,8 @@ public class CURDTest
                     try
                     {
                         Thread.sleep(500);
-                    } catch (InterruptedException e)
+                    }
+                    catch (InterruptedException e)
                     {
                         // TODO Auto-generated catch block
                         e.printStackTrace();

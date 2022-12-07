@@ -12,16 +12,18 @@ import com.jfirer.jsql.annotation.Sql;
 import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.session.SqlSession;
-import com.jfirer.jsql.transfer.resultset.ResultMap;
-import com.jfirer.jsql.transfer.resultset.ResultSetTransfer;
-import com.jfirer.jsql.transfer.resultset.impl.*;
+import com.jfirer.jsql.transfer.CustomTransfer;
+import com.jfirer.jsql.transfer.ResultSetTransfer;
+import com.jfirer.jsql.transfer.impl.*;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.sql.Clob;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -430,17 +432,34 @@ public class MapperGenerator
     private static void addResultSetTransferField(ClassModel classModel, Method method, String transferFieldName, Class<?> itemType)
     {
         Class<? extends ResultSetTransfer> ckass = null;
-        if (method.isAnnotationPresent(ResultMap.class))
+        itemType = itemType.isPrimitive() ? ReflectUtil.wrapPrimitive(itemType) : itemType;
+        if (method.isAnnotationPresent(CustomTransfer.class))
         {
-            ckass = method.getAnnotation(ResultMap.class).value();
+            ckass = method.getAnnotation(CustomTransfer.class).value();
         }
-        else if (itemType == String.class)
+        else if (itemType == Boolean.class)
         {
-            ckass = StringTransfer.class;
+            ckass = BooleanTransfer.class;
         }
-        else if (Enum.class.isAssignableFrom(itemType))
+        else if (itemType == Double.class)
         {
-            ckass = EnumNameTransfer.class;
+            ckass = DoubleTransfer.class;
+        }
+        else if (itemType == Float.class)
+        {
+            ckass = FloatTransfer.class;
+        }
+        else if (itemType == Integer.class)
+        {
+            ckass = IntegerTransfer.class;
+        }
+        else if (itemType == Long.class)
+        {
+            ckass = LongTransfer.class;
+        }
+        else if (itemType == Short.class)
+        {
+            ckass = ShortTransfer.class;
         }
         else if (itemType == Date.class)
         {
@@ -450,6 +469,10 @@ public class MapperGenerator
         {
             ckass = UtilDateTransfer.class;
         }
+        else if (itemType == String.class)
+        {
+            ckass = StringTransfer.class;
+        }
         else if (itemType == Timestamp.class)
         {
             ckass = TimeStampTransfer.class;
@@ -458,44 +481,34 @@ public class MapperGenerator
         {
             ckass = TimeTransfer.class;
         }
-        else if (itemType.isPrimitive())
+        else if (Enum.class.isAssignableFrom(itemType))
         {
-            itemType = ReflectUtil.wrapPrimitive(itemType);
-            if (itemType == Integer.class)
-            {
-                ckass = IntegerTransfer.class;
-            }
-            else if (itemType == Long.class)
-            {
-                ckass = LongTransfer.class;
-            }
-            else if (itemType == Short.class)
-            {
-                ckass = ShortTransfer.class;
-            }
-            else if (itemType == Float.class)
-            {
-                ckass = FloatTransfer.class;
-            }
-            else if (itemType == Double.class)
-            {
-                ckass = DoubleTransfer.class;
-            }
-            else if (itemType == Boolean.class)
-            {
-                ckass = BooleanTransfer.class;
-            }
-            else
-            {
-                throw new UnsupportedOperationException("不支持的单类型转换:" + itemType.getName());
-            }
+            ckass = EnumNameTransfer.class;
+        }
+        else if (itemType == Calendar.class)
+        {
+            ckass = CalendarTransfer.class;
+        }
+        else if (itemType == byte[].class)
+        {
+            ckass = ByteArrayTransfer.class;
+        }
+        else if (itemType == Clob.class)
+        {
+            ckass = ClobTransfer.class;
         }
         else
         {
             ckass = BeanTransfer.class;
         }
         classModel.addImport(ckass);
-        FieldModel fieldModel = new FieldModel(transferFieldName, ResultSetTransfer.class, "new " + SmcHelper.getReferenceName(ckass, classModel) + "().initialize(" + SmcHelper.getReferenceName(itemType, classModel) + ".class)", classModel);
+        FieldModel fieldModel = new FieldModel(transferFieldName, ResultSetTransfer.class, "new " + SmcHelper.getReferenceName(ckass, classModel) + "().awareType(" + SmcHelper.getReferenceName(itemType, classModel) + ".class)", classModel);
+//        if (ckass == BeanTransfer.class)
+//        {
+//        }
+//        else
+//        {
+//        }
         classModel.addField(fieldModel);
     }
 
@@ -561,11 +574,30 @@ public class MapperGenerator
 
     enum Operator
     {
-        And, Or,//
+        And,
+        Or,//
         By,//
-        Between, LessThan, LessThanEqual, GreaterThan, GreaterThanEqual, After, Before,//
-        Like, NotLike, StartingWith, EndingWith, Containing, In, NotIn,//
-        True, False, IsNull, IsNotNull, OrderBy, Desc, Asc
+        Between,
+        LessThan,
+        LessThanEqual,
+        GreaterThan,
+        GreaterThanEqual,
+        After,
+        Before,//
+        Like,
+        NotLike,
+        StartingWith,
+        EndingWith,
+        Containing,
+        In,
+        NotIn,//
+        True,
+        False,
+        IsNull,
+        IsNotNull,
+        OrderBy,
+        Desc,
+        Asc
     }
 
     static class TriTree extends HashMap<Character, TriTree>

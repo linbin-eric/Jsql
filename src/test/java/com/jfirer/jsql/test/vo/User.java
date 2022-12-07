@@ -5,8 +5,8 @@ import com.jfirer.jsql.annotation.SqlIgnore;
 import com.jfirer.jsql.annotation.StandardColumnDef;
 import com.jfirer.jsql.annotation.TableDef;
 import com.jfirer.jsql.annotation.pkstrategy.AutoIncrement;
-import com.jfirer.jsql.transfer.column.ColumnMap;
-import com.jfirer.jsql.transfer.column.impl.EnumOrdinalTransfer;
+import com.jfirer.jsql.transfer.CustomTransfer;
+import com.jfirer.jsql.transfer.impl.EnumOrdinalTransfer;
 
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -20,48 +20,61 @@ public class User
 
     public static enum State
     {
-        off, on;
+        off,
+        on;
     }
 
     public static enum StringEnum
     {
-        v1, v2
+        v1,
+        v2
     }
 
-    public static String customName = "12asdaseda";
+    public static String        customName = "12asdaseda";
     @Pk
     @AutoIncrement
-    private Integer id;
+    private       Integer       id;
     @StandardColumnDef(columnName = "name2")
-    private String name;
-    private int age;
+    private       String        name;
+    private       int           age;
     @SqlIgnore
-    private Integer length;
+    private       Integer       length;
     @SqlIgnore
-    private int age2;
-    @ColumnMap(EnumOrdinalTransfer.class)
+    private       int           age2;
+    @CustomTransfer(EnumOrdinalTransfer.class)
     @StandardColumnDef(dataType = "integer")
-    private State         state;
+    private       State         state;
     @StandardColumnDef(dataType = "varchar")
-    private StringEnum    stringEnum;
-    private boolean       b         = false;
-    private byte[]        barray    = new byte[]{1, 2};
-    private Calendar      calendar  = Calendar.getInstance();
-    private Date          date      = new Date();
-    private double        d1        = 2.53d;
-    private float         f1        = 5.36f;
-    private long          l1        = 23l;
-    private java.sql.Date sqlDate   = new java.sql.Date(now);
-    private Time          time      = new Time(now);
-    private Timestamp     timestamp = new Timestamp(now);
-    private Boolean       B11       = false;
-    private Double        D11       = 6.32d;
-    private Float         F11       = 5.69f;
-    private Long          L11       = 5625l;
+    private       StringEnum    stringEnum;
+    private       boolean       b          = false;
+    private       byte[]        barray     = new byte[]{1, 2};
+    private       Calendar      calendar   = Calendar.getInstance();
+    private       Date          date       = new Date();
+    private       double        d1         = 2.53d;
+    private       float         f1         = 5.36f;
+    private       long          l1         = 23l;
+    private       java.sql.Date sqlDate    = new java.sql.Date(now);
+    private       Time          time       = new Time(now);
+    private       Timestamp     timestamp  = new Timestamp(now);
+    private       Boolean       B11        = false;
+    private       Double        D11        = 6.32d;
+    private       Float         F11        = 5.69f;
+    private       Long          L11        = 5625l;
+    private       long          n          = now;
 
     public static long getNow()
     {
         return now;
+    }
+
+    public long getN()
+    {
+        return n;
+    }
+
+    public void setN(long n)
+    {
+        this.n = n;
     }
 
     public static String getCustomName()
@@ -285,5 +298,4 @@ public class User
     {
         this.name = name;
     }
-
 }

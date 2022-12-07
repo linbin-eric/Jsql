@@ -1,10 +1,9 @@
 package com.jfirer.jsql.executor.impl;
 
 import com.jfirer.jsql.dialect.Dialect;
-import com.jfirer.jsql.executor.SqlExecutor;
 import com.jfirer.jsql.metadata.Page;
-import com.jfirer.jsql.transfer.resultset.ResultSetTransfer;
-import com.jfirer.jsql.transfer.resultset.impl.IntegerTransfer;
+import com.jfirer.jsql.transfer.ResultSetTransfer;
+import com.jfirer.jsql.transfer.impl.IntegerTransfer;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -12,7 +11,7 @@ import java.util.List;
 
 public class StandardPageExecutor extends  NextHolder
 {
-    private final ResultSetTransfer countResultTransfer = new IntegerTransfer();
+    private final ResultSetTransfer countResultTransfer = new IntegerTransfer(1);
 
     @Override
     public int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException

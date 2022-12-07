@@ -1,7 +1,7 @@
 package com.jfirer.jsql.curd;
 
 import com.jfirer.jsql.SessionFactory;
-import com.jfirer.jsql.transfer.resultset.ResultSetTransfer;
+import com.jfirer.jsql.transfer.ResultSetTransfer;
 
 import java.util.List;
 
