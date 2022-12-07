@@ -11,7 +11,8 @@ public enum TokenType
     // 表达式
     EXPRESSION, //
     // 模板字符串
-    TEMPLATE_CHARACTERS, // 自动集合
+    TEMPLATE_CHARACTERS,
+    // 自动集合
 AUTO_COLLECTION, //
     // 符号
     SYMBOL, //

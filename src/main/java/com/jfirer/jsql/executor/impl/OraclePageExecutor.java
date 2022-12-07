@@ -1,8 +1,6 @@
 package com.jfirer.jsql.executor.impl;
 
 import com.jfirer.jsql.dialect.Dialect;
-import com.jfirer.jsql.executor.SqlExecutor;
-import com.jfirer.jsql.executor.SqlInvoker;
 import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.transfer.resultset.ResultSetTransfer;
 import com.jfirer.jsql.transfer.resultset.impl.IntegerTransfer;
@@ -11,36 +9,36 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
-public class OraclePageExecutor implements SqlExecutor
+public class OraclePageExecutor extends NextHolder
 {
     private final ResultSetTransfer countResultTransfer = new IntegerTransfer();
 
     @Override
-    public int update(String sql, List<Object> params, Connection connection, Dialect dialect, SqlInvoker next) throws SQLException
+    public int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
     {
         return next.update(sql, params, connection, dialect);
     }
 
     @Override
-    public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect, SqlInvoker next) throws SQLException
+    public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
     {
         return next.insertWithReturnKey(sql, params, connection, dialect);
     }
 
     @Override
-    public List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer, SqlInvoker next) throws SQLException
+    public List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
     {
         Object param = params.get(params.size() - 1);
-        if ( param instanceof Page == false )
+        if (param instanceof Page == false)
         {
             return next.queryList(sql, params, connection, dialect, resultSetTransfer);
         }
         params.remove(params.size() - 1);
         Page page = (Page) param;
-        if ( page.isFetchSum() )
+        if (page.isFetchSum())
         {
             String countSql = "select count(*) from (" + sql + ")";
-            int total = (Integer) next.queryOne(countSql, params, connection, dialect, countResultTransfer);
+            int    total    = (Integer) next.queryOne(countSql, params, connection, dialect, countResultTransfer);
             page.setTotal(total);
         }
         sql = "select * from ( select a.*,rownum rn from(" + sql + ") a where rownum<=?) where rn>=?";
@@ -50,7 +48,7 @@ public class OraclePageExecutor implements SqlExecutor
     }
 
     @Override
-    public Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer, SqlInvoker next) throws SQLException
+    public Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
     {
         return next.queryOne(sql, params, connection, dialect, resultSetTransfer);
     }
@@ -60,5 +58,4 @@ public class OraclePageExecutor implements SqlExecutor
     {
         return 1000;
     }
-
 }

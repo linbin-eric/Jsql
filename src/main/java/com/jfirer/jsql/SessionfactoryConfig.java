@@ -18,9 +18,8 @@ import com.jfirer.jsql.dialect.Dialect;
 import com.jfirer.jsql.dialect.impl.H2Dialect;
 import com.jfirer.jsql.dialect.impl.MysqlDialect;
 import com.jfirer.jsql.dialect.impl.OracleDialect;
-import com.jfirer.jsql.executor.FinalExecuteSqlExecutor;
+import com.jfirer.jsql.executor.impl.FinalExecuteSqlExecutor;
 import com.jfirer.jsql.executor.SqlExecutor;
-import com.jfirer.jsql.executor.SqlInvoker;
 import com.jfirer.jsql.executor.impl.OraclePageExecutor;
 import com.jfirer.jsql.executor.impl.StandardPageExecutor;
 import com.jfirer.jsql.mapper.AbstractMapper;
@@ -28,7 +27,6 @@ import com.jfirer.jsql.mapper.Mapper;
 import com.jfirer.jsql.mapper.MapperGenerator;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.metadata.TableMode;
-import com.jfirer.jsql.transfer.resultset.ResultSetTransfer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +59,7 @@ public class SessionfactoryConfig
             String      productName = detectProductName();
             modifySchema(classSet, productName, annotationContextFactory);
             dialect = dialect == null ? generateDialect(productName) : dialect;
-            return new SessionFactoryImpl(generateMappers(classSet, annotationContextFactory), generateCurdInfos(productName, classSet,annotationContextFactory), generateHeadSqlInvoker(productName), dataSource, dialect);
+            return new SessionFactoryImpl(generateMappers(classSet, annotationContextFactory), generateCurdInfos(productName, classSet,annotationContextFactory), generateHeadSqlExecutor(productName), dataSource, dialect);
         }
         catch (Exception e)
         {
@@ -195,7 +193,7 @@ public class SessionfactoryConfig
         }
     }
 
-    private SqlInvoker generateHeadSqlInvoker(String productName)
+    private SqlExecutor generateHeadSqlExecutor(String productName)
     {
         if ("mysql".equalsIgnoreCase(productName) || "h2".equalsIgnoreCase(productName))
         {
@@ -206,55 +204,20 @@ public class SessionfactoryConfig
             sqlExecutors.add(new OraclePageExecutor());
         }
         sqlExecutors.add(new FinalExecuteSqlExecutor());
-        Collections.sort(sqlExecutors, new Comparator<SqlExecutor>()
-        {
-
-            @Override
-            public int compare(SqlExecutor o1, SqlExecutor o2)
+        sqlExecutors.sort((e1,e2)->{
+            int result = e1.order() - e2.order();
+            if (result == 0)
             {
-                int result = o1.order() - o2.order();
-                if (result == 0)
-                {
-                    throw new IllegalStateException(o1.getClass().getName() + "和" + o2.getClass().getName() + "的序号重复，这会导致不可预测的结果，请检查");
-                }
-                return result;
+                    throw new IllegalStateException(e1.getClass().getName() + "和" + e2.getClass().getName() + "的序号重复，这会导致不可预测的结果，请检查");
+
             }
+            return result;
         });
-        SqlInvoker pred  = null;
-        int        index = sqlExecutors.size() - 1;
-        for (int i = index; i > -1; i--)
-        {
-            final SqlExecutor sqlExecutor = sqlExecutors.get(i);
-            final SqlInvoker  next        = pred;
-            pred = new SqlInvoker()
-            {
-
-                @Override
-                public int update(String sql, List<Object> params, Connection connection, Dialect dialect1) throws SQLException
-                {
-                    return sqlExecutor.update(sql, params, connection, dialect1, next);
-                }
-
-                @Override
-                public Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect1, ResultSetTransfer resultSetTransfer) throws SQLException
-                {
-                    return sqlExecutor.queryOne(sql, params, connection, dialect1, resultSetTransfer, next);
-                }
-
-                @Override
-                public List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect1, ResultSetTransfer resultSetTransfer) throws SQLException
-                {
-                    return sqlExecutor.queryList(sql, params, connection, dialect1, resultSetTransfer, next);
-                }
-
-                @Override
-                public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect1) throws SQLException
-                {
-                    return sqlExecutor.insertWithReturnKey(sql, params, connection, dialect1, next);
-                }
-            };
-        }
-        return pred;
+        sqlExecutors.stream().reduce((current,next)->{
+            current.setNext(next);
+            return next;
+        });
+        return sqlExecutors.get(0);
     }
 
     private Set<String> buildClassSet() throws ClassNotFoundException

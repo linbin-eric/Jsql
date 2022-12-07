@@ -1,7 +1,8 @@
-package com.jfirer.jsql.executor;
+package com.jfirer.jsql.executor.impl;
 
 import com.jfirer.jsql.dialect.Dialect;
 import com.jfirer.jsql.exception.NotSingleResultException;
+import com.jfirer.jsql.executor.SqlExecutor;
 import com.jfirer.jsql.transfer.resultset.ResultSetTransfer;
 
 import java.sql.*;
@@ -13,7 +14,7 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
 {
 
     @Override
-    public int update(String sql, List<Object> params, Connection connection, Dialect dialect, SqlInvoker next) throws SQLException
+    public int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
     {
         PreparedStatement prepareStatement = null;
         try
@@ -33,7 +34,7 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
     }
 
     @Override
-    public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect, SqlInvoker next) throws SQLException
+    public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
     {
         PreparedStatement prepareStatement = null;
         ResultSet generatedKeys = null;
@@ -61,7 +62,7 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
     }
 
     @Override
-    public List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer, SqlInvoker next) throws SQLException
+    public List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
     {
         PreparedStatement prepareStatement = null;
         ResultSet resultSet = null;
@@ -90,7 +91,7 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
     }
 
     @Override
-    public Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer, SqlInvoker next) throws SQLException
+    public Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
     {
         PreparedStatement prepareStatement = null;
         ResultSet executeQuery = null;
@@ -132,4 +133,8 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
         return Integer.MAX_VALUE;
     }
 
+    @Override
+    public void setNext(SqlExecutor next)
+    {
+    }
 }

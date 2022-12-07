@@ -4,7 +4,7 @@ import com.jfirer.baseutil.reflect.ReflectUtil;
 import com.jfirer.jsql.curd.CurdInfo;
 import com.jfirer.jsql.curd.LockMode;
 import com.jfirer.jsql.dialect.Dialect;
-import com.jfirer.jsql.executor.SqlInvoker;
+import com.jfirer.jsql.executor.SqlExecutor;
 import com.jfirer.jsql.mapper.AbstractMapper;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.Model;
@@ -26,9 +26,9 @@ public class SqlSessionImpl implements SqlSession
     private              boolean                                                    transactionActive = false;
     private              boolean                                                    closed            = false;
     private final        IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> mappers;
-    private final        Connection                                                 connection;
-    private final        SqlInvoker                                                 sqlInvoker;
-    private final        IdentityHashMap<Class<?>, CurdInfo<?>>                     curdInfoMap;
+    private final Connection                             connection;
+    private final SqlExecutor                            headSqlExecutor;
+    private final IdentityHashMap<Class<?>, CurdInfo<?>> curdInfoMap;
     private final        Dialect                                                    dialect;
     private final static Logger                                                     logger            = LoggerFactory.getLogger(SqlSession.class);
     private static final ThreadLocal<List<Object>>                                  cahcedParams      = new ThreadLocal<List<Object>>()
@@ -40,10 +40,10 @@ public class SqlSessionImpl implements SqlSession
     };
     private static final ResultSetTransfer                                          countTransfer     = new IntegerTransfer();
 
-    public SqlSessionImpl(Connection connection, SqlInvoker sqlInvoker, IdentityHashMap<Class<?>, CurdInfo<?>> curdInfoMap, IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> mappers, Dialect dialect)
+    public SqlSessionImpl(Connection connection, SqlExecutor headSqlExecutor, IdentityHashMap<Class<?>, CurdInfo<?>> curdInfoMap, IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> mappers, Dialect dialect)
     {
         this.connection = connection;
-        this.sqlInvoker = sqlInvoker;
+        this.headSqlExecutor = headSqlExecutor;
         this.curdInfoMap = curdInfoMap;
         this.dialect = dialect;
         this.mappers = mappers;
@@ -290,7 +290,7 @@ public class SqlSessionImpl implements SqlSession
         checkIfClosed();
         try
         {
-            return sqlInvoker.update(sql, params, connection, dialect);
+            return headSqlExecutor.update(sql, params, connection, dialect);
         }
         catch (SQLException e)
         {
@@ -305,7 +305,7 @@ public class SqlSessionImpl implements SqlSession
         checkIfClosed();
         try
         {
-            return sqlInvoker.insertWithReturnKey(sql, params, connection, dialect);
+            return headSqlExecutor.insertWithReturnKey(sql, params, connection, dialect);
         }
         catch (SQLException e)
         {
@@ -321,7 +321,7 @@ public class SqlSessionImpl implements SqlSession
         checkIfClosed();
         try
         {
-            return (T) sqlInvoker.queryOne(sql, params, connection, dialect, transfer);
+            return (T) headSqlExecutor.queryOne(sql, params, connection, dialect, transfer);
         }
         catch (SQLException e)
         {
@@ -337,7 +337,7 @@ public class SqlSessionImpl implements SqlSession
         checkIfClosed();
         try
         {
-            return (List<T>) sqlInvoker.queryList(sql, params, connection, dialect, transfer);
+            return (List<T>) headSqlExecutor.queryList(sql, params, connection, dialect, transfer);
         }
         catch (SQLException e)
         {
