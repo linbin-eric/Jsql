@@ -1,12 +1,10 @@
 package com.jfirer.jsql.analyse.template.execution;
 
-
 import java.util.List;
 import java.util.Map;
 
 public interface Execution
 {
-
     /**
      * 语句是否已经执行
      *

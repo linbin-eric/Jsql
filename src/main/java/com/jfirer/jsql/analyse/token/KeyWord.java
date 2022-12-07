@@ -123,9 +123,7 @@ public enum KeyWord
     MATCHED, //
     MERGE, //
     TEMPORARY;
-
     private static final Map<String, KeyWord> keywords = new HashMap<String, KeyWord>(128);
-
     static
     {
         for (KeyWord each : KeyWord.values())
@@ -133,7 +131,6 @@ public enum KeyWord
             keywords.put(each.name().toLowerCase(), each);
         }
     }
-
     public static boolean isKeyWord(String literals)
     {
         return keywords.containsKey(literals.toLowerCase());

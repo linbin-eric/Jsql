@@ -2,7 +2,6 @@ package com.jfirer.jsql.analyse.exception;
 
 public class MethodBodyNotCompleteException extends RuntimeException
 {
-
     /**
      *
      */
@@ -11,5 +10,4 @@ public class MethodBodyNotCompleteException extends RuntimeException
     public MethodBodyNotCompleteException()
     {
     }
-
 }

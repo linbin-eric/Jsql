@@ -2,7 +2,10 @@ package com.jfirer.jsql.mapper;
 
 import com.jfirer.jsql.session.SqlSession;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 用来给生成接口对象的类作为继承用 方便在其中设置sqlSession
@@ -18,15 +21,14 @@ public abstract class AbstractMapper
             return new HashMap<String, Object>();
         }
     };
-    protected static final ThreadLocal<List<Object>> cachedParams = new ThreadLocal<List<Object>>()
+    protected static final ThreadLocal<List<Object>>        cachedParams    = new ThreadLocal<List<Object>>()
     {
         protected java.util.List<Object> initialValue()
         {
             return new ArrayList<Object>();
         }
     };
-
-    protected SqlSession session;
+    protected              SqlSession                       session;
 
     public SqlSession getSession()
     {
@@ -37,5 +39,4 @@ public abstract class AbstractMapper
     {
         this.session = session;
     }
-
 }

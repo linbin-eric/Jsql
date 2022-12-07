@@ -12,14 +12,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TableEntityInfo
 {
     private static final Map<Class<?>, TableEntityInfo> store = new ConcurrentHashMap<Class<?>, TableEntityInfo>();
-
-    private final String                  className;
-    private final String                  classSimpleName;
-    private final String                  tableName;
-    private       Map<String, ColumnInfo> propertyNameKeyMap;
-    private       Map<String, ColumnInfo> columnNameIgnoreCaseKeyMap;
-    private       ColumnInfo              pkInfo;
-    private final Class<?>                ckass;
+    private final        String                         className;
+    private final        String                         classSimpleName;
+    private final        String                         tableName;
+    private              Map<String, ColumnInfo>        propertyNameKeyMap;
+    private              Map<String, ColumnInfo>        columnNameIgnoreCaseKeyMap;
+    private              ColumnInfo                     pkInfo;
+    private final        Class<?>                       ckass;
 
     private TableEntityInfo(Class<?> ckass)
     {

@@ -9,9 +9,9 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
 
-public class StandardPageExecutor extends  NextHolder
+public class StandardPageExecutor extends NextHolder
 {
-    private final ResultSetTransfer countResultTransfer = new IntegerTransfer(1);
+    private final ResultSetTransfer countResultTransfer = new IntegerTransfer();
 
     @Override
     public int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
@@ -29,16 +29,16 @@ public class StandardPageExecutor extends  NextHolder
     public List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException
     {
         Object param;
-        if ( params.isEmpty() || (param = params.get(params.size() - 1)) instanceof Page == false )
+        if (params.isEmpty() || (param = params.get(params.size() - 1)) instanceof Page == false)
         {
             return next.queryList(sql, params, connection, dialect, resultSetTransfer);
         }
         params.remove(params.size() - 1);
         Page page = (Page) param;
-        if ( page.isFetchSum() )
+        if (page.isFetchSum())
         {
             String countSql = "select count(*) from (" + sql + ")";
-            int total = (Integer) next.queryOne(countSql, params, connection, dialect, countResultTransfer);
+            int    total    = (Integer) next.queryOne(countSql, params, connection, dialect, countResultTransfer);
             page.setTotal(total);
         }
         sql = sql + " limit ?,?";
@@ -58,5 +58,4 @@ public class StandardPageExecutor extends  NextHolder
     {
         return 1000;
     }
-
 }

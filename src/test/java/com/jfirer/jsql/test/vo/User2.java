@@ -10,8 +10,8 @@ public class User2
     @Pk
     private Integer id;
     @StandardColumnDef(columnName = "name2")
-    private String name;
-    private int age;
+    private String  name;
+    private int     age;
 
     public Integer getId()
     {
@@ -42,5 +42,4 @@ public class User2
     {
         this.age = age;
     }
-
 }

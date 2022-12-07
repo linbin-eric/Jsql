@@ -31,5 +31,4 @@ public @interface Sql
      * @return
      */
     String paramNames();
-
 }

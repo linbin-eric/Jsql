@@ -11,7 +11,6 @@ import java.util.List;
 
 public class MysqlDialect implements Dialect
 {
-
     @Override
     public void fillStatement(PreparedStatement preparedStatement, List<Object> params) throws SQLException
     {

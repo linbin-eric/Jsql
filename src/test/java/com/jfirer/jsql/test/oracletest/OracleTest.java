@@ -1,10 +1,10 @@
 package com.jfirer.jsql.test.oracletest;
 
+import com.jfirer.baseutil.TRACEID;
 import com.jfirer.jsql.SessionFactory;
 import com.jfirer.jsql.SessionfactoryConfig;
 import com.jfirer.jsql.metadata.TableMode;
 import com.jfirer.jsql.session.SqlSession;
-import com.jfirer.baseutil.TRACEID;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -21,9 +21,9 @@ public class OracleTest
     @Ignore
     public void test() throws SQLException
     {
-        String traceId = TRACEID.newTraceId();
-        String url = "jdbc:oracle:thin:@172.18.169.20:1521/orcl";
-        String url2 = "jdbc:oracle:thin:@(DESCRIPTION =(ADDRESS_LIST =(ADDRESS = (PROTOCOL = TCP)(HOST = 172.18.169.20)(PORT = 1521)))(CONNECT_DATA =(SERVER = DEDICATED)(SERVICE_NAME = orcl)))";
+        String           traceId    = TRACEID.newTraceId();
+        String           url        = "jdbc:oracle:thin:@172.18.169.20:1521/orcl";
+        String           url2       = "jdbc:oracle:thin:@(DESCRIPTION =(ADDRESS_LIST =(ADDRESS = (PROTOCOL = TCP)(HOST = 172.18.169.20)(PORT = 1521)))(CONNECT_DATA =(SERVER = DEDICATED)(SERVICE_NAME = orcl)))";
         HikariDataSource dataSource = new HikariDataSource();
         dataSource.setJdbcUrl(url2);
         dataSource.setDriverClassName("oracle.jdbc.driver.OracleDriver");
@@ -36,5 +36,4 @@ public class OracleTest
         SessionFactory sessionFactory = config.build();
         SqlSession     session        = sessionFactory.openSession();
     }
-
 }

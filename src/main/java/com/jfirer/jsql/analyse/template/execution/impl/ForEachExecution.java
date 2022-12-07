@@ -1,8 +1,8 @@
 package com.jfirer.jsql.analyse.template.execution.impl;
 
+import com.jfirer.jfireel.expression.Expression;
 import com.jfirer.jsql.analyse.template.execution.Execution;
 import com.jfirer.jsql.analyse.template.execution.WithBodyExecution;
-import com.jfirer.jfireel.expression.Expression;
 
 import java.util.Collection;
 import java.util.List;
@@ -10,9 +10,9 @@ import java.util.Map;
 
 public class ForEachExecution implements WithBodyExecution
 {
-    private Execution[] body;
-    private final String     itemName;
-    private final Expression collection;
+    private       Execution[] body;
+    private final String      itemName;
+    private final Expression  collection;
 
     public ForEachExecution(String itemName, Expression collection)
     {
@@ -24,11 +24,11 @@ public class ForEachExecution implements WithBodyExecution
     public boolean execute(Map<String, Object> variables, StringBuilder cache, List<Object> params)
     {
         Object result = collection.calculate(variables);
-        if ( result == null )
+        if (result == null)
         {
             return true;
         }
-        if ( result instanceof Collection<?> )
+        if (result instanceof Collection<?>)
         {
             for (Object each : ((Collection<?>) result))
             {

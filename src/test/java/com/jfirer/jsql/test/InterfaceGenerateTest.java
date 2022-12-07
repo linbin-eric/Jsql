@@ -19,7 +19,6 @@ import java.util.Set;
 
 public class InterfaceGenerateTest
 {
-
     private SessionfactoryConfig config;
 
     @Before

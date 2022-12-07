@@ -39,7 +39,6 @@ interface ConnectionOp
      * @return
      */
     Connection getConnection();
-
 }
 
 interface CurdOp
@@ -89,7 +88,6 @@ interface CurdOp
      * @return 代表该行记录的对象实例
      */
     <T> T get(Class<T> entityClass, Object pk, LockMode mode);
-
 }
 
 interface ModelOp

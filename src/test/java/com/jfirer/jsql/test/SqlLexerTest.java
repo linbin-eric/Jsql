@@ -63,9 +63,9 @@ public class SqlLexerTest
     @Test
     public void test_2()
     {
-        TableEntityInfo tableTransfer = TableEntityInfo.parse(User.class);
-        String          sql           = "select name FROM User";
-        Map<String, TableEntityInfo> map = new HashMap<String, TableEntityInfo>();
+        TableEntityInfo              tableTransfer = TableEntityInfo.parse(User.class);
+        String                       sql           = "select name FROM User";
+        Map<String, TableEntityInfo> map           = new HashMap<String, TableEntityInfo>();
         map.put("User", tableTransfer);
         Assert.assertEquals("SELECT name2 FROM user", SqlLexer.parse(sql).transfer(map).format());
     }
@@ -73,8 +73,8 @@ public class SqlLexerTest
     @Test
     public void test_3()
     {
-        TableEntityInfo tableTransfer = TableEntityInfo.parse(User.class);
-        Map<String, TableEntityInfo> map = new HashMap<String, TableEntityInfo>();
+        TableEntityInfo              tableTransfer = TableEntityInfo.parse(User.class);
+        Map<String, TableEntityInfo> map           = new HashMap<String, TableEntityInfo>();
         map.put("User", tableTransfer);
         String sql = "select name,age FROM User";
         Assert.assertEquals("SELECT name2 , age FROM user", SqlLexer.parse(sql).transfer(map).format());
@@ -94,5 +94,4 @@ public class SqlLexerTest
         sql = "insert into User (age) select 16 from dual where not exists (select * from user where age = ${age})";
         Assert.assertEquals("INSERT INTO user ( age ) SELECT 16 FROM dual WHERE NOT EXISTS ( SELECT * FROM user WHERE age = ${age} )", SqlLexer.parse(sql).transfer(map).format());
     }
-
 }

@@ -5,11 +5,11 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Calendar;
 
-public class CalendarTransfer extends ColumnIndexHolder
+public class CalendarTransfer extends ColumnNameHolder
 {
-    public CalendarTransfer(int columnIndex)
+    public CalendarTransfer(String columnName)
     {
-        super(columnIndex);
+        super(columnName);
     }
 
     public CalendarTransfer()
@@ -19,7 +19,7 @@ public class CalendarTransfer extends ColumnIndexHolder
     @Override
     public Object transfer(ResultSet resultSet) throws SQLException
     {
-        Timestamp timestamp = resultSet.getTimestamp(columnIndex);
+        Timestamp timestamp = columnName == null ? resultSet.getTimestamp(1) : resultSet.getTimestamp(columnName);
         if (timestamp != null)
         {
             Calendar calendar = Calendar.getInstance();

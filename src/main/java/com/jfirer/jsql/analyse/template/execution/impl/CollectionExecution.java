@@ -1,7 +1,7 @@
 package com.jfirer.jsql.analyse.template.execution.impl;
 
-import com.jfirer.jsql.analyse.template.execution.Execution;
 import com.jfirer.jfireel.expression.Expression;
+import com.jfirer.jsql.analyse.template.execution.Execution;
 
 import java.util.Collection;
 import java.util.List;
@@ -67,7 +67,7 @@ public class CollectionExecution implements Execution
                     cache.append("?,");
                     params.add(each);
                 }
-                cache.setLength(cache.length()-1);
+                cache.setLength(cache.length() - 1);
                 cache.append(") ");
             }
             else if (result instanceof boolean[])
@@ -78,7 +78,7 @@ public class CollectionExecution implements Execution
                     cache.append("?,");
                     params.add(each);
                 }
-                cache.setLength(cache.length()-1);
+                cache.setLength(cache.length() - 1);
                 cache.append(") ");
             }
             else if (result instanceof char[])
@@ -89,7 +89,7 @@ public class CollectionExecution implements Execution
                     cache.append("?,");
                     params.add(each);
                 }
-                cache.setLength(cache.length()-1);
+                cache.setLength(cache.length() - 1);
                 cache.append(") ");
             }
             else if (result instanceof byte[])
@@ -100,7 +100,7 @@ public class CollectionExecution implements Execution
                     cache.append("?,");
                     params.add(each);
                 }
-                cache.setLength(cache.length()-1);
+                cache.setLength(cache.length() - 1);
                 cache.append(") ");
             }
             else if (result instanceof short[])
@@ -111,7 +111,7 @@ public class CollectionExecution implements Execution
                     cache.append("?,");
                     params.add(each);
                 }
-                cache.setLength(cache.length()-1);
+                cache.setLength(cache.length() - 1);
                 cache.append(") ");
             }
             else if (result instanceof long[])
@@ -122,7 +122,7 @@ public class CollectionExecution implements Execution
                     cache.append("?,");
                     params.add(each);
                 }
-                cache.setLength(cache.length()-1);
+                cache.setLength(cache.length() - 1);
                 cache.append(") ");
             }
             else if (result instanceof float[])
@@ -133,7 +133,7 @@ public class CollectionExecution implements Execution
                     cache.append("?,");
                     params.add(each);
                 }
-                cache.setLength(cache.length()-1);
+                cache.setLength(cache.length() - 1);
                 cache.append(") ");
             }
             else if (result instanceof double[])
@@ -144,7 +144,7 @@ public class CollectionExecution implements Execution
                     cache.append("?,");
                     params.add(each);
                 }
-                cache.setLength(cache.length()-1);
+                cache.setLength(cache.length() - 1);
                 cache.append(") ");
             }
         }

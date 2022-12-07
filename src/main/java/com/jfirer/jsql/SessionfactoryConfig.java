@@ -18,8 +18,8 @@ import com.jfirer.jsql.dialect.Dialect;
 import com.jfirer.jsql.dialect.impl.H2Dialect;
 import com.jfirer.jsql.dialect.impl.MysqlDialect;
 import com.jfirer.jsql.dialect.impl.OracleDialect;
-import com.jfirer.jsql.executor.impl.FinalExecuteSqlExecutor;
 import com.jfirer.jsql.executor.SqlExecutor;
+import com.jfirer.jsql.executor.impl.FinalExecuteSqlExecutor;
 import com.jfirer.jsql.executor.impl.OraclePageExecutor;
 import com.jfirer.jsql.executor.impl.StandardPageExecutor;
 import com.jfirer.jsql.mapper.AbstractMapper;
@@ -59,7 +59,7 @@ public class SessionfactoryConfig
             String      productName = detectProductName();
             modifySchema(classSet, productName, annotationContextFactory);
             dialect = dialect == null ? generateDialect(productName) : dialect;
-            return new SessionFactoryImpl(generateMappers(classSet, annotationContextFactory), generateCurdInfos(productName, classSet,annotationContextFactory), generateHeadSqlExecutor(productName), dataSource, dialect);
+            return new SessionFactoryImpl(generateMappers(classSet, annotationContextFactory), generateCurdInfos(productName, classSet, annotationContextFactory), generateHeadSqlExecutor(productName), dataSource, dialect);
         }
         catch (Exception e)
         {
@@ -204,16 +204,15 @@ public class SessionfactoryConfig
             sqlExecutors.add(new OraclePageExecutor());
         }
         sqlExecutors.add(new FinalExecuteSqlExecutor());
-        sqlExecutors.sort((e1,e2)->{
+        sqlExecutors.sort((e1, e2) -> {
             int result = e1.order() - e2.order();
             if (result == 0)
             {
-                    throw new IllegalStateException(e1.getClass().getName() + "和" + e2.getClass().getName() + "的序号重复，这会导致不可预测的结果，请检查");
-
+                throw new IllegalStateException(e1.getClass().getName() + "和" + e2.getClass().getName() + "的序号重复，这会导致不可预测的结果，请检查");
             }
             return result;
         });
-        sqlExecutors.stream().reduce((current,next)->{
+        sqlExecutors.stream().reduce((current, next) -> {
             current.setNext(next);
             return next;
         });

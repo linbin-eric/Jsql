@@ -8,11 +8,10 @@ import java.util.Deque;
 
 public class TextParser extends TokenParser
 {
-
     @Override
     public int parse(String sql, int offset, Deque<Token> tokens)
     {
-        if ( getChar(offset, sql) != '\'' )
+        if (getChar(offset, sql) != '\'')
         {
             return next.parse(sql, offset, tokens);
         }
@@ -27,5 +26,4 @@ public class TextParser extends TokenParser
         tokens.push(new Token(text, TokenType.TEXT));
         return offset + 1;
     }
-
 }

@@ -2,7 +2,6 @@ package com.jfirer.jsql.exception;
 
 public class NotSingleResultException extends RuntimeException
 {
-
     /**
      *
      */

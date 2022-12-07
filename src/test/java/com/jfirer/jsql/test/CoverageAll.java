@@ -7,6 +7,4 @@ import org.junit.runners.Suite.SuiteClasses;
 @SuiteClasses({InterfaceGenerateTest.class, SqlLexerTest.class, CURDTest.class, ModelTest.class, MapperTest.class, JpaModeTest.class})
 @RunWith(Suite.class)
 public class CoverageAll
-{
-
-}
+{}

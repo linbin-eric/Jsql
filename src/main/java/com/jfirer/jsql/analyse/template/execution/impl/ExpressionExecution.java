@@ -1,7 +1,7 @@
 package com.jfirer.jsql.analyse.template.execution.impl;
 
-import com.jfirer.jsql.analyse.template.execution.Execution;
 import com.jfirer.jfireel.expression.Expression;
+import com.jfirer.jsql.analyse.template.execution.Execution;
 
 import java.util.List;
 import java.util.Map;
@@ -28,5 +28,4 @@ public class ExpressionExecution implements Execution
     {
         // TODO Auto-generated method stub
     }
-
 }

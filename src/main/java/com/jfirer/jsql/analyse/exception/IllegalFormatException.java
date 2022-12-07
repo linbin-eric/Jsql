@@ -2,7 +2,6 @@ package com.jfirer.jsql.analyse.exception;
 
 public class IllegalFormatException extends RuntimeException
 {
-
     /**
      *
      */

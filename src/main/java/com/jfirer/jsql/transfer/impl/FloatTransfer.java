@@ -3,12 +3,11 @@ package com.jfirer.jsql.transfer.impl;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class FloatTransfer extends ColumnIndexHolder
+public class FloatTransfer extends ColumnNameHolder
 {
-
-    public FloatTransfer(int columnIndex)
+    public FloatTransfer(String columnName)
     {
-        super(columnIndex);
+        super(columnName);
     }
 
     public FloatTransfer()
@@ -18,7 +17,7 @@ public class FloatTransfer extends ColumnIndexHolder
     @Override
     public Object transfer(ResultSet resultSet) throws SQLException
     {
-        float f = resultSet.getFloat(columnIndex);
+        float f = columnName == null ? resultSet.getFloat(1) : resultSet.getFloat(columnName);
         if (resultSet.wasNull())
         {
             return null;

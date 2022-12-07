@@ -1,13 +1,13 @@
 package com.jfirer.jsql.dbstructure.impl;
 
+import com.jfirer.baseutil.StringUtil;
+import com.jfirer.baseutil.TRACEID;
 import com.jfirer.jsql.annotation.StandardColumnDef;
 import com.jfirer.jsql.annotation.TableDef;
 import com.jfirer.jsql.annotation.pkstrategy.AutoIncrement;
 import com.jfirer.jsql.dbstructure.SchemaAdjustment;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.metadata.TableMode;
-import com.jfirer.baseutil.StringUtil;
-import com.jfirer.baseutil.TRACEID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,7 +63,7 @@ public class H2SchemaAdjustment implements SchemaAdjustment
 
     private void dropTableIfExist(Connection connection, String tableName) throws SQLException
     {
-        String dropTable = "DROP TABLE IF EXISTS ";
+        String            dropTable        = "DROP TABLE IF EXISTS ";
         PreparedStatement prepareStatement = connection.prepareStatement(dropTable + tableName);
         prepareStatement.executeUpdate();
         prepareStatement.close();
@@ -88,17 +88,17 @@ public class H2SchemaAdjustment implements SchemaAdjustment
             String            columnName = columnInfo.getColumnName();
             String            columnType = decideColumnType(columnInfo.getField(), columnDef);
             cache.append(columnName).append(' ').append(columnType).append(' ');
-            if ( columnDef != null && columnDef.isNullable() == false )
+            if (columnDef != null && columnDef.isNullable() == false)
             {
                 cache.append("NOT NULL ");
             }
-            if ( columnInfo.getField().isAnnotationPresent(AutoIncrement.class) )
+            if (columnInfo.getField().isAnnotationPresent(AutoIncrement.class))
             {
                 cache.append("AUTO_INCREMENT");
             }
             cache.append(",\r\n");
         }
-        cache.deleteCharAt(cache.length()-3);
+        cache.deleteCharAt(cache.length() - 3);
         cache.append(")");
         return cache.toString();
     }
@@ -106,14 +106,14 @@ public class H2SchemaAdjustment implements SchemaAdjustment
     private String decideColumnType(Field field, StandardColumnDef columnDef)
     {
         String columnType;
-        if ( columnDef != null && StringUtil.isNotBlank(columnDef.dataType()) )
+        if (columnDef != null && StringUtil.isNotBlank(columnDef.dataType()))
         {
             String dataType = columnDef.dataType();
-            if ( "varchar".equals(dataType) )
+            if ("varchar".equals(dataType))
             {
                 columnType = "varchar(" + columnDef.maxCharacterLength() + ")";
             }
-            else if ( "datetime".equals(dataType) || "timestamp".equals(dataType) )
+            else if ("datetime".equals(dataType) || "timestamp".equals(dataType))
             {
                 columnType = dataType + "(" + columnDef.datetime_precision() + ")";
             }
@@ -125,47 +125,47 @@ public class H2SchemaAdjustment implements SchemaAdjustment
         else
         {
             Class<?> type = field.getType();
-            if ( type == String.class )
+            if (type == String.class)
             {
                 columnType = "VARCHAR(64)";
             }
-            else if ( type == Integer.class || type == int.class || type == short.class || type == Short.class || type == byte.class || type == Byte.class )
+            else if (type == Integer.class || type == int.class || type == short.class || type == Short.class || type == byte.class || type == Byte.class)
             {
                 columnType = "INTEGER";
             }
-            else if ( type == boolean.class || type == Boolean.class )
+            else if (type == boolean.class || type == Boolean.class)
             {
                 columnType = "BOOLEAN";
             }
-            else if ( type == long.class || type == Long.class )
+            else if (type == long.class || type == Long.class)
             {
                 columnType = "BIGINT";
             }
-            else if ( type == float.class || type == Float.class || type == Double.class || type == double.class )
+            else if (type == float.class || type == Float.class || type == Double.class || type == double.class)
             {
                 columnType = "DOUBLE";
             }
-            else if ( type == Date.class )
+            else if (type == Date.class)
             {
                 columnType = "TIMESTAMP";
             }
-            else if ( type == Time.class )
+            else if (type == Time.class)
             {
                 columnType = "TIME";
             }
-            else if ( type == java.util.Date.class || type == Timestamp.class || type == Calendar.class )
+            else if (type == java.util.Date.class || type == Timestamp.class || type == Calendar.class)
             {
                 columnType = "TIMESTAMP(3)";
             }
-            else if ( type == Clob.class )
+            else if (type == Clob.class)
             {
                 columnType = "CLOB";
             }
-            else if ( type == Blob.class )
+            else if (type == Blob.class)
             {
                 columnType = "BLOB";
             }
-            else if ( type == byte[].class )
+            else if (type == byte[].class)
             {
                 columnType = "BLOB";
             }

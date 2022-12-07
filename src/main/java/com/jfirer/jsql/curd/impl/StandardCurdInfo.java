@@ -9,7 +9,6 @@ import java.util.List;
 
 public class StandardCurdInfo<T> extends AbstractCurdInfo<T>
 {
-
     public StandardCurdInfo(Class<T> ckass)
     {
         super(ckass);

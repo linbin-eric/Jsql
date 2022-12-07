@@ -37,18 +37,18 @@ public class MysqlTest
         java.sql.Date  date           = new java.sql.Date(System.currentTimeMillis());
         Calendar       calendar       = Calendar.getInstance();
         Model model = Model.insert(MysqlTable1.class)//
-                .insert("col1", 1)//
-                .insert("col2", 56l)//
-                .insert("col3", 4.65f)//
-                .insert("col4", 5.65d)//
-                .insert("col5", "2")//
-                .insert("col6", true)//
-                .insert("col7", date)//
-                .insert("col8", calendar)//
-                .insert("col9", new Timestamp(System.currentTimeMillis()))//
-                .insert("col10", new Time(System.currentTimeMillis()))//
-                .insert("col11", new byte[10])//
-                .insert("col12", "112");
+                           .insert("col1", 1)//
+                           .insert("col2", 56l)//
+                           .insert("col3", 4.65f)//
+                           .insert("col4", 5.65d)//
+                           .insert("col5", "2")//
+                           .insert("col6", true)//
+                           .insert("col7", date)//
+                           .insert("col8", calendar)//
+                           .insert("col9", new Timestamp(System.currentTimeMillis()))//
+                           .insert("col10", new Time(System.currentTimeMillis()))//
+                           .insert("col11", new byte[10])//
+                           .insert("col12", "112");
         SqlSession session = sessionFactory.openSession();
         session.insert(model);
         MysqlTable1 one = session.findOne(Model.query(MysqlTable1.class).where("col1", 1));

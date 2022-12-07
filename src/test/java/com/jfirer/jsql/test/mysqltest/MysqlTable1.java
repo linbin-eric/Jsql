@@ -21,24 +21,24 @@ public class MysqlTable1
     @AutoIncrement
     @Constraint(type = Type.PRIMARY_KEY)
     @StandardColumnDef(isNullable = false, comment = "这是主键")
-    private Integer id;
+    private Integer   id;
     @StandardColumnDef(comment = "12123注释")
-    private int col1;
+    private int       col1;
     @Index
-    private long col2;
+    private long      col2;
     @Index(unique = true)
-    private float col3;
+    private float     col3;
     @StandardColumnDef(comment = "注释2")
-    private double col4;
-    private String col5;
-    private boolean col6;
-    private Date col7;
-    private Calendar col8;
+    private double    col4;
+    private String    col5;
+    private boolean   col6;
+    private Date      col7;
+    private Calendar  col8;
     @StandardColumnDef(comment = "注释3")
     private Timestamp col9;
-    private Time col10;
-    private byte[] col11;
-    private Clob col12;
+    private Time      col10;
+    private byte[]    col11;
+    private Clob      col12;
 
     public Integer getId()
     {
@@ -169,5 +169,4 @@ public class MysqlTable1
     {
         this.col12 = col12;
     }
-
 }

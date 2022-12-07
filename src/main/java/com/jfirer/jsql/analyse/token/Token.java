@@ -3,7 +3,7 @@ package com.jfirer.jsql.analyse.token;
 public class Token
 {
     private TokenType tokenType;
-    private String literals;
+    private String    literals;
 
     public Token(KeyWord keyWord)
     {
@@ -48,5 +48,4 @@ public class Token
     {
         this.tokenType = tokenType;
     }
-
 }

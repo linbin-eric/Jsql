@@ -10,11 +10,10 @@ import java.util.Deque;
 
 public class ExecutionBeginParser extends TemplateParser
 {
-
     @Override
     public int parse(String sentence, int offset, Deque<Execution> executions, Template template, StringBuilder cache, Invoker next)
     {
-        if ( isExecutionBegin(offset, sentence) == false )
+        if (isExecutionBegin(offset, sentence) == false)
         {
             return next.scan(sentence, offset, executions, template, cache);
         }
@@ -24,5 +23,4 @@ public class ExecutionBeginParser extends TemplateParser
         offset = skipWhiteSpace(offset, sentence);
         return offset;
     }
-
 }

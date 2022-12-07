@@ -1,16 +1,15 @@
 package com.jfirer.jsql.analyse.template.parser;
 
+import com.jfirer.jfireel.expression.util.CharType;
 import com.jfirer.jsql.analyse.exception.IllegalFormatException;
 import com.jfirer.jsql.analyse.template.Template;
 import com.jfirer.jsql.analyse.template.execution.Execution;
 import com.jfirer.jsql.analyse.template.execution.impl.StringExecution;
-import com.jfirer.jfireel.expression.util.CharType;
 
 import java.util.Deque;
 
 public abstract class TemplateParser
 {
-
     protected static final Execution[] emptyBody = new Execution[0];
 
     public abstract int parse(String sentence, int offset, Deque<Execution> executions, Template template, StringBuilder cache, Invoker next);
@@ -96,7 +95,8 @@ public abstract class TemplateParser
                 }
             }
             offset++;
-        } while (offset < length);
+        }
+        while (offset < length);
         if (offset >= length)
         {
             return -1;

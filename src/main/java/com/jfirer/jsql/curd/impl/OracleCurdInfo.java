@@ -9,7 +9,6 @@ import java.util.List;
 
 public class OracleCurdInfo<T> extends AbstractCurdInfo<T>
 {
-
     public OracleCurdInfo(Class<T> ckass)
     {
         super(ckass);

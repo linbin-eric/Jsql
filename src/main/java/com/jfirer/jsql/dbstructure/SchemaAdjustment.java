@@ -13,5 +13,4 @@ public interface SchemaAdjustment
     AtomicInteger count = new AtomicInteger(0);
 
     void adjust(TableMode mode, DataSource dataSource, Set<TableEntityInfo> tableEntityInfos) throws SQLException;
-
 }

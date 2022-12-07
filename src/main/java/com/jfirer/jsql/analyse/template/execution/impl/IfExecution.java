@@ -1,9 +1,9 @@
 package com.jfirer.jsql.analyse.template.execution.impl;
 
+import com.jfirer.jfireel.expression.Expression;
 import com.jfirer.jsql.analyse.exception.MethodBodyNotCompleteException;
 import com.jfirer.jsql.analyse.template.execution.Execution;
 import com.jfirer.jsql.analyse.template.execution.WithBodyExecution;
-import com.jfirer.jfireel.expression.Expression;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -11,7 +11,6 @@ import java.util.Map;
 
 public class IfExecution implements WithBodyExecution
 {
-
     private final Expression      conditionLexer;
     private       Execution[]     body;
     private       Execution       elseExecution;

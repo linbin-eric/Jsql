@@ -38,7 +38,7 @@ public class SqlSessionImpl implements SqlSession
             return new ArrayList<Object>();
         }
     };
-    private static final ResultSetTransfer                                          countTransfer     = new IntegerTransfer(1);
+    private static final ResultSetTransfer                                          countTransfer     = new IntegerTransfer();
 
     public SqlSessionImpl(Connection connection, SqlExecutor headSqlExecutor, IdentityHashMap<Class<?>, CurdInfo<?>> curdInfoMap, IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> mappers, Dialect dialect)
     {

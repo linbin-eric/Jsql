@@ -16,20 +16,20 @@ public class H2Table
 {
     @Pk
     @AutoIncrement
-    private Integer id;
-    private int col1;
+    private Integer   id;
+    private int       col1;
     @Index
-    private long col2;
-    private float col3;
-    private double col4;
-    private String col5;
-    private boolean col6;
-    private Date col7;
-    private Calendar col8;
+    private long      col2;
+    private float     col3;
+    private double    col4;
+    private String    col5;
+    private boolean   col6;
+    private Date      col7;
+    private Calendar  col8;
     private Timestamp col9;
-    private Time col10;
-    private byte[] col11;
-    private Clob col12;
+    private Time      col10;
+    private byte[]    col11;
+    private Clob      col12;
 
     public Integer getId()
     {
@@ -160,5 +160,4 @@ public class H2Table
     {
         this.col12 = col12;
     }
-
 }

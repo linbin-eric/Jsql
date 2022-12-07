@@ -3,14 +3,12 @@ package com.jfirer.jsql.analyse.token;
 import com.jfirer.jsql.analyse.token.parser.TokenParser;
 import com.jfirer.jsql.analyse.token.parser.impl.*;
 import com.jfirer.jsql.metadata.TableEntityInfo;
-import com.jfirer.jsql.analyse.token.parser.impl.*;
 
 import java.util.*;
 
 public class SqlLexer
 {
     private static final TokenParser firstParser;
-
     static
     {
         TokenParser[] parsers = new TokenParser[]{ //
@@ -33,7 +31,6 @@ public class SqlLexer
         }
         firstParser = parsers[0];
     }
-
     private Token[] tokens;
 
     public static SqlLexer parse(String sql)
@@ -43,14 +40,14 @@ public class SqlLexer
 
     private SqlLexer(String sql)
     {
-        int length = sql.length();
-        int offset = 0;
-        Deque<Token> tmp = new LinkedList<Token>();
+        int          length = sql.length();
+        int          offset = 0;
+        Deque<Token> tmp    = new LinkedList<Token>();
         while (offset < length)
         {
             int pred = offset;
             offset = firstParser.parse(sql, offset, tmp);
-            if ( pred == offset )
+            if (pred == offset)
             {
                 throw new UnsupportedOperationException("无法解析" + sql.substring(offset));
             }
@@ -72,7 +69,7 @@ public class SqlLexer
         transferPropertyNameWithAliasEntity(transfers, entityAliasNameMap);
         for (Token token : tokens)
         {
-            if ( token.getTokenType() == TokenType.TABLE_ENTITY )
+            if (token.getTokenType() == TokenType.TABLE_ENTITY)
             {
                 token.setListerals(transfers.get(token.getListerals()).getTableName());
             }
@@ -89,15 +86,15 @@ public class SqlLexer
         Set<String> entityAliasStart = entityAliasNameMap.keySet();
         for (Token token : tokens)
         {
-            if ( token.getTokenType() == TokenType.IDENTIFIER )
+            if (token.getTokenType() == TokenType.IDENTIFIER)
             {
                 String listerals = token.getListerals();
                 for (String each : entityAliasStart)
                 {
-                    if ( listerals.startsWith(each) )
+                    if (listerals.startsWith(each))
                     {
                         String propertyName = listerals.substring(each.length());
-                        String columnName = transfers.get(entityAliasNameMap.get(each)).getPropertyNameKeyMap().get(propertyName).getColumnName();
+                        String columnName   = transfers.get(entityAliasNameMap.get(each)).getPropertyNameKeyMap().get(propertyName).getColumnName();
                         token.setListerals(each + columnName);
                         break;
                     }
@@ -114,19 +111,19 @@ public class SqlLexer
      */
     private Map<String, String> findEntityAliasName()
     {
-        Token pred = null;
-        boolean hitAs = false;
+        Token               pred               = null;
+        boolean             hitAs              = false;
         Map<String, String> entityAliasNameMap = new HashMap<String, String>();
         for (Token token : tokens)
         {
-            if ( hitAs )
+            if (hitAs)
             {
                 hitAs = false;
                 String entityAliasName = token.getListerals();
                 entityAliasNameMap.put(entityAliasName + '.', pred.getListerals());
                 pred = null;
             }
-            else if ( isAsKeyWord(token) && (pred != null && pred.getTokenType() == TokenType.TABLE_ENTITY) )
+            else if (isAsKeyWord(token) && (pred != null && pred.getTokenType() == TokenType.TABLE_ENTITY))
             {
                 hitAs = true;
             }
@@ -149,7 +146,7 @@ public class SqlLexer
         {
             for (Token token : tokens)
             {
-                if ( isPropertyName(info, token) )
+                if (isPropertyName(info, token))
                 {
                     token.setListerals(info.getPropertyNameKeyMap().get(token.getListerals()).getColumnName());
                 }
@@ -168,7 +165,7 @@ public class SqlLexer
         List<TableEntityInfo> hit = new LinkedList<TableEntityInfo>();
         for (Token token : tokens)
         {
-            if ( isClassSImpleName(transfers, token) )
+            if (isClassSImpleName(transfers, token))
             {
                 hit.add(transfers.get(token.getListerals()));
                 token.setTokenType(TokenType.TABLE_ENTITY);
@@ -216,9 +213,9 @@ public class SqlLexer
         {
             cache.append(token.getListerals()).append(' ');
         }
-        if ( cache.length() != 0 )
+        if (cache.length() != 0)
         {
-            cache.setLength(cache.length()-1);
+            cache.setLength(cache.length() - 1);
         }
         return cache.toString();
     }

@@ -45,9 +45,7 @@ public enum Symbol
     DOUBLE_GT(">>"), //
     MONKEYS_AT("@"), //
     POUND("#");
-
     private static final Map<String, Symbol> symbols = new HashMap<String, Symbol>(128);
-
     static
     {
         for (Symbol each : Symbol.values())
@@ -55,7 +53,6 @@ public enum Symbol
             symbols.put(each.literals, each);
         }
     }
-
     Symbol(String literals)
     {
         this.literals = literals;
@@ -77,5 +74,4 @@ public enum Symbol
     {
         return symbols.get(literals);
     }
-
 }

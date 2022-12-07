@@ -1,5 +1,7 @@
 package com.jfirer.jsql.curd.impl;
 
+import com.jfirer.baseutil.reflect.ReflectUtil;
+import com.jfirer.baseutil.reflect.ValueAccessor;
 import com.jfirer.jsql.SessionFactory;
 import com.jfirer.jsql.annotation.pkstrategy.PkGenerator;
 import com.jfirer.jsql.curd.CurdInfo;
@@ -7,8 +9,6 @@ import com.jfirer.jsql.curd.LockMode;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.transfer.ResultSetTransfer;
 import com.jfirer.jsql.transfer.impl.BeanTransfer;
-import com.jfirer.baseutil.reflect.ReflectUtil;
-import com.jfirer.baseutil.reflect.ValueAccessor;
 
 import java.lang.reflect.Field;
 import java.util.LinkedList;
@@ -36,7 +36,10 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
 
     enum PkMode
     {
-        STRING, INT, LONG, OTHER
+        STRING,
+        INT,
+        LONG,
+        OTHER
     }
 
     AbstractCurdInfo(Class<T> ckass)
@@ -188,7 +191,7 @@ public abstract class AbstractCurdInfo<T> implements CurdInfo<T>
     {
         StringBuilder cache = new StringBuilder();
         cache.append("delete from ").append(tableEntityInfo.getTableName()).append(" where ").append(tableEntityInfo.getPkInfo().getColumnName())//
-                .append("=?");
+             .append("=?");
         deleteEntry = new SqlAndFieldEntry();
         deleteEntry.sql = cache.toString();
         deleteEntry.valueAccessors = buildValueAccessor(tableEntityInfo.getPkInfo().getField());

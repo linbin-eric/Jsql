@@ -4,21 +4,21 @@ import java.sql.Blob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class ByteArrayTransfer extends ColumnIndexHolder
+public class ByteArrayTransfer extends ColumnNameHolder
 {
     public ByteArrayTransfer()
     {
     }
 
-    public ByteArrayTransfer(int columnIndex)
+    public ByteArrayTransfer(String columnName)
     {
-        super(columnIndex);
+        super(columnName);
     }
 
     @Override
     public Object transfer(ResultSet resultSet) throws SQLException
     {
-        Blob blob = resultSet.getBlob(columnIndex);
+        Blob blob = columnName == null ? resultSet.getBlob(1) : resultSet.getBlob(columnName);
         if (blob != null)
         {
             byte[] array = blob.getBytes(1, (int) blob.length());

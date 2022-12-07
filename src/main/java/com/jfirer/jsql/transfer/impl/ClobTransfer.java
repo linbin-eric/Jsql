@@ -4,11 +4,11 @@ import java.sql.Clob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class ClobTransfer extends ColumnIndexHolder
+public class ClobTransfer extends ColumnNameHolder
 {
-    public ClobTransfer(int columnIndex)
+    public ClobTransfer(String columnName)
     {
-        super(columnIndex);
+        super(columnName);
     }
 
     public ClobTransfer()
@@ -18,7 +18,7 @@ public class ClobTransfer extends ColumnIndexHolder
     @Override
     public Object transfer(ResultSet resultSet) throws SQLException
     {
-        Clob clob = resultSet.getClob(columnIndex);
+        Clob clob = columnName == null ? resultSet.getClob(1) : resultSet.getClob(columnName);
         return clob;
     }
 }

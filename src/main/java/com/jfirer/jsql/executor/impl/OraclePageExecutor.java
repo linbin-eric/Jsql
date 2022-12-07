@@ -11,7 +11,7 @@ import java.util.List;
 
 public class OraclePageExecutor extends NextHolder
 {
-    private final ResultSetTransfer countResultTransfer = new IntegerTransfer(1);
+    private final ResultSetTransfer countResultTransfer = new IntegerTransfer();
 
     @Override
     public int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException

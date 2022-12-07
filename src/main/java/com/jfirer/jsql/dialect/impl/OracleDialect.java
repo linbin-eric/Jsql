@@ -11,7 +11,6 @@ import java.util.List;
 
 public class OracleDialect implements Dialect
 {
-
     @Override
     public void fillStatement(PreparedStatement preparedStatement, List<Object> params) throws SQLException
     {

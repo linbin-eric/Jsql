@@ -3,11 +3,11 @@ package com.jfirer.jsql.transfer.impl;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class ShortTransfer extends ColumnIndexHolder
+public class ShortTransfer extends ColumnNameHolder
 {
-    public ShortTransfer(int columnIndex)
+    public ShortTransfer(String columnName)
     {
-        super(columnIndex);
+        super(columnName);
     }
 
     public ShortTransfer()
@@ -17,7 +17,7 @@ public class ShortTransfer extends ColumnIndexHolder
     @Override
     public Object transfer(ResultSet resultSet) throws SQLException
     {
-        short s = resultSet.getShort(columnIndex);
+        short s = columnName == null ? resultSet.getShort(1) : resultSet.getShort(columnName);
         if (resultSet.wasNull())
         {
             return null;

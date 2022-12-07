@@ -1,5 +1,7 @@
 package com.jfirer.jsql.dbstructure.impl;
 
+import com.jfirer.baseutil.StringUtil;
+import com.jfirer.baseutil.TRACEID;
 import com.jfirer.jsql.annotation.StandardColumnDef;
 import com.jfirer.jsql.annotation.TableDef;
 import com.jfirer.jsql.annotation.pkstrategy.AutoIncrement;
@@ -8,8 +10,6 @@ import com.jfirer.jsql.dbstructure.Index;
 import com.jfirer.jsql.dbstructure.SchemaAdjustment;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.metadata.TableMode;
-import com.jfirer.baseutil.StringUtil;
-import com.jfirer.baseutil.TRACEID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

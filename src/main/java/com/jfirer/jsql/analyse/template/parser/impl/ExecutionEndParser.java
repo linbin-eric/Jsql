@@ -10,13 +10,12 @@ import java.util.Deque;
 
 public class ExecutionEndParser extends TemplateParser
 {
-
     @Override
     public int parse(String sentence, int offset, Deque<Execution> executions, Template template, StringBuilder cache, Invoker next)
     {
-        if ( template.getMode() != ScanMode.EXECUTION //
-                || '%' != getChar(offset, sentence) //
-                || '>' != getChar(offset + 1, sentence) )
+        if (template.getMode() != ScanMode.EXECUTION //
+            || '%' != getChar(offset, sentence) //
+            || '>' != getChar(offset + 1, sentence))
         {
             return next.scan(sentence, offset, executions, template, cache);
         }
@@ -24,5 +23,4 @@ public class ExecutionEndParser extends TemplateParser
         offset += 2;
         return offset;
     }
-
 }

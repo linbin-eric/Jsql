@@ -12,6 +12,7 @@ public @interface Constraint
 
     enum Type
     {
-        PRIMARY_KEY, UNIQUE_KEY
+        PRIMARY_KEY,
+        UNIQUE_KEY
     }
 }

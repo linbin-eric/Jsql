@@ -52,7 +52,6 @@ public class MapperTest
         @Sql(sql = "select count(*) from User where name like ${name+'%'}", paramNames = "name")
         public int count4(String name);
         /** 测试$%%格式 **/
-
         /**
          * 测试$~
          **/
@@ -98,7 +97,6 @@ public class MapperTest
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
         public int count5_2(List<String> ids);
         /** 测试$~ **/
-
         /**
          * 测试as 功能
          **/

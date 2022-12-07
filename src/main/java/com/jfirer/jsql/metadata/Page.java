@@ -4,9 +4,9 @@ import java.util.List;
 
 public class Page
 {
-    private int total;
-    private int offset;
-    private int size;
+    private int     total;
+    private int     offset;
+    private int     size;
     private List<?> data;
     /**
      * 是否需要查询总数
@@ -62,5 +62,4 @@ public class Page
     {
         this.fetchSum = fetchSum;
     }
-
 }

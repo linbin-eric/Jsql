@@ -10,11 +10,10 @@ import java.util.Deque;
 
 public class LiteralsParser extends TemplateParser
 {
-
     @Override
     public int parse(String sentence, int offset, Deque<Execution> executions, Template template, StringBuilder cache, Invoker next)
     {
-        if ( template.getMode() != ScanMode.LITERALS )
+        if (template.getMode() != ScanMode.LITERALS)
         {
             offset = skipWhiteSpace(offset, sentence);
             return offset;
@@ -22,5 +21,4 @@ public class LiteralsParser extends TemplateParser
         cache.append(getChar(offset, sentence));
         return offset + 1;
     }
-
 }

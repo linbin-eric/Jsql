@@ -6,7 +6,6 @@ import com.jfirer.jsql.analyse.template.execution.impl.StringExecution;
 import com.jfirer.jsql.analyse.template.parser.Invoker;
 import com.jfirer.jsql.analyse.template.parser.TemplateParser;
 import com.jfirer.jsql.analyse.template.parser.impl.*;
-import com.jfirer.jsql.analyse.template.parser.impl.*;
 
 import java.util.Deque;
 import java.util.LinkedList;
@@ -26,7 +25,6 @@ public class Template
     private              Execution[]                runtimeExecutions;
     private              ScanMode                   mode;
     private static final Invoker                    DEFAULT_HEAD;
-
     static
     {
         TemplateParser[] parsers = new TemplateParser[]{ //
@@ -43,7 +41,6 @@ public class Template
         };
         Invoker pred = new Invoker()
         {
-
             @Override
             public int scan(String sentence, int offset, Deque<Execution> executions, Template template, StringBuilder cache)
             {
@@ -56,7 +53,6 @@ public class Template
             final Invoker        next   = pred;
             pred = new Invoker()
             {
-
                 @Override
                 public int scan(String sentence, int offset, Deque<Execution> executions1, Template template, StringBuilder cache)
                 {
@@ -66,7 +62,6 @@ public class Template
         }
         DEFAULT_HEAD = pred;
     }
-
     public ScanMode getMode()
     {
         return mode;

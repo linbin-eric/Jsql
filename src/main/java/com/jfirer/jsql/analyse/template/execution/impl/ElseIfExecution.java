@@ -1,8 +1,8 @@
 package com.jfirer.jsql.analyse.template.execution.impl;
 
+import com.jfirer.jfireel.expression.Expression;
 import com.jfirer.jsql.analyse.template.execution.Execution;
 import com.jfirer.jsql.analyse.template.execution.WithBodyExecution;
-import com.jfirer.jfireel.expression.Expression;
 
 import java.util.List;
 import java.util.Map;
@@ -20,7 +20,7 @@ public class ElseIfExecution implements WithBodyExecution
     @Override
     public boolean execute(Map<String, Object> variables, StringBuilder cache, List<Object> params)
     {
-        if ( expression.calculate(variables) )
+        if (expression.calculate(variables))
         {
             for (Execution each : body)
             {

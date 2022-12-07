@@ -7,7 +7,6 @@ import java.util.List;
 
 public class CountModel extends Model
 {
-
     @Override
     public String _getSql()
     {
@@ -21,7 +20,7 @@ public class CountModel extends Model
     public List<Object> getParams()
     {
         List<Object> params = new LinkedList<Object>();
-        if ( whereEntries != null )
+        if (whereEntries != null)
         {
             for (WhereEntry entry : whereEntries)
             {
@@ -30,5 +29,4 @@ public class CountModel extends Model
         }
         return params;
     }
-
 }

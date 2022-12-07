@@ -141,7 +141,7 @@ public class ModelTest
     public void test_4()
     {
         SqlSession session = sessionFactory.openSession();
-        int age = new Random().nextInt(150);
+        int        age     = new Random().nextInt(150);
         session.insert(Model.insert(User.class).insert("name", "aa1").insert("age", age));
         User user = session.findOne(Model.query(User.class).where("name", "aa1").where("age", age));
         assertNotNull(user);

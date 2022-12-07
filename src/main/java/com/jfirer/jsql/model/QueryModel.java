@@ -10,14 +10,14 @@ import java.util.List;
 
 public class QueryModel extends Model
 {
-    private List<String> selectProperties;
+    private          List<String>       selectProperties;
     private          List<OrderByEntry> orderByProperties;
     private volatile BeanTransfer       beanTransfer;
     private          Page               page;
 
     class OrderByEntry
     {
-        final String orderPropertyName;
+        final String  orderPropertyName;
         final boolean desc;
 
         OrderByEntry(String orderPropertyName, boolean desc)
@@ -25,12 +25,11 @@ public class QueryModel extends Model
             this.orderPropertyName = orderPropertyName;
             this.desc = desc;
         }
-
     }
 
     public QueryModel select(String propertyName)
     {
-        if ( selectProperties == null )
+        if (selectProperties == null)
         {
             selectProperties = new LinkedList<String>();
         }
@@ -40,7 +39,7 @@ public class QueryModel extends Model
 
     public QueryModel orderBy(String orderPropertyName, boolean desc)
     {
-        if ( orderByProperties == null )
+        if (orderByProperties == null)
         {
             orderByProperties = new LinkedList<OrderByEntry>();
         }
@@ -51,7 +50,7 @@ public class QueryModel extends Model
     @Override
     public BeanTransfer getBeanTransfer()
     {
-        if ( selectProperties == null )
+        if (selectProperties == null)
         {
             selectProperties = new LinkedList<String>();
             for (TableEntityInfo.ColumnInfo columnInfo : TableEntityInfo.parse(entityClass).getPropertyNameKeyMap().values())
@@ -59,11 +58,11 @@ public class QueryModel extends Model
                 selectProperties.add(columnInfo.getPropertyName());
             }
         }
-        if ( beanTransfer == null )
+        if (beanTransfer == null)
         {
             synchronized (this)
             {
-                if ( beanTransfer == null )
+                if (beanTransfer == null)
                 {
                     beanTransfer = (BeanTransfer) new BeanTransfer().awareType(entityClass);
                 }
@@ -77,7 +76,7 @@ public class QueryModel extends Model
     {
         StringBuilder cache = new StringBuilder();
         cache.append("select ");
-        if ( selectProperties == null )
+        if (selectProperties == null)
         {
             selectProperties = new LinkedList<String>();
             for (TableEntityInfo.ColumnInfo columnInfo : TableEntityInfo.parse(entityClass).getPropertyNameKeyMap().values())
@@ -91,13 +90,13 @@ public class QueryModel extends Model
             String columnName = tableEntityInfo.getPropertyNameKeyMap().get(each).getColumnName();
             cache.append(columnName).append(',');
         }
-        cache.setLength(cache.length()-1);
+        cache.setLength(cache.length() - 1);
         cache.append(' ');
         cache.append("from ");
         String tableName = entityClass.getAnnotation(TableDef.class).name();
         cache.append(tableName);
         setWhereColumns(cache);
-        if ( orderByProperties != null )
+        if (orderByProperties != null)
         {
             cache.append(" order by ");
             for (OrderByEntry each : orderByProperties)
@@ -106,7 +105,7 @@ public class QueryModel extends Model
                 cache.append(columnName).append(each.desc ? " desc" : " asc");
                 cache.append(',');
             }
-            cache.setLength(cache.length()-1);
+            cache.setLength(cache.length() - 1);
         }
         return cache.toString();
     }
@@ -115,14 +114,14 @@ public class QueryModel extends Model
     public List<Object> getParams()
     {
         List<Object> params = new LinkedList<Object>();
-        if ( whereEntries != null )
+        if (whereEntries != null)
         {
             for (WhereEntry whereEntry : whereEntries)
             {
                 params.add(whereEntry.value);
             }
         }
-        if ( page != null )
+        if (page != null)
         {
             params.add(page);
         }

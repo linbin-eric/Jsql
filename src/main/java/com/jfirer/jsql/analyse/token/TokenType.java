@@ -13,7 +13,7 @@ public enum TokenType
     // 模板字符串
     TEMPLATE_CHARACTERS,
     // 自动集合
-AUTO_COLLECTION, //
+    AUTO_COLLECTION, //
     // 符号
     SYMBOL, //
     // 标识符
