@@ -114,8 +114,8 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
 
     ResultSetTransfer getTransfer(AnnotatedElement annotatedElement)
     {
-        Class itemType = null;
-        Class<? extends  ResultSetTransfer> transferClass;
+        Class                              itemType = null;
+        Class<? extends ResultSetTransfer> transferClass;
         if (annotatedElement instanceof Class<?> c)
         {
             itemType = c;

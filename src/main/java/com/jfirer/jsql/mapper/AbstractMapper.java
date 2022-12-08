@@ -15,20 +15,8 @@ import java.util.Map;
  */
 public abstract class AbstractMapper
 {
-    protected static final ThreadLocal<Map<String, Object>> cachedVariables = new ThreadLocal<Map<String, Object>>()
-    {
-        protected java.util.Map<String, Object> initialValue()
-        {
-            return new HashMap<String, Object>();
-        }
-    };
-    protected static final ThreadLocal<List<Object>>        cachedParams    = new ThreadLocal<List<Object>>()
-    {
-        protected java.util.List<Object> initialValue()
-        {
-            return new ArrayList<Object>();
-        }
-    };
+    protected static final ThreadLocal<Map<String, Object>> cachedVariables = ThreadLocal.withInitial(() -> new HashMap<>());
+    protected static final ThreadLocal<List<Object>>        cachedParams    = ThreadLocal.withInitial(() -> new ArrayList<>());
     public static          List<Method>                     methods         = new ArrayList<>();
     private static         int                              index           = 0;
 

@@ -12,7 +12,6 @@ public class QueryModel extends Model
 {
     private          List<String>       selectProperties;
     private          List<OrderByEntry> orderByProperties;
-    private volatile BeanTransfer       beanTransfer;
     private          Page               page;
 
     class OrderByEntry
@@ -45,30 +44,6 @@ public class QueryModel extends Model
         }
         orderByProperties.add(new OrderByEntry(orderPropertyName, desc));
         return this;
-    }
-
-    @Override
-    public BeanTransfer getBeanTransfer()
-    {
-        if (selectProperties == null)
-        {
-            selectProperties = new LinkedList<String>();
-            for (TableEntityInfo.ColumnInfo columnInfo : TableEntityInfo.parse(entityClass).getPropertyNameKeyMap().values())
-            {
-                selectProperties.add(columnInfo.getPropertyName());
-            }
-        }
-        if (beanTransfer == null)
-        {
-            synchronized (this)
-            {
-                if (beanTransfer == null)
-                {
-                    beanTransfer = (BeanTransfer) new BeanTransfer().awareType(entityClass);
-                }
-            }
-        }
-        return beanTransfer;
     }
 
     @Override

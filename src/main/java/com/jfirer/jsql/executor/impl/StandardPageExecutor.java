@@ -27,7 +27,7 @@ public class StandardPageExecutor extends NextHolder
     }
 
     @Override
-    public  List<Object> queryList(String sql, AnnotatedElement element, List<Object> params, Connection connection, Dialect dialect) throws SQLException
+    public List<Object> queryList(String sql, AnnotatedElement element, List<Object> params, Connection connection, Dialect dialect) throws SQLException
     {
         Object param;
         if (params.isEmpty() || (param = params.get(params.size() - 1)) instanceof Page == false)
@@ -49,7 +49,7 @@ public class StandardPageExecutor extends NextHolder
     }
 
     @Override
-    public  Object queryOne(String sql, AnnotatedElement element, List<Object> params, Connection connection, Dialect dialect) throws SQLException
+    public Object queryOne(String sql, AnnotatedElement element, List<Object> params, Connection connection, Dialect dialect) throws SQLException
     {
         return next.queryOne(sql, element, params, connection, dialect);
     }

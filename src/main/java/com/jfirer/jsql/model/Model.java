@@ -60,11 +60,6 @@ public abstract class Model
         throw new UnsupportedOperationException();
     }
 
-    public BeanTransfer getBeanTransfer()
-    {
-        throw new UnsupportedOperationException();
-    }
-
     public Model set(String property, Object value)
     {
         throw new UnsupportedOperationException();
