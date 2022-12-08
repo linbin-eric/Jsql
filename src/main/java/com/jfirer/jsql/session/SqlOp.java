@@ -1,7 +1,6 @@
 package com.jfirer.jsql.session;
 
-import com.jfirer.jsql.transfer.ResultSetTransfer;
-
+import java.lang.reflect.AnnotatedElement;
 import java.util.List;
 
 public interface SqlOp
@@ -17,15 +16,15 @@ public interface SqlOp
      */
     String insertReturnPk(String sql, List<Object> params);
 
-    <T> T query(ResultSetTransfer transfer, String sql, List<Object> params);
+    <T> T query(String sql, AnnotatedElement element, List<Object> params);
 
     /**
      * 如果最后一个参数是Page，则会触发page查询
      *
-     * @param transfer
      * @param sql
+     * @param type
      * @param params
      * @return
      */
-    <T> List<T> queryList(ResultSetTransfer transfer, String sql, List<Object> params);
+    <T> List<T> queryList(String sql, AnnotatedElement element, List<Object> params);
 }

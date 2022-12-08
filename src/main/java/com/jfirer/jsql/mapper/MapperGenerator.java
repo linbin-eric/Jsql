@@ -62,17 +62,18 @@ public class MapperGenerator
             if (formatSql.startsWith("SELECT") || formatSql.startsWith("select"))
             {
                 String transferFieldName = "transfer_" + (fieldNameCount.getAndIncrement());
+                    int      methodIndex            = AbstractMapper.put(method);
                 if (List.class.isAssignableFrom(method.getReturnType()))
                 {
                     Class<?> componentClass = (Class<?>) ((ParameterizedType) method.getGenericReturnType()).getActualTypeArguments()[0];
-                    addResultSetTransferField(classModel, method, transferFieldName, componentClass);
-                    methodBody.append("List result = session.queryList(").append(transferFieldName).append(",sql,params);\r\n");
+//                    addResultSetTransferField(classModel, method, transferFieldName, componentClass);
+                    methodBody.append("List result = session.queryList(sql,methods.get(").append(methodIndex).append("),params);\r\n");
                 }
                 else
                 {
-                    addResultSetTransferField(classModel, method, transferFieldName, method.getReturnType());
+//                    addResultSetTransferField(classModel, method, transferFieldName, method.getReturnType());
                     String returnTypeName = method.getReturnType().isPrimitive() ? ReflectUtil.wrapPrimitive(method.getReturnType()).getName() : SmcHelper.getReferenceName(method.getReturnType(), classModel);
-                    methodBody.append(returnTypeName).append(" result = session.query(").append(transferFieldName).append(",sql,params);\r\n");
+                    methodBody.append(returnTypeName).append(" result = session.query(sql,methods.get(").append(methodIndex).append("),params);\r\n");
                 }
             }
             else

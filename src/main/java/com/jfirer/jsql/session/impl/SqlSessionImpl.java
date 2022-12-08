@@ -14,6 +14,7 @@ import com.jfirer.jsql.transfer.impl.IntegerTransfer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -232,7 +233,7 @@ public class SqlSessionImpl implements SqlSession
         List<Object> list     = cahcedParams.get();
         CurdInfo<T>  curdInfo = (CurdInfo<T>) curdInfoMap.get(entityClass);
         String       sql      = curdInfo.find(pk, list);
-        T            result   = query(curdInfo.getBeanTransfer(), sql, list);
+        T            result   = query(sql, entityClass, list);
         list.clear();
         return result;
     }
@@ -243,7 +244,7 @@ public class SqlSessionImpl implements SqlSession
         List<Object> list     = cahcedParams.get();
         CurdInfo<?>  curdInfo = curdInfoMap.get(entityClass);
         String       sql      = curdInfo.find(pk, mode, list);
-        T            result   = query(curdInfo.getBeanTransfer(), sql, list);
+        T            result   = query(sql, entityClass, list);
         list.clear();
         return result;
     }
@@ -251,13 +252,13 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> T findOne(Model model)
     {
-        return query(model.getBeanTransfer(), model.getSql(), model.getParams());
+        return (T) query(model.getSql(), model.getEntityClass(), model.getParams());
     }
 
     @Override
     public <T> List<T> find(Model model)
     {
-        return queryList(model.getBeanTransfer(), model.getSql(), model.getParams());
+        return (List<T>) queryList(model.getSql(), model.getEntityClass(), model.getParams());
     }
 
     @Override
@@ -275,7 +276,7 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public int count(Model model)
     {
-        return query(countTransfer, model.getSql(), model.getParams());
+        return (int) query(model.getSql(), Integer.class, model.getParams());
     }
 
     @Override
@@ -316,12 +317,12 @@ public class SqlSessionImpl implements SqlSession
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T query(ResultSetTransfer transfer, String sql, List<Object> params)
+    public <T> T query(String sql, AnnotatedElement element, List<Object> params)
     {
         checkIfClosed();
         try
         {
-            return (T) headSqlExecutor.queryOne(sql, params, connection, dialect, transfer);
+            return (T) headSqlExecutor.queryOne(sql, element, params, connection, dialect);
         }
         catch (SQLException e)
         {
@@ -332,12 +333,12 @@ public class SqlSessionImpl implements SqlSession
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> List<T> queryList(ResultSetTransfer transfer, String sql, List<Object> params)
+    public <T> List<T> queryList(String sql, AnnotatedElement element, List<Object> params)
     {
         checkIfClosed();
         try
         {
-            return (List<T>) headSqlExecutor.queryList(sql, params, connection, dialect, transfer);
+            return (List<T>) headSqlExecutor.queryList(sql, element, params, connection, dialect);
         }
         catch (SQLException e)
         {

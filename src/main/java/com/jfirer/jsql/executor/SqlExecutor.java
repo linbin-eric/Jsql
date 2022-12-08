@@ -1,8 +1,8 @@
 package com.jfirer.jsql.executor;
 
 import com.jfirer.jsql.dialect.Dialect;
-import com.jfirer.jsql.transfer.ResultSetTransfer;
 
+import java.lang.reflect.AnnotatedElement;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
@@ -13,9 +13,9 @@ public interface SqlExecutor
 
     String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException;
 
-    List<Object> queryList(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException;
+    List<Object> queryList(String sql, AnnotatedElement element, List<Object> params, Connection connection, Dialect dialect) throws SQLException;
 
-    Object queryOne(String sql, List<Object> params, Connection connection, Dialect dialect, ResultSetTransfer resultSetTransfer) throws SQLException;
+    Object queryOne(String sql, AnnotatedElement element, List<Object> params, Connection connection, Dialect dialect) throws SQLException;
 
     // 拦截器顺序，数字越大，越后执行
     int order();
