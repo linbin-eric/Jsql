@@ -9,9 +9,9 @@ import com.jfirer.baseutil.bytecode.support.SupportOverrideAttributeAnnotationCo
 import com.jfirer.baseutil.reflect.ReflectUtil;
 import com.jfirer.baseutil.smc.compiler.CompileHelper;
 import com.jfirer.jsql.annotation.TableDef;
-import com.jfirer.jsql.curd.CurdInfo;
-import com.jfirer.jsql.curd.impl.OracleCurdInfo;
-import com.jfirer.jsql.curd.impl.StandardCurdInfo;
+import com.jfirer.jsql.curd.CurdOpSupport;
+import com.jfirer.jsql.curd.impl.OracleCurdOpSupport;
+import com.jfirer.jsql.curd.impl.StandardCurdOpSupport;
 import com.jfirer.jsql.dbstructure.impl.H2SchemaAdjustment;
 import com.jfirer.jsql.dbstructure.impl.MysqlSchemaAdjustment;
 import com.jfirer.jsql.dialect.Dialect;
@@ -139,9 +139,9 @@ public class SessionfactoryConfig
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private IdentityHashMap<Class<?>, CurdInfo<?>> generateCurdInfos(String productName, Set<String> classSet, AnnotationContextFactory annotationContextFactory)
+    private IdentityHashMap<Class<?>, CurdOpSupport<?>> generateCurdInfos(String productName, Set<String> classSet, AnnotationContextFactory annotationContextFactory)
     {
-        IdentityHashMap<Class<?>, CurdInfo<?>> curdInfos = new IdentityHashMap<Class<?>, CurdInfo<?>>();
+        IdentityHashMap<Class<?>, CurdOpSupport<?>> curdInfos = new IdentityHashMap<Class<?>, CurdOpSupport<?>>();
         for (String each : classSet)
         {
             if (annotationContextFactory.get(each.replace('.', '/')).isAnnotationPresent(TableDef.class) == false)
@@ -158,11 +158,11 @@ public class SessionfactoryConfig
                 }
                 if ("mysql".equals(productName) || "h2".equalsIgnoreCase(productName))
                 {
-                    curdInfos.put(ckass, new StandardCurdInfo(ckass));
+                    curdInfos.put(ckass, new StandardCurdOpSupport(ckass));
                 }
                 else if ("oracle".equals(productName))
                 {
-                    curdInfos.put(ckass, new OracleCurdInfo(ckass));
+                    curdInfos.put(ckass, new OracleCurdOpSupport(ckass));
                 }
             }
             catch (ClassNotFoundException e)

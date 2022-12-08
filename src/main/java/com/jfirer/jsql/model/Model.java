@@ -77,7 +77,7 @@ public abstract class Model
 
     Model from(Class<?> entityClass)
     {
-        if (entityClass.isAnnotationPresent(TableDef.class) == false)
+        if (!entityClass.isAnnotationPresent(TableDef.class))
         {
             throw new IllegalArgumentException("没有实体类注解");
         }

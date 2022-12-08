@@ -46,6 +46,7 @@ public class MapperGenerator
             methodBody.append("if(session==null){throw new NullPointerException(\"当前没有session\");}");
             methodBody.append("Map<String,Object> variables = cachedVariables.get();\r\n");
             methodBody.append("List<Object> params = cachedParams.get();\r\n");
+            methodBody.append("try{\r\n");
             MethodModel methodModel = new MethodModel(method, classModel);
             String      formatSql;
             if (method.isAnnotationPresent(Sql.class))
@@ -76,8 +77,6 @@ public class MapperGenerator
             {
                 methodBody.append("int result = session.update(sql,params);\r\n");
             }
-            methodBody.append("params.clear();\r\n");
-            methodBody.append("variables.clear();\r\n");
             if (method.getReturnType() == void.class || method.getReturnType() == Void.class)
             {
                 ;
@@ -86,6 +85,7 @@ public class MapperGenerator
             {
                 methodBody.append("return result;\r\n");
             }
+            methodBody.append("}finally {params.clear();variables.clear();}");
             methodModel.setBody(methodBody.toString());
             classModel.putMethodModel(methodModel);
         }

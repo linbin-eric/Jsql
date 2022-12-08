@@ -1,24 +1,19 @@
 package com.jfirer.jsql.session.impl;
 
 import com.jfirer.baseutil.reflect.ReflectUtil;
-import com.jfirer.jsql.curd.CurdInfo;
+import com.jfirer.jsql.curd.CurdOpSupport;
 import com.jfirer.jsql.curd.LockMode;
 import com.jfirer.jsql.dialect.Dialect;
 import com.jfirer.jsql.executor.SqlExecutor;
 import com.jfirer.jsql.mapper.AbstractMapper;
-import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.session.SqlSession;
-import com.jfirer.jsql.transfer.ResultSetTransfer;
-import com.jfirer.jsql.transfer.impl.IntegerTransfer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 
@@ -28,24 +23,16 @@ public class SqlSessionImpl implements SqlSession
     private              boolean                                                    closed            = false;
     private final        IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> mappers;
     private final        Connection                                                 connection;
-    private final        SqlExecutor                                                headSqlExecutor;
-    private final        IdentityHashMap<Class<?>, CurdInfo<?>>                     curdInfoMap;
-    private final        Dialect                                                    dialect;
+    private final        SqlExecutor                                 headSqlExecutor;
+    private final        IdentityHashMap<Class<?>, CurdOpSupport<?>> curdOpSupportMap;
+    private final        Dialect                                     dialect;
     private final static Logger                                                     logger            = LoggerFactory.getLogger(SqlSession.class);
-    private static final ThreadLocal<List<Object>>                                  cahcedParams      = new ThreadLocal<List<Object>>()
-    {
-        protected java.util.List<Object> initialValue()
-        {
-            return new ArrayList<Object>();
-        }
-    };
-    private static final ResultSetTransfer                                          countTransfer     = new IntegerTransfer();
 
-    public SqlSessionImpl(Connection connection, SqlExecutor headSqlExecutor, IdentityHashMap<Class<?>, CurdInfo<?>> curdInfoMap, IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> mappers, Dialect dialect)
+    public SqlSessionImpl(Connection connection, SqlExecutor headSqlExecutor, IdentityHashMap<Class<?>, CurdOpSupport<?>> curdOpSupportMap, IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> mappers, Dialect dialect)
     {
         this.connection = connection;
         this.headSqlExecutor = headSqlExecutor;
-        this.curdInfoMap = curdInfoMap;
+        this.curdOpSupportMap = curdOpSupportMap;
         this.dialect = dialect;
         this.mappers = mappers;
     }
@@ -160,93 +147,52 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> void save(T entity)
     {
-        TableEntityInfo tableEntityInfo = TableEntityInfo.parse(entity.getClass());
-        Field           pkField         = tableEntityInfo.getPkInfo().getField();
-        try
-        {
-            if (pkField.get(entity) == null)
-            {
-                CurdInfo<T>                   curdInfo       = (CurdInfo<T>) curdInfoMap.get(entity.getClass());
-                List<Object>                  list           = cahcedParams.get();
-                CurdInfo.AutoGeneratePkAndSql autoGeneratePk = curdInfo.autoGeneratePkInsert(entity, list);
-                String                        sql            = autoGeneratePk.sql;
-                String                        pk             = insertReturnPk(sql, list);
-                if (autoGeneratePk.generatePkValue != null)
-                {
-                    curdInfo.setPkValue(entity, autoGeneratePk.generatePkValue);
-                }
-                else
-                {
-                    curdInfo.setPkValue(entity, pk);
-                }
-                list.clear();
-            }
-            else
-            {
-                update(entity);
-            }
-        }
-        catch (Exception e)
-        {
-            ReflectUtil.throwException(e);
-        }
+        CurdOpSupport<T> curdInfo = (CurdOpSupport<T>) curdOpSupportMap.get(entity.getClass());
+        curdInfo.save(entity, headSqlExecutor, dialect, connection);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <T> void update(T entity)
     {
-        CurdInfo<T>  curdInfo = (CurdInfo<T>) curdInfoMap.get(entity.getClass());
-        List<Object> list     = cahcedParams.get();
-        String       sql      = curdInfo.update(entity, list);
-        update(sql, list);
-        list.clear();
+        checkIfClosed();
+        CurdOpSupport<T> curdInfo = (CurdOpSupport<T>) curdOpSupportMap.get(entity.getClass());
+        curdInfo.update(entity, headSqlExecutor, dialect, connection);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <T> int delete(Class<T> ckass, Object pk)
     {
-        List<Object> list     = cahcedParams.get();
-        CurdInfo<T>  curdInfo = (CurdInfo<T>) curdInfoMap.get(ckass);
-        String       sql      = curdInfo.delete(pk, list);
-        int          update   = update(sql, list);
-        list.clear();
-        return update;
+        checkIfClosed();
+        CurdOpSupport<T> curdInfo = (CurdOpSupport<T>) curdOpSupportMap.get(ckass);
+        return curdInfo.delete(pk, headSqlExecutor, dialect, connection);
     }
 
     @SuppressWarnings({"unchecked"})
     @Override
     public <T> void insert(T entity)
     {
-        List<Object> list     = cahcedParams.get();
-        CurdInfo<T>  curdInfo = (CurdInfo<T>) curdInfoMap.get(entity.getClass());
-        String       sql      = curdInfo.insert(entity, list);
-        update(sql, list);
-        list.clear();
+        checkIfClosed();
+        CurdOpSupport<T> curdInfo = (CurdOpSupport<T>) curdOpSupportMap.get(entity.getClass());
+        curdInfo.insert(entity, headSqlExecutor, dialect, connection);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <T> T get(Class<T> entityClass, Object pk)
     {
-        List<Object> list     = cahcedParams.get();
-        CurdInfo<T>  curdInfo = (CurdInfo<T>) curdInfoMap.get(entityClass);
-        String       sql      = curdInfo.find(pk, list);
-        T            result   = query(sql, entityClass, list);
-        list.clear();
-        return result;
+        checkIfClosed();
+        CurdOpSupport<T> curdInfo = (CurdOpSupport<T>) curdOpSupportMap.get(entityClass);
+        return curdInfo.find(pk, headSqlExecutor, dialect, connection);
     }
 
     @Override
     public <T> T get(Class<T> entityClass, Object pk, LockMode mode)
     {
-        List<Object> list     = cahcedParams.get();
-        CurdInfo<?>  curdInfo = curdInfoMap.get(entityClass);
-        String       sql      = curdInfo.find(pk, mode, list);
-        T            result   = query(sql, entityClass, list);
-        list.clear();
-        return result;
+        checkIfClosed();
+        CurdOpSupport<?> curdInfo = curdOpSupportMap.get(entityClass);
+        return (T) curdInfo.find(pk, mode, headSqlExecutor, dialect, connection);
     }
 
     @Override

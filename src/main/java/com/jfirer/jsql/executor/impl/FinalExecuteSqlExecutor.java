@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-@SuppressWarnings("ALL")
 public class FinalExecuteSqlExecutor implements SqlExecutor
 {
     record ClassKey(String sql, Class<?> ckass) {}
