@@ -33,8 +33,8 @@ public class TableEntityInfo
         try
         {
             ColumnNameStrategy strategy = ckass.isAnnotationPresent(ColumnNameStrategyDef.class) ? //
-                    ckass.getAnnotation(ColumnNameStrategyDef.class).value().newInstance()//
-                    : DefaultLowerCaseNameStrategy.instance;
+                    ckass.getAnnotation(ColumnNameStrategyDef.class).value().getDeclaredConstructor().newInstance()//
+                    : ColumnNameStrategy.LowerCaseName.instance;
             for (Field field : getAllFields(ckass))
             {
                 if (isNotColumnField(field))
