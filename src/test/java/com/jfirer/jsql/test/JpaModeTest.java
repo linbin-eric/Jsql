@@ -16,9 +16,14 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.lang.reflect.Method;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.LinkedList;
 import java.util.List;
+
+import static com.jfirer.jsql.test.CURDTest.user2TableDml;
+import static com.jfirer.jsql.test.CURDTest.userTableDml;
 
 public class JpaModeTest
 {
@@ -43,7 +48,6 @@ public class JpaModeTest
         dataSource.setPassword("");
         config.setDataSource(dataSource);
         config.setClassLoader(MapperTest.class.getClassLoader());
-        config.setTableMode(TableMode.CREATE);
         config.setDialect(new H2Dialect()
         {
             protected void setUnDefinedType(PreparedStatement preparedStatement, int i, Object value) throws SQLException
@@ -68,6 +72,10 @@ public class JpaModeTest
         config.addSqlExecutor(new SqlLog());
         sessionFactory = config.build();
         SqlSession session = sessionFactory.openSession();
+        session.update("DROP TABLE IF EXISTS user", new LinkedList<>());
+        session.update("DROP TABLE IF EXISTS user2", new LinkedList<>());
+        session.update(userTableDml, new LinkedList<>());
+        session.update(user2TableDml, new LinkedList<>());
         User       user    = new User();
         user.setAge(12);
         user.setName("lin");

@@ -22,6 +22,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.TimeZone;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -32,6 +33,37 @@ import static org.junit.Assert.assertNotNull;
 public class CURDTest
 {
     private SessionFactory sessionFactory;
+   public static String user2TableDml = """
+                           CREATE TABLE PUBLIC.user2 (
+                           name2 VARCHAR(64) ,
+                           id VARCHAR(64) ,
+                           age INTEGER
+                           )
+                           """;
+    public static String userTableDml  = """
+                           CREATE TABLE PUBLIC.user (
+                           calendar TIMESTAMP(3) ,
+                           date TIMESTAMP(3) ,
+                           b BOOLEAN ,
+                           _b11 BOOLEAN ,
+                           l1 BIGINT ,
+                           _d11 DOUBLE ,
+                           string_enum varchar(64) ,
+                           _f11 DOUBLE ,
+                           f1 DOUBLE ,
+                           d1 DOUBLE ,
+                           _l11 BIGINT ,
+                           sql_date TIMESTAMP ,
+                           n BIGINT ,
+                           barray BLOB ,
+                           name2 VARCHAR(64) ,
+                           id INTEGER AUTO_INCREMENT,
+                           state integer ,
+                           time TIME ,
+                           age INTEGER ,
+                           timestamp TIMESTAMP(3)
+                           )
+                           """;
 
     @Before
     public void before()
@@ -44,10 +76,14 @@ public class CURDTest
         dataSource.setPassword("");
         config.setDataSource(dataSource);
         config.setClassLoader(CURDTest.class.getClassLoader());
-        config.setTableMode(TableMode.CREATE);
         config.setScanPackage(User.class.getPackage().getName());
         config.addSqlExecutor(new SqlLog());
         sessionFactory = config.build();
+        SqlSession sqlSession = sessionFactory.openSession();
+        sqlSession.update("DROP TABLE IF EXISTS user", new LinkedList<>());
+        sqlSession.update("DROP TABLE IF EXISTS user2", new LinkedList<>());
+        sqlSession.update(userTableDml, new LinkedList<>());
+        sqlSession.update(user2TableDml, new LinkedList<>());
     }
 
     /**

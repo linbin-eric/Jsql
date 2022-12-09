@@ -15,9 +15,12 @@ import org.junit.Test;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
+import static com.jfirer.jsql.test.CURDTest.user2TableDml;
+import static com.jfirer.jsql.test.CURDTest.userTableDml;
 import static org.junit.Assert.assertNotNull;
 
 public class ModelTest
@@ -35,9 +38,13 @@ public class ModelTest
         dataSource.setPassword("");
         config.setDataSource(dataSource);
         config.setClassLoader(ModelTest.class.getClassLoader());
-        config.setTableMode(TableMode.CREATE);
         config.setScanPackage(User.class.getPackage().getName());
         sessionFactory = config.build();
+        SqlSession sqlSession = sessionFactory.openSession();
+        sqlSession.update("DROP TABLE IF EXISTS user", new LinkedList<>());
+        sqlSession.update("DROP TABLE IF EXISTS user2", new LinkedList<>());
+        sqlSession.update(userTableDml, new LinkedList<>());
+        sqlSession.update(user2TableDml, new LinkedList<>());
     }
 
     /**

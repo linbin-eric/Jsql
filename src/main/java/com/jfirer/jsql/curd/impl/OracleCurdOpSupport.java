@@ -16,7 +16,7 @@ public class OracleCurdOpSupport<T> extends AbstractCurdOpSupport<T>
     }
 
     @Override
-    protected SqlAndFieldAccessors generateNative(TableEntityInfo tableEntityInfo)
+    protected SqlAndFieldAccessors generateInsertWithPkNullEntry(TableEntityInfo tableEntityInfo)
     {
         Field pkField = tableEntityInfo.getPkInfo().getField();
         if (Number.class.isAssignableFrom(pkField.getType()) && pkField.isAnnotationPresent(Sequence.class))

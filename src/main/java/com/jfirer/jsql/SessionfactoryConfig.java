@@ -12,8 +12,6 @@ import com.jfirer.jsql.annotation.TableDef;
 import com.jfirer.jsql.curd.CurdOpSupport;
 import com.jfirer.jsql.curd.impl.OracleCurdOpSupport;
 import com.jfirer.jsql.curd.impl.StandardCurdOpSupport;
-import com.jfirer.jsql.dbstructure.impl.H2SchemaAdjustment;
-import com.jfirer.jsql.dbstructure.impl.MysqlSchemaAdjustment;
 import com.jfirer.jsql.dialect.Dialect;
 import com.jfirer.jsql.dialect.impl.H2Dialect;
 import com.jfirer.jsql.dialect.impl.MysqlDialect;
@@ -26,7 +24,6 @@ import com.jfirer.jsql.mapper.AbstractMapper;
 import com.jfirer.jsql.mapper.Mapper;
 import com.jfirer.jsql.mapper.MapperGenerator;
 import com.jfirer.jsql.metadata.TableEntityInfo;
-import com.jfirer.jsql.metadata.TableMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,8 +38,6 @@ public class SessionfactoryConfig
     private                DataSource               dataSource;
     private                ClassLoader              classLoader              = Thread.currentThread().getContextClassLoader();
     private                String                   scanPackage;
-    // 如果值是create，则会创建表。
-    private                TableMode                tableMode                = TableMode.NONE;
     private final          List<SqlExecutor>        sqlExecutors             = new LinkedList<SqlExecutor>();
     private                Dialect                  dialect;
     protected static final Logger                   logger                   = LoggerFactory.getLogger(SessionfactoryConfig.class);
@@ -57,7 +52,6 @@ public class SessionfactoryConfig
             Verify.notNull(scanPackage, "sql的扫描路径不能为空");
             Set<String> classSet    = buildClassSet();
             String      productName = detectProductName();
-            modifySchema(classSet, productName, annotationContextFactory);
             dialect = dialect == null ? generateDialect(productName) : dialect;
             return new SessionFactoryImpl(generateMappers(classSet, annotationContextFactory), generateCurdInfos(productName, classSet, annotationContextFactory), generateHeadSqlExecutor(productName), dataSource, dialect);
         }
@@ -65,34 +59,6 @@ public class SessionfactoryConfig
         {
             ReflectUtil.throwException(e);
             return null;
-        }
-    }
-
-    private void modifySchema(Set<String> classSet, String productName, AnnotationContextFactory annotationContextFactory) throws SQLException
-    {
-        Set<TableEntityInfo> tableEntityInfos = new HashSet<TableEntityInfo>();
-        for (String ckass : classSet)
-        {
-            AnnotationContext annotationContext = annotationContextFactory.get(ckass.replace('.', '/'), classLoader);
-            if (annotationContext.isAnnotationPresent(TableDef.class) && annotationContext.getAnnotation(TableDef.class).editable())
-            {
-                try
-                {
-                    tableEntityInfos.add(TableEntityInfo.parse(classLoader.loadClass(ckass)));
-                }
-                catch (ClassNotFoundException e)
-                {
-                    ReflectUtil.throwException(e);
-                }
-            }
-        }
-        if ("mysql".equals(productName))
-        {
-            new MysqlSchemaAdjustment().adjust(tableMode, dataSource, tableEntityInfos);
-        }
-        else if ("h2".equalsIgnoreCase(productName))
-        {
-            new H2SchemaAdjustment().adjust(tableMode, dataSource, tableEntityInfos);
         }
     }
 
@@ -249,11 +215,6 @@ public class SessionfactoryConfig
                 connection.close();
             }
         }
-    }
-
-    public void setTableMode(TableMode tableMode)
-    {
-        this.tableMode = tableMode;
     }
 
     public void setDataSource(DataSource dataSource)

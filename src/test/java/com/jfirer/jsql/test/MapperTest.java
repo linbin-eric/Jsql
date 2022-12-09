@@ -6,7 +6,6 @@ import com.jfirer.jsql.annotation.Sql;
 import com.jfirer.jsql.dialect.impl.H2Dialect;
 import com.jfirer.jsql.mapper.Mapper;
 import com.jfirer.jsql.metadata.Page;
-import com.jfirer.jsql.metadata.TableMode;
 import com.jfirer.jsql.session.SqlSession;
 import com.jfirer.jsql.test.vo.SqlLog;
 import com.jfirer.jsql.test.vo.User;
@@ -27,6 +26,8 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 
+import static com.jfirer.jsql.test.CURDTest.user2TableDml;
+import static com.jfirer.jsql.test.CURDTest.userTableDml;
 import static org.junit.Assert.*;
 
 public class MapperTest
@@ -177,6 +178,14 @@ public class MapperTest
         @Sql(sql = "select F11 from User where id=1", paramNames = "")
         float findByTransfer_7();
         /* 测试Transfer */
+
+        /*
+        测试默认方法
+         */
+        public default int testDefault()
+        {
+            return 1;
+        }
     }
 
     @Mapper
@@ -211,7 +220,6 @@ public class MapperTest
         dataSource.setPassword("");
         config.setDataSource(dataSource);
         config.setClassLoader(MapperTest.class.getClassLoader());
-        config.setTableMode(TableMode.CREATE);
         config.setDialect(new H2Dialect()
         {
             protected void setUnDefinedType(PreparedStatement preparedStatement, int i, Object value) throws SQLException
@@ -236,7 +244,11 @@ public class MapperTest
         config.addSqlExecutor(new SqlLog());
         sessionFactory = config.build();
         SqlSession session = sessionFactory.openSession();
-        User       user    = new User();
+        session.update("DROP TABLE IF EXISTS user", new LinkedList<>());
+        session.update("DROP TABLE IF EXISTS user2", new LinkedList<>());
+        session.update(userTableDml, new LinkedList<>());
+        session.update(user2TableDml, new LinkedList<>());
+        User user = new User();
         user.setAge(12);
         user.setName("lin");
         user.setLength(18);
@@ -393,5 +405,13 @@ public class MapperTest
         assertNotNull(testOp.findByTransfer_5());
         assertNotNull(testOp.findByTransfer_6());
         assertEquals(5.69f, testOp.findByTransfer_7(), 0.0001);
+    }
+
+    /**
+     * 测试默认方法
+     */
+    @Test
+    public void test_11(){
+        assertEquals(1,testOp.testDefault());
     }
 }

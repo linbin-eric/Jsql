@@ -63,7 +63,7 @@ public abstract class AbstractCurdOpSupport<T> implements CurdOpSupport<T>
         if (pkField.isAnnotationPresent(PkGenerator.class))
         {
             pkGenerateMode = PkGenerateMode.SET_BY_ANNOTATION;
-            //如果采用外部注解类来生成主键，其等于全量数据插入，也就等同于insert
+            //如果采用外部注解类来生成主键，其等于全量数据插入，也就等同于insert。因此这个时候，insertWithPkNullEntry就应该为null。
             insertWithPkNullEntry = null;
             try
             {
@@ -78,7 +78,7 @@ public abstract class AbstractCurdOpSupport<T> implements CurdOpSupport<T>
         else
         {
             pkGenerateMode = PkGenerateMode.NAVIVE;
-            insertWithPkNullEntry = generateNative(tableEntityInfo);
+            insertWithPkNullEntry = generateInsertWithPkNullEntry(tableEntityInfo);
         }
         insertEntry = generateInsertEntry(tableEntityInfo);
         updateEntry = generateUpdateEntry(tableEntityInfo);
@@ -108,7 +108,7 @@ public abstract class AbstractCurdOpSupport<T> implements CurdOpSupport<T>
         }
     }
 
-    protected abstract SqlAndFieldAccessors generateNative(TableEntityInfo tableEntityInfo);
+    protected abstract SqlAndFieldAccessors generateInsertWithPkNullEntry(TableEntityInfo tableEntityInfo);
 
     @Override
     public void save(T entity, SqlExecutor headSqlExecutor, Dialect dialect, Connection connection)

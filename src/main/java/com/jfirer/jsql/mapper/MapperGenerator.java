@@ -42,6 +42,10 @@ public class MapperGenerator
         TriTree         propertyNames   = null;
         for (Method method : ckass.getDeclaredMethods())
         {
+            if (method.isDefault())
+            {
+                continue;
+            }
             StringBuilder methodBody = new StringBuilder();
             methodBody.append("if(session==null){throw new NullPointerException(\"当前没有session\");}");
             methodBody.append("Map<String,Object> variables = cachedVariables.get();\r\n");
@@ -62,7 +66,7 @@ public class MapperGenerator
             }
             if (formatSql.startsWith("SELECT") || formatSql.startsWith("select"))
             {
-                int    methodIndex       = AbstractMapper.put(method);
+                int methodIndex = AbstractMapper.put(method);
                 if (List.class.isAssignableFrom(method.getReturnType()))
                 {
                     methodBody.append("List result = session.queryList(sql,methods.get(").append(methodIndex).append("),params);\r\n");

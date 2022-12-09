@@ -14,7 +14,7 @@ public class StandardCurdOpSupport<T> extends AbstractCurdOpSupport<T>
     }
 
     @Override
-    protected SqlAndFieldAccessors generateNative(TableEntityInfo tableEntityInfo)
+    protected SqlAndFieldAccessors generateInsertWithPkNullEntry(TableEntityInfo tableEntityInfo)
     {
         StringBuilder cache = new StringBuilder();
         cache.append("insert into ").append(tableEntityInfo.getTableName()).append(" (");

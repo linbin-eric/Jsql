@@ -14,8 +14,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+
+import static com.jfirer.jsql.test.CURDTest.user2TableDml;
+import static com.jfirer.jsql.test.CURDTest.userTableDml;
 
 public class InterfaceGenerateTest
 {
@@ -32,7 +36,6 @@ public class InterfaceGenerateTest
         dataSource.setPassword("");
         config.setDataSource(dataSource);
         config.setClassLoader(InterfaceGenerateTest.class.getClassLoader());
-        config.setTableMode(TableMode.CREATE);
         Set<Class<?>> set = new HashSet<Class<?>>();
         set.add(User.class);
     }
@@ -42,6 +45,11 @@ public class InterfaceGenerateTest
         config.setScanPackage(packageName);
         SessionFactory sessionFactory = config.build();
         SqlSession     session        = sessionFactory.openSession();
+        SqlSession sqlSession = sessionFactory.openSession();
+        sqlSession.update("DROP TABLE IF EXISTS user", new LinkedList<>());
+        sqlSession.update("DROP TABLE IF EXISTS user2", new LinkedList<>());
+        sqlSession.update(userTableDml, new LinkedList<>());
+        sqlSession.update(user2TableDml, new LinkedList<>());
         session.getMapper(ckass);
     }
 
