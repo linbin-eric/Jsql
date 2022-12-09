@@ -23,6 +23,7 @@ public class InsertModel extends Model
         }
     }
 
+    @Override
     public Model insert(String property, Object value)
     {
         if (insertEntries == null)
@@ -37,7 +38,7 @@ public class InsertModel extends Model
     public String _getSql()
     {
         StringBuilder cache = new StringBuilder();
-        cache.append("insert into ").append(entityClass.getAnnotation(TableDef.class).name()).append(" (");
+        cache.append("insert into ").append(entityClass.getAnnotation(TableDef.class).value()).append(" (");
         if (insertEntries == null)
         {
             throw new NullPointerException("需要插入的属性为空");
@@ -45,7 +46,7 @@ public class InsertModel extends Model
         Map<String, TableEntityInfo.ColumnInfo> columnInfoMap = TableEntityInfo.parse(entityClass).getPropertyNameKeyMap();
         for (InsertEntry each : insertEntries)
         {
-            cache.append(columnInfoMap.get(each.propertyName).getColumnName()).append(',');
+            cache.append(columnInfoMap.get(each.propertyName).columnName()).append(',');
         }
         cache.setLength(cache.length() - 1);
         cache.append(") values(");

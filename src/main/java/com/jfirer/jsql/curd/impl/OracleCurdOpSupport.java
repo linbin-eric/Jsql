@@ -1,7 +1,7 @@
 package com.jfirer.jsql.curd.impl;
 
 import com.jfirer.baseutil.reflect.ValueAccessor;
-import com.jfirer.jsql.annotation.pkstrategy.Sequence;
+import com.jfirer.jsql.annotation.Sequence;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 
 import java.lang.reflect.Field;
@@ -18,12 +18,12 @@ public class OracleCurdOpSupport<T> extends AbstractCurdOpSupport<T>
     @Override
     protected SqlAndFieldAccessors generateInsertWithPkNullEntry(TableEntityInfo tableEntityInfo)
     {
-        Field pkField = tableEntityInfo.getPkInfo().getField();
+        Field pkField = tableEntityInfo.getPkInfo().field();
         if (Number.class.isAssignableFrom(pkField.getType()) && pkField.isAnnotationPresent(Sequence.class))
         {
             StringBuilder cache = new StringBuilder();
             cache.append("insert into ").append(tableEntityInfo.getTableName()).append("(");
-            cache.append(tableEntityInfo.getPkInfo().getColumnName()).append(',');
+            cache.append(tableEntityInfo.getPkInfo().columnName()).append(',');
             StringAndValueAccessors stringAndValueAccessors = concatNonPkColumnNames(tableEntityInfo);
             cache.append(stringAndValueAccessors.sqlSegment()).append(") values (").append(pkField.getAnnotation(Sequence.class).value()).append(".NEXTVAL,");
             String collect = Stream.generate(() -> "?").limit(stringAndValueAccessors.list().size()).collect(Collectors.joining(","));

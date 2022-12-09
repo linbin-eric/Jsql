@@ -2,9 +2,8 @@ package com.jfirer.jsql.test.vo;
 
 import com.jfirer.jsql.annotation.Pk;
 import com.jfirer.jsql.annotation.SqlIgnore;
-import com.jfirer.jsql.annotation.StandardColumnDef;
+import com.jfirer.jsql.annotation.ColumnName;
 import com.jfirer.jsql.annotation.TableDef;
-import com.jfirer.jsql.annotation.pkstrategy.AutoIncrement;
 import com.jfirer.jsql.transfer.CustomTransfer;
 import com.jfirer.jsql.transfer.impl.EnumOrdinalTransfer;
 
@@ -13,7 +12,7 @@ import java.sql.Timestamp;
 import java.util.Calendar;
 import java.util.Date;
 
-@TableDef(name = "user")
+@TableDef(value = "user")
 public class User
 {
     public static final long now = System.currentTimeMillis();
@@ -32,9 +31,8 @@ public class User
 
     public static String        customName = "12asdaseda";
     @Pk
-    @AutoIncrement
     private       Integer       id;
-    @StandardColumnDef(columnName = "name2")
+    @ColumnName(value = "name2")
     private       String        name;
     private       int           age;
     @SqlIgnore
@@ -42,9 +40,7 @@ public class User
     @SqlIgnore
     private       int           age2;
     @CustomTransfer(EnumOrdinalTransfer.class)
-    @StandardColumnDef(dataType = "integer")
     private       State         state;
-    @StandardColumnDef(dataType = "varchar")
     private       StringEnum    stringEnum;
     private       boolean       b          = false;
     private       byte[]        barray     = new byte[]{1, 2};
@@ -62,7 +58,7 @@ public class User
     private       Long          L11        = 5625l;
     private       long          n          = now;
 
-    public static long getNow()
+    public  long getNow()
     {
         return now;
     }

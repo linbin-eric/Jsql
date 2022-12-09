@@ -11,7 +11,7 @@ public class CountModel extends Model
     public String _getSql()
     {
         StringBuilder cache = new StringBuilder();
-        cache.append("select count(*) from ").append(entityClass.getAnnotation(TableDef.class).name()).append(' ');
+        cache.append("select count(*) from ").append(entityClass.getAnnotation(TableDef.class).value()).append(' ');
         setWhereColumns(cache);
         return cache.toString();
     }

@@ -3,7 +3,6 @@ package com.jfirer.jsql.model;
 import com.jfirer.jsql.annotation.TableDef;
 import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.metadata.TableEntityInfo;
-import com.jfirer.jsql.transfer.impl.BeanTransfer;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -56,19 +55,19 @@ public class QueryModel extends Model
             selectProperties = new LinkedList<String>();
             for (TableEntityInfo.ColumnInfo columnInfo : TableEntityInfo.parse(entityClass).getPropertyNameKeyMap().values())
             {
-                selectProperties.add(columnInfo.getPropertyName());
+                selectProperties.add(columnInfo.propertyName());
             }
         }
         TableEntityInfo tableEntityInfo = TableEntityInfo.parse(entityClass);
         for (String each : selectProperties)
         {
-            String columnName = tableEntityInfo.getPropertyNameKeyMap().get(each).getColumnName();
+            String columnName = tableEntityInfo.getPropertyNameKeyMap().get(each).columnName();
             cache.append(columnName).append(',');
         }
         cache.setLength(cache.length() - 1);
         cache.append(' ');
         cache.append("from ");
-        String tableName = entityClass.getAnnotation(TableDef.class).name();
+        String tableName = entityClass.getAnnotation(TableDef.class).value();
         cache.append(tableName);
         setWhereColumns(cache);
         if (orderByProperties != null)
@@ -76,7 +75,7 @@ public class QueryModel extends Model
             cache.append(" order by ");
             for (OrderByEntry each : orderByProperties)
             {
-                String columnName = tableEntityInfo.getPropertyNameKeyMap().get(each.orderPropertyName).getColumnName();
+                String columnName = tableEntityInfo.getPropertyNameKeyMap().get(each.orderPropertyName).columnName();
                 cache.append(columnName).append(each.desc ? " desc" : " asc");
                 cache.append(',');
             }

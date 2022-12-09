@@ -5,12 +5,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * 该注解表明该类是一个数据库表的映射类
- */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface TableDef
+@Target(ElementType.FIELD)
+public @interface ColumnName
 {
     String value();
 }

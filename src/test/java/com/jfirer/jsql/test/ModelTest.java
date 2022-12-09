@@ -3,8 +3,8 @@ package com.jfirer.jsql.test;
 import com.jfirer.jsql.SessionFactory;
 import com.jfirer.jsql.SessionfactoryConfig;
 import com.jfirer.jsql.metadata.Page;
-import com.jfirer.jsql.metadata.TableMode;
 import com.jfirer.jsql.model.Model;
+import com.jfirer.jsql.model.support.SFunction;
 import com.jfirer.jsql.session.SqlSession;
 import com.jfirer.jsql.test.vo.User;
 import com.zaxxer.hikari.HikariDataSource;
@@ -21,6 +21,7 @@ import java.util.Random;
 
 import static com.jfirer.jsql.test.CURDTest.user2TableDml;
 import static com.jfirer.jsql.test.CURDTest.userTableDml;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class ModelTest
@@ -63,7 +64,7 @@ public class ModelTest
         ResultSet resultSet = session.getConnection().prepareStatement("select age from user where name2 ='1221'").executeQuery();
         Assert.assertTrue(resultSet.next());
         Assert.assertEquals(12, resultSet.getInt(1));
-        session.delete(Model.delete(User.class).where("name", "1221").where("age", 12));
+        session.delete(Model.delete(User.class).where(User::getName, "1221").where(User::getAge, 12));
         resultSet = session.getConnection().prepareStatement("select count(*) from user").executeQuery();
         resultSet.next();
         Assert.assertEquals(0, resultSet.getInt(1));
@@ -84,10 +85,10 @@ public class ModelTest
         user.setAge(12);
         user.setName("ll");
         session.save(user);
-        User query = session.findOne(Model.query(User.class).where("age", 12));
+        User query = session.findOne(Model.query(User.class).where(User::getAge, 12));
         Assert.assertNotNull(query);
         Assert.assertEquals("ll", query.getName());
-        query = session.findOne(Model.query(User.class).select("name").select("age").where("age", 12));
+        query = session.findOne(Model.query(User.class).select(User::getName).select(User::getAge).where(User::getAge, 12));
         Assert.assertNotNull(query);
         Assert.assertEquals("ll", query.getName());
         Assert.assertEquals(12, query.getAge());
@@ -95,15 +96,15 @@ public class ModelTest
         user.setAge(19);
         user.setName("ll");
         session.save(user);
-        List<User> list = session.find(Model.query(User.class).where("name", "ll"));
+        List<User> list = session.find(Model.query(User.class).where(User::getName, "ll"));
         Assert.assertEquals(2, list.size());
         Assert.assertEquals(12 + 19, list.get(0).getAge() + list.get(1).getAge());
-        Assert.assertEquals(2, session.count(Model.count(User.class).where("name", "ll")));
+        Assert.assertEquals(2, session.count(Model.count(User.class).where(User::getName, "ll")));
         Page page = new Page();
         page.setOffset(0);
         page.setSize(1);
         page.setFetchSum(true);
-        list = session.find(Model.query(User.class).select("age").where("name", "ll").setPage(page));
+        list = session.find(Model.query(User.class).select("age").where(User::getName, "ll").setPage(page));
         Assert.assertEquals(1, list.size());
         Assert.assertEquals(2, page.getTotal());
     }
@@ -119,7 +120,7 @@ public class ModelTest
         user.setAge(10);
         SqlSession session = sessionFactory.openSession();
         session.save(user);
-        session.update(Model.update(User.class).set("age", 12).where("id", 1));
+        session.update(Model.update(User.class).set(User::getAge, 12).where(User::getId, 1));
         User query = session.get(User.class, 1);
         Assert.assertEquals(12, query.getAge());
     }
@@ -139,7 +140,7 @@ public class ModelTest
         user.setAge(12);
         user.setName("aa2");
         session.save(user);
-        List<User> result = session.find(Model.query(User.class).select("name").orderBy("age", true));
+        List<User> result = session.find(Model.query(User.class).select(User::getName).orderBy(User::getAge, true));
         Assert.assertEquals("aa2", result.get(0).getName());
         Assert.assertEquals("aa1", result.get(1).getName());
     }
@@ -149,8 +150,16 @@ public class ModelTest
     {
         SqlSession session = sessionFactory.openSession();
         int        age     = new Random().nextInt(150);
-        session.insert(Model.insert(User.class).insert("name", "aa1").insert("age", age));
-        User user = session.findOne(Model.query(User.class).where("name", "aa1").where("age", age));
+        session.insert(Model.insert(User.class).insert(User::getName, "aa1").insert(User::getAge, age));
+        User user = session.findOne(Model.query(User.class).where(User::getName, "aa1").where(User::getAge, age));
         assertNotNull(user);
+    }
+
+    @Test
+    public void test_5()
+    {
+        SFunction<User, ?> fn = User::getNow;
+        String             s  = SFunction.resolveFieldName(fn);
+        assertEquals("now", s);
     }
 }

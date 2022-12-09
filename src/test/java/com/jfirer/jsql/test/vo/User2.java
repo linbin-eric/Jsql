@@ -1,15 +1,15 @@
 package com.jfirer.jsql.test.vo;
 
+import com.jfirer.jsql.annotation.ColumnName;
 import com.jfirer.jsql.annotation.Pk;
-import com.jfirer.jsql.annotation.StandardColumnDef;
 import com.jfirer.jsql.annotation.TableDef;
 
-@TableDef(name = "user", editable = false)
+@TableDef(value = "user")
 public class User2
 {
     @Pk
     private Integer id;
-    @StandardColumnDef(columnName = "name2")
+    @ColumnName("name2")
     private String  name;
     private int     age;
 

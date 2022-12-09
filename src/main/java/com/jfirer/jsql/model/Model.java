@@ -3,7 +3,7 @@ package com.jfirer.jsql.model;
 import com.jfirer.jsql.annotation.TableDef;
 import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.metadata.TableEntityInfo;
-import com.jfirer.jsql.transfer.impl.BeanTransfer;
+import com.jfirer.jsql.model.support.SFunction;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -43,7 +43,7 @@ public abstract class Model
             Map<String, TableEntityInfo.ColumnInfo> columnInfoMap = TableEntityInfo.parse(entityClass).getPropertyNameKeyMap();
             for (WhereEntry each : whereEntries)
             {
-                String columnName = columnInfoMap.get(each.propertyName).getColumnName();
+                String columnName = columnInfoMap.get(each.propertyName).columnName();
                 cache.append(columnName).append("=? and ");
             }
             cache.setLength(cache.length() - 4);
@@ -55,9 +55,19 @@ public abstract class Model
         throw new UnsupportedOperationException();
     }
 
+    public <T> Model insert(SFunction<T,?> function, Object value)
+    {
+        return insert(function.resolveFieldName(), value);
+    }
+
     public Model select(String propertyName)
     {
         throw new UnsupportedOperationException();
+    }
+
+    public <T> Model select(SFunction<T,?> function)
+    {
+        return select(function.resolveFieldName());
     }
 
     public Model set(String property, Object value)
@@ -65,9 +75,19 @@ public abstract class Model
         throw new UnsupportedOperationException();
     }
 
+    public <T> Model set(SFunction<T,?> function, Object value)
+    {
+        return set(function.resolveFieldName(), value);
+    }
+
     public Model orderBy(String propertyName, boolean desc)
     {
         throw new UnsupportedOperationException();
+    }
+
+    public <T> Model orderBy(SFunction<T,?> function, boolean desc)
+    {
+        return orderBy(function.resolveFieldName(), desc);
     }
 
     public Model setPage(Page page)
@@ -92,6 +112,16 @@ public abstract class Model
             whereEntries = new LinkedList<WhereEntry>();
         }
         whereEntries.add(new WhereEntry(propertyName, value));
+        return this;
+    }
+
+    public <T> Model where(SFunction<T,?> function, Object value)
+    {
+        if (whereEntries == null)
+        {
+            whereEntries = new LinkedList<WhereEntry>();
+        }
+        whereEntries.add(new WhereEntry(SFunction.resolveFieldName(function), value));
         return this;
     }
 

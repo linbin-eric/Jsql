@@ -1,17 +1,17 @@
 package com.jfirer.jsql.test.vo;
 
 import com.jfirer.jsql.annotation.Pk;
-import com.jfirer.jsql.annotation.StandardColumnDef;
+import com.jfirer.jsql.annotation.ColumnName;
 import com.jfirer.jsql.annotation.TableDef;
-import com.jfirer.jsql.annotation.pkstrategy.PkGenerator;
+import com.jfirer.jsql.annotation.PkGenerator;
 
-@TableDef(name = "user2")
+@TableDef(value = "user2")
 public class User3
 {
     @Pk
     @PkGenerator(PkGenerator.UUIDGenerator.class)
     private String id;
-    @StandardColumnDef(columnName = "name2")
+    @ColumnName(value = "name2")
     private String name;
     private int    age;
 

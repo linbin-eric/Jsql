@@ -1,4 +1,4 @@
-package com.jfirer.jsql.annotation.pkstrategy;
+package com.jfirer.jsql.annotation;
 
 import com.jfirer.jsql.SessionFactory;
 

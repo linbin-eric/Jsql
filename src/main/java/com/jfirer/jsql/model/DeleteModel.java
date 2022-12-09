@@ -11,7 +11,7 @@ public class DeleteModel extends Model
     public String _getSql()
     {
         StringBuilder cache = new StringBuilder();
-        cache.append("delete from ").append(entityClass.getAnnotation(TableDef.class).name()).append(" ");
+        cache.append("delete from ").append(entityClass.getAnnotation(TableDef.class).value()).append(" ");
         setWhereColumns(cache);
         return cache.toString();
     }

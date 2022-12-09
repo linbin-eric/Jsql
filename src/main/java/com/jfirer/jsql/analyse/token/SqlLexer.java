@@ -94,7 +94,7 @@ public class SqlLexer
                     if (listerals.startsWith(each))
                     {
                         String propertyName = listerals.substring(each.length());
-                        String columnName   = transfers.get(entityAliasNameMap.get(each)).getPropertyNameKeyMap().get(propertyName).getColumnName();
+                        String columnName   = transfers.get(entityAliasNameMap.get(each)).getPropertyNameKeyMap().get(propertyName).columnName();
                         token.setListerals(each + columnName);
                         break;
                     }
@@ -148,7 +148,7 @@ public class SqlLexer
             {
                 if (isPropertyName(info, token))
                 {
-                    token.setListerals(info.getPropertyNameKeyMap().get(token.getListerals()).getColumnName());
+                    token.setListerals(info.getPropertyNameKeyMap().get(token.getListerals()).columnName());
                 }
             }
         }

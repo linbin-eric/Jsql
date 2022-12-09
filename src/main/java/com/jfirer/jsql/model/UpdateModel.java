@@ -37,7 +37,7 @@ public class UpdateModel extends Model
     public String _getSql()
     {
         StringBuilder cache = new StringBuilder();
-        cache.append("update ").append(entityClass.getAnnotation(TableDef.class).name()).append(" ");
+        cache.append("update ").append(entityClass.getAnnotation(TableDef.class).value()).append(" ");
         if (setEntries == null)
         {
             throw new IllegalArgumentException("没有设置需要更新的字段");
@@ -46,7 +46,7 @@ public class UpdateModel extends Model
         Map<String, TableEntityInfo.ColumnInfo> columnInfoMap = TableEntityInfo.parse(entityClass).getPropertyNameKeyMap();
         for (UpdateEntry each : setEntries)
         {
-            cache.append(columnInfoMap.get(each.propertyName).getColumnName()).append("=?,");
+            cache.append(columnInfoMap.get(each.propertyName).columnName()).append("=?,");
         }
         cache.setLength(cache.length() - 1);
         cache.append(' ');

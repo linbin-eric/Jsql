@@ -11,6 +11,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class TableEntityInfo
 {
+    public record ColumnInfo(String columnName, String propertyName, Field field) {}
+
     private static final Map<Class<?>, TableEntityInfo> store = new ConcurrentHashMap<Class<?>, TableEntityInfo>();
     private final        String                         className;
     private final        String                         classSimpleName;
@@ -25,7 +27,7 @@ public class TableEntityInfo
         this.ckass = ckass;
         className = ckass.getName();
         classSimpleName = ckass.getSimpleName();
-        tableName = ckass.getAnnotation(TableDef.class).name();
+        tableName = ckass.getAnnotation(TableDef.class).value();
         Map<String, ColumnInfo> propertyNameKeyMap         = new HashMap<String, TableEntityInfo.ColumnInfo>();
         Map<String, ColumnInfo> columnNameIgnoreCaseKeyMap = new HashMap<String, TableEntityInfo.ColumnInfo>();
         try
@@ -40,21 +42,17 @@ public class TableEntityInfo
                     continue;
                 }
                 field.setAccessible(true);
-                String     columnName = field.isAnnotationPresent(StandardColumnDef.class) && StringUtil.isNotBlank(field.getAnnotation(StandardColumnDef.class).columnName()) ? field.getAnnotation(StandardColumnDef.class).columnName() : strategy.toColumnName(field.getName());
-                ColumnInfo columnInfo = new ColumnInfo();
-                columnInfo.setColumnName(columnName);
-                columnInfo.setField(field);
-                columnInfo.setPropertyName(field.getName());
-                propertyNameKeyMap.put(field.getName(), columnInfo);
+                String columnName = field.isAnnotationPresent(ColumnName.class) && StringUtil.isNotBlank(field.getAnnotation(ColumnName.class).value()) ? //
+                        field.getAnnotation(ColumnName.class).value()//
+                        : strategy.toColumnName(field.getName());
+                ColumnInfo columnInfo = new ColumnInfo(columnName, field.getName(), field);
+                propertyNameKeyMap.put(columnInfo.propertyName, columnInfo);
                 columnNameIgnoreCaseKeyMap.put(columnName.toLowerCase(), columnInfo);
                 if (field.isAnnotationPresent(Pk.class))
                 {
                     if (pkInfo == null)
                     {
-                        pkInfo = new ColumnInfo();
-                        pkInfo.setField(field);
-                        pkInfo.setColumnName(columnName);
-                        pkInfo.setPropertyName(field.getName());
+                        pkInfo = new ColumnInfo(columnName, field.getName(), field);
                     }
                     else
                     {
@@ -166,42 +164,5 @@ public class TableEntityInfo
             store.put(entityClass, tableEntityInfo);
         }
         return tableEntityInfo;
-    }
-
-    public static class ColumnInfo
-    {
-        String columnName;
-        String propertyName;
-        Field  field;
-
-        public String getColumnName()
-        {
-            return columnName;
-        }
-
-        void setColumnName(String columnName)
-        {
-            this.columnName = columnName;
-        }
-
-        public String getPropertyName()
-        {
-            return propertyName;
-        }
-
-        void setPropertyName(String propertyName)
-        {
-            this.propertyName = propertyName;
-        }
-
-        public Field getField()
-        {
-            return field;
-        }
-
-        void setField(Field field)
-        {
-            this.field = field;
-        }
     }
 }

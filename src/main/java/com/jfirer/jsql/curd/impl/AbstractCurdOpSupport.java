@@ -2,7 +2,7 @@ package com.jfirer.jsql.curd.impl;
 
 import com.jfirer.baseutil.reflect.ReflectUtil;
 import com.jfirer.baseutil.reflect.ValueAccessor;
-import com.jfirer.jsql.annotation.pkstrategy.PkGenerator;
+import com.jfirer.jsql.annotation.PkGenerator;
 import com.jfirer.jsql.curd.CurdOpSupport;
 import com.jfirer.jsql.curd.LockMode;
 import com.jfirer.jsql.dialect.Dialect;
@@ -57,7 +57,7 @@ public abstract class AbstractCurdOpSupport<T> implements CurdOpSupport<T>
     {
         this.ckass = ckass;
         TableEntityInfo tableEntityInfo = TableEntityInfo.parse(ckass);
-        Field           pkField         = tableEntityInfo.getPkInfo().getField();
+        Field           pkField         = tableEntityInfo.getPkInfo().field();
         pkValueType = detectPkValueType(pkField);
         pkAccessor = new ValueAccessor(pkField);
         if (pkField.isAnnotationPresent(PkGenerator.class))
@@ -83,9 +83,9 @@ public abstract class AbstractCurdOpSupport<T> implements CurdOpSupport<T>
         insertEntry = generateInsertEntry(tableEntityInfo);
         updateEntry = generateUpdateEntry(tableEntityInfo);
         getEntry = generateGetEntry(tableEntityInfo);
-        deleteEntry = new SqlAndFieldAccessors("delete from " + tableEntityInfo.getTableName() + " where " + tableEntityInfo.getPkInfo().getColumnName() + "=?", buildValueAccessor(pkAccessor.getField()));
-        lockInShareEntry = new SqlAndFieldAccessors("select * from " + tableEntityInfo.getTableName() + " where " + tableEntityInfo.getPkInfo().getField() + "=? lock in share mode", buildValueAccessor(pkAccessor.getField()));
-        lockForUpdateEntry = new SqlAndFieldAccessors("select * from " + tableEntityInfo.getTableName() + " where " + tableEntityInfo.getPkInfo().getColumnName() + "=? for update", buildValueAccessor(pkAccessor.getField()));
+        deleteEntry = new SqlAndFieldAccessors("delete from " + tableEntityInfo.getTableName() + " where " + tableEntityInfo.getPkInfo().columnName() + "=?", buildValueAccessor(pkAccessor.getField()));
+        lockInShareEntry = new SqlAndFieldAccessors("select * from " + tableEntityInfo.getTableName() + " where " + tableEntityInfo.getPkInfo().columnName() + "=? lock in share mode", buildValueAccessor(pkAccessor.getField()));
+        lockForUpdateEntry = new SqlAndFieldAccessors("select * from " + tableEntityInfo.getTableName() + " where " + tableEntityInfo.getPkInfo().columnName() + "=? for update", buildValueAccessor(pkAccessor.getField()));
     }
 
     private PkValueType detectPkValueType(Field pkField)
@@ -170,12 +170,12 @@ public abstract class AbstractCurdOpSupport<T> implements CurdOpSupport<T>
 
     StringAndValueAccessors concatNonPkColumnNames(TableEntityInfo tableEntityInfo)
     {
-        Field               pkField = tableEntityInfo.getPkInfo().getField();
+        Field               pkField = tableEntityInfo.getPkInfo().field();
         List<ValueAccessor> list    = new ArrayList<>();
         String colunmNames = tableEntityInfo.getPropertyNameKeyMap().values().stream()//
-                                            .filter(columnInfo -> columnInfo.getField() != pkField)//
-                                            .peek(columnInfo -> list.add(new ValueAccessor(columnInfo.getField())))//
-                                            .map(columnInfo -> columnInfo.getColumnName())//
+                                            .filter(columnInfo -> columnInfo.field() != pkField)//
+                                            .peek(columnInfo -> list.add(new ValueAccessor(columnInfo.field())))//
+                                            .map(columnInfo -> columnInfo.columnName())//
                                             .collect(Collectors.joining(","));
         return new StringAndValueAccessors(colunmNames, list);
     }
@@ -199,9 +199,9 @@ public abstract class AbstractCurdOpSupport<T> implements CurdOpSupport<T>
     {
         StringBuilder cache = new StringBuilder();
         cache.append("select  ");
-        String segment = tableEntityInfo.getPropertyNameKeyMap().values().stream().map(columnInfo -> columnInfo.getColumnName()).collect(Collectors.joining(","));
+        String segment = tableEntityInfo.getPropertyNameKeyMap().values().stream().map(columnInfo -> columnInfo.columnName()).collect(Collectors.joining(","));
         cache.append(segment).append(" from ");
-        cache.append(tableEntityInfo.getTableName()).append(" where ").append(tableEntityInfo.getPkInfo().getColumnName()).append("=?");
+        cache.append(tableEntityInfo.getTableName()).append(" where ").append(tableEntityInfo.getPkInfo().columnName()).append("=?");
         return new SqlAndFieldAccessors(cache.toString(), new ValueAccessor[]{pkAccessor});
     }
 
@@ -211,11 +211,11 @@ public abstract class AbstractCurdOpSupport<T> implements CurdOpSupport<T>
         cache.append("update ").append(tableEntityInfo.getTableName()).append(" set ");
         List<ValueAccessor> list = new ArrayList<>();
         String segment = tableEntityInfo.getPropertyNameKeyMap().values().stream()//
-                                        .peek(columnInfo -> list.add(new ValueAccessor(columnInfo.getField())))//
-                                        .map(columnInfo -> columnInfo.getColumnName() + "=?")//
+                                        .peek(columnInfo -> list.add(new ValueAccessor(columnInfo.field())))//
+                                        .map(columnInfo -> columnInfo.columnName() + "=?")//
                                         .collect(Collectors.joining(","));
-        cache.append(segment).append(" where ").append(tableEntityInfo.getPkInfo().getColumnName()).append("=?");
-        list.add(new ValueAccessor(tableEntityInfo.getPkInfo().getField()));
+        cache.append(segment).append(" where ").append(tableEntityInfo.getPkInfo().columnName()).append("=?");
+        list.add(new ValueAccessor(tableEntityInfo.getPkInfo().field()));
         return new SqlAndFieldAccessors(cache.toString(), list.toArray(new ValueAccessor[0]));
     }
 
@@ -225,8 +225,8 @@ public abstract class AbstractCurdOpSupport<T> implements CurdOpSupport<T>
         List<ValueAccessor> list  = new LinkedList<>();
         cache.append("insert into ").append(tableEntityInfo.getTableName()).append(" (");
         String segment = tableEntityInfo.getPropertyNameKeyMap().values().stream()//
-                                        .peek(columnInfo -> list.add(new ValueAccessor(columnInfo.getField())))//
-                                        .map(columnInfo -> columnInfo.getColumnName()).collect(Collectors.joining(","));
+                                        .peek(columnInfo -> list.add(new ValueAccessor(columnInfo.field())))//
+                                        .map(columnInfo -> columnInfo.columnName()).collect(Collectors.joining(","));
         cache.append(segment).append(") values(");
         segment= Stream.generate(()->"?").limit(list.size()).collect(Collectors.joining(","));
         cache.append(segment).append(")");

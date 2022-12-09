@@ -12,5 +12,4 @@ import java.lang.annotation.Target;
 @Target(ElementType.FIELD)
 public @interface Pk
 {
-    String pkName() default "";
 }

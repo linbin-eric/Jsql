@@ -204,7 +204,7 @@ public class MapperGenerator
                         throw new IllegalArgumentException("方法：" + method.toGenericString() + "无法找到[" + methodName.substring(index) + "]相匹配的属性名");
                     }
                     TableEntityInfo.ColumnInfo columnInfo = tableEntityInfo.getPropertyNameKeyMap().get(propertyName.substring(0, 1).toLowerCase() + propertyName.substring(1));
-                    sql.append(columnInfo.getColumnName()).append(" = ${name").append(paramIndex++).append("} ");
+                    sql.append(columnInfo.columnName()).append(" = ${name").append(paramIndex++).append("} ");
                     index += propertyName.length();
                     propertyNameNow = false;
                 }
@@ -254,7 +254,7 @@ public class MapperGenerator
                     {
                         if (content.startsWith("Pk"))
                         {
-                            propername = tableEntityInfo.getPkInfo().getPropertyName();
+                            propername = tableEntityInfo.getPkInfo().propertyName();
                             index += 2;
                         }
                         else
@@ -268,7 +268,7 @@ public class MapperGenerator
                     }
                     propername = propername.substring(0, 1).toLowerCase() + propername.substring(1);
                     TableEntityInfo.ColumnInfo columnInfo = tableEntityInfo.getPropertyNameKeyMap().get(propername);
-                    sql.append(columnInfo.getColumnName()).append(" ");
+                    sql.append(columnInfo.columnName()).append(" ");
                     operatorName = operators.find(methodName.substring(index));
                     if (operatorName != null && (Operator.And.name().equals(operatorName) || Operator.Or.equals(operatorName) || Operator.OrderBy.name().equals(operatorName)))
                     {
@@ -375,7 +375,7 @@ public class MapperGenerator
                     index += operatorName.length();
                     String                     propertyName = propertyNames.find(methodName.substring(index));
                     TableEntityInfo.ColumnInfo columnInfo   = tableEntityInfo.getPropertyNameKeyMap().get(propertyName.substring(0, 1).toLowerCase() + propertyName.substring(1));
-                    sql.append(columnInfo.getColumnName());
+                    sql.append(columnInfo.columnName());
                     index += propertyName.length();
                     String nextOperator = operators.find(methodName.substring(index));
                     if (Operator.Desc.name().equals(nextOperator) || Operator.Asc.name().equals(nextOperator))

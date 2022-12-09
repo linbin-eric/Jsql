@@ -35,7 +35,7 @@ public class BeanTransfer implements ResultSetTransfer
                     {
                         ColumnTransfer columnTransfer;
                         String         columnName = metaData.getColumnName(i + 1);
-                        Field          field      = tableEntityInfo.getColumnInfoByColumnNameIgnoreCase(columnName).getField();
+                        Field          field      = tableEntityInfo.getColumnInfoByColumnNameIgnoreCase(columnName).field();
                         Class          fieldType  = field.getType().isPrimitive() ? ReflectUtil.wrapPrimitive(field.getType()) : field.getType();
                         if (field.isAnnotationPresent(CustomTransfer.class))
                         {
