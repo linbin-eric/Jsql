@@ -170,19 +170,20 @@ public class SessionfactoryConfig
             sqlExecutors.add(new OraclePageExecutor());
         }
         sqlExecutors.add(new FinalExecuteSqlExecutor());
-        sqlExecutors.sort((e1, e2) -> {
-            int result = e1.order() - e2.order();
-            if (result == 0)
-            {
-                throw new IllegalStateException(e1.getClass().getName() + "和" + e2.getClass().getName() + "的序号重复，这会导致不可预测的结果，请检查");
-            }
-            return result;
-        });
-        sqlExecutors.stream().reduce((current, next) -> {
-            current.setNext(next);
-            return next;
-        });
-        return sqlExecutors.get(0);
+        Optional<SqlExecutor> minOrderExecutor = sqlExecutors.stream()//
+                                                             .sorted((e1, e2) -> {
+                                                                 int result = e2.order() - e1.order();
+                                                                 if (result == 0)
+                                                                 {
+                                                                     throw new IllegalStateException(e1.getClass().getName() + "和" + e2.getClass().getName() + "的序号重复，这会导致不可预测的结果，请检查");
+                                                                 }
+                                                                 return result;
+                                                             })//
+                                                             .reduce((current, next) -> {
+                                                                 next.setNext(current);
+                                                                 return next;
+                                                             });
+        return minOrderExecutor.get();
     }
 
     private Set<String> buildClassSet() throws ClassNotFoundException
