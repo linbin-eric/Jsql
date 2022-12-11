@@ -22,7 +22,8 @@ public interface SFunction<T, R> extends Function<T, R>, Serializable
     {
         try
         {
-            return getSerializedLambda(fn).getImplClass();
+            String resourceName = getSerializedLambda(fn).getImplClass();
+            return resourceName.replace("/",".");
         }
         catch (Exception e)
         {
@@ -45,6 +46,11 @@ public interface SFunction<T, R> extends Function<T, R>, Serializable
     default String resolveFieldName()
     {
         return resolveFieldName(this);
+    }
+
+    default String getImplClass()
+    {
+        return getImplClass(this);
     }
 
     static <T> String resolveFieldName(SFunction<T, ?> fn)

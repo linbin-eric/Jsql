@@ -101,13 +101,13 @@ interface ModelOp
      */
     <T> List<T> find(Model model);
 
+    int count(Model model);
+
     int update(Model model);
 
     int delete(Model model);
 
-    int count(Model model);
-
-    void insert(Model model);
+    int insert(Model model);
 }
 
 /**

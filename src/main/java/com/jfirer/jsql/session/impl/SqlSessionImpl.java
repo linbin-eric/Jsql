@@ -6,6 +6,7 @@ import com.jfirer.jsql.curd.LockMode;
 import com.jfirer.jsql.dialect.Dialect;
 import com.jfirer.jsql.executor.SqlExecutor;
 import com.jfirer.jsql.mapper.AbstractMapper;
+import com.jfirer.jsql.model.BaseModel;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.session.SqlSession;
 import org.slf4j.Logger;
@@ -23,9 +24,9 @@ public class SqlSessionImpl implements SqlSession
     private              boolean                                                    closed            = false;
     private final        IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> mappers;
     private final        Connection                                                 connection;
-    private final        SqlExecutor                                 headSqlExecutor;
-    private final        IdentityHashMap<Class<?>, CurdOpSupport<?>> curdOpSupportMap;
-    private final        Dialect                                     dialect;
+    private final        SqlExecutor                                                headSqlExecutor;
+    private final        IdentityHashMap<Class<?>, CurdOpSupport<?>>                curdOpSupportMap;
+    private final        Dialect                                                    dialect;
     private final static Logger                                                     logger            = LoggerFactory.getLogger(SqlSession.class);
 
     public SqlSessionImpl(Connection connection, SqlExecutor headSqlExecutor, IdentityHashMap<Class<?>, CurdOpSupport<?>> curdOpSupportMap, IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> mappers, Dialect dialect)
@@ -198,37 +199,41 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> T findOne(Model model)
     {
-        return (T) query(model.getSql(), model.getEntityClass(), model.getParams());
+        BaseModel.ModelResult result = model.getResult();
+        return query(result.sql(), result.returnType(), result.paramValues());
     }
 
     @Override
     public <T> List<T> find(Model model)
     {
-        return (List<T>) queryList(model.getSql(), model.getEntityClass(), model.getParams());
-    }
-
-    @Override
-    public int update(Model model)
-    {
-        return update(model.getSql(), model.getParams());
-    }
-
-    @Override
-    public int delete(Model model)
-    {
-        return update(model.getSql(), model.getParams());
+        BaseModel.ModelResult result = model.getResult();
+        return queryList(result.sql(), result.returnType(), result.paramValues());
     }
 
     @Override
     public int count(Model model)
     {
-        return (int) query(model.getSql(), Integer.class, model.getParams());
+        BaseModel.ModelResult result = model.getResult();
+        return query(result.sql(), Integer.class, result.paramValues());
     }
 
     @Override
-    public void insert(Model model)
+    public int update(Model model)
     {
-        update(model.getSql(), model.getParams());
+        BaseModel.ModelResult result = model.getResult();
+        return update(result.sql(), result.paramValues());
+    }
+
+    @Override
+    public int delete(Model model)
+    {
+        return update(model);
+    }
+
+    @Override
+    public int insert(Model model)
+    {
+        return update(model);
     }
 
     @Override

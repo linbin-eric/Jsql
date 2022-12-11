@@ -3,8 +3,8 @@ package com.jfirer.jsql.test;
 import com.jfirer.jsql.SessionFactory;
 import com.jfirer.jsql.SessionfactoryConfig;
 import com.jfirer.jsql.curd.LockMode;
-import com.jfirer.jsql.metadata.TableMode;
 import com.jfirer.jsql.model.Model;
+import com.jfirer.jsql.model.Param;
 import com.jfirer.jsql.session.SqlSession;
 import com.jfirer.jsql.test.vo.SqlLog;
 import com.jfirer.jsql.test.vo.User;
@@ -32,38 +32,38 @@ import static org.junit.Assert.assertNotNull;
 
 public class CURDTest
 {
-    private SessionFactory sessionFactory;
-   public static String user2TableDml = """
-                           CREATE TABLE PUBLIC.user2 (
-                           name2 VARCHAR(64) ,
-                           id VARCHAR(64) ,
-                           age INTEGER
-                           )
-                           """;
-    public static String userTableDml  = """
-                           CREATE TABLE PUBLIC.user (
-                           calendar TIMESTAMP(3) ,
-                           date TIMESTAMP(3) ,
-                           b BOOLEAN ,
-                           _b11 BOOLEAN ,
-                           l1 BIGINT ,
-                           _d11 DOUBLE ,
-                           string_enum varchar(64) ,
-                           _f11 DOUBLE ,
-                           f1 DOUBLE ,
-                           d1 DOUBLE ,
-                           _l11 BIGINT ,
-                           sql_date TIMESTAMP ,
-                           n BIGINT ,
-                           barray BLOB ,
-                           name2 VARCHAR(64) ,
-                           id INTEGER AUTO_INCREMENT,
-                           state integer ,
-                           time TIME ,
-                           age INTEGER ,
-                           timestamp TIMESTAMP(3)
-                           )
-                           """;
+    private       SessionFactory sessionFactory;
+    public static String         user2TableDml = """
+                                                 CREATE TABLE PUBLIC.user2 (
+                                                 name2 VARCHAR(64) ,
+                                                 id VARCHAR(64) ,
+                                                 age INTEGER
+                                                 )
+                                                 """;
+    public static String         userTableDml  = """
+                                                 CREATE TABLE PUBLIC.user (
+                                                 calendar TIMESTAMP(3) ,
+                                                 date TIMESTAMP(3) ,
+                                                 b BOOLEAN ,
+                                                 _b11 BOOLEAN ,
+                                                 l1 BIGINT ,
+                                                 _d11 DOUBLE ,
+                                                 string_enum varchar(64) ,
+                                                 _f11 DOUBLE ,
+                                                 f1 DOUBLE ,
+                                                 d1 DOUBLE ,
+                                                 _l11 BIGINT ,
+                                                 sql_date TIMESTAMP ,
+                                                 n BIGINT ,
+                                                 barray BLOB ,
+                                                 name2 VARCHAR(64) ,
+                                                 id INTEGER AUTO_INCREMENT,
+                                                 state integer ,
+                                                 time TIME ,
+                                                 age INTEGER ,
+                                                 timestamp TIMESTAMP(3)
+                                                 )
+                                                 """;
 
     @Before
     public void before()
@@ -339,7 +339,7 @@ public class CURDTest
         User3      user3   = new User3();
         user3.setName("121");
         session.save(user3);
-        User3 one = session.findOne(Model.query(User3.class).where("name", "121"));
+        User3 one = session.findOne(Model.from(User3.class).selectAll(User3.class).where(Param.eq(User3::getName, "121")));
         assertNotNull(one.getId());
         System.out.println(one.getId());
     }
