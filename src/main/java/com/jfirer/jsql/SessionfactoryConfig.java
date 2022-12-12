@@ -9,9 +9,6 @@ import com.jfirer.baseutil.bytecode.support.SupportOverrideAttributeAnnotationCo
 import com.jfirer.baseutil.reflect.ReflectUtil;
 import com.jfirer.baseutil.smc.compiler.CompileHelper;
 import com.jfirer.jsql.annotation.TableDef;
-import com.jfirer.jsql.curd.CurdOpSupport;
-import com.jfirer.jsql.curd.impl.OracleCurdOpSupport;
-import com.jfirer.jsql.curd.impl.StandardCurdOpSupport;
 import com.jfirer.jsql.dialect.Dialect;
 import com.jfirer.jsql.dialect.impl.H2Dialect;
 import com.jfirer.jsql.dialect.impl.MysqlDialect;
@@ -50,10 +47,9 @@ public class SessionfactoryConfig
         {
             Verify.notNull(dataSource, "dataSource 对象不能为空");
             Verify.notNull(scanPackage, "sql的扫描路径不能为空");
-            Set<String> classSet    = buildClassSet();
             String      productName = detectProductName();
             dialect = dialect == null ? generateDialect(productName) : dialect;
-            return new SessionFactoryImpl(generateMappers(classSet, annotationContextFactory), generateCurdInfos(productName, classSet, annotationContextFactory), generateHeadSqlExecutor(productName), dataSource, dialect);
+            return new SessionFactoryImpl(generateMappers(buildClassSet(), annotationContextFactory), generateHeadSqlExecutor(productName), dataSource, dialect);
         }
         catch (Exception e)
         {
@@ -102,41 +98,6 @@ public class SessionfactoryConfig
             }
         }
         return mappers;
-    }
-
-    @SuppressWarnings({"rawtypes", "unchecked"})
-    private IdentityHashMap<Class<?>, CurdOpSupport<?>> generateCurdInfos(String productName, Set<String> classSet, AnnotationContextFactory annotationContextFactory)
-    {
-        IdentityHashMap<Class<?>, CurdOpSupport<?>> curdInfos = new IdentityHashMap<Class<?>, CurdOpSupport<?>>();
-        for (String each : classSet)
-        {
-            if (annotationContextFactory.get(each.replace('.', '/')).isAnnotationPresent(TableDef.class) == false)
-            {
-                continue;
-            }
-            try
-            {
-                Class           ckass           = classLoader.loadClass(each);
-                TableEntityInfo tableEntityInfo = TableEntityInfo.parse(ckass);
-                if (tableEntityInfo.getPkInfo() == null)
-                {
-                    continue;
-                }
-                if ("mysql".equals(productName) || "h2".equalsIgnoreCase(productName))
-                {
-                    curdInfos.put(ckass, new StandardCurdOpSupport(ckass));
-                }
-                else if ("oracle".equals(productName))
-                {
-                    curdInfos.put(ckass, new OracleCurdOpSupport(ckass));
-                }
-            }
-            catch (ClassNotFoundException e)
-            {
-                ReflectUtil.throwException(e);
-            }
-        }
-        return curdInfos;
     }
 
     private Dialect generateDialect(String productName)

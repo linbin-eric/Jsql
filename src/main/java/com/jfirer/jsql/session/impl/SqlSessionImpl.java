@@ -1,11 +1,10 @@
 package com.jfirer.jsql.session.impl;
 
 import com.jfirer.baseutil.reflect.ReflectUtil;
-import com.jfirer.jsql.curd.CurdOpSupport;
-import com.jfirer.jsql.curd.LockMode;
 import com.jfirer.jsql.dialect.Dialect;
 import com.jfirer.jsql.executor.SqlExecutor;
 import com.jfirer.jsql.mapper.AbstractMapper;
+import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.BaseModel;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.session.SqlSession;
@@ -25,15 +24,13 @@ public class SqlSessionImpl implements SqlSession
     private final        IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> mappers;
     private final        Connection                                                 connection;
     private final        SqlExecutor                                                headSqlExecutor;
-    private final        IdentityHashMap<Class<?>, CurdOpSupport<?>>                curdOpSupportMap;
     private final        Dialect                                                    dialect;
     private final static Logger                                                     logger            = LoggerFactory.getLogger(SqlSession.class);
 
-    public SqlSessionImpl(Connection connection, SqlExecutor headSqlExecutor, IdentityHashMap<Class<?>, CurdOpSupport<?>> curdOpSupportMap, IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> mappers, Dialect dialect)
+    public SqlSessionImpl(Connection connection, SqlExecutor headSqlExecutor, IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> mappers, Dialect dialect)
     {
         this.connection = connection;
         this.headSqlExecutor = headSqlExecutor;
-        this.curdOpSupportMap = curdOpSupportMap;
         this.dialect = dialect;
         this.mappers = mappers;
     }
@@ -148,52 +145,47 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> void save(T entity)
     {
-        CurdOpSupport<T> curdInfo = (CurdOpSupport<T>) curdOpSupportMap.get(entity.getClass());
-        curdInfo.save(entity, headSqlExecutor, dialect, connection);
+        BaseModel.ModelResult result = Model.save(entity).getResult();
+        if (result.pkReturnType() != TableEntityInfo.PkReturnType.NO_RETURN_PK)
+        {
+            String                     pk     = insertReturnPk(result.sql(), result.paramValues());
+            TableEntityInfo.ColumnInfo pkInfo = TableEntityInfo.parse(entity.getClass()).getPkInfo();
+            switch (result.pkReturnType())
+            {
+                case STRING ->
+                {
+                    pkInfo.accessor().setObject(entity, pk);
+                }
+                case INT ->
+                {
+                    pkInfo.accessor().setObject(entity, Integer.valueOf(pk));
+                }
+                case LONG ->
+                {
+                    pkInfo.accessor().setObject(entity, Long.valueOf(pk));
+                }
+            }
+        }
+        else
+        {
+            update(result.sql(), result.paramValues());
+        }
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <T> void update(T entity)
     {
-        checkIfClosed();
-        CurdOpSupport<T> curdInfo = (CurdOpSupport<T>) curdOpSupportMap.get(entity.getClass());
-        curdInfo.update(entity, headSqlExecutor, dialect, connection);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> int delete(Class<T> ckass, Object pk)
-    {
-        checkIfClosed();
-        CurdOpSupport<T> curdInfo = (CurdOpSupport<T>) curdOpSupportMap.get(ckass);
-        return curdInfo.delete(pk, headSqlExecutor, dialect, connection);
+        BaseModel.ModelResult result = Model.update(entity).getResult();
+        update(result.sql(), result.paramValues());
     }
 
     @SuppressWarnings({"unchecked"})
     @Override
     public <T> void insert(T entity)
     {
-        checkIfClosed();
-        CurdOpSupport<T> curdInfo = (CurdOpSupport<T>) curdOpSupportMap.get(entity.getClass());
-        curdInfo.insert(entity, headSqlExecutor, dialect, connection);
-    }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public <T> T get(Class<T> entityClass, Object pk)
-    {
-        checkIfClosed();
-        CurdOpSupport<T> curdInfo = (CurdOpSupport<T>) curdOpSupportMap.get(entityClass);
-        return curdInfo.find(pk, headSqlExecutor, dialect, connection);
-    }
-
-    @Override
-    public <T> T get(Class<T> entityClass, Object pk, LockMode mode)
-    {
-        checkIfClosed();
-        CurdOpSupport<?> curdInfo = curdOpSupportMap.get(entityClass);
-        return (T) curdInfo.find(pk, mode, headSqlExecutor, dialect, connection);
+        BaseModel.ModelResult result = Model.insert(entity).getResult();
+        update(result.sql(), result.paramValues());
     }
 
     @Override

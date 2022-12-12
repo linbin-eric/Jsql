@@ -1,5 +1,6 @@
 package com.jfirer.jsql.model;
 
+import com.jfirer.jsql.model.support.LockMode;
 import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.support.SFunction;
@@ -20,6 +21,13 @@ public interface Model
         return model;
     }
 
+    static <T> Model insert(T entity)
+    {
+        BaseModel model = new BaseModel();
+        model.insert(entity);
+        return model;
+    }
+
     static Model deleteFrom(Class<?> ckass)
     {
         BaseModel model = new BaseModel();
@@ -36,6 +44,20 @@ public interface Model
     {
         BaseModel model = new BaseModel();
         model.addFromAs(new BaseModel.FromAs(ckass, asName));
+        return model;
+    }
+
+    static <T> Model save(T entity)
+    {
+        BaseModel model = new BaseModel();
+        model.save(entity);
+        return model;
+    }
+
+    static <T> Model update(T entity)
+    {
+        BaseModel model = new BaseModel();
+        model.update(entity);
         return model;
     }
 
@@ -70,6 +92,8 @@ public interface Model
     <T> Model groupBy(SFunction<T, ?> fn);
 
     Model returnType(Class<?> ckass);
+
+    Model lockMode(LockMode lockMode);
 
     Model page(Page page);
 

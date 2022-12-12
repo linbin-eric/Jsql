@@ -124,7 +124,7 @@ public class ModelTest
         SqlSession session = sessionFactory.openSession();
         session.save(user);
         session.insert(Model.update(User.class).set(User::getAge, 12).where(Param.eq(User::getId, 1)));
-        User query = session.get(User.class, 1);
+        User query = session.findOne(Model.from(User.class).where(Param.eq(User::getId,1)));
         Assert.assertEquals(12, query.getAge());
     }
 

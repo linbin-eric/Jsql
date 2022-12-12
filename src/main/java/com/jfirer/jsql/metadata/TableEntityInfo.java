@@ -2,6 +2,7 @@ package com.jfirer.jsql.metadata;
 
 import com.jfirer.baseutil.StringUtil;
 import com.jfirer.baseutil.reflect.ReflectUtil;
+import com.jfirer.baseutil.reflect.ValueAccessor;
 import com.jfirer.jsql.annotation.*;
 
 import java.lang.reflect.Field;
@@ -11,9 +12,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class TableEntityInfo
 {
-    public record ColumnInfo(String columnName, String propertyName, Field field) {}
+    public record ColumnInfo(String columnName, String propertyName, Field field, ValueAccessor accessor) {}
 
-    private static final Map<Class<?>, TableEntityInfo> store = new ConcurrentHashMap<Class<?>, TableEntityInfo>();
+    private static final Map<Class<?>, TableEntityInfo> store        = new ConcurrentHashMap<Class<?>, TableEntityInfo>();
     private final        String                         className;
     private final        String                         classSimpleName;
     private final        String                         tableName;
@@ -21,6 +22,16 @@ public class TableEntityInfo
     private              Map<String, ColumnInfo>        columnNameIgnoreCaseKeyMap;
     private              ColumnInfo                     pkInfo;
     private final        Class<?>                       ckass;
+    private              PkGenerator.Generator          pkGenerator;
+    private              PkReturnType                   pkReturnType = PkReturnType.NO_RETURN_PK;
+
+    public enum PkReturnType
+    {
+        STRING,
+        INT,
+        LONG,
+        NO_RETURN_PK
+    }
 
     private TableEntityInfo(Class<?> ckass)
     {
@@ -45,18 +56,30 @@ public class TableEntityInfo
                 String columnName = field.isAnnotationPresent(ColumnName.class) && StringUtil.isNotBlank(field.getAnnotation(ColumnName.class).value()) ? //
                         field.getAnnotation(ColumnName.class).value()//
                         : strategy.toColumnName(field.getName());
-                ColumnInfo columnInfo = new ColumnInfo(columnName, field.getName(), field);
+                ColumnInfo columnInfo = new ColumnInfo(columnName, field.getName(), field, new ValueAccessor(field));
                 propertyNameKeyMap.put(columnInfo.propertyName, columnInfo);
                 columnNameIgnoreCaseKeyMap.put(columnName.toLowerCase(), columnInfo);
                 if (field.isAnnotationPresent(Pk.class))
                 {
                     if (pkInfo == null)
                     {
-                        pkInfo = new ColumnInfo(columnName, field.getName(), field);
+                        pkInfo = new ColumnInfo(columnName, field.getName(), field, new ValueAccessor(field));
                     }
                     else
                     {
                         throw new IllegalStateException("一个实体类不能注解两个PK注解，请检查" + field.getDeclaringClass().getName());
+                    }
+                    if (field.isAnnotationPresent(PkGenerator.class))
+                    {
+                        pkGenerator = field.getAnnotation(PkGenerator.class).value().getDeclaredConstructor().newInstance();
+                    }
+                    else if (field.isAnnotationPresent(AutoIncrement.class) || field.isAnnotationPresent(Sequence.class))
+                    {
+                        pkReturnType = detectPkValueType(field);
+                    }
+                    else
+                    {
+                        ;
                     }
                 }
             }
@@ -164,5 +187,35 @@ public class TableEntityInfo
             store.put(entityClass, tableEntityInfo);
         }
         return tableEntityInfo;
+    }
+
+    public PkGenerator.Generator getPkGenerator()
+    {
+        return pkGenerator;
+    }
+
+    private PkReturnType detectPkValueType(Field pkField)
+    {
+        if (pkField.getType() == String.class)
+        {
+            return PkReturnType.STRING;
+        }
+        else if (pkField.getType() == Integer.class)
+        {
+            return PkReturnType.INT;
+        }
+        else if (pkField.getGenericType() == Long.class)
+        {
+            return PkReturnType.LONG;
+        }
+        else
+        {
+            throw new IllegalArgumentException("不支持非String，Integer，Long以外类型的主键");
+        }
+    }
+
+    public PkReturnType getPkReturnType()
+    {
+        return pkReturnType;
     }
 }

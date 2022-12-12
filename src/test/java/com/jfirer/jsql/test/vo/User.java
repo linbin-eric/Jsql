@@ -1,9 +1,6 @@
 package com.jfirer.jsql.test.vo;
 
-import com.jfirer.jsql.annotation.Pk;
-import com.jfirer.jsql.annotation.SqlIgnore;
-import com.jfirer.jsql.annotation.ColumnName;
-import com.jfirer.jsql.annotation.TableDef;
+import com.jfirer.jsql.annotation.*;
 import com.jfirer.jsql.transfer.CustomTransfer;
 import com.jfirer.jsql.transfer.impl.EnumOrdinalTransfer;
 
@@ -31,6 +28,7 @@ public class User
 
     public static String        customName = "12asdaseda";
     @Pk
+    @AutoIncrement
     private       Integer       id;
     @ColumnName(value = "name2")
     private       String        name;

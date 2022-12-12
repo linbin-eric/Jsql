@@ -1,9 +1,9 @@
 package com.jfirer.jsql.model.impl;
 
 import com.jfirer.jsql.metadata.TableEntityInfo;
-import com.jfirer.jsql.model.support.SFunction;
 import com.jfirer.jsql.model.BaseModel;
 import com.jfirer.jsql.model.Model;
+import com.jfirer.jsql.model.support.SFunction;
 
 import java.util.List;
 
@@ -11,8 +11,8 @@ public class OneValueParam extends InternalParamImpl
 {
     private final SFunction<?, ?> fn;
     private final Object          value;
-    private final String      operator;
-    private       SixConsumer sixConsumer = (tableName, columnName, value, operator, builder, paramValues) -> {
+    private final String          operator;
+    private       SixConsumer     sixConsumer = (tableName, columnName, value, operator, builder, paramValues) -> {
         if (value instanceof Model m)
         {
             BaseModel.ModelResult result = m.getResult();

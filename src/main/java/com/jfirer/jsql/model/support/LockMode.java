@@ -1,4 +1,4 @@
-package com.jfirer.jsql.curd;
+package com.jfirer.jsql.model.support;
 
 public enum LockMode
 {

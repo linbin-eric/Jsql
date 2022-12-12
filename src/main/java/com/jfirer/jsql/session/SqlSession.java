@@ -1,6 +1,5 @@
 package com.jfirer.jsql.session;
 
-import com.jfirer.jsql.curd.LockMode;
 import com.jfirer.jsql.model.Model;
 
 import java.sql.Connection;
@@ -41,57 +40,15 @@ interface ConnectionOp
     Connection getConnection();
 }
 
-interface CurdOp
+/**
+ * 代表一个connection链接，提供各种dao操作入口
+ *
+ * @author eric
+ */
+public interface SqlSession extends ConnectionOp, SqlOp
 {
-    /**
-     * 将一个对象保存或者更新到数据库。如果对象的id属性有值，就是更新操作，如果没有值就是插入操作
-     *
-     * @param <T>
-     * @param entity
-     * @return
-     */
-    <T> void save(T entity);
+    <T> T getMapper(Class<T> mapperClass);
 
-    <T> void update(T entity);
-
-    /**
-     * 删除一个实体的记录
-     *
-     * @param ckass
-     * @param pk
-     * @return
-     */
-    <T> int delete(Class<T> ckass, Object pk);
-
-    /**
-     * 将一个对象以插入的形式保存到数据库
-     *
-     * @param <T>
-     * @param entity
-     */
-    <T> void insert(T entity);
-
-    /**
-     * 根据主键获取一条记录，并且使用该记录创造一个对象
-     *
-     * @param entityClass 代表数据库表的类对象
-     * @param pk          主键
-     * @return 代表该行记录的对象实例
-     */
-    <T> T get(Class<T> entityClass, Object pk);
-
-    /**
-     * 根据主键获取一条记录，并且使用该记录创造一个对象.获取的时候使用给定的锁定模式
-     *
-     * @param entityClass 代表数据库表的类对象
-     * @param pk          主键
-     * @return 代表该行记录的对象实例
-     */
-    <T> T get(Class<T> entityClass, Object pk, LockMode mode);
-}
-
-interface ModelOp
-{
     <T> T findOne(Model model);
 
     /**
@@ -108,14 +65,23 @@ interface ModelOp
     int delete(Model model);
 
     int insert(Model model);
-}
 
-/**
- * 代表一个connection链接，提供各种dao操作入口
- *
- * @author eric
- */
-public interface SqlSession extends ConnectionOp, CurdOp, ModelOp, SqlOp
-{
-    <T> T getMapper(Class<T> mapperClass);
+    /**
+     * 将一个对象保存或者更新到数据库。如果对象的id属性有值，就是更新操作，如果没有值就是插入操作
+     *
+     * @param <T>
+     * @param entity
+     * @return
+     */
+    <T> void save(T entity);
+
+    <T> void update(T entity);
+
+    /**
+     * 将一个对象以插入的形式保存到数据库
+     *
+     * @param <T>
+     * @param entity
+     */
+    <T> void insert(T entity);
 }

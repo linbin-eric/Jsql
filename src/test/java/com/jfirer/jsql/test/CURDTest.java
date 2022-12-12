@@ -2,7 +2,7 @@ package com.jfirer.jsql.test;
 
 import com.jfirer.jsql.SessionFactory;
 import com.jfirer.jsql.SessionfactoryConfig;
-import com.jfirer.jsql.curd.LockMode;
+import com.jfirer.jsql.model.support.LockMode;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.Param;
 import com.jfirer.jsql.session.SqlSession;
@@ -182,7 +182,7 @@ public class CURDTest
     {
         test_save_insert();
         SqlSession session = sessionFactory.openSession();
-        User       query   = session.get(User.class, 1);
+        User       query   = session.findOne(Model.from(User.class).where(Param.eq(User::getId, 1)));
         Assert.assertNotNull(query);
         Assert.assertEquals(1, query.getId().intValue());
         Assert.assertEquals(new Date(User.now).getTime(), query.getDate().getTime(), 1);
@@ -217,10 +217,8 @@ public class CURDTest
     public void test_delete() throws SQLException
     {
         test_insert();
-        User delete = new User();
-        delete.setId(1);
         SqlSession session = sessionFactory.openSession();
-        session.delete(User.class, 1);
+        session.delete(Model.deleteFrom(User.class).where(Param.eq(User::getId, 1)));
         ResultSet resultSet = session.getConnection().prepareStatement("select count(*) from user").executeQuery();
         Assert.assertTrue(resultSet.next());
         Assert.assertEquals(0, resultSet.getInt(1));
@@ -243,7 +241,7 @@ public class CURDTest
         ResultSet resultSet = session.getConnection().prepareStatement("select age from User where id = 1").executeQuery();
         resultSet.next();
         System.out.println(resultSet.getInt(1));
-        User query = session.get(User.class, user.getId());
+        User query = session.findOne(Model.from(User.class).where(Param.eq(User::getId, user.getId())));
         Assert.assertEquals(0, query.getAge2());
         Assert.assertEquals(12, query.getAge());
         session.close();
@@ -274,7 +272,7 @@ public class CURDTest
                     latch.countDown();
                     SqlSession session = one.openSession();
                     session.beginTransAction();
-                    session.get(User.class, 1, LockMode.SHARE);
+                    session.find(Model.from(User.class).where(Param.eq(User::getId, 1)).lockMode(LockMode.SHARE));
                     count.incrementAndGet();
                     session.close();
                 }
@@ -308,7 +306,7 @@ public class CURDTest
                     latch.countDown();
                     SqlSession session = one.openSession();
                     session.beginTransAction();
-                    session.get(User.class, 1, LockMode.UPDATE);
+                    session.find(Model.from(User.class).where(Param.eq(User::getId, 1)).lockMode(LockMode.UPDATE));
                     count.incrementAndGet();
                     try
                     {

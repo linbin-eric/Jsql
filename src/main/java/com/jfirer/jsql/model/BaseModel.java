@@ -1,7 +1,12 @@
 package com.jfirer.jsql.model;
 
+import com.jfirer.jsql.annotation.AutoIncrement;
+import com.jfirer.jsql.annotation.PkGenerator;
+import com.jfirer.jsql.annotation.Sequence;
+import com.jfirer.jsql.model.support.LockMode;
 import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.metadata.TableEntityInfo;
+import com.jfirer.jsql.model.impl.ForUpdateEqParam;
 import com.jfirer.jsql.model.impl.InternalParam;
 import com.jfirer.jsql.model.support.SFunction;
 
@@ -164,13 +169,15 @@ public class BaseModel implements Model
     List<Record> orderBy = new LinkedList<>();
     List<Record> groupBy = new LinkedList<>();
     List<Record> insert  = new LinkedList<>();
-    private ModelType  type;
-    private Update     update;
-    private Delete     delete;
-    private InsertInto insertInto;
-    private Param      param;
-    private Class<?>   returnType;
-    private Page       page;
+    private ModelType                    type;
+    private Update                       update;
+    private Delete                       delete;
+    private InsertInto                   insertInto;
+    private Param                        param;
+    private Class<?>                     returnType;
+    private Page                         page;
+    private TableEntityInfo.PkReturnType pkReturnType;
+    private LockMode                     lockMode;
 
     public void setDelete(Delete delete)
     {
@@ -363,6 +370,13 @@ public class BaseModel implements Model
         return this;
     }
 
+    @Override
+    public Model lockMode(LockMode lockMode)
+    {
+        this.lockMode = lockMode;
+        return this;
+    }
+
     private Class<?> getReturnType()
     {
         if (type == ModelType.query)
@@ -389,7 +403,7 @@ public class BaseModel implements Model
 
     private List<Object> paramValues = new LinkedList<>();
 
-    public record ModelResult(String sql, Class<?> returnType, List<Object> paramValues) {}
+    public record ModelResult(String sql, Class<?> returnType, List<Object> paramValues, TableEntityInfo.PkReturnType pkReturnType) {}
 
     @Override
     public ModelResult getResult()
@@ -399,7 +413,7 @@ public class BaseModel implements Model
         {
             paramValues.add(page);
         }
-        return new ModelResult(sql, getReturnType(), paramValues);
+        return new ModelResult(sql, getReturnType(), paramValues, pkReturnType);
     }
 
     private String getSql()
@@ -411,8 +425,15 @@ public class BaseModel implements Model
             case query ->
             {
                 builder.append("select ");
-                String segment = select.stream().map(select -> select.toString()).collect(Collectors.joining(","));
-                builder.append(segment);
+                if (select.isEmpty())
+                {
+                    builder.append("*");
+                }
+                else
+                {
+                    String segment = select.stream().map(select -> select.toString()).collect(Collectors.joining(","));
+                    builder.append(segment);
+                }
                 builder.append(" from ");
                 String fromSegment = from.stream().map(fromAs -> fromAs.toString()).collect(Collectors.joining(" "));
                 builder.append(fromSegment);
@@ -442,6 +463,14 @@ public class BaseModel implements Model
                 else
                 {
                     ;
+                }
+                if (lockMode != null)
+                {
+                    switch (lockMode)
+                    {
+                        case SHARE -> builder.append(" lock in share mode ");
+                        case UPDATE -> builder.append(" for update ");
+                    }
                 }
             }
             case delete ->
@@ -497,6 +526,10 @@ public class BaseModel implements Model
                         paramValues.addAll(result.paramValues);
                         return new WrapperData(insert.columnName, result.sql);
                     }
+                    else if (insert.value instanceof Sequence sequence)
+                    {
+                        return new WrapperData(insert.columnName, sequence.value() + ".NEXTVAL");
+                    }
                     else
                     {
                         paramValues.add(insert.value);
@@ -508,6 +541,86 @@ public class BaseModel implements Model
             }
         }
         return builder.toString();
+    }
+
+    public <T> void insert(T entity)
+    {
+        TableEntityInfo entityInfo = TableEntityInfo.parse(entity.getClass());
+        setInsertInto(new InsertInto(entityInfo.getEntityClass()));
+        for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
+        {
+            insert.add(new Insert(columnInfo.columnName(), columnInfo.accessor().get(entity)));
+        }
+    }
+
+    public <T> void update(T entity)
+    {
+        setUpdate(new Update(entity.getClass()));
+        TableEntityInfo entityInfo = TableEntityInfo.parse(entity.getClass());
+        for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
+        {
+            set.add(new set(columnInfo.columnName(), columnInfo.accessor().get(entity)));
+        }
+        param = new ForUpdateEqParam(entity);
+    }
+
+    /**
+     * 保存一个对象到数据库。会根据该对象的主键属性是否为空进行不同的行为。
+     * 1、不存在主键的，则按照全量插入处理。
+     * 2.1、存在主键，且主键属性有值，按照全量插入处理。
+     * 2.2、存在主键，主键属性为空，主键有PkGenerator注解，则使用对应的生成器生成主键属性，赋值给入参对象后，按照全量插入处理。
+     * 2.3、存在主键，主键属性为空，主键上有AutoIncrement主键，则除了主键属性外，所有的属性均插入数据库，并且返回数据库自动生成的主键值。
+     * 2.4、存在主键，主键属性为空，主键上有Sequence主键，则除了主键属性外，所有的属性均插入数据库，并且返回数据库自动生成的主键值。
+     * 2.5、抛出异常
+     *
+     * @param entity
+     * @param <T>
+     * @return
+     */
+    public <T> void save(T entity)
+    {
+        TableEntityInfo entityInfo = TableEntityInfo.parse(entity.getClass());
+        if (entityInfo.getPkInfo() == null)
+        {
+            insert(entity);
+            pkReturnType = TableEntityInfo.PkReturnType.NO_RETURN_PK;
+        }
+        else
+        {
+            TableEntityInfo.ColumnInfo pkInfo = entityInfo.getPkInfo();
+            Object                     pk     = pkInfo.accessor().get(entity);
+            if (pk == null)
+            {
+                if (pkInfo.field().isAnnotationPresent(PkGenerator.class))
+                {
+                    Object next = entityInfo.getPkGenerator().next();
+                    pkInfo.accessor().setObject(entity, next);
+                    insert(entity);
+                    pkReturnType = TableEntityInfo.PkReturnType.NO_RETURN_PK;
+                }
+                else if (pkInfo.field().isAnnotationPresent(AutoIncrement.class) || pkInfo.field().isAnnotationPresent(Sequence.class))
+                {
+                    setInsertInto(new InsertInto(entityInfo.getEntityClass()));
+                    entityInfo.getPropertyNameKeyMap().values().stream()//
+                              .filter(columnInfo -> columnInfo.field() != pkInfo.field())//
+                              .forEach(columnInfo -> insert.add(new Insert(columnInfo.columnName(), columnInfo.accessor().get(entity))));
+                    if (pkInfo.field().isAnnotationPresent(Sequence.class))
+                    {
+                        insert.add(new Insert(pkInfo.columnName(), pkInfo.field().getAnnotation(Sequence.class)));
+                    }
+                    pkReturnType = entityInfo.getPkReturnType();
+                }
+                else
+                {
+                    throw new IllegalArgumentException(pkInfo.field() + "主键没有自动生成，也没有标记自增长或者序列注解，不能在空值情况下执行save操作");
+                }
+            }
+            else
+            {
+                update(entity);
+                pkReturnType = TableEntityInfo.PkReturnType.NO_RETURN_PK;
+            }
+        }
     }
 }
 
