@@ -2,8 +2,8 @@ package com.jfirer.jsql.model;
 
 import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.metadata.TableEntityInfo;
-import com.jfirer.jsql.model.support.SFunction;
 import com.jfirer.jsql.model.impl.InternalParam;
+import com.jfirer.jsql.model.support.SFunction;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -147,12 +147,22 @@ public class BaseModel implements Model
         }
     }
 
+    record GroupBy(String columnName)
+    {
+        @Override
+        public String toString()
+        {
+            return columnName;
+        }
+    }
+
     record Insert(String columnName, Object value) {}
 
     List<Record> from    = new LinkedList<>();
     List<Record> select  = new LinkedList<>();
     List<Record> set     = new LinkedList<>();
     List<Record> orderBy = new LinkedList<>();
+    List<Record> groupBy = new LinkedList<>();
     List<Record> insert  = new LinkedList<>();
     private ModelType  type;
     private Update     update;
@@ -340,6 +350,13 @@ public class BaseModel implements Model
     }
 
     @Override
+    public <T> Model groupBy(SFunction<T, ?> fn)
+    {
+        findColumnNameAndConsumer(from, fn, (tableName, columnName) -> groupBy.add(new GroupBy(tableName + "." + columnName)));
+        return this;
+    }
+
+    @Override
     public Model returnType(Class<?> ckass)
     {
         returnType = ckass;
@@ -403,6 +420,14 @@ public class BaseModel implements Model
                 {
                     builder.append(" where ");
                     ((InternalParam) param).renderSql(from, builder, paramValues);
+                }
+                else
+                {
+                    ;
+                }
+                if (groupBy.isEmpty() == false)
+                {
+                    builder.append(" group by ").append(groupBy.stream().map(record -> record.toString()).collect(Collectors.joining(",")));
                 }
                 else
                 {

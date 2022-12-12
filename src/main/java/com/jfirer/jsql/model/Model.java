@@ -67,6 +67,8 @@ public interface Model
 
     <T> Model orderBy(SFunction<T, ?> fn, boolean desc);
 
+    <T> Model groupBy(SFunction<T, ?> fn);
+
     Model returnType(Class<?> ckass);
 
     Model page(Page page);
