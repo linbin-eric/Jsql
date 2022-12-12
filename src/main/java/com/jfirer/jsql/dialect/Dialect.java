@@ -14,4 +14,22 @@ public interface Dialect
      * @throws SQLException
      */
     void fillStatement(PreparedStatement preparedStatement, List<Object> params) throws SQLException;
+
+    @FunctionalInterface
+    interface ThreeConsumer
+    {
+        void accept(PreparedStatement preparedStatement, int index, Object value) throws SQLException;
+
+        static void defaultAccept(PreparedStatement preparedStatement, int index, Object value)
+        {
+            try
+            {
+                preparedStatement.setObject(index, value);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 }

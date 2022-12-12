@@ -5,7 +5,6 @@ import com.jfirer.jsql.SessionfactoryConfig;
 import com.jfirer.jsql.dialect.impl.H2Dialect;
 import com.jfirer.jsql.mapper.Mapper;
 import com.jfirer.jsql.mapper.Repository;
-import com.jfirer.jsql.metadata.TableMode;
 import com.jfirer.jsql.session.SqlSession;
 import com.jfirer.jsql.test.vo.SqlLog;
 import com.jfirer.jsql.test.vo.User;
@@ -16,9 +15,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.lang.reflect.Method;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -48,26 +44,22 @@ public class JpaModeTest
         dataSource.setPassword("");
         config.setDataSource(dataSource);
         config.setClassLoader(MapperTest.class.getClassLoader());
-        config.setDialect(new H2Dialect()
-        {
-            protected void setUnDefinedType(PreparedStatement preparedStatement, int i, Object value) throws SQLException
+        config.setDialect(new H2Dialect((preparedStatement, i, value) -> {
+            if (value instanceof User.StringEnum)
             {
-                if (value instanceof User.StringEnum)
-                {
-                    User.StringEnum stringEnum = (User.StringEnum) value;
-                    preparedStatement.setString(i, stringEnum.name());
-                }
-                else if (value instanceof Enum<?>)
-                {
-                    Enum<?> enum1 = (Enum<?>) value;
-                    preparedStatement.setInt(i, enum1.ordinal());
-                }
-                else
-                {
-                    preparedStatement.setObject(i, value);
-                }
+                User.StringEnum stringEnum = (User.StringEnum) value;
+                preparedStatement.setString(i, stringEnum.name());
             }
-        });
+            else if (value instanceof Enum<?>)
+            {
+                Enum<?> enum1 = (Enum<?>) value;
+                preparedStatement.setInt(i, enum1.ordinal());
+            }
+            else
+            {
+                preparedStatement.setObject(i, value);
+            }
+        }));
         config.setScanPackage("com.jfirer.jsql.test:in~*$UserOp;com.jfirer.jsql.test.vo");
         config.addSqlExecutor(new SqlLog());
         sessionFactory = config.build();
@@ -76,7 +68,7 @@ public class JpaModeTest
         session.update("DROP TABLE IF EXISTS user2", new LinkedList<>());
         session.update(userTableDml, new LinkedList<>());
         session.update(user2TableDml, new LinkedList<>());
-        User       user    = new User();
+        User user = new User();
         user.setAge(12);
         user.setName("lin");
         user.setLength(18);

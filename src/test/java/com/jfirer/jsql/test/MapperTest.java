@@ -19,7 +19,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Date;
@@ -141,9 +140,8 @@ public class MapperTest
                    <%} else {%>
                     where id=${id}
                     <%}%>
-                   """,paramNames = "name,id")
+                   """, paramNames = "name,id")
         public List<User> find(String name, int id, Page page);
-
 
         @Sql(sql = "select * from User where name like ${'%'+name+'%'}", paramNames = "name")
         public List<User> find2(String name, Page page);
@@ -229,26 +227,22 @@ public class MapperTest
         dataSource.setPassword("");
         config.setDataSource(dataSource);
         config.setClassLoader(MapperTest.class.getClassLoader());
-        config.setDialect(new H2Dialect()
-        {
-            protected void setUnDefinedType(PreparedStatement preparedStatement, int i, Object value) throws SQLException
+        config.setDialect(new H2Dialect((PreparedStatement preparedStatement, int i, Object value) -> {
+            if (value instanceof User.StringEnum)
             {
-                if (value instanceof User.StringEnum)
-                {
-                    User.StringEnum stringEnum = (User.StringEnum) value;
-                    preparedStatement.setString(i, stringEnum.name());
-                }
-                else if (value instanceof Enum<?>)
-                {
-                    Enum<?> enum1 = (Enum<?>) value;
-                    preparedStatement.setInt(i, enum1.ordinal());
-                }
-                else
-                {
-                    preparedStatement.setObject(i, value);
-                }
+                User.StringEnum stringEnum = (User.StringEnum) value;
+                preparedStatement.setString(i, stringEnum.name());
             }
-        });
+            else if (value instanceof Enum<?>)
+            {
+                Enum<?> enum1 = (Enum<?>) value;
+                preparedStatement.setInt(i, enum1.ordinal());
+            }
+            else
+            {
+                preparedStatement.setObject(i, value);
+            }
+        }));
         config.setScanPackage("com.jfirer.jsql.test:in~*$TestOp;com.jfirer.jsql.test.vo");
         config.addSqlExecutor(new SqlLog());
         sessionFactory = config.build();
@@ -420,7 +414,8 @@ public class MapperTest
      * 测试默认方法
      */
     @Test
-    public void test_11(){
-        assertEquals(1,testOp.testDefault());
+    public void test_11()
+    {
+        assertEquals(1, testOp.testDefault());
     }
 }

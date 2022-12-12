@@ -11,6 +11,18 @@ import java.util.List;
 
 public class H2Dialect implements Dialect
 {
+    ThreeConsumer threeConsumer;
+
+    public H2Dialect(ThreeConsumer threeConsumer)
+    {
+        this.threeConsumer = threeConsumer;
+    }
+
+    public H2Dialect()
+    {
+        this(ThreeConsumer::defaultAccept);
+    }
+
     @Override
     public void fillStatement(PreparedStatement preparedStatement, List<Object> params) throws SQLException
     {
@@ -39,14 +51,8 @@ public class H2Dialect implements Dialect
             }
             else
             {
-                setUnDefinedType(preparedStatement, index, value);
+                threeConsumer.accept(preparedStatement, index, value);
             }
-            index++;
         }
-    }
-
-    protected void setUnDefinedType(PreparedStatement preparedStatement, int i, Object value) throws SQLException
-    {
-        preparedStatement.setObject(i, value);
     }
 }

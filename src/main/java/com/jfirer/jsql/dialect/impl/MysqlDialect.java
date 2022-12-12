@@ -11,6 +11,18 @@ import java.util.List;
 
 public class MysqlDialect implements Dialect
 {
+    ThreeConsumer consumer;
+
+    public MysqlDialect(ThreeConsumer consumer)
+    {
+        this.consumer = consumer;
+    }
+
+    public MysqlDialect()
+    {
+        this(ThreeConsumer::defaultAccept);
+    }
+
     @Override
     public void fillStatement(PreparedStatement preparedStatement, List<Object> params) throws SQLException
     {
@@ -39,14 +51,9 @@ public class MysqlDialect implements Dialect
             }
             else
             {
-                setUnDefinedType(preparedStatement, index, value);
+                consumer.accept(preparedStatement,index,value);
             }
-            index++;
         }
     }
 
-    private void setUnDefinedType(PreparedStatement preparedStatement, int i, Object value) throws SQLException
-    {
-        preparedStatement.setObject(i, value);
-    }
 }
