@@ -16,11 +16,19 @@ public abstract class TokenParser
 
     protected int skipWhiteSpace(int offset, String el)
     {
-        while (CharType.isWhitespace(getChar(offset, el)))
+        do
         {
-            offset++;
+            char c = getChar(offset, el);
+            if (c == ' ' || c == '\r' || c == '\n' || c == '\t')
+            {
+                offset++;
+            }
+            else
+            {
+                return offset;
+            }
         }
-        return offset;
+        while (true);
     }
 
     public abstract int parse(String sql, int offset, Deque<Token> tokens);

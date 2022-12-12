@@ -133,8 +133,17 @@ public class MapperTest
 
         /* 测试对POJO属性的提取 */
         /* 测试page */
-        @Sql(sql = "select * from User <%  if( name != null) {    %>" + " where name like ${'%'+name+'%'}" + " <%} else {%> " + "where id=${id}" + " <%}%> ", paramNames = "name,id")
+//        @Sql(sql = "select * from User <%  if( name != null) {    %>" + " where name like ${'%'+name+'%'}" + " <%} else {%> " + "where id=${id}" + " <%}%> ", paramNames = "name,id")
+        @Sql(sql = """
+                   select * from User 
+                   <%  if( name != null) {    %>
+                    where name like ${'%'+name+'%'}
+                   <%} else {%>
+                    where id=${id}
+                    <%}%>
+                   """,paramNames = "name,id")
         public List<User> find(String name, int id, Page page);
+
 
         @Sql(sql = "select * from User where name like ${'%'+name+'%'}", paramNames = "name")
         public List<User> find2(String name, Page page);
