@@ -1,9 +1,9 @@
 package com.jfirer.jsql.model.impl;
 
 import com.jfirer.jsql.metadata.TableEntityInfo;
-import com.jfirer.jsql.model.support.SFunction;
 import com.jfirer.jsql.model.BaseModel;
 import com.jfirer.jsql.model.Model;
+import com.jfirer.jsql.model.support.SFunction;
 
 import java.util.Arrays;
 import java.util.List;
@@ -11,10 +11,13 @@ import java.util.stream.Collectors;
 
 public class InParam extends InternalParamImpl
 {
-    private final SFunction<?, ?> fn;
-    private final Object[]        values;
-    private       FiveConsumer    consumer = (tableName, columnName, values, builder, paramValues) -> {
-        builder.append(tableName).append('.').append(columnName).append(" in (");
+    private final       SFunction<?, ?> fn;
+    private final       Object[]        values;
+    private final       String          mode;
+    public static final String          IN       = " in (";
+    public static final String          NOT_IN   = " not in (";
+    private             InConsumer      consumer = (tableName, columnName, values, builder, paramValues, mode) -> {
+        builder.append(tableName).append('.').append(columnName).append(mode);
         record WrapperData(String segment, Object paramValue) {}
         String segment = Arrays.stream(values)//
                                .map(value -> {
@@ -41,9 +44,10 @@ public class InParam extends InternalParamImpl
         builder.append(segment).append(" )");
     };
 
-    public InParam(SFunction<?, ?> fn, Object... values)
+    public InParam(SFunction<?, ?> fn, String mode, Object... values)
     {
         this.fn = fn;
+        this.mode = mode;
         this.values = values;
     }
 
@@ -51,7 +55,7 @@ public class InParam extends InternalParamImpl
     public void renderSql(List<Record> fromAsList, StringBuilder builder, List<Object> paramValues)
     {
         BaseModel.findColumnNameAndConsumer(fromAsList, fn, (tableName, columnName) -> {
-            consumer.accept(tableName, columnName, values, builder, paramValues);
+            consumer.accept(tableName, columnName, values, builder, paramValues, mode);
         });
     }
 
@@ -60,12 +64,12 @@ public class InParam extends InternalParamImpl
     {
         TableEntityInfo            entityInfo = TableEntityInfo.parse(ckass);
         TableEntityInfo.ColumnInfo columnInfo = entityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName());
-        consumer.accept(entityInfo.getTableName(), columnInfo.columnName(), values, builder, paramValues);
+        consumer.accept(entityInfo.getTableName(), columnInfo.columnName(), values, builder, paramValues, mode);
     }
 
     @FunctionalInterface
-    interface FiveConsumer
+    interface InConsumer
     {
-        void accept(String tableName, String columnName, Object[] values, StringBuilder builder, List<Object> paramValues);
+        void accept(String tableName, String columnName, Object[] values, StringBuilder builder, List<Object> paramValues, String mode);
     }
 }

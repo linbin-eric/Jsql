@@ -6,7 +6,7 @@ import com.jfirer.jsql.annotation.Sequence;
 import com.jfirer.jsql.model.support.LockMode;
 import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.metadata.TableEntityInfo;
-import com.jfirer.jsql.model.impl.ForUpdateEqParam;
+import com.jfirer.jsql.model.impl.SpecialPkEqParam;
 import com.jfirer.jsql.model.impl.InternalParam;
 import com.jfirer.jsql.model.support.SFunction;
 
@@ -561,7 +561,7 @@ public class BaseModel implements Model
         {
             set.add(new set(columnInfo.columnName(), columnInfo.accessor().get(entity)));
         }
-        param = new ForUpdateEqParam(entity);
+        param = new SpecialPkEqParam(entity);
     }
 
     /**

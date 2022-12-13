@@ -158,11 +158,5 @@ public class ModelTest
         assertNotNull(user);
     }
 
-    @Test
-    public void test_5()
-    {
-        SFunction<User, ?> fn = User::getNow;
-        String             s  = SFunction.resolveFieldName(fn);
-        assertEquals("now", s);
-    }
+
 }

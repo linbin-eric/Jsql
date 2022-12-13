@@ -5,11 +5,11 @@ import com.jfirer.jsql.model.Param;
 
 import java.util.List;
 
-public class ForUpdateEqParam implements InternalParam
+public class SpecialPkEqParam implements InternalParam
 {
     private final Object entity;
 
-    public ForUpdateEqParam(Object entity)
+    public SpecialPkEqParam(Object entity)
     {
         this.entity = entity;
     }

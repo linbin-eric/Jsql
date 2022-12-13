@@ -3,8 +3,8 @@ package com.jfirer.jsql.test;
 import com.jfirer.jsql.SessionFactory;
 import com.jfirer.jsql.SessionfactoryConfig;
 import com.jfirer.jsql.dialect.impl.H2Dialect;
-import com.jfirer.jsql.mapper.Mapper;
-import com.jfirer.jsql.mapper.Repository;
+import com.jfirer.jsql.model.Model;
+import com.jfirer.jsql.model.Param;
 import com.jfirer.jsql.session.SqlSession;
 import com.jfirer.jsql.test.vo.SqlLog;
 import com.jfirer.jsql.test.vo.User;
@@ -16,12 +16,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.LinkedList;
-import java.util.List;
 
 import static com.jfirer.jsql.test.CURDTest.user2TableDml;
 import static com.jfirer.jsql.test.CURDTest.userTableDml;
 
-public class JpaModeTest
+public class ModelTest2
 {
     private SessionFactory       sessionFactory;
     private SessionfactoryConfig config;
@@ -90,80 +89,43 @@ public class JpaModeTest
     @Test
     public void test()
     {
-        UserOp userOp = sqlSession.getMapper(UserOp.class);
-        User   user   = userOp.findByAge(12);
+        User user = sqlSession.findOne(Model.from(User.class).where(Param.eq(User::getAge, 12)));
         Assert.assertTrue(user.isB());
-        user = userOp.findByPk(1);
+        user = sqlSession.findOne(Model.from(User.class).where(Param.eq(User::getId, 1)));
         Assert.assertTrue(user.isB());
-        userOp.updateAgeByPk(13, 1);
-        user = userOp.findByPk(1);
+        sqlSession.update(Model.update(User.class).set(User::getAge, 13).where(Param.eq(User::getId, 1)));
+        user = sqlSession.findOne(Model.from(User.class).where(Param.eq(User::getId, 1)));
         Assert.assertEquals(13, user.getAge());
-        userOp.updateAgeByPk(12, 1);
-        user = userOp.findByAgeAndByName(12, "lin");
+        sqlSession.update(Model.update(User.class).set(User::getAge, 12).where(Param.eq(User::getId, 1)));
+        user = sqlSession.findOne(Model.from(User.class).where(Param.eq(User::getAge, 12).and(Param.eq(User::getName, "lin"))));
         Assert.assertTrue(user.isB());
-        user = userOp.findByAgeGreaterThan(12);
+        user = sqlSession.findOne(Model.from(User.class).where(Param.bt(User::getAge, 12)));
         Assert.assertEquals("linbin", user.getName());
-        user = userOp.findByNameStartingWith("linb");
+        user = sqlSession.findOne(Model.from(User.class).where(Param.startWith(User::getName, "linb")));
         Assert.assertEquals(13, user.getAge());
-        user = userOp.findByNameEndingWith("nbin");
+        user = sqlSession.findOne(Model.from(User.class).where(Param.endWith(User::getName, "nbin")));
         Assert.assertEquals(13, user.getAge());
-        user = userOp.findByNameContaining("nb");
+        user = sqlSession.findOne(Model.from(User.class).where(Param.contain(User::getName, "nb")));
         Assert.assertEquals(13, user.getAge());
-        user = userOp.findByAgeGreaterThanEqual(13);
+        user = sqlSession.findOne(Model.from(User.class).where(Param.be(User::getAge, 13)));
         Assert.assertEquals("linbin", user.getName());
-        user = userOp.findByAgeLessThan(13);
+        user = sqlSession.findOne(Model.from(User.class).where(Param.lt(User::getAge, 13)));
         Assert.assertEquals("lin", user.getName());
-        user = userOp.findByAgeLessThanEqual(12);
+        user = sqlSession.findOne(Model.from(User.class).where(Param.le(User::getAge, 12)));
         Assert.assertEquals("lin", user.getName());
-        user = userOp.findByAgeIn(new int[]{9, 12}).get(0);
+        user = (User) sqlSession.find(Model.from(User.class).where(Param.in(User::getAge, 9, 12))).get(0);
         Assert.assertEquals("lin", user.getName());
-        user = userOp.findByAgeNotIn(new int[]{9, 13}).get(0);
+        user = (User) sqlSession.find(Model.from(User.class).where(Param.notIn(User::getAge, 9, 13))).get(0);
         Assert.assertEquals("lin", user.getName());
-        user = userOp.findByStateOrderByAgeDesc(User.State.off.ordinal()).get(0);
+        user = (User) sqlSession.find(Model.from(User.class).where(Param.eq(User::getState, User.State.off.ordinal())).orderBy(User::getAge, true)).get(0);
         Assert.assertEquals("linbin", user.getName());
-        userOp.updateAgeByAge(14, 12);
-        user = userOp.findByAge(14);
+        sqlSession.update(Model.update(User.class).set(User::getAge, 14).where(Param.eq(User::getAge, 12)));
+        user = sqlSession.findOne(Model.from(User.class).where(Param.eq(User::getAge, 14)));
         Assert.assertEquals("lin", user.getName());
         System.out.println(user.getName() + ":" + user.getAge());
-        int result = userOp.updateAgeAndNameByAge(1, "linnew", 14);
+        int result = sqlSession.update(Model.update(User.class).set(User::getAge, 1).set(User::getName, "linnew").where(Param.eq(User::getAge, 14)));
         Assert.assertEquals(1, result);
-        user = userOp.findByAge(1);
+        user = sqlSession.findOne(Model.from(User.class).where(Param.eq(User::getAge, 1)));
         Assert.assertNotNull(user);
-    }
-
-    @Mapper
-    public static interface UserOp extends Repository<User>
-    {
-        User findByAge(int age);
-
-        User findByAgeAndByName(int age, String name);
-
-        User findByAgeGreaterThan(int age);
-
-        User findByNameStartingWith(String name);
-
-        User findByNameEndingWith(String name);
-
-        User findByNameContaining(String name);
-
-        User findByAgeGreaterThanEqual(int age);
-
-        User findByAgeLessThan(int age);
-
-        User findByAgeLessThanEqual(int age);
-
-        List<User> findByAgeIn(int[] ages);
-
-        List<User> findByAgeNotIn(int[] ages);
-
-        List<User> findByStateOrderByAgeDesc(int state);
-
-        void updateAgeByAge(int newAge, int oldAge);
-
-        int updateAgeAndNameByAge(int newAge, String name, int oldAge);
-
-        User findByPk(int id);
-
-        void updateAgeByPk(int age, int id);
     }
 }
