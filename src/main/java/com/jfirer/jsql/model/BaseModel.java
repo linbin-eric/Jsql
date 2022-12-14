@@ -3,11 +3,11 @@ package com.jfirer.jsql.model;
 import com.jfirer.jsql.annotation.AutoIncrement;
 import com.jfirer.jsql.annotation.PkGenerator;
 import com.jfirer.jsql.annotation.Sequence;
-import com.jfirer.jsql.model.support.LockMode;
 import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.metadata.TableEntityInfo;
-import com.jfirer.jsql.model.impl.SpecialPkEqParam;
 import com.jfirer.jsql.model.impl.InternalParam;
+import com.jfirer.jsql.model.impl.SpecialPkEqParam;
+import com.jfirer.jsql.model.support.LockMode;
 import com.jfirer.jsql.model.support.SFunction;
 
 import java.util.Arrays;
@@ -427,13 +427,10 @@ public class BaseModel implements Model
                 builder.append("select ");
                 if (select.isEmpty())
                 {
-                    builder.append("*");
+                    selectAll(((FromAs) from.get(0)).tableClass);
                 }
-                else
-                {
-                    String segment = select.stream().map(select -> select.toString()).collect(Collectors.joining(","));
-                    builder.append(segment);
-                }
+                String segment = select.stream().map(select -> select.toString()).collect(Collectors.joining(","));
+                builder.append(segment);
                 builder.append(" from ");
                 String fromSegment = from.stream().map(fromAs -> fromAs.toString()).collect(Collectors.joining(" "));
                 builder.append(fromSegment);
