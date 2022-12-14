@@ -19,6 +19,11 @@ public interface Param
         return new OneValueParam(fn, value, "=");
     }
 
+    static <T> Param notEq(SFunction<T, ?> fn, Object value)
+    {
+        return new OneValueParam(fn, value, "!=");
+    }
+
     static <T> Param bt(SFunction<T, ?> fn, Object value)
     {
         return new OneValueParam(fn, value, ">");
