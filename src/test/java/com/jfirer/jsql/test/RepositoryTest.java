@@ -15,6 +15,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.LinkedList;
+import java.util.List;
 
 import static com.jfirer.jsql.test.CURDTest.user2TableDml;
 import static com.jfirer.jsql.test.CURDTest.userTableDml;
@@ -59,5 +60,19 @@ public class RepositoryTest
         RepositoryOp repositoryOp = session.getMapper(RepositoryOp.class);
         User         linbin       = repositoryOp.findOne(Param.eq(User::getName, "linbin"));
         Assert.assertEquals(12, linbin.getAge());
+        user.setId(null);
+        user.setAge(14);
+        session.save(user);
+        List<User> list = repositoryOp.findList(Param.bt(User::getAge, 13));
+        Assert.assertEquals(1,list.size());
+        user.setId(null);
+        user.setAge(20);
+        repositoryOp.save(user);
+        list = repositoryOp.findList(Param.bt(User::getAge, 13));
+        Assert.assertEquals(2,list.size());
+        user.setAge(40);
+        repositoryOp.update(user);
+        User one = repositoryOp.findOne(Param.eq(User::getId, user.getId()));
+        Assert.assertEquals(40,one.getAge());
     }
 }
