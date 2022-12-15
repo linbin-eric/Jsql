@@ -11,13 +11,19 @@ import com.jfirer.jsql.analyse.token.SqlLexer;
 import com.jfirer.jsql.annotation.Sql;
 import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.metadata.TableEntityInfo;
+import com.jfirer.jsql.model.Model;
+import com.jfirer.jsql.model.ModelFactory;
+import com.jfirer.jsql.model.Param;
 import com.jfirer.jsql.session.SqlSession;
 import com.jfirer.jsql.transfer.impl.BeanTransfer;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MapperGenerator
@@ -26,60 +32,74 @@ public class MapperGenerator
 
     public static Class<?> generate(Class<?> ckass, Map<String, TableEntityInfo> tableEntityInfos, CompileHelper compiler)
     {
-        ClassModel    classModel     = buildClassModelAndImportNecessaryClass(ckass);
-        AtomicInteger fieldNameCount = new AtomicInteger(0);
-        for (Method method : ckass.getDeclaredMethods())
+        try
         {
-            if (method.isDefault())
+            ClassModel    classModel     = buildClassModelAndImportNecessaryClass(ckass);
+            AtomicInteger fieldNameCount = new AtomicInteger(0);
+            for (Method method : ckass.getDeclaredMethods())
             {
-                continue;
-            }
-            StringBuilder methodBody = new StringBuilder();
-            methodBody.append("if(session==null){throw new NullPointerException(\"当前没有session\");}");
-            methodBody.append("Map<String,Object> variables = cachedVariables.get();\r\n");
-            methodBody.append("List<Object> params = cachedParams.get();\r\n");
-            methodBody.append("try{\r\n");
-            MethodModel methodModel = new MethodModel(method, classModel);
-            String      formatSql;
-            if (method.isAnnotationPresent(Sql.class))
-            {
-                formatSql = generateSqlAndTemplateField(tableEntityInfos, classModel, fieldNameCount, method, methodBody);
-            }
-            else
-            {
-                throw new IllegalArgumentException(method.toString());
-            }
-            if (formatSql.startsWith("SELECT") || formatSql.startsWith("select"))
-            {
-                int methodIndex = AbstractMapper.put(method);
-                if (List.class.isAssignableFrom(method.getReturnType()))
+                if (method.isDefault() || method.isAnnotationPresent(Sql.class) == false)
                 {
-                    methodBody.append("List result = session.queryList(sql,methods.get(").append(methodIndex).append("),params);\r\n");
+                    continue;
+                }
+                StringBuilder methodBody = new StringBuilder();
+                methodBody.append("if(session==null){throw new NullPointerException(\"当前没有session\");}");
+                methodBody.append("Map<String,Object> variables = cachedVariables.get();\r\n");
+                methodBody.append("List<Object> params = cachedParams.get();\r\n");
+                methodBody.append("try{\r\n");
+                MethodModel methodModel = new MethodModel(method, classModel);
+                String      formatSql   = generateSqlAndTemplateField(tableEntityInfos, classModel, fieldNameCount, method, methodBody);
+                if (formatSql.startsWith("SELECT") || formatSql.startsWith("select"))
+                {
+                    int methodIndex = AbstractMapper.put(method);
+                    if (List.class.isAssignableFrom(method.getReturnType()))
+                    {
+                        methodBody.append("List result = session.queryList(sql,methods.get(").append(methodIndex).append("),params);\r\n");
+                    }
+                    else
+                    {
+                        String returnTypeName = method.getReturnType().isPrimitive() ? ReflectUtil.wrapPrimitive(method.getReturnType()).getName() : SmcHelper.getReferenceName(method.getReturnType(), classModel);
+                        methodBody.append(returnTypeName).append(" result = session.query(sql,methods.get(").append(methodIndex).append("),params);\r\n");
+                    }
                 }
                 else
                 {
-                    String returnTypeName = method.getReturnType().isPrimitive() ? ReflectUtil.wrapPrimitive(method.getReturnType()).getName() : SmcHelper.getReferenceName(method.getReturnType(), classModel);
-                    methodBody.append(returnTypeName).append(" result = session.query(sql,methods.get(").append(methodIndex).append("),params);\r\n");
+                    methodBody.append("int result = session.execute(sql,params);\r\n");
                 }
+                if (method.getReturnType() == void.class || method.getReturnType() == Void.class)
+                {
+                    ;
+                }
+                else
+                {
+                    methodBody.append("return result;\r\n");
+                }
+                methodBody.append("}finally {params.clear();variables.clear();}");
+                methodModel.setBody(methodBody.toString());
+                classModel.putMethodModel(methodModel);
             }
-            else
+            if (Repository.class.isAssignableFrom(ckass))
             {
-                methodBody.append("int result = session.update(sql,params);\r\n");
+                Class<?> repositoryEntityClass = null;
+                for (Type genericInterface : ckass.getGenericInterfaces())
+                {
+                    if (genericInterface instanceof ParameterizedType parameterizedType)
+                    {
+                        repositoryEntityClass = (Class<?>) parameterizedType.getActualTypeArguments()[0];
+                    }
+                }
+                Objects.requireNonNull(repositoryEntityClass);
+                classModel.addImport(repositoryEntityClass);
+                classModel.addImport(Param.class);
+                classModel.addImport(ModelFactory.class);
+                classModel.addImport(Model.class);
+                addFindOne(classModel, (Class<? extends Repository>) ckass, repositoryEntityClass);
+                addFindList(classModel, (Class<? extends Repository>) ckass, repositoryEntityClass);
+                addDelete(classModel, (Class<? extends Repository>) ckass, repositoryEntityClass);
+                addInsert(classModel, (Class<? extends Repository>) ckass, repositoryEntityClass);
+                addSave(classModel, (Class<? extends Repository>) ckass, repositoryEntityClass);
+                addUpadte(classModel, (Class<? extends Repository>) ckass, repositoryEntityClass);
             }
-            if (method.getReturnType() == void.class || method.getReturnType() == Void.class)
-            {
-                ;
-            }
-            else
-            {
-                methodBody.append("return result;\r\n");
-            }
-            methodBody.append("}finally {params.clear();variables.clear();}");
-            methodModel.setBody(methodBody.toString());
-            classModel.putMethodModel(methodModel);
-        }
-        try
-        {
             return compiler.compile(classModel);
         }
         catch (Exception e)
@@ -87,6 +107,75 @@ public class MapperGenerator
             ReflectUtil.throwException(e);
             return null;
         }
+    }
+
+    private static void addUpadte(ClassModel classModel, Class<? extends Repository> ckass, Class<?> repositoryEntityClass) throws NoSuchMethodException
+    {
+        Method      update      = ckass.getMethod("update", Object.class);
+        MethodModel methodModel = new MethodModel(update, classModel);
+        methodModel.setParamterTypes(repositoryEntityClass);
+        methodModel.setBody("""
+                            if(session==null){throw new NullPointerException("当前没有session");}
+                            return session.update($0);
+                            """);
+        classModel.putMethodModel(methodModel);
+    }
+
+    private static void addSave(ClassModel classModel, Class<? extends Repository> ckass, Class<?> repositoryEntityClass) throws NoSuchMethodException
+    {
+        Method      save        = ckass.getMethod("save", Object.class);
+        MethodModel methodModel = new MethodModel(save, classModel);
+        methodModel.setParamterTypes(repositoryEntityClass);
+        methodModel.setBody("""
+                            if(session==null){throw new NullPointerException("当前没有session");}
+                            return session.save($0);
+                            """);
+        classModel.putMethodModel(methodModel);
+    }
+
+    private static void addInsert(ClassModel classModel, Class<? extends Repository> ckass, Class<?> repositoryEntityClass) throws NoSuchMethodException
+    {
+        Method      insert      = ckass.getMethod("insert", Object.class);
+        MethodModel methodModel = new MethodModel(insert, classModel);
+        methodModel.setParamterTypes(repositoryEntityClass);
+        methodModel.setBody("""
+                            if(session==null){throw new NullPointerException("当前没有session");}
+                            return session.insert($0);
+                            """);
+        classModel.putMethodModel(methodModel);
+    }
+
+    private static void addDelete(ClassModel classModel, Class<? extends Repository> ckass, Class<?> repositoryEntityClass) throws NoSuchMethodException
+    {
+        Method      delete      = ckass.getMethod("delete", Param.class);
+        MethodModel methodModel = new MethodModel(delete, classModel);
+        methodModel.setBody("""
+                            if(session==null){throw new NullPointerException("当前没有session");}
+                            return session.execute(ModelFactory.deleteFrom(""" + SmcHelper.getReferenceName(repositoryEntityClass, classModel) + ".class).where($0));");
+        classModel.putMethodModel(methodModel);
+    }
+
+    private static void addFindList(ClassModel classModel, Class<? extends Repository> ckass, Class<?> repositoryEntityClass) throws NoSuchMethodException
+    {
+        Method      findList    = ckass.getMethod("findList", Param.class);
+        MethodModel methodModel = new MethodModel(findList, classModel);
+        methodModel.setBody("""
+                            if(session==null){throw new NullPointerException("当前没有session");}
+                            return session.findList(ModelFactory.selectAll().from(""" //
+                            + SmcHelper.getReferenceName(repositoryEntityClass, classModel) + ".class).where($0));");
+        classModel.putMethodModel(methodModel);
+    }
+
+    private static void addFindOne(ClassModel classModel, Class<? extends Repository> ckass, Class<?> repositoryEntityClass) throws NoSuchMethodException
+    {
+        Method      method  = ckass.getMethod("findOne", Param.class);
+        MethodModel findOne = new MethodModel(method, classModel);
+        findOne.setReturnType(repositoryEntityClass);
+        findOne.setBody("""
+                        if(session==null){throw new NullPointerException("当前没有session");}
+                        return session.findOne(ModelFactory.selectAll().from(""" //
+                        + SmcHelper.getReferenceName(repositoryEntityClass, classModel) + ".class).where($0));");
+        classModel.putMethodModel(findOne);
     }
 
     private static ClassModel buildClassModelAndImportNecessaryClass(Class<?> ckass)

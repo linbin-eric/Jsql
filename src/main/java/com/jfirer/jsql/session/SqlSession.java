@@ -56,15 +56,11 @@ public interface SqlSession extends ConnectionOp, SqlOp
      *
      * @return
      */
-    <T> List<T> find(Model model);
+    <T> List<T> findList(Model model);
 
     int count(Model model);
 
-    int update(Model model);
-
-    int delete(Model model);
-
-    int insert(Model model);
+    int execute(Model model);
 
     /**
      * 将一个对象保存或者更新到数据库。如果对象的id属性有值，就是更新操作，如果没有值就是插入操作
@@ -73,9 +69,9 @@ public interface SqlSession extends ConnectionOp, SqlOp
      * @param entity
      * @return
      */
-    <T> void save(T entity);
+    <T> int save(T entity);
 
-    <T> void update(T entity);
+    <T> int update(T entity);
 
     /**
      * 将一个对象以插入的形式保存到数据库
@@ -83,5 +79,5 @@ public interface SqlSession extends ConnectionOp, SqlOp
      * @param <T>
      * @param entity
      */
-    <T> void insert(T entity);
+    <T> int insert(T entity);
 }

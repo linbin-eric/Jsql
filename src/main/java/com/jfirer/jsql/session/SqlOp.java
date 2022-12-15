@@ -5,7 +5,7 @@ import java.util.List;
 
 public interface SqlOp
 {
-    int update(String sql, List<Object> params);
+    int execute(String sql, List<Object> params);
 
     /**
      * 插入一行数据，并且以String的形式返回自动生成的主键

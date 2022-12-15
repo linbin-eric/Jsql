@@ -144,7 +144,7 @@ public class SqlSessionImpl implements SqlSession
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> void save(T entity)
+    public <T> int save(T entity)
     {
         BaseModel.ModelResult result = ModelFactory.save(entity).getResult();
         if (result.pkReturnType() != TableEntityInfo.PkReturnType.NO_RETURN_PK)
@@ -157,27 +157,28 @@ public class SqlSessionImpl implements SqlSession
                 case INT -> pkInfo.accessor().setObject(entity, Integer.valueOf(pk));
                 case LONG -> pkInfo.accessor().setObject(entity, Long.valueOf(pk));
             }
+            return 1;
         }
         else
         {
-            update(result.sql(), result.paramValues());
+            return execute(result.sql(), result.paramValues());
         }
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> void update(T entity)
+    public <T> int update(T entity)
     {
         BaseModel.ModelResult result = ModelFactory.update(entity).getResult();
-        update(result.sql(), result.paramValues());
+        return execute(result.sql(), result.paramValues());
     }
 
     @SuppressWarnings({"unchecked"})
     @Override
-    public <T> void insert(T entity)
+    public <T> int insert(T entity)
     {
         BaseModel.ModelResult result = ModelFactory.insert(entity).getResult();
-        update(result.sql(), result.paramValues());
+        return execute(result.sql(), result.paramValues());
     }
 
     @Override
@@ -188,7 +189,7 @@ public class SqlSessionImpl implements SqlSession
     }
 
     @Override
-    public <T> List<T> find(Model model)
+    public <T> List<T> findList(Model model)
     {
         BaseModel.ModelResult result = model.getResult();
         return queryList(result.sql(), result.returnType(), result.paramValues());
@@ -202,26 +203,14 @@ public class SqlSessionImpl implements SqlSession
     }
 
     @Override
-    public int update(Model model)
+    public int execute(Model model)
     {
         BaseModel.ModelResult result = model.getResult();
-        return update(result.sql(), result.paramValues());
+        return execute(result.sql(), result.paramValues());
     }
 
     @Override
-    public int delete(Model model)
-    {
-        return update(model);
-    }
-
-    @Override
-    public int insert(Model model)
-    {
-        return update(model);
-    }
-
-    @Override
-    public int update(String sql, List<Object> params)
+    public int execute(String sql, List<Object> params)
     {
         checkIfClosed();
         try

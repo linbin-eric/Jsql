@@ -247,10 +247,10 @@ public class MapperTest
         config.addSqlExecutor(new SqlLog());
         sessionFactory = config.build();
         SqlSession session = sessionFactory.openSession();
-        session.update("DROP TABLE IF EXISTS user", new LinkedList<>());
-        session.update("DROP TABLE IF EXISTS user2", new LinkedList<>());
-        session.update(userTableDml, new LinkedList<>());
-        session.update(user2TableDml, new LinkedList<>());
+        session.execute("DROP TABLE IF EXISTS user", new LinkedList<>());
+        session.execute("DROP TABLE IF EXISTS user2", new LinkedList<>());
+        session.execute(userTableDml, new LinkedList<>());
+        session.execute(user2TableDml, new LinkedList<>());
         User user = new User();
         user.setAge(12);
         user.setName("lin");

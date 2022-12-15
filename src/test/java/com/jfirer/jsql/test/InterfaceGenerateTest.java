@@ -4,7 +4,6 @@ import com.jfirer.jsql.SessionFactory;
 import com.jfirer.jsql.SessionfactoryConfig;
 import com.jfirer.jsql.annotation.Sql;
 import com.jfirer.jsql.mapper.Mapper;
-import com.jfirer.jsql.metadata.TableMode;
 import com.jfirer.jsql.session.SqlSession;
 import com.jfirer.jsql.test.vo.User;
 import com.zaxxer.hikari.HikariDataSource;
@@ -46,10 +45,10 @@ public class InterfaceGenerateTest
         SessionFactory sessionFactory = config.build();
         SqlSession     session        = sessionFactory.openSession();
         SqlSession sqlSession = sessionFactory.openSession();
-        sqlSession.update("DROP TABLE IF EXISTS user", new LinkedList<>());
-        sqlSession.update("DROP TABLE IF EXISTS user2", new LinkedList<>());
-        sqlSession.update(userTableDml, new LinkedList<>());
-        sqlSession.update(user2TableDml, new LinkedList<>());
+        sqlSession.execute("DROP TABLE IF EXISTS user", new LinkedList<>());
+        sqlSession.execute("DROP TABLE IF EXISTS user2", new LinkedList<>());
+        sqlSession.execute(userTableDml, new LinkedList<>());
+        sqlSession.execute(user2TableDml, new LinkedList<>());
         session.getMapper(ckass);
     }
 
