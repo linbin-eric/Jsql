@@ -7,6 +7,7 @@ import com.jfirer.jsql.mapper.AbstractMapper;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.BaseModel;
 import com.jfirer.jsql.model.Model;
+import com.jfirer.jsql.model.ModelFactory;
 import com.jfirer.jsql.session.SqlSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -145,25 +146,16 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> void save(T entity)
     {
-        BaseModel.ModelResult result = Model.save(entity).getResult();
+        BaseModel.ModelResult result = ModelFactory.save(entity).getResult();
         if (result.pkReturnType() != TableEntityInfo.PkReturnType.NO_RETURN_PK)
         {
             String                     pk     = insertReturnPk(result.sql(), result.paramValues());
             TableEntityInfo.ColumnInfo pkInfo = TableEntityInfo.parse(entity.getClass()).getPkInfo();
             switch (result.pkReturnType())
             {
-                case STRING ->
-                {
-                    pkInfo.accessor().setObject(entity, pk);
-                }
-                case INT ->
-                {
-                    pkInfo.accessor().setObject(entity, Integer.valueOf(pk));
-                }
-                case LONG ->
-                {
-                    pkInfo.accessor().setObject(entity, Long.valueOf(pk));
-                }
+                case STRING -> pkInfo.accessor().setObject(entity, pk);
+                case INT -> pkInfo.accessor().setObject(entity, Integer.valueOf(pk));
+                case LONG -> pkInfo.accessor().setObject(entity, Long.valueOf(pk));
             }
         }
         else
@@ -176,7 +168,7 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> void update(T entity)
     {
-        BaseModel.ModelResult result = Model.update(entity).getResult();
+        BaseModel.ModelResult result = ModelFactory.update(entity).getResult();
         update(result.sql(), result.paramValues());
     }
 
@@ -184,7 +176,7 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> void insert(T entity)
     {
-        BaseModel.ModelResult result = Model.insert(entity).getResult();
+        BaseModel.ModelResult result = ModelFactory.insert(entity).getResult();
         update(result.sql(), result.paramValues());
     }
 

@@ -17,69 +17,65 @@ public class StringPatternParam extends InternalParamImpl
     }
 
     private final SFunction<?, ?> fn;
-    private final PatternMode     mode;
-    private final Object          value;
-    private final PatternConsumer consumer = (tableName, columnName, builder, paramValues, value, mode) -> {
-        switch (mode)
-        {
-            case BEFORE ->
-            {
-                builder.append(tableName).append('.').append(columnName).append(" like ?");
-                paramValues.add("%" + value);
-            }
-            case AFTER ->
-            {
-                builder.append(tableName).append('.').append(columnName).append(" like ?");
-                paramValues.add(value + "%");
-            }
-            case NONE ->
-            {
-                if (value instanceof BaseModel m)
-                {
-                    builder.append(tableName).append('.').append(columnName).append(" like (");
-                    BaseModel.ModelResult result = m.getResult();
-                    builder.append(result.sql()).append(')');
-                    paramValues.addAll(result.paramValues());
-                }
-                else
-                {
-                    builder.append(tableName).append('.').append(columnName).append(" like ?");
-                    paramValues.add(value);
-                }
-            }
-            case BOTH ->
-            {
-                builder.append(tableName).append('.').append(columnName).append(" like ?");
-                paramValues.add("%" + value + "%");
-            }
-        }
-    };
+    private final PatternConsumer consumer;
 
     public StringPatternParam(SFunction<?, ?> fn, PatternMode mode, Object value)
     {
         this.fn = fn;
-        this.mode = mode;
-        this.value = value;
+        consumer = (columnName, builder, paramValues) -> {
+            switch (mode)
+            {
+                case BEFORE ->
+                {
+                    builder.append(columnName).append(" like ?");
+                    paramValues.add("%" + value);
+                }
+                case AFTER ->
+                {
+                    builder.append(columnName).append(" like ?");
+                    paramValues.add(value + "%");
+                }
+                case NONE ->
+                {
+                    if (value instanceof BaseModel m)
+                    {
+                        builder.append(columnName).append(" like (");
+                        BaseModel.ModelResult result = m.getResult();
+                        builder.append(result.sql()).append(')');
+                        paramValues.addAll(result.paramValues());
+                    }
+                    else
+                    {
+                        builder.append(columnName).append(" like ?");
+                        paramValues.add(value);
+                    }
+                }
+                case BOTH ->
+                {
+                    builder.append(columnName).append(" like ?");
+                    paramValues.add("%" + value + "%");
+                }
+            }
+        };
     }
 
     @Override
-    public void renderSql(List<Record> fromAsList, StringBuilder builder, List<Object> paramValues)
+    public void renderSql(BaseModel model, StringBuilder builder, List<Object> paramValues)
     {
-        BaseModel.findColumnNameAndConsumer(fromAsList, fn, (tableName, colunName) -> {
-            consumer.accept(tableName, colunName, builder, paramValues, value, mode);
-        });
+        String columnName = model.findColumnName(fn);
+        consumer.accept(columnName, builder, paramValues);
     }
 
     @Override
     public void renderSql(Class ckass, StringBuilder builder, List<Object> paramValues)
     {
         TableEntityInfo entityInfo = TableEntityInfo.parse(ckass);
-        consumer.accept(entityInfo.getTableName(), entityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName(), builder, paramValues, value, mode);
+        consumer.accept(entityInfo.getTableName() + "." + entityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName(), builder, paramValues);
     }
 
     @FunctionalInterface
     interface PatternConsumer
     {
-        void accept(String tableName, String columnName, StringBuilder builder, List<Object> paramValues, Object value, PatternMode mode);
+        void accept(String columnName, StringBuilder builder, List<Object> paramValues);
     }
 }

@@ -1,5 +1,7 @@
 package com.jfirer.jsql.model.impl;
 
+import com.jfirer.jsql.model.BaseModel;
+import com.jfirer.jsql.model.InternalParam;
 import com.jfirer.jsql.model.Param;
 
 import java.util.List;
@@ -18,11 +20,11 @@ public abstract class InternalParamImpl implements InternalParam
         }
 
         @Override
-        public void renderSql(List<Record> fromAsList, StringBuilder builder, List<Object> paramValues)
+        public void renderSql(BaseModel model, StringBuilder builder, List<Object> paramValues)
         {
-            param1.renderSql(fromAsList, builder, paramValues);
+            param1.renderSql(model, builder, paramValues);
             builder.append(" and ");
-            param2.renderSql(fromAsList, builder, paramValues);
+            param2.renderSql(model, builder, paramValues);
             builder.append(" ");
         }
 
@@ -48,11 +50,11 @@ public abstract class InternalParamImpl implements InternalParam
         }
 
         @Override
-        public void renderSql(List<Record> fromAsList, StringBuilder builder, List<Object> paramValues)
+        public void renderSql(BaseModel model, StringBuilder builder, List<Object> paramValues)
         {
-            param1.renderSql(fromAsList, builder, paramValues);
+            param1.renderSql(model, builder, paramValues);
             builder.append(" or ");
-            param2.renderSql(fromAsList, builder, paramValues);
+            param2.renderSql(model, builder, paramValues);
             builder.append(" ");
         }
 
@@ -76,10 +78,10 @@ public abstract class InternalParamImpl implements InternalParam
         }
 
         @Override
-        public void renderSql(List<Record> fromAsList, StringBuilder builder, List<Object> paramValues)
+        public void renderSql(BaseModel model, StringBuilder builder, List<Object> paramValues)
         {
             builder.append("( ");
-            param.renderSql(fromAsList, builder, paramValues);
+            param.renderSql(model, builder, paramValues);
             builder.append(" ) ");
         }
 

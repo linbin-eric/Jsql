@@ -3,7 +3,7 @@ package com.jfirer.jsql.test;
 import com.jfirer.jsql.SessionFactory;
 import com.jfirer.jsql.SessionfactoryConfig;
 import com.jfirer.jsql.metadata.Page;
-import com.jfirer.jsql.model.support.SFunction;
+import com.jfirer.jsql.model.ModelFactory;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.Param;
 import com.jfirer.jsql.session.SqlSession;
@@ -67,7 +67,7 @@ public class ModelTest
         ResultSet resultSet = session.getConnection().prepareStatement("select age from user where name2 ='1221'").executeQuery();
         Assert.assertTrue(resultSet.next());
         Assert.assertEquals(12, resultSet.getInt(1));
-        session.update(Model.deleteFrom(User.class).where(Param.eq(User::getName, "1221").and(Param.eq(User::getAge, 12))));
+        session.update(ModelFactory.deleteFrom(User.class).where(Param.eq(User::getName, "1221").and(Param.eq(User::getAge, 12))));
         resultSet = session.getConnection().prepareStatement("select count(*) from user").executeQuery();
         resultSet.next();
         Assert.assertEquals(0, resultSet.getInt(1));
@@ -88,10 +88,10 @@ public class ModelTest
         user.setAge(12);
         user.setName("ll");
         session.save(user);
-        User query = session.findOne(Model.from(User.class).selectAll(User.class).where(Param.eq(User::getAge, 12)));
+        User query = session.findOne(ModelFactory.selectAll().from(User.class).where(Param.eq(User::getAge, 12)));
         Assert.assertNotNull(query);
         Assert.assertEquals("ll", query.getName());
-        query = session.findOne(Model.from(User.class).select(User::getName, User::getAge).where(Param.eq(User::getAge, 12)));
+        query = session.findOne(ModelFactory.select(User::getName, User::getAge).from(User.class).where(Param.eq(User::getAge, 12)));
         Assert.assertNotNull(query);
         Assert.assertEquals("ll", query.getName());
         Assert.assertEquals(12, query.getAge());
@@ -99,15 +99,15 @@ public class ModelTest
         user.setAge(19);
         user.setName("ll");
         session.save(user);
-        List<User> list = session.find(Model.from(User.class).selectAll(User.class).where(Param.eq(User::getName, "ll")));
+        List<User> list = session.find(ModelFactory.selectAll().from(User.class).where(Param.eq(User::getName, "ll")));
         Assert.assertEquals(2, list.size());
         Assert.assertEquals(12 + 19, list.get(0).getAge() + list.get(1).getAge());
-        Assert.assertEquals(2, session.count(Model.from(User.class).selectCount().where(Param.eq(User::getName, "ll"))));
+        Assert.assertEquals(2, session.count(ModelFactory.selectCount().from(User.class).where(Param.eq(User::getName, "ll"))));
         Page page = new Page();
         page.setOffset(0);
         page.setSize(1);
         page.setFetchSum(true);
-        list = session.find(Model.from(User.class).select(User::getAge).where(Param.eq(User::getName, "ll")).page(page));
+        list = session.find(ModelFactory.select(User::getAge).from(User.class).where(Param.eq(User::getName, "ll")).page(page));
         Assert.assertEquals(1, list.size());
         Assert.assertEquals(2, page.getTotal());
     }
@@ -123,8 +123,8 @@ public class ModelTest
         user.setAge(10);
         SqlSession session = sessionFactory.openSession();
         session.save(user);
-        session.insert(Model.update(User.class).set(User::getAge, 12).where(Param.eq(User::getId, 1)));
-        User query = session.findOne(Model.from(User.class).where(Param.eq(User::getId,1)));
+        session.insert(ModelFactory.update(User.class).set(User::getAge, 12).where(Param.eq(User::getId, 1)));
+        User query = session.findOne(ModelFactory.selectAll().from(User.class).where(Param.eq(User::getId,1)));
         Assert.assertEquals(12, query.getAge());
     }
 
@@ -143,7 +143,7 @@ public class ModelTest
         user.setAge(12);
         user.setName("aa2");
         session.save(user);
-        List<User> result = session.find(Model.from(User.class).select(User::getName).orderBy(User::getAge, true));
+        List<User> result = session.find(ModelFactory.select(User::getName).from(User.class).orderBy(User::getAge, true));
         Assert.assertEquals("aa2", result.get(0).getName());
         Assert.assertEquals("aa1", result.get(1).getName());
     }
@@ -153,8 +153,8 @@ public class ModelTest
     {
         SqlSession session = sessionFactory.openSession();
         int        age     = new Random().nextInt(150);
-        session.update(Model.insert(User.class).insert(User::getName, "aa1").insert(User::getAge, age));
-        User user = session.findOne(Model.from(User.class).selectAll(User.class).where(Param.eq(User::getName, "aa1").and(Param.eq(User::getAge, age))));
+        session.update(ModelFactory.insert(User.class).insert(User::getName, "aa1").insert(User::getAge, age));
+        User user = session.findOne(ModelFactory.selectAll().from(User.class).where(Param.eq(User::getName, "aa1").and(Param.eq(User::getAge, age))));
         assertNotNull(user);
     }
 

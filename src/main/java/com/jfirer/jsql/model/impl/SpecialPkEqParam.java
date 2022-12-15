@@ -1,6 +1,8 @@
 package com.jfirer.jsql.model.impl;
 
 import com.jfirer.jsql.metadata.TableEntityInfo;
+import com.jfirer.jsql.model.BaseModel;
+import com.jfirer.jsql.model.InternalParam;
 import com.jfirer.jsql.model.Param;
 
 import java.util.List;
@@ -14,17 +16,18 @@ public class SpecialPkEqParam implements InternalParam
         this.entity = entity;
     }
 
+
     @Override
     public void renderSql(Class ckass, StringBuilder builder, List<Object> paramValues)
     {
         TableEntityInfo            entityInfo = TableEntityInfo.parse(ckass);
         TableEntityInfo.ColumnInfo columnInfo = entityInfo.getPkInfo();
-        builder.append(" ").append(columnInfo.columnName() + "=?");
+        builder.append(columnInfo.columnName() + "=?");
         paramValues.add(entityInfo.getPkInfo().accessor().get(entity));
     }
 
     @Override
-    public void renderSql(List<Record> fromAsList, StringBuilder builder, List<Object> paramValues)
+    public void renderSql(BaseModel model, StringBuilder builder, List<Object> paramValues)
     {
         throw new UnsupportedOperationException();
     }

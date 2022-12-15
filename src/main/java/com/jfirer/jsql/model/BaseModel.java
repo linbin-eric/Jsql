@@ -5,7 +5,6 @@ import com.jfirer.jsql.annotation.PkGenerator;
 import com.jfirer.jsql.annotation.Sequence;
 import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.metadata.TableEntityInfo;
-import com.jfirer.jsql.model.impl.InternalParam;
 import com.jfirer.jsql.model.impl.SpecialPkEqParam;
 import com.jfirer.jsql.model.support.LockMode;
 import com.jfirer.jsql.model.support.SFunction;
@@ -13,8 +12,6 @@ import com.jfirer.jsql.model.support.SFunction;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
-import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 public class BaseModel implements Model
@@ -26,6 +23,8 @@ public class BaseModel implements Model
         update,
         insert;
     }
+
+    public record ModelResult(String sql, Class<?> returnType, List<Object> paramValues, TableEntityInfo.PkReturnType pkReturnType) {}
 
     public record FromAs(Class tableClass, String asName)
     {
@@ -96,6 +95,12 @@ public class BaseModel implements Model
         }
     }
 
+    record UpdateWithObject(Object value) {}
+
+    record InsertIntoWithObject(Object value) {}
+
+    record SaveWithObject(Object value) {}
+
     record InsertInto(Class<?> ckass)
     {
         @Override
@@ -114,50 +119,60 @@ public class BaseModel implements Model
         }
     }
 
-    record SelectAs(String columnName, String asName)
+    record SelectAs(SFunction<?, ?> fn, String asName, BaseModel model)
     {
         @Override
         public String toString()
         {
-            return columnName + " as " + asName;
+            return model.findColumnName(fn) + " as " + asName;
         }
     }
 
-    record Select(String columnName)
+    record Select(SFunction<?, ?> fn, BaseModel model)
     {
         @Override
         public String toString()
         {
-            return columnName;
+            return model.findColumnName(fn);
         }
     }
 
-    record Count(String columnName)
+    record SelectWithName(String name)
     {
         @Override
         public String toString()
         {
-            return "count(" + columnName + ")";
+            return name;
+        }
+    }
+
+    record Count(SFunction<?, ?> fn, BaseModel model)
+    {
+        @Override
+        public String toString()
+        {
+            return "count( " + model.findColumnName(fn) + " )";
         }
     }
 
     record set(String columnName, Object value) {}
 
-    record OrderBy(String columnName, boolean desc)
+    record OrderBy(SFunction<?, ?> fn, boolean desc, BaseModel model)
     {
         @Override
         public String toString()
         {
+            String columnName = model.findColumnName(fn);
             return desc ? columnName + " desc" : columnName + " asc";
         }
     }
 
-    record GroupBy(String columnName)
+    record GroupBy(SFunction<?, ?> fn, BaseModel model)
     {
         @Override
         public String toString()
         {
-            return columnName;
+            return model.findColumnName(fn);
         }
     }
 
@@ -178,29 +193,67 @@ public class BaseModel implements Model
     private Page                         page;
     private TableEntityInfo.PkReturnType pkReturnType;
     private LockMode                     lockMode;
+    private List<Object>                 paramValues = new LinkedList<>();
 
-    public void setDelete(Delete delete)
+    public BaseModel(Delete delete)
     {
-        type = ModelType.delete;
         this.delete = delete;
+        type = ModelType.delete;
     }
 
-    public void setUpdate(Update update)
+    public BaseModel(Update update)
     {
-        type = ModelType.update;
         this.update = update;
+        type = ModelType.update;
     }
 
-    public void addFromAs(FromAs fromAs)
+    public BaseModel(InsertInto insertInto)
+    {
+        this.insertInto = insertInto;
+        type = ModelType.insert;
+    }
+
+    public BaseModel()
     {
         type = ModelType.query;
-        this.from.add(fromAs);
     }
 
-    public void setInsertInto(InsertInto insertInto)
+    public BaseModel(InsertIntoWithObject insert)
     {
-        type = ModelType.insert;
-        this.insertInto = insertInto;
+        this(new InsertInto(insert.value.getClass()));
+        insert(insert.value);
+    }
+
+    private void insert(Object entity)
+    {
+        TableEntityInfo entityInfo = TableEntityInfo.parse(entity.getClass());
+        for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
+        {
+            this.insert.add(new Insert(columnInfo.columnName(), columnInfo.accessor().get(entity)));
+        }
+    }
+
+    public BaseModel(UpdateWithObject update)
+    {
+        this(new Update(update.value.getClass()));
+        updateByPk(update.value);
+    }
+
+    private void updateByPk(Object entity)
+    {
+        TableEntityInfo entityInfo = TableEntityInfo.parse(entity.getClass());
+        for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
+        {
+            set.add(new set(columnInfo.columnName(), columnInfo.accessor().get(entity)));
+        }
+        param = new SpecialPkEqParam(entity);
+    }
+
+    @Override
+    public Model fromAs(Class<?> ckass, String asName)
+    {
+        from.add(new FromAs(ckass, asName));
+        return this;
     }
 
     @Override
@@ -208,7 +261,7 @@ public class BaseModel implements Model
     {
         for (SFunction<T, ?> fn : fns)
         {
-            findColumnNameAndConsumer(from, fn, (tableName, columnName) -> select.add(new Select(tableName + "." + columnName)));
+            select.add(new Select(fn, this));
         }
         return this;
     }
@@ -217,70 +270,43 @@ public class BaseModel implements Model
     public Model selectAll(Class<?> ckass)
     {
         from.stream()//
-            .filter(record -> {
-                if (record instanceof FromAs from)
-                {
-                    return from.tableClass == ckass;
-                }
-                else
-                {
-                    return false;
-                }
-            })//
+            .filter(record -> FromAs.class.isInstance(record) ? ((FromAs) record).tableClass == ckass : false)//
             .findAny()//
             .ifPresent(record -> {
                 FromAs fromAs = (FromAs) record;
-                TableEntityInfo.parse(fromAs.tableClass).getPropertyNameKeyMap().values().forEach(columnInfo -> select.add(new Select(fromAs.asName() + "." + columnInfo.columnName())));
+                TableEntityInfo.parse(fromAs.tableClass).getPropertyNameKeyMap().values().forEach(columnInfo -> select.add(new SelectWithName(fromAs.asName() + "." + columnInfo.columnName())));
             });
         return this;
     }
 
-    public static void findColumnNameAndConsumer(List<Record> from, SFunction<?, ?> fn, BiConsumer<String, String> biConsumer)
+    public String findColumnName(SFunction<?, ?> fn)
     {
         String implClass = fn.getImplClass();
-        from.stream()//
-            .filter(record -> {
-                if (record instanceof FromAs fAs)
-                {
-                    return fAs.tableClass().getName().equals(implClass);
-                }
-                else
-                {
-                    return false;
-                }
-            }) //
-            .map(record -> ((FromAs) record))//
-            .findAny()//
-            .ifPresentOrElse(//
-                             fromAs -> biConsumer.accept(fromAs.asName(), Objects.requireNonNull(TableEntityInfo.parse(fromAs.tableClass())//
-                                                                                                                .getPropertyNameKeyMap()//
-                                                                                                                .get(fn.resolveFieldName()))//
-                                                                                 .columnName()),//
-                             () -> {
-                                 throw new IllegalArgumentException();
-                             });
+        FromAs fromAs = from.stream()//
+                            .filter(record -> FromAs.class.isInstance(record) ? ((FromAs) record).tableClass.getName().equals(implClass) : false) //
+                            .map(record -> ((FromAs) record))//
+                            .findAny().orElseThrow();
+        return fromAs.asName + "." + TableEntityInfo.parse(fromAs.tableClass).getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName();
     }
 
     @Override
     public <T> Model selectAs(SFunction<T, ?> fn, String asName)
     {
-        findColumnNameAndConsumer(from, fn, (tableName, columnName) -> select.add(new SelectAs(tableName + "." + columnName, asName)));
+        select.add(new SelectAs(fn, asName, this));
         return this;
     }
 
     @Override
     public <T> Model selectCount(SFunction<T, ?> fn)
     {
-        type = ModelType.query;
-        findColumnNameAndConsumer(from, fn, (tableName, columnName) -> select.add(new Count(tableName + "." + columnName)));
+        select.add(new Count(fn, this));
         return this;
     }
 
     @Override
     public Model selectCount()
     {
-        type = ModelType.query;
-        select.add(new Select("count(*)"));
+        select.add(new SelectWithName("count(*)"));
         return this;
     }
 
@@ -333,11 +359,9 @@ public class BaseModel implements Model
     @Override
     public <E, T> Model on(SFunction<T, ?> fn1, SFunction<E, ?> fn2)
     {
-        StringBuilder builder = new StringBuilder();
-        builder.append("on ");
-        findColumnNameAndConsumer(from, fn1, (tableName, columnName) -> builder.append(tableName + "." + columnName));
-        builder.append(" = ");
-        findColumnNameAndConsumer(from, fn2, (tableName, columnName) -> builder.append(tableName + "." + columnName));
+        String        columnName1 = findColumnName(fn1);
+        String        columnName2 = findColumnName(fn2);
+        StringBuilder builder     = new StringBuilder().append("on ").append(columnName1).append(" = ").append(columnName2);
         from.add(new JoinOn(builder.toString()));
         return this;
     }
@@ -352,14 +376,14 @@ public class BaseModel implements Model
     @Override
     public <T> Model orderBy(SFunction<T, ?> fn, boolean desc)
     {
-        findColumnNameAndConsumer(from, fn, (tableName, columnName) -> orderBy.add(new OrderBy(tableName + "." + columnName, desc)));
+        orderBy.add(new OrderBy(fn, desc, this));
         return this;
     }
 
     @Override
     public <T> Model groupBy(SFunction<T, ?> fn)
     {
-        findColumnNameAndConsumer(from, fn, (tableName, columnName) -> groupBy.add(new GroupBy(tableName + "." + columnName)));
+        groupBy.add(new GroupBy(fn, this));
         return this;
     }
 
@@ -396,15 +420,6 @@ public class BaseModel implements Model
         return this;
     }
 
-    public Page getPage()
-    {
-        return page;
-    }
-
-    private List<Object> paramValues = new LinkedList<>();
-
-    public record ModelResult(String sql, Class<?> returnType, List<Object> paramValues, TableEntityInfo.PkReturnType pkReturnType) {}
-
     @Override
     public ModelResult getResult()
     {
@@ -437,7 +452,7 @@ public class BaseModel implements Model
                 if (param != null)
                 {
                     builder.append(" where ");
-                    ((InternalParam) param).renderSql(from, builder, paramValues);
+                    ((InternalParam) param).renderSql(this, builder, paramValues);
                 }
                 else
                 {
@@ -540,27 +555,6 @@ public class BaseModel implements Model
         return builder.toString();
     }
 
-    public <T> void insert(T entity)
-    {
-        TableEntityInfo entityInfo = TableEntityInfo.parse(entity.getClass());
-        setInsertInto(new InsertInto(entityInfo.getEntityClass()));
-        for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
-        {
-            insert.add(new Insert(columnInfo.columnName(), columnInfo.accessor().get(entity)));
-        }
-    }
-
-    public <T> void update(T entity)
-    {
-        setUpdate(new Update(entity.getClass()));
-        TableEntityInfo entityInfo = TableEntityInfo.parse(entity.getClass());
-        for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
-        {
-            set.add(new set(columnInfo.columnName(), columnInfo.accessor().get(entity)));
-        }
-        param = new SpecialPkEqParam(entity);
-    }
-
     /**
      * 保存一个对象到数据库。会根据该对象的主键属性是否为空进行不同的行为。
      * 1、不存在主键的，则按照全量插入处理。
@@ -570,37 +564,38 @@ public class BaseModel implements Model
      * 2.4、存在主键，主键属性为空，主键上有Sequence主键，则除了主键属性外，所有的属性均插入数据库，并且返回数据库自动生成的主键值。
      * 2.5、抛出异常
      *
-     * @param entity
-     * @param <T>
      * @return
      */
-    public <T> void save(T entity)
+    public BaseModel(SaveWithObject save)
     {
-        TableEntityInfo entityInfo = TableEntityInfo.parse(entity.getClass());
+        TableEntityInfo entityInfo = TableEntityInfo.parse(save.value.getClass());
         if (entityInfo.getPkInfo() == null)
         {
-            insert(entity);
+            type = ModelType.insert;
+            insertInto = new InsertInto(entityInfo.getEntityClass());
+            insert(save.value);
             pkReturnType = TableEntityInfo.PkReturnType.NO_RETURN_PK;
         }
         else
         {
             TableEntityInfo.ColumnInfo pkInfo = entityInfo.getPkInfo();
-            Object                     pk     = pkInfo.accessor().get(entity);
+            Object                     pk     = pkInfo.accessor().get(save.value);
             if (pk == null)
             {
+                type = ModelType.insert;
+                insertInto = new InsertInto(entityInfo.getEntityClass());
                 if (pkInfo.field().isAnnotationPresent(PkGenerator.class))
                 {
                     Object next = entityInfo.getPkGenerator().next();
-                    pkInfo.accessor().setObject(entity, next);
-                    insert(entity);
+                    pkInfo.accessor().setObject(save.value, next);
+                    insert(save.value);
                     pkReturnType = TableEntityInfo.PkReturnType.NO_RETURN_PK;
                 }
                 else if (pkInfo.field().isAnnotationPresent(AutoIncrement.class) || pkInfo.field().isAnnotationPresent(Sequence.class))
                 {
-                    setInsertInto(new InsertInto(entityInfo.getEntityClass()));
                     entityInfo.getPropertyNameKeyMap().values().stream()//
                               .filter(columnInfo -> columnInfo.field() != pkInfo.field())//
-                              .forEach(columnInfo -> insert.add(new Insert(columnInfo.columnName(), columnInfo.accessor().get(entity))));
+                              .forEach(columnInfo -> insert.add(new Insert(columnInfo.columnName(), columnInfo.accessor().get(save.value))));
                     if (pkInfo.field().isAnnotationPresent(Sequence.class))
                     {
                         insert.add(new Insert(pkInfo.columnName(), pkInfo.field().getAnnotation(Sequence.class)));
@@ -614,7 +609,9 @@ public class BaseModel implements Model
             }
             else
             {
-                update(entity);
+                type = ModelType.update;
+                update = new Update(save.value.getClass());
+                updateByPk(save.value);
                 pkReturnType = TableEntityInfo.PkReturnType.NO_RETURN_PK;
             }
         }
