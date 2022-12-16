@@ -2,6 +2,7 @@ package com.jfirer.jsql.session;
 
 import com.jfirer.jsql.model.Model;
 
+import java.lang.reflect.AnnotatedElement;
 import java.sql.Connection;
 import java.util.List;
 
@@ -45,7 +46,7 @@ interface ConnectionOp
  *
  * @author eric
  */
-public interface SqlSession extends ConnectionOp, SqlOp
+public interface SqlSession extends ConnectionOp
 {
     <T> T getMapper(Class<T> mapperClass);
 
@@ -80,4 +81,26 @@ public interface SqlSession extends ConnectionOp, SqlOp
      * @param entity
      */
     <T> int insert(T entity);
+
+    int execute(String sql, List<Object> params);
+
+    /**
+     * 插入一行数据，并且以String的形式返回自动生成的主键
+     *
+     * @param sql
+     * @param params
+     * @return
+     */
+    String insertReturnPk(String sql, List<Object> params);
+
+    <T> T query(String sql, AnnotatedElement element, List<Object> params);
+
+    /**
+     * 如果最后一个参数是Page，则会触发page查询
+     *
+     * @param sql
+     * @param params
+     * @return
+     */
+    <T> List<T> queryList(String sql, AnnotatedElement element, List<Object> params);
 }
