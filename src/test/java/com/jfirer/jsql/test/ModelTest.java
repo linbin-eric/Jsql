@@ -39,8 +39,6 @@ public class ModelTest
         dataSource.setUsername("sa");
         dataSource.setPassword("");
         config.setDataSource(dataSource);
-        config.setClassLoader(ModelTest.class.getClassLoader());
-        config.setScanPackage(User.class.getPackage().getName());
         config.addSqlExecutor(new SqlLog());
         sessionFactory = config.build();
         SqlSession sqlSession = sessionFactory.openSession();

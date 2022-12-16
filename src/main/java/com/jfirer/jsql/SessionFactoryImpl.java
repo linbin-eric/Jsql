@@ -3,23 +3,19 @@ package com.jfirer.jsql;
 import com.jfirer.baseutil.reflect.ReflectUtil;
 import com.jfirer.jsql.dialect.Dialect;
 import com.jfirer.jsql.executor.SqlExecutor;
-import com.jfirer.jsql.mapper.AbstractMapper;
 import com.jfirer.jsql.session.SqlSession;
 import com.jfirer.jsql.session.impl.SqlSessionImpl;
 
 import javax.sql.DataSource;
-import java.util.IdentityHashMap;
 
 public class SessionFactoryImpl implements SessionFactory
 {
-    private final IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> mappers;
-    private final SqlExecutor                                                headSqlExecutor;
-    private final DataSource                                                 dataSource;
-    private final Dialect                                                    dialect;
+    private final SqlExecutor headSqlExecutor;
+    private final DataSource  dataSource;
+    private final Dialect     dialect;
 
-    public SessionFactoryImpl(IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> mappers, SqlExecutor headSqlExecutor, DataSource dataSource, Dialect dialect)
+    public SessionFactoryImpl(SqlExecutor headSqlExecutor, DataSource dataSource, Dialect dialect)
     {
-        this.mappers = mappers;
         this.headSqlExecutor = headSqlExecutor;
         this.dataSource = dataSource;
         this.dialect = dialect;
@@ -30,7 +26,7 @@ public class SessionFactoryImpl implements SessionFactory
     {
         try
         {
-            return new SqlSessionImpl(dataSource.getConnection(), headSqlExecutor, mappers, dialect);
+            return new SqlSessionImpl(dataSource.getConnection(), headSqlExecutor, dialect);
         }
         catch (Throwable e)
         {

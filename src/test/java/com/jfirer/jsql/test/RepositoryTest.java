@@ -38,8 +38,6 @@ public class RepositoryTest
         dataSource.setUsername("sa");
         dataSource.setPassword("");
         config.setDataSource(dataSource);
-        config.setClassLoader(CURDTest.class.getClassLoader());
-        config.setScanPackage("com.jfirer.jsql.test:in~*$RepositoryOp;com.jfirer.jsql.test.vo");
         config.addSqlExecutor(new SqlLog());
         sessionFactory = config.build();
         SqlSession sqlSession = sessionFactory.openSession();
@@ -50,7 +48,7 @@ public class RepositoryTest
     }
 
     @Test
-    public void testFindOne()
+    public void test()
     {
         SqlSession session = sessionFactory.openSession();
         User       user    = new User();
@@ -64,15 +62,17 @@ public class RepositoryTest
         user.setAge(14);
         session.save(user);
         List<User> list = repositoryOp.findList(Param.bt(User::getAge, 13));
-        Assert.assertEquals(1,list.size());
+        Assert.assertEquals(1, list.size());
         user.setId(null);
         user.setAge(20);
         repositoryOp.save(user);
         list = repositoryOp.findList(Param.bt(User::getAge, 13));
-        Assert.assertEquals(2,list.size());
+        Assert.assertEquals(2, list.size());
         user.setAge(40);
         repositoryOp.update(user);
         User one = repositoryOp.findOne(Param.eq(User::getId, user.getId()));
-        Assert.assertEquals(40,one.getAge());
+        Assert.assertEquals(40, one.getAge());
+        repositoryOp.delete(Param.eq(User::getAge, 40));
+        Assert.assertEquals(2, repositoryOp.count(Param.notEq(User::getId, 0)));
     }
 }

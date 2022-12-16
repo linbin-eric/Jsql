@@ -34,17 +34,15 @@ public class InterfaceGenerateTest
         dataSource.setUsername("sa");
         dataSource.setPassword("");
         config.setDataSource(dataSource);
-        config.setClassLoader(InterfaceGenerateTest.class.getClassLoader());
         Set<Class<?>> set = new HashSet<Class<?>>();
         set.add(User.class);
     }
 
-    protected void build(String packageName, Class<?> ckass)
+    protected void build(Class<?> ckass)
     {
-        config.setScanPackage(packageName);
         SessionFactory sessionFactory = config.build();
         SqlSession     session        = sessionFactory.openSession();
-        SqlSession sqlSession = sessionFactory.openSession();
+        SqlSession     sqlSession     = sessionFactory.openSession();
         sqlSession.execute("DROP TABLE IF EXISTS user", new LinkedList<>());
         sqlSession.execute("DROP TABLE IF EXISTS user2", new LinkedList<>());
         sqlSession.execute(userTableDml, new LinkedList<>());
@@ -58,7 +56,7 @@ public class InterfaceGenerateTest
     @Test
     public void test_4()
     {
-        build("com.jfirer.jsql.test:in~*$test_4;com.jfirer.jsql.test.vo", test_4.class);
+        build(test_4.class);
     }
 
     /**
@@ -67,7 +65,7 @@ public class InterfaceGenerateTest
     @Test
     public void test_1()
     {
-        build("com.jfirer.jsql.test:in~*$test_1;com.jfirer.jsql.test.vo", test_1.class);
+        build(test_1.class);
     }
 
     /**
@@ -78,7 +76,7 @@ public class InterfaceGenerateTest
     {
         try
         {
-            build("com.jfirer.jsql.test:in~*$test_10;com.jfirer.jsql.test.vo", test_10.class);
+            build(test_10.class);
             Assert.fail();
         }
         catch (Exception ignored)
@@ -92,7 +90,7 @@ public class InterfaceGenerateTest
     @Test
     public void test_2()
     {
-        build("com.jfirer.jsql.test:in~*$test_2;com.jfirer.jsql.test.vo", test_2.class);
+        build(test_2.class);
     }
 
     @Mapper
@@ -128,7 +126,7 @@ public class InterfaceGenerateTest
     @Test
     public void test_6()
     {
-        build("com.jfirer.jsql.test:in~*$test_6;com.jfirer.jsql.test.vo", test_6.class);
+        build(test_6.class);
     }
 
     @Mapper
@@ -144,7 +142,7 @@ public class InterfaceGenerateTest
     @Test
     public void test_7()
     {
-        build("com.jfirer.jsql.test:in~*$test_7;com.jfirer.jsql.test.vo", test_7.class);
+        build(test_7.class);
     }
 
     @Mapper
@@ -172,7 +170,7 @@ public class InterfaceGenerateTest
     @Test
     public void test_8()
     {
-        build("com.jfirer.jsql.test:in~*$test_8;com.jfirer.jsql.test.vo", test_8.class);
+        build(test_8.class);
     }
 
     @Mapper
@@ -188,7 +186,7 @@ public class InterfaceGenerateTest
     @Test
     public void test_9()
     {
-        build("com.jfirer.jsql.test:in~*$test_9;com.jfirer.jsql.test.vo", test_9.class);
+        build(test_9.class);
     }
 
     @Mapper
@@ -218,6 +216,6 @@ public class InterfaceGenerateTest
     @Test
     public void test_11()
     {
-        build("com.jfirer.jsql.test:in~*$test_11;com.jfirer.jsql.test.vo", test_11.class);
+        build(test_11.class);
     }
 }

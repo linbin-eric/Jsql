@@ -9,6 +9,8 @@ import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.session.SqlSession;
 import com.jfirer.jsql.test.vo.SqlLog;
 import com.jfirer.jsql.test.vo.User;
+import com.jfirer.jsql.test.vo.User2;
+import com.jfirer.jsql.test.vo.User3;
 import com.jfirer.jsql.transfer.CustomTransfer;
 import com.jfirer.jsql.transfer.impl.EnumOrdinalTransfer;
 import com.zaxxer.hikari.HikariDataSource;
@@ -31,7 +33,7 @@ import static org.junit.Assert.*;
 
 public class MapperTest
 {
-    @Mapper
+    @Mapper({User.class, User3.class, User2.class})
     public static interface TestOp
     {
         @Sql(sql = "select count(*) from #{table} ", paramNames = "table")
@@ -226,7 +228,6 @@ public class MapperTest
         dataSource.setUsername("sa");
         dataSource.setPassword("");
         config.setDataSource(dataSource);
-        config.setClassLoader(MapperTest.class.getClassLoader());
         config.setDialect(new H2Dialect((PreparedStatement preparedStatement, int i, Object value) -> {
             if (value instanceof User.StringEnum)
             {
@@ -243,7 +244,6 @@ public class MapperTest
                 preparedStatement.setObject(i, value);
             }
         }));
-        config.setScanPackage("com.jfirer.jsql.test:in~*$TestOp;com.jfirer.jsql.test.vo");
         config.addSqlExecutor(new SqlLog());
         sessionFactory = config.build();
         SqlSession session = sessionFactory.openSession();

@@ -1,14 +1,8 @@
 package com.jfirer.jsql;
 
-import com.jfirer.baseutil.PackageScan;
 import com.jfirer.baseutil.TRACEID;
 import com.jfirer.baseutil.Verify;
-import com.jfirer.baseutil.bytecode.support.AnnotationContext;
-import com.jfirer.baseutil.bytecode.support.AnnotationContextFactory;
-import com.jfirer.baseutil.bytecode.support.SupportOverrideAttributeAnnotationContextFactory;
 import com.jfirer.baseutil.reflect.ReflectUtil;
-import com.jfirer.baseutil.smc.compiler.CompileHelper;
-import com.jfirer.jsql.annotation.TableDef;
 import com.jfirer.jsql.dialect.Dialect;
 import com.jfirer.jsql.dialect.impl.H2Dialect;
 import com.jfirer.jsql.dialect.impl.MysqlDialect;
@@ -17,28 +11,20 @@ import com.jfirer.jsql.executor.SqlExecutor;
 import com.jfirer.jsql.executor.impl.FinalExecuteSqlExecutor;
 import com.jfirer.jsql.executor.impl.OraclePageExecutor;
 import com.jfirer.jsql.executor.impl.StandardPageExecutor;
-import com.jfirer.jsql.mapper.AbstractMapper;
-import com.jfirer.jsql.mapper.Mapper;
-import com.jfirer.jsql.mapper.MapperGenerator;
-import com.jfirer.jsql.metadata.TableEntityInfo;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 
 public class SessionfactoryConfig
 {
-    private                DataSource               dataSource;
-    private                ClassLoader              classLoader              = Thread.currentThread().getContextClassLoader();
-    private                String                   scanPackage;
-    private final          List<SqlExecutor>        sqlExecutors             = new LinkedList<SqlExecutor>();
-    private                Dialect                  dialect;
-    protected static final Logger                   logger                   = LoggerFactory.getLogger(SessionfactoryConfig.class);
-    private                AnnotationContextFactory annotationContextFactory = new SupportOverrideAttributeAnnotationContextFactory();
+    private       DataSource        dataSource;
+    private final List<SqlExecutor> sqlExecutors = new LinkedList<SqlExecutor>();
+    private       Dialect           dialect;
 
     public SessionFactory build()
     {
@@ -46,58 +32,15 @@ public class SessionfactoryConfig
         try
         {
             Verify.notNull(dataSource, "dataSource 对象不能为空");
-            Verify.notNull(scanPackage, "sql的扫描路径不能为空");
-            String      productName = detectProductName();
+            String productName = detectProductName();
             dialect = dialect == null ? generateDialect(productName) : dialect;
-            return new SessionFactoryImpl(generateMappers(buildClassSet(), annotationContextFactory), generateHeadSqlExecutor(productName), dataSource, dialect);
+            return new SessionFactoryImpl(generateHeadSqlExecutor(productName), dataSource, dialect);
         }
         catch (Exception e)
         {
             ReflectUtil.throwException(e);
             return null;
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> generateMappers(Set<String> classSet, AnnotationContextFactory annotationContextFactory)
-    {
-        Map<String, TableEntityInfo> tableEntityInfos = new HashMap<String, TableEntityInfo>();
-        for (String each : classSet)
-        {
-            AnnotationContext annotationContext = annotationContextFactory.get(each.replace('.', '/'));
-            if (annotationContext.isAnnotationPresent(TableDef.class))
-            {
-                try
-                {
-                    Class ckass = classLoader.loadClass(each);
-                    tableEntityInfos.put(ckass.getSimpleName(), TableEntityInfo.parse(ckass));
-                }
-                catch (ClassNotFoundException e)
-                {
-                    ReflectUtil.throwException(e);
-                }
-            }
-        }
-        CompileHelper                                              compiler = new CompileHelper(classLoader);
-        IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> mappers  = new IdentityHashMap<Class<?>, Class<? extends AbstractMapper>>();
-        for (String each : classSet)
-        {
-            AnnotationContext annotationContext = annotationContextFactory.get(each.replace('.', '/'));
-            if (annotationContext.isAnnotationPresent(Mapper.class))
-            {
-                try
-                {
-                    Class<?>                        ckass       = classLoader.loadClass(each);
-                    Class<? extends AbstractMapper> mapperClass = (Class<? extends AbstractMapper>) MapperGenerator.generate(ckass, tableEntityInfos, compiler);
-                    mappers.put(ckass, mapperClass);
-                }
-                catch (ClassNotFoundException e)
-                {
-                    ReflectUtil.throwException(e);
-                }
-            }
-        }
-        return mappers;
     }
 
     private Dialect generateDialect(String productName)
@@ -147,20 +90,6 @@ public class SessionfactoryConfig
         return minOrderExecutor.get();
     }
 
-    private Set<String> buildClassSet() throws ClassNotFoundException
-    {
-        Set<String> set          = new HashSet<String>();
-        String[]    packageNames = scanPackage.split(";");
-        for (String packageName : packageNames)
-        {
-            for (String each : PackageScan.scan(packageName))
-            {
-                set.add(each);
-            }
-        }
-        return set;
-    }
-
     private String detectProductName() throws SQLException
     {
         Connection connection = null;
@@ -182,16 +111,6 @@ public class SessionfactoryConfig
     public void setDataSource(DataSource dataSource)
     {
         this.dataSource = dataSource;
-    }
-
-    public void setClassLoader(ClassLoader classLoader)
-    {
-        this.classLoader = classLoader;
-    }
-
-    public void setScanPackage(String scanPackage)
-    {
-        this.scanPackage = scanPackage;
     }
 
     public Dialect getDialect()

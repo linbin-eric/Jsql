@@ -42,7 +42,6 @@ public class ModelTest2
         dataSource.setUsername("sa");
         dataSource.setPassword("");
         config.setDataSource(dataSource);
-        config.setClassLoader(MapperTest.class.getClassLoader());
         config.setDialect(new H2Dialect((preparedStatement, i, value) -> {
             if (value instanceof User.StringEnum)
             {
@@ -59,7 +58,6 @@ public class ModelTest2
                 preparedStatement.setObject(i, value);
             }
         }));
-        config.setScanPackage("com.jfirer.jsql.test:in~*$UserOp;com.jfirer.jsql.test.vo");
         config.addSqlExecutor(new SqlLog());
         sessionFactory = config.build();
         SqlSession session = sessionFactory.openSession();

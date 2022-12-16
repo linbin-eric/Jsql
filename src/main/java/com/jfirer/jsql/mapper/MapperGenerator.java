@@ -1,5 +1,7 @@
 package com.jfirer.jsql.mapper;
 
+import com.jfirer.baseutil.bytecode.support.AnnotationContextFactory;
+import com.jfirer.baseutil.bytecode.support.SupportOverrideAttributeAnnotationContextFactory;
 import com.jfirer.baseutil.reflect.ReflectUtil;
 import com.jfirer.baseutil.smc.SmcHelper;
 import com.jfirer.baseutil.smc.compiler.CompileHelper;
@@ -20,22 +22,37 @@ import com.jfirer.jsql.transfer.impl.BeanTransfer;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MapperGenerator
 {
-    private static final AtomicInteger count = new AtomicInteger(0);
+    private static final AtomicInteger                                            count                    = new AtomicInteger(0);
+    private static       AnnotationContextFactory                                 annotationContextFactory = new SupportOverrideAttributeAnnotationContextFactory();
+    private static       CompileHelper                                            compileHelper            = new CompileHelper(Thread.currentThread().getContextClassLoader());
+    private static       ConcurrentMap<Class<?>, Class<? extends AbstractMapper>> store                    = new ConcurrentHashMap<>();
 
-    public static Class<?> generate(Class<?> ckass, Map<String, TableEntityInfo> tableEntityInfos, CompileHelper compiler)
+    public static Class<? extends AbstractMapper> generate(Class<?> ckass)
+    {
+        if (annotationContextFactory.get(ckass).isAnnotationPresent(Mapper.class) == false)
+        {
+            throw new IllegalArgumentException();
+        }
+        return store.computeIfAbsent(ckass, v -> (Class<? extends AbstractMapper>) generate(v, compileHelper));
+    }
+
+    private static Class<?> generate(Class<?> ckass, CompileHelper compiler)
     {
         try
         {
-            ClassModel    classModel     = buildClassModelAndImportNecessaryClass(ckass);
-            AtomicInteger fieldNameCount = new AtomicInteger(0);
+            ClassModel                   classModel       = buildClassModelAndImportNecessaryClass(ckass);
+            AtomicInteger                fieldNameCount   = new AtomicInteger(0);
+            Map<String, TableEntityInfo> tableEntityInfos = new HashMap<>();
+            Arrays.stream(ckass.getAnnotation(Mapper.class).value()).map(value -> TableEntityInfo.parse(value)).forEach(entityInfo -> {
+                tableEntityInfos.put(entityInfo.getClassSimpleName(), entityInfo);
+            });
             for (Method method : ckass.getDeclaredMethods())
             {
                 if (method.isDefault() || method.isAnnotationPresent(Sql.class) == false)
@@ -99,6 +116,7 @@ public class MapperGenerator
                 addInsert(classModel, (Class<? extends Repository>) ckass, repositoryEntityClass);
                 addSave(classModel, (Class<? extends Repository>) ckass, repositoryEntityClass);
                 addUpadte(classModel, (Class<? extends Repository>) ckass, repositoryEntityClass);
+                addCount(ckass, classModel, repositoryEntityClass);
             }
             return compiler.compile(classModel);
         }
@@ -107,6 +125,17 @@ public class MapperGenerator
             ReflectUtil.throwException(e);
             return null;
         }
+    }
+
+    private static void addCount(Class<?> ckass, ClassModel classModel, Class<?> repositoryEntityClass) throws NoSuchMethodException
+    {
+        Method      count       = ckass.getMethod("count", Param.class);
+        MethodModel methodModel = new MethodModel(count, classModel);
+        methodModel.setBody("""
+                            if(session==null){throw new NullPointerException("当前没有session");}
+                            return session.count(ModelFactory.selectCount().from(
+                            """ + SmcHelper.getReferenceName(repositoryEntityClass, classModel) + ".class).where($0));");
+        classModel.putMethodModel(methodModel);
     }
 
     private static void addUpadte(ClassModel classModel, Class<? extends Repository> ckass, Class<?> repositoryEntityClass) throws NoSuchMethodException

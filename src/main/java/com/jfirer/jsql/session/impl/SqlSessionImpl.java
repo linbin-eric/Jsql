@@ -4,6 +4,7 @@ import com.jfirer.baseutil.reflect.ReflectUtil;
 import com.jfirer.jsql.dialect.Dialect;
 import com.jfirer.jsql.executor.SqlExecutor;
 import com.jfirer.jsql.mapper.AbstractMapper;
+import com.jfirer.jsql.mapper.MapperGenerator;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.BaseModel;
 import com.jfirer.jsql.model.Model;
@@ -15,25 +16,22 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.AnnotatedElement;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.IdentityHashMap;
 import java.util.List;
 
 public class SqlSessionImpl implements SqlSession
 {
-    private              boolean                                                    transactionActive = false;
-    private              boolean                                                    closed            = false;
-    private final        IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> mappers;
-    private final        Connection                                                 connection;
-    private final        SqlExecutor                                                headSqlExecutor;
-    private final        Dialect                                                    dialect;
-    private final static Logger                                                     logger            = LoggerFactory.getLogger(SqlSession.class);
+    private              boolean     transactionActive = false;
+    private              boolean     closed            = false;
+    private final        Connection  connection;
+    private final        SqlExecutor headSqlExecutor;
+    private final        Dialect     dialect;
+    private final static Logger      logger            = LoggerFactory.getLogger(SqlSession.class);
 
-    public SqlSessionImpl(Connection connection, SqlExecutor headSqlExecutor, IdentityHashMap<Class<?>, Class<? extends AbstractMapper>> mappers, Dialect dialect)
+    public SqlSessionImpl(Connection connection, SqlExecutor headSqlExecutor, Dialect dialect)
     {
         this.connection = connection;
         this.headSqlExecutor = headSqlExecutor;
         this.dialect = dialect;
-        this.mappers = mappers;
     }
 
     @Override
@@ -277,8 +275,8 @@ public class SqlSessionImpl implements SqlSession
     {
         try
         {
-            Class<? extends AbstractMapper> ckass  = mappers.get(mapperClass);
-            AbstractMapper                  mapper = ckass.newInstance();
+            Class<? extends AbstractMapper> ckass  = MapperGenerator.generate(mapperClass);
+            AbstractMapper                  mapper = ckass.getDeclaredConstructor().newInstance();
             mapper.setSession(this);
             return (T) mapper;
         }

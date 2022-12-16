@@ -180,13 +180,7 @@ public class TableEntityInfo
 
     public static TableEntityInfo parse(Class<?> entityClass)
     {
-        TableEntityInfo tableEntityInfo = store.get(entityClass);
-        if (tableEntityInfo == null)
-        {
-            tableEntityInfo = new TableEntityInfo(entityClass);
-            store.put(entityClass, tableEntityInfo);
-        }
-        return tableEntityInfo;
+        return store.computeIfAbsent(entityClass, ckass -> new TableEntityInfo(ckass));
     }
 
     public PkGenerator.Generator getPkGenerator()

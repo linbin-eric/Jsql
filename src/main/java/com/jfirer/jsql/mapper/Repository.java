@@ -15,6 +15,8 @@ public interface Repository<T>
 
     List<T> findList(Param param);
 
+    int count(Param param);
+
     int delete(Param param);
 
     int insert(T entity);
