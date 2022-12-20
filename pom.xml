@@ -36,7 +36,7 @@
         <dependency>
             <groupId>com.jfirer</groupId>
             <artifactId>jfireEL</artifactId>
-            <version>1.0.1-SNAPSHOT</version>
+            <version>1.0.1</version>
         </dependency>
         <dependency>
             <groupId>mysql</groupId>
@@ -88,19 +88,18 @@
     </dependencies>
     <distributionManagement>
         <repository>
-            <id>nexus</id>
+            <id>nexus3</id>
             <name>nexus</name>
-            <url>http://homenas.club:49159/repository/maven-releases/</url>
+            <url>http://backupnas.jfirer.com:8082/repository/maven-releases/</url>
         </repository>
         <snapshotRepository>
-            <id>nexus-snapshot</id>
+            <id>nexus3</id>
             <name>nexus</name>
-            <url>http://homenas.club:49159/repository/maven-snapshots/</url>
+            <url>http://backupnas.jfirer.com:8082/repository/maven-snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
     <build>
         <plugins>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

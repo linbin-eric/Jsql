@@ -123,7 +123,7 @@ public class BeanTransfer implements ResultSetTransfer
         }
         try
         {
-            Object entity = ckass.newInstance();
+            Object entity = ckass.getConstructor().newInstance();
             for (ColumnTransfer each : columnTransfers)
             {
                 Object value = each.transfer.transfer(resultSet);

@@ -50,7 +50,7 @@ public class MapperGenerator
             ClassModel                   classModel       = buildClassModelAndImportNecessaryClass(ckass);
             AtomicInteger                fieldNameCount   = new AtomicInteger(0);
             Map<String, TableEntityInfo> tableEntityInfos = new HashMap<>();
-            Arrays.stream(ckass.getAnnotation(Mapper.class).value()).map(value -> TableEntityInfo.parse(value)).forEach(entityInfo -> {
+            Arrays.stream(annotationContextFactory.get(ckass).getAnnotation(Mapper.class).value()).map(value -> TableEntityInfo.parse(value)).forEach(entityInfo -> {
                 tableEntityInfos.put(entityInfo.getClassSimpleName(), entityInfo);
             });
             for (Method method : ckass.getDeclaredMethods())
