@@ -23,7 +23,7 @@ public interface SFunction<T, R> extends Function<T, R>, Serializable
         try
         {
             String resourceName = getSerializedLambda(fn).getImplClass();
-            return resourceName.replace("/",".");
+            return resourceName.replace("/", ".");
         }
         catch (Exception e)
         {
@@ -56,8 +56,15 @@ public interface SFunction<T, R> extends Function<T, R>, Serializable
     static <T> String resolveFieldName(SFunction<T, ?> fn)
     {
         String methodName = getImplMethodName(fn);
-        return Optional.of(methodName.startsWith("get") ? methodName.substring(3) : methodName.substring(2))//
-                       .map(value -> value.toLowerCase().charAt(0) + value.substring(1))//
-                       .get();
+        if (methodName.startsWith("get") || methodName.startsWith("is"))
+        {
+            return Optional.of(methodName.startsWith("get") ? methodName.substring(3) : methodName.substring(2))//
+                           .map(value -> value.toLowerCase().charAt(0) + value.substring(1))//
+                           .get();
+        }
+        else
+        {
+            return methodName;
+        }
     }
 }

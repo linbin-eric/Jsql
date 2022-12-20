@@ -111,6 +111,10 @@ public class BeanTransfer implements ResultSetTransfer
                         {
                             columnTransfer = new ColumnTransfer(new ClobTransfer(metaData.getColumnName(i + 1)), new ValueAccessor(field));
                         }
+                        else if (fieldType.isEnum())
+                        {
+                            columnTransfer = new ColumnTransfer(new EnumNameTransfer(metaData.getColumnName(i + 1)), new ValueAccessor(field));
+                        }
                         else
                         {
                             throw new IllegalArgumentException();
