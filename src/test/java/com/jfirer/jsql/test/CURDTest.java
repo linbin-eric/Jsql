@@ -2,7 +2,7 @@ package com.jfirer.jsql.test;
 
 import com.jfirer.jsql.SessionFactory;
 import com.jfirer.jsql.SessionfactoryConfig;
-import com.jfirer.jsql.model.ModelFactory;
+import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.support.LockMode;
 import com.jfirer.jsql.model.Param;
 import com.jfirer.jsql.session.SqlSession;
@@ -180,7 +180,7 @@ public class CURDTest
     {
         test_save_insert();
         SqlSession session = sessionFactory.openSession();
-        User       query   = session.findOne(ModelFactory.selectAll().from(User.class).where(Param.eq(User::getId, 1)));
+        User       query   = session.findOne(Model.selectAll().from(User.class).where(Param.eq(User::getId, 1)));
         Assert.assertNotNull(query);
         Assert.assertEquals(1, query.getId().intValue());
         Assert.assertEquals(new Date(User.now).getTime(), query.getDate().getTime(), 1);
@@ -216,7 +216,7 @@ public class CURDTest
     {
         test_insert();
         SqlSession session = sessionFactory.openSession();
-        session.execute(ModelFactory.deleteFrom(User.class).where(Param.eq(User::getId, 1)));
+        session.execute(Model.deleteFrom(User.class).where(Param.eq(User::getId, 1)));
         ResultSet resultSet = session.getConnection().prepareStatement("select count(*) from user").executeQuery();
         Assert.assertTrue(resultSet.next());
         Assert.assertEquals(0, resultSet.getInt(1));
@@ -239,7 +239,7 @@ public class CURDTest
         ResultSet resultSet = session.getConnection().prepareStatement("select age from User where id = 1").executeQuery();
         resultSet.next();
         System.out.println(resultSet.getInt(1));
-        User query = session.findOne(ModelFactory.selectAll().from(User.class).where(Param.eq(User::getId, user.getId())));
+        User query = session.findOne(Model.selectAll().from(User.class).where(Param.eq(User::getId, user.getId())));
         Assert.assertEquals(0, query.getAge2());
         Assert.assertEquals(12, query.getAge());
         session.close();
@@ -270,7 +270,7 @@ public class CURDTest
                     latch.countDown();
                     SqlSession session = one.openSession();
                     session.beginTransAction();
-                    session.findList(ModelFactory.selectAll().from(User.class).where(Param.eq(User::getId, 1)).lockMode(LockMode.SHARE));
+                    session.findList(Model.selectAll().from(User.class).where(Param.eq(User::getId, 1)).lockMode(LockMode.SHARE));
                     count.incrementAndGet();
                     session.close();
                 }
@@ -304,7 +304,7 @@ public class CURDTest
                     latch.countDown();
                     SqlSession session = one.openSession();
                     session.beginTransAction();
-                    session.findList(ModelFactory.selectAll().from(User.class).where(Param.eq(User::getId, 1)).lockMode(LockMode.UPDATE));
+                    session.findList(Model.selectAll().from(User.class).where(Param.eq(User::getId, 1)).lockMode(LockMode.UPDATE));
                     count.incrementAndGet();
                     try
                     {
@@ -335,7 +335,7 @@ public class CURDTest
         User3      user3   = new User3();
         user3.setName("121");
         session.save(user3);
-        User3 one = session.findOne(ModelFactory.selectAll().from(User3.class).selectAll(User3.class).where(Param.eq(User3::getName, "121")));
+        User3 one = session.findOne(Model.selectAll().from(User3.class).where(Param.eq(User3::getName, "121")));
         assertNotNull(one.getId());
         System.out.println(one.getId());
     }

@@ -7,6 +7,79 @@ import com.jfirer.jsql.model.support.SFunction;
 
 public interface Model
 {
+    static Model update(Class<?> ckass)
+    {
+        return new BaseModel(new BaseModel.Update(ckass));
+    }
+
+    static Model insert(Class<?> ckass)
+    {
+        return new BaseModel(new BaseModel.InsertInto(ckass));
+    }
+
+    static <T> Model insert(T entity)
+    {
+        return new BaseModel(new BaseModel.InsertIntoWithObject(entity));
+    }
+
+    static Model deleteFrom(Class<?> ckass)
+    {
+        return new BaseModel(new BaseModel.Delete(ckass));
+    }
+
+    static <T> Model save(T entity)
+    {
+        return new BaseModel(new BaseModel.SaveWithObject(entity));
+    }
+
+    static <T> Model update(T entity)
+    {
+        return new BaseModel(new BaseModel.UpdateWithObject(entity));
+    }
+
+    static <T> Model select(SFunction<T, ?>... fns)
+    {
+        BaseModel model = new BaseModel();
+        for (SFunction<T, ?> fn : fns)
+        {
+            model.addSelect(fn);
+        }
+        return model;
+    }
+
+    static Model selectAll()
+    {
+        return new BaseModel();
+    }
+
+    static Model selectAll(Class<?> ckass)
+    {
+        BaseModel model = new BaseModel();
+        model.selectAll(ckass);
+        return model;
+    }
+
+    static <T> Model selectAlias(SFunction<T, ?> fn, String asName)
+    {
+        BaseModel model = new BaseModel();
+        model.selectAs(fn, asName);
+        return model;
+    }
+
+    static <T> Model selectCount(SFunction<T, ?> fn)
+    {
+        BaseModel model = new BaseModel();
+        model.selectCount(fn);
+        return model;
+    }
+
+    static Model selectCount()
+    {
+        BaseModel model = new BaseModel();
+        model.selectCount();
+        return model;
+    }
+
     default Model from(Class<?> ckass)
     {
         return fromAs(ckass, TableEntityInfo.parse(ckass).getTableName());
@@ -14,15 +87,9 @@ public interface Model
 
     Model fromAs(Class<?> ckass, String asName);
 
-    <T> Model select(SFunction<T, ?>... fns);
-
-    Model selectAll(Class<?> ckass);
+    <T> Model addSelect(SFunction<T, ?> fns);
 
     <T> Model selectAs(SFunction<T, ?> fn, String asName);
-
-    <T> Model selectCount(SFunction<T, ?> fn);
-
-    Model selectCount();
 
     <T> Model set(SFunction<T, ?> fn, Object value);
 

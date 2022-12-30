@@ -257,16 +257,12 @@ public class BaseModel implements Model
     }
 
     @Override
-    public <T> Model select(SFunction<T, ?>... fns)
+    public <T> Model addSelect(SFunction<T, ?> fn)
     {
-        for (SFunction<T, ?> fn : fns)
-        {
-            select.add(new Select(fn, this));
-        }
+        select.add(new Select(fn, this));
         return this;
     }
 
-    @Override
     public Model selectAll(Class<?> ckass)
     {
         from.stream()//
@@ -296,14 +292,12 @@ public class BaseModel implements Model
         return this;
     }
 
-    @Override
     public <T> Model selectCount(SFunction<T, ?> fn)
     {
         select.add(new Count(fn, this));
         return this;
     }
 
-    @Override
     public Model selectCount()
     {
         select.add(new SelectWithName("count(*)"));

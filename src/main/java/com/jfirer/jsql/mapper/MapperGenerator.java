@@ -14,7 +14,6 @@ import com.jfirer.jsql.annotation.Sql;
 import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.Model;
-import com.jfirer.jsql.model.ModelFactory;
 import com.jfirer.jsql.model.Param;
 import com.jfirer.jsql.session.SqlSession;
 import com.jfirer.jsql.transfer.impl.BeanTransfer;
@@ -108,7 +107,6 @@ public class MapperGenerator
                 Objects.requireNonNull(repositoryEntityClass);
                 classModel.addImport(repositoryEntityClass);
                 classModel.addImport(Param.class);
-                classModel.addImport(ModelFactory.class);
                 classModel.addImport(Model.class);
                 addFindOne(classModel, (Class<? extends Repository>) ckass, repositoryEntityClass);
                 addFindList(classModel, (Class<? extends Repository>) ckass, repositoryEntityClass);
@@ -133,7 +131,7 @@ public class MapperGenerator
         MethodModel methodModel = new MethodModel(count, classModel);
         methodModel.setBody("""
                             if(session==null){throw new NullPointerException("当前没有session");}
-                            return session.count(ModelFactory.selectCount().from(
+                            return session.count(Model.selectCount().from(
                             """ + SmcHelper.getReferenceName(repositoryEntityClass, classModel) + ".class).where($0));");
         classModel.putMethodModel(methodModel);
     }
@@ -180,7 +178,7 @@ public class MapperGenerator
         MethodModel methodModel = new MethodModel(delete, classModel);
         methodModel.setBody("""
                             if(session==null){throw new NullPointerException("当前没有session");}
-                            return session.execute(ModelFactory.deleteFrom(""" + SmcHelper.getReferenceName(repositoryEntityClass, classModel) + ".class).where($0));");
+                            return session.execute(Model.deleteFrom(""" + SmcHelper.getReferenceName(repositoryEntityClass, classModel) + ".class).where($0));");
         classModel.putMethodModel(methodModel);
     }
 
@@ -190,7 +188,7 @@ public class MapperGenerator
         MethodModel methodModel = new MethodModel(findList, classModel);
         methodModel.setBody("""
                             if(session==null){throw new NullPointerException("当前没有session");}
-                            return session.findList(ModelFactory.selectAll().from(""" //
+                            return session.findList(Model.selectAll().from(""" //
                             + SmcHelper.getReferenceName(repositoryEntityClass, classModel) + ".class).where($0));");
         classModel.putMethodModel(methodModel);
     }
@@ -202,7 +200,7 @@ public class MapperGenerator
         findOne.setReturnType(repositoryEntityClass);
         findOne.setBody("""
                         if(session==null){throw new NullPointerException("当前没有session");}
-                        return session.findOne(ModelFactory.selectAll().from(""" //
+                        return session.findOne(Model.selectAll().from(""" //
                         + SmcHelper.getReferenceName(repositoryEntityClass, classModel) + ".class).where($0));");
         classModel.putMethodModel(findOne);
     }

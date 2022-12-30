@@ -8,7 +8,6 @@ import com.jfirer.jsql.mapper.MapperGenerator;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.BaseModel;
 import com.jfirer.jsql.model.Model;
-import com.jfirer.jsql.model.ModelFactory;
 import com.jfirer.jsql.session.SqlSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -144,7 +143,7 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> int save(T entity)
     {
-        BaseModel.ModelResult result = ModelFactory.save(entity).getResult();
+        BaseModel.ModelResult result = Model.save(entity).getResult();
         if (result.pkReturnType() != TableEntityInfo.PkReturnType.NO_RETURN_PK)
         {
             String                     pk     = insertReturnPk(result.sql(), result.paramValues());
@@ -167,7 +166,7 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> int update(T entity)
     {
-        BaseModel.ModelResult result = ModelFactory.update(entity).getResult();
+        BaseModel.ModelResult result = Model.update(entity).getResult();
         return execute(result.sql(), result.paramValues());
     }
 
@@ -175,7 +174,7 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> int insert(T entity)
     {
-        BaseModel.ModelResult result = ModelFactory.insert(entity).getResult();
+        BaseModel.ModelResult result = Model.insert(entity).getResult();
         return execute(result.sql(), result.paramValues());
     }
 
