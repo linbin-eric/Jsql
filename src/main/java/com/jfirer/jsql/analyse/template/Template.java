@@ -22,7 +22,7 @@ public class Template
             return new StringBuilder();
         }
     };
-    private              Execution[]                runtimeExecutions;
+    private final        Execution[]                runtimeExecutions;
     private              ScanMode                   mode;
     private static final Invoker                    DEFAULT_HEAD;
     static
@@ -98,7 +98,7 @@ public class Template
             each.check();
         }
         Deque<Execution> array = new LinkedList<Execution>();
-        while (executions.isEmpty() == false)
+        while (!executions.isEmpty())
         {
             array.push(executions.pollFirst());
         }

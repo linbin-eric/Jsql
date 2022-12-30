@@ -18,7 +18,7 @@ public interface ColumnNameStrategy
         @Override
         public String toColumnName(String name)
         {
-            return ColumnNameStrategy.getString(name, c-> (char) Character.toLowerCase(c));
+            return ColumnNameStrategy.getString(name, c -> (char) Character.toLowerCase(c));
         }
     }
 
@@ -29,7 +29,7 @@ public interface ColumnNameStrategy
         @Override
         public String toColumnName(String name)
         {
-            return ColumnNameStrategy.getString(name, c-> (char) Character.toUpperCase(c));
+            return ColumnNameStrategy.getString(name, c -> (char) Character.toUpperCase(c));
         }
     }
 

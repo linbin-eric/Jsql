@@ -1,9 +1,9 @@
 package com.jfirer.jsql.test.vo;
 
-import com.jfirer.jsql.annotation.Pk;
 import com.jfirer.jsql.annotation.ColumnName;
-import com.jfirer.jsql.annotation.TableDef;
+import com.jfirer.jsql.annotation.Pk;
 import com.jfirer.jsql.annotation.PkGenerator;
+import com.jfirer.jsql.annotation.TableDef;
 
 @TableDef(value = "user2")
 public class User3

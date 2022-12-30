@@ -28,14 +28,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class MapperGenerator
 {
-    private static final AtomicInteger                                            count                    = new AtomicInteger(0);
-    private static       AnnotationContextFactory                                 annotationContextFactory = new SupportOverrideAttributeAnnotationContextFactory();
-    private static       CompileHelper                                            compileHelper            = new CompileHelper(Thread.currentThread().getContextClassLoader());
-    private static       ConcurrentMap<Class<?>, Class<? extends AbstractMapper>> store                    = new ConcurrentHashMap<>();
+    private static final AtomicInteger            count                    = new AtomicInteger(0);
+    private static final AnnotationContextFactory annotationContextFactory = new SupportOverrideAttributeAnnotationContextFactory();
+    private static final CompileHelper            compileHelper            = new CompileHelper(Thread.currentThread().getContextClassLoader());
+    private static final ConcurrentMap<Class<?>, Class<? extends AbstractMapper>> store                    = new ConcurrentHashMap<>();
 
     public static Class<? extends AbstractMapper> generate(Class<?> ckass)
     {
-        if (annotationContextFactory.get(ckass).isAnnotationPresent(Mapper.class) == false)
+        if (!annotationContextFactory.get(ckass).isAnnotationPresent(Mapper.class))
         {
             throw new IllegalArgumentException();
         }
@@ -54,7 +54,7 @@ public class MapperGenerator
             });
             for (Method method : ckass.getDeclaredMethods())
             {
-                if (method.isDefault() || method.isAnnotationPresent(Sql.class) == false)
+                if (method.isDefault() || !method.isAnnotationPresent(Sql.class))
                 {
                     continue;
                 }
@@ -84,7 +84,6 @@ public class MapperGenerator
                 }
                 if (method.getReturnType() == void.class || method.getReturnType() == Void.class)
                 {
-                    ;
                 }
                 else
                 {

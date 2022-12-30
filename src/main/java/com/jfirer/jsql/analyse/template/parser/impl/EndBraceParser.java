@@ -27,7 +27,7 @@ public class EndBraceParser extends TemplateParser
         Execution        pop;
         while ((pop = executions.pollFirst()) != null)
         {
-            if (pop instanceof WithBodyExecution == false || ((WithBodyExecution) pop).isBodyNotSet() == false)
+            if (!(pop instanceof WithBodyExecution) || !((WithBodyExecution) pop).isBodyNotSet())
             {
                 array.push(pop);
             }
@@ -43,7 +43,7 @@ public class EndBraceParser extends TemplateParser
         ((WithBodyExecution) pop).setBody(array.toArray(emptyBody));
         if (pop instanceof ElseExecution)
         {
-            if (executions.peek() == null || executions.peek() instanceof IfExecution == false)
+            if (executions.peek() == null || !(executions.peek() instanceof IfExecution))
             {
                 throw new IllegalFormatException("else 节点之前没有if节点", sentence.substring(0, offset));
             }
@@ -51,7 +51,7 @@ public class EndBraceParser extends TemplateParser
         }
         else if (pop instanceof ElseIfExecution)
         {
-            if (executions.peek() == null || executions.peek() instanceof IfExecution == false)
+            if (executions.peek() == null || !(executions.peek() instanceof IfExecution))
             {
                 throw new IllegalFormatException("else if 节点之前没有if节点", sentence.substring(0, offset));
             }

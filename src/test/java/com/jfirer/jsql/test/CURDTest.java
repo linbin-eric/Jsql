@@ -3,8 +3,8 @@ package com.jfirer.jsql.test;
 import com.jfirer.jsql.SessionFactory;
 import com.jfirer.jsql.SessionfactoryConfig;
 import com.jfirer.jsql.model.Model;
-import com.jfirer.jsql.model.support.LockMode;
 import com.jfirer.jsql.model.Param;
+import com.jfirer.jsql.model.support.LockMode;
 import com.jfirer.jsql.session.SqlSession;
 import com.jfirer.jsql.test.vo.SqlLog;
 import com.jfirer.jsql.test.vo.User;
@@ -194,7 +194,7 @@ public class CURDTest
         Assert.assertEquals(calendar.getTimeInMillis(), query.getSqlDate().getTime());
         Assert.assertEquals(2.53d, query.getD1(), 0.001);
         Assert.assertEquals(5.36f, query.getF1(), 0.001);
-        Assert.assertEquals(23l, query.getL1());
+        Assert.assertEquals(23L, query.getL1());
         Assert.assertEquals(new Timestamp(User.now).getTime(), query.getTimestamp().getTime(), 1);
         assertEquals(User.now, query.getN());
         assertEquals(User.now, new Timestamp(User.now).getTime());
@@ -202,7 +202,7 @@ public class CURDTest
         Assert.assertEquals(Boolean.FALSE, query.getB11());
         Assert.assertEquals(6.32d, query.getD11(), 0.001);
         Assert.assertEquals(5.69f, query.getF11(), 0.001);
-        Assert.assertEquals(Long.valueOf(5625l), query.getL11());
+        Assert.assertEquals(Long.valueOf(5625L), query.getL11());
         session.close();
     }
 

@@ -14,7 +14,7 @@ public class LiteralsParser extends TokenParser
     public int parse(String sql, int offset, Deque<Token> tokens)
     {
         char c = getChar(offset, sql);
-        if (CharType.isAlphabet(c) == false)
+        if (!CharType.isAlphabet(c))
         {
             return next.parse(sql, offset, tokens);
         }

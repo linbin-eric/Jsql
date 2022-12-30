@@ -34,99 +34,99 @@ import static org.junit.Assert.*;
 public class MapperTest
 {
     @Mapper({User.class, User3.class, User2.class})
-    public static interface TestOp
+    public interface TestOp
     {
         @Sql(sql = "select count(*) from #{table} ", paramNames = "table")
-        public int count(String table);
+        int count(String table);
 
         @Sql(sql = "select count(*) from #{table} where name2=${name}", paramNames = "table,name")
-        public int count(String table, String name);
+        int count(String table, String name);
 
         /**
          * 测试$%%格式
          **/
         @Sql(sql = "select count(*) from User where name like ${'%'+name+'%'}", paramNames = "name")
-        public int count2(String name);
+        int count2(String name);
 
         @Sql(sql = "select count(*) from User where name like ${'%'+name}", paramNames = "name")
-        public int count3(String name);
+        int count3(String name);
 
         @Sql(sql = "select count(*) from User where name like ${name+'%'}", paramNames = "name")
-        public int count4(String name);
+        int count4(String name);
         /** 测试$%%格式 **/
         /**
          * 测试$~
          **/
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
-        public int count5(String ids);
+        int count5(String ids);
 
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
-        public int count5(String[] ids);
+        int count5(String[] ids);
 
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
-        public int count5(double[] ids);
+        int count5(double[] ids);
 
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
-        public int count5(char[] ids);
+        int count5(char[] ids);
 
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
-        public int count5(int[] ids);
+        int count5(int[] ids);
 
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
-        public int count5(float[] ids);
+        int count5(float[] ids);
 
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
-        public int count5(Integer[] ids);
+        int count5(Integer[] ids);
 
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
-        public int count5(byte[] ids);
+        int count5(byte[] ids);
 
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
-        public int count5(short[] ids);
+        int count5(short[] ids);
 
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
-        public int count5(long[] ids);
+        int count5(long[] ids);
 
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
-        public int count5(Long[] ids);
+        int count5(Long[] ids);
 
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
-        public int count5(List<Integer> ids);
+        int count5(List<Integer> ids);
 
         @Sql(sql = "select count(*) from User where b in ~{booleans}", paramNames = "booleans")
-        public int count5(boolean[] booleans);
+        int count5(boolean[] booleans);
 
         @Sql(sql = "select count(*) from User where id in ~{ids}", paramNames = "ids")
-        public int count5_2(List<String> ids);
+        int count5_2(List<String> ids);
         /** 测试$~ **/
         /**
          * 测试as 功能
          **/
         @Sql(sql = "select * from User as u where u.name = ${name}", paramNames = "name")
-        public User find(String name);
+        User find(String name);
 
         @Sql(sql = "select age from User as u where u.name = ${name}", paramNames = "name")
-        public User find2(String name);
+        User find2(String name);
 
         @Sql(sql = "select age as a from User as u where u.name = ${name}", paramNames = "name")
-        public User find3(String name);
+        User find3(String name);
         /** 测试as类别名 **/
         /**
          * 测试Enum
          */
         @Sql(sql = "select * from User where state =${s.ordinal()}", paramNames = "s")
-        public User find(User.State s);
+        User find(User.State s);
 
         @Sql(sql = "select * from User where stringEnum = ${v.name()}", paramNames = "v")
         User find(User.StringEnum v);
 
         @CustomTransfer(EnumOrdinalTransfer.class)
         @Sql(sql = "select state from User where name=${name}", paramNames = "name")
-        public User.State findState(String name);
+        User.State findState(String name);
 
         @CustomTransfer(EnumOrdinalTransfer.class)
         @Sql(sql = "select state from User where name like ${'%'+name+'%'}", paramNames = "name")
-        public List<User.State> findListState(String name);
+        List<User.State> findListState(String name);
 
         /**
          * 测试Enum
@@ -143,10 +143,10 @@ public class MapperTest
                     where id=${id}
                     <%}%>
                    """, paramNames = "name,id")
-        public List<User> find(String name, int id, Page page);
+        List<User> find(String name, int id, Page page);
 
         @Sql(sql = "select * from User where name like ${'%'+name+'%'}", paramNames = "name")
-        public List<User> find2(String name, Page page);
+        List<User> find2(String name, Page page);
 
         /* 测试page */
         /* 静态常量 */
@@ -156,10 +156,10 @@ public class MapperTest
 
         /* 测试语句 */
         @Sql(sql = "select * from User where <% if(id==1) {%> id=1 <%}else if(id==2) {%> id=2 <%} else {%> id=3 <%}%>", paramNames = "id")
-        public User find(int id);
+        User find(int id);
 
         @Sql(sql = "select * from User where id=#{id}", paramNames = "id")
-        public User find_1(int id);
+        User find_1(int id);
 
         /* 测试语句 */
         /* 测试Transfer */
@@ -191,20 +191,20 @@ public class MapperTest
         /*
         测试默认方法
          */
-        public default int testDefault()
+        default int testDefault()
         {
             return 1;
         }
     }
 
     @Mapper
-    public static interface TestOp2
+    public interface TestOp2
     {
         /**
          * 测试Enum
          */
         @Sql(sql = "select * from User where state =${s.ordinal()}", paramNames = "s")
-        public User find(User.State s);
+        User find(User.State s);
     }
 
     private SessionFactory       sessionFactory;
@@ -229,14 +229,12 @@ public class MapperTest
         dataSource.setPassword("");
         config.setDataSource(dataSource);
         config.setDialect(new H2Dialect((PreparedStatement preparedStatement, int i, Object value) -> {
-            if (value instanceof User.StringEnum)
+            if (value instanceof User.StringEnum stringEnum)
             {
-                User.StringEnum stringEnum = (User.StringEnum) value;
                 preparedStatement.setString(i, stringEnum.name());
             }
-            else if (value instanceof Enum<?>)
+            else if (value instanceof Enum<?> enum1)
             {
-                Enum<?> enum1 = (Enum<?>) value;
                 preparedStatement.setInt(i, enum1.ordinal());
             }
             else
@@ -308,7 +306,7 @@ public class MapperTest
         Assert.assertEquals(2, testOp.count5(new double[]{1, 2}));
         Assert.assertEquals(2, testOp.count5(new Integer[]{1, 2}));
         Assert.assertEquals(2, testOp.count5(new long[]{1, 2}));
-        Assert.assertEquals(2, testOp.count5(new Long[]{1l, 2l}));
+        Assert.assertEquals(2, testOp.count5(new Long[]{1L, 2L}));
         Assert.assertEquals(2, testOp.count5(new float[]{1, 2}));
         assertEquals(2, testOp.count5(new boolean[]{true, false}));
         List<Integer> ids = new LinkedList<Integer>();

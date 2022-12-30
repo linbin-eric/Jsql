@@ -48,7 +48,7 @@ public class CollectionExecution implements Execution
         }
         else if (result.getClass().isArray())
         {
-            if (result.getClass().getComponentType().isPrimitive() == false)
+            if (!result.getClass().getComponentType().isPrimitive())
             {
                 cache.append("(");
                 for (Object each : (Object[]) result)

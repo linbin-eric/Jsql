@@ -94,30 +94,30 @@ public class InterfaceGenerateTest
     }
 
     @Mapper
-    public static interface test_1
+    public interface test_1
     {
         @Sql(sql = "select * from User as u where u.name= ${T(com.jfirer.jsql.test.vo.User).xx}", paramNames = "")
-        public List<User> find3();
+        List<User> find3();
     }
 
     @Mapper
-    public static interface test_2
+    public interface test_2
     {
         @Sql(sql = "select * from User where name = ${T(com.jfirer.jsql.test.vo.User).xx}", paramNames = "")
-        public List<User> query();
+        List<User> query();
 
         @Sql(sql = "update User set name = ${T(com.jfirer.jsql.test.vo.User).xx}", paramNames = "")
-        public int update();
+        int update();
     }
 
     @Mapper
-    public static interface test_4
+    public interface test_4
     {
         @Sql(sql = "select * from User <%if(i>5) {%>where name ='kx'<%}%> ", paramNames = "i")
-        public List<User> query(int i);
+        List<User> query(int i);
 
         @Sql(sql = "update User set name = ${user.name} <%if( user.name != null && user.name=='ss' ) {%> where name ='x' <%}%> ", paramNames = "user")
-        public int update(User user);
+        int update(User user);
     }
 
     /**
@@ -130,10 +130,10 @@ public class InterfaceGenerateTest
     }
 
     @Mapper
-    public static interface test_6
+    public interface test_6
     {
         @Sql(sql = "select * from User where state = ${T(com.jfirer.jsql.test.vo.User$State).off}", paramNames = "")
-        public User find4();
+        User find4();
     }
 
     /**
@@ -146,22 +146,22 @@ public class InterfaceGenerateTest
     }
 
     @Mapper
-    public static interface test_7
+    public interface test_7
     {
         @Sql(sql = "delete from User where id in ~{ids}", paramNames = "ids")
-        public int delete(String ids);
+        int delete(String ids);
 
         @Sql(sql = "delete from User where id in ~{ids}", paramNames = "ids")
-        public int delete(int[] ids);
+        int delete(int[] ids);
 
         @Sql(sql = "delete from User where id in ~{ids}", paramNames = "ids")
-        public int delete(Integer[] ids);
+        int delete(Integer[] ids);
 
         @Sql(sql = "delete from User where id in ~{ids}", paramNames = "ids")
-        public int delete(long[] ids);
+        int delete(long[] ids);
 
         @Sql(sql = "delete from User where id in ~{ids}", paramNames = "ids")
-        public int delete(Long[] ids);
+        int delete(Long[] ids);
     }
 
     /**
@@ -174,10 +174,10 @@ public class InterfaceGenerateTest
     }
 
     @Mapper
-    public static interface test_8
+    public interface test_8
     {
         @Sql(sql = "select count(*) from user", paramNames = "")
-        public int count();
+        int count();
     }
 
     /**
@@ -190,24 +190,24 @@ public class InterfaceGenerateTest
     }
 
     @Mapper
-    public static interface test_9
+    public interface test_9
     {
         @Sql(sql = "select count(*) from #{name}", paramNames = "name")
-        public int count(String name);
+        int count(String name);
     }
 
     @Mapper
-    public static interface test_10
+    public interface test_10
     {
         @Sql(sql = "select count(*) <%if(name == 's') {%> from #{name} ", paramNames = "name")
-        public int count(String name);
+        int count(String name);
     }
 
     @Mapper
-    public static interface test_11
+    public interface test_11
     {
         @Sql(sql = "select sum(age) from User", paramNames = "")
-        public int count();
+        int count();
     }
 
     /**

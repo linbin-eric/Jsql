@@ -31,7 +31,7 @@ public class SqlLexer
         }
         firstParser = parsers[0];
     }
-    private Token[] tokens;
+    private final Token[] tokens;
 
     public static SqlLexer parse(String sql)
     {

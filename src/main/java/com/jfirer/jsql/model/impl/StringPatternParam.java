@@ -1,10 +1,7 @@
 package com.jfirer.jsql.model.impl;
 
-import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.BaseModel;
 import com.jfirer.jsql.model.support.SFunction;
-
-import java.util.List;
 
 public class StringPatternParam extends InternalParamImpl
 {
@@ -16,12 +13,9 @@ public class StringPatternParam extends InternalParamImpl
         BOTH
     }
 
-    private final SFunction<?, ?> fn;
-    private final PatternConsumer consumer;
-
     public StringPatternParam(SFunction<?, ?> fn, PatternMode mode, Object value)
     {
-        this.fn = fn;
+        super(fn);
         consumer = (columnName, builder, paramValues) -> {
             switch (mode)
             {
@@ -57,25 +51,5 @@ public class StringPatternParam extends InternalParamImpl
                 }
             }
         };
-    }
-
-    @Override
-    public void renderSql(BaseModel model, StringBuilder builder, List<Object> paramValues)
-    {
-        String columnName = model.findColumnName(fn);
-        consumer.accept(columnName, builder, paramValues);
-    }
-
-    @Override
-    public void renderSql(Class ckass, StringBuilder builder, List<Object> paramValues)
-    {
-        TableEntityInfo entityInfo = TableEntityInfo.parse(ckass);
-        consumer.accept(entityInfo.getTableName() + "." + entityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName(), builder, paramValues);
-    }
-
-    @FunctionalInterface
-    interface PatternConsumer
-    {
-        void accept(String columnName, StringBuilder builder, List<Object> paramValues);
     }
 }

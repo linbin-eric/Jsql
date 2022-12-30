@@ -14,13 +14,13 @@ public class User
 {
     public static final long now = System.currentTimeMillis();
 
-    public static enum State
+    public enum State
     {
         off,
-        on;
+        on
     }
 
-    public static enum StringEnum
+    public enum StringEnum
     {
         v1,
         v2
@@ -46,17 +46,17 @@ public class User
     private       Date          date       = new Date();
     private       double        d1         = 2.53d;
     private       float         f1         = 5.36f;
-    private       long          l1         = 23l;
+    private       long          l1         = 23L;
     private       java.sql.Date sqlDate    = new java.sql.Date(now);
     private       Time          time       = new Time(now);
     private       Timestamp     timestamp  = new Timestamp(now);
     private       Boolean       B11        = false;
     private       Double        D11        = 6.32d;
     private       Float         F11        = 5.69f;
-    private       Long          L11        = 5625l;
+    private       Long          L11        = 5625L;
     private       long          n          = now;
 
-    public  long getNow()
+    public long getNow()
     {
         return now;
     }

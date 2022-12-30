@@ -30,7 +30,7 @@ public class StandardPageExecutor extends NextHolder
     public List<Object> queryList(String sql, AnnotatedElement element, List<Object> params, Connection connection, Dialect dialect) throws SQLException
     {
         Object param;
-        if (params.isEmpty() || (param = params.get(params.size() - 1)) instanceof Page == false)
+        if (params.isEmpty() || !((param = params.get(params.size() - 1)) instanceof Page))
         {
             return next.queryList(sql, element, params, connection, dialect);
         }

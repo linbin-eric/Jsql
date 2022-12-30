@@ -39,7 +39,7 @@ public class SqlSessionImpl implements SqlSession
         checkIfClosed();
         try
         {
-            if (transactionActive != false)
+            if (transactionActive)
             {
                 return;
             }
@@ -64,7 +64,7 @@ public class SqlSessionImpl implements SqlSession
     public void commit()
     {
         checkIfClosed();
-        if (transactionActive == false)
+        if (!transactionActive)
         {
             throw new IllegalStateException("当前链接未开启事务，无法进行提交");
         }
@@ -98,7 +98,7 @@ public class SqlSessionImpl implements SqlSession
     public void rollback()
     {
         checkIfClosed();
-        if (transactionActive == false)
+        if (!transactionActive)
         {
             throw new IllegalStateException("当前链接未开启事务，无需回滚");
         }

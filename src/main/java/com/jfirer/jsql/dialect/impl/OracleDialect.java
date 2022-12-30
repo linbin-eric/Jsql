@@ -39,14 +39,12 @@ public class OracleDialect implements Dialect
             {
                 preparedStatement.setTimestamp(index, (java.sql.Timestamp) value);
             }
-            else if (value instanceof java.util.Date)
+            else if (value instanceof Date date)
             {
-                Date date = (Date) value;
                 preparedStatement.setTimestamp(index, new Timestamp(date.getTime()));
             }
-            else if (value instanceof Calendar)
+            else if (value instanceof Calendar calendar)
             {
-                Calendar calendar = (Calendar) value;
                 preparedStatement.setTimestamp(index, new Timestamp(calendar.getTimeInMillis()));
             }
             else

@@ -1,6 +1,5 @@
 package com.jfirer.jsql.model.impl;
 
-import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.BaseModel;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.support.SFunction;
@@ -9,32 +8,15 @@ import java.util.List;
 
 public class BetweenParam extends InternalParamImpl
 {
-    private final SFunction<?, ?> fn;
-    private       BetweenConsumer betweenConsumer;
-
     public BetweenParam(SFunction<?, ?> fn, Object value1, Object value2)
     {
-        this.fn = fn;
-        betweenConsumer = (columnName, builder, paramValues) -> {
+        super(fn);
+        consumer = (columnName, builder, paramValues) -> {
             builder.append(columnName).append(" between ");
             putValue(value1, builder, paramValues);
             builder.append(" and ");
             putValue(value2, builder, paramValues);
         };
-    }
-
-    @Override
-    public void renderSql(BaseModel model, StringBuilder builder, List<Object> paramValues)
-    {
-        betweenConsumer.accept(model.findColumnName(fn), builder, paramValues);
-    }
-
-    @Override
-    public void renderSql(Class ckass, StringBuilder builder, List<Object> paramValues)
-    {
-        TableEntityInfo            entityInfo = TableEntityInfo.parse(ckass);
-        TableEntityInfo.ColumnInfo columnInfo = entityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName());
-        betweenConsumer.accept(entityInfo.getTableName() + "." + columnInfo.columnName(), builder, paramValues);
     }
 
     private void putValue(Object value, StringBuilder builder, List<Object> paramValues)
@@ -50,11 +32,5 @@ public class BetweenParam extends InternalParamImpl
             builder.append(" ? ");
             paramValues.add(value);
         }
-    }
-
-    @FunctionalInterface
-    interface BetweenConsumer
-    {
-        void accept(String columnName, StringBuilder builder, List<Object> paramValues);
     }
 }

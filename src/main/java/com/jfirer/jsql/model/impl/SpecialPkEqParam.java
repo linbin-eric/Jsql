@@ -9,27 +9,20 @@ import java.util.List;
 
 public class SpecialPkEqParam implements InternalParam
 {
-    private final Object entity;
+    private final Object                     entity;
+    private final TableEntityInfo.ColumnInfo pkInfo;
 
-    public SpecialPkEqParam(Object entity)
+    public SpecialPkEqParam(Object entity, TableEntityInfo.ColumnInfo pkInfo)
     {
         this.entity = entity;
-    }
-
-
-    @Override
-    public void renderSql(Class ckass, StringBuilder builder, List<Object> paramValues)
-    {
-        TableEntityInfo            entityInfo = TableEntityInfo.parse(ckass);
-        TableEntityInfo.ColumnInfo columnInfo = entityInfo.getPkInfo();
-        builder.append(columnInfo.columnName() + "=?");
-        paramValues.add(entityInfo.getPkInfo().accessor().get(entity));
+        this.pkInfo = pkInfo;
     }
 
     @Override
     public void renderSql(BaseModel model, StringBuilder builder, List<Object> paramValues)
     {
-        throw new UnsupportedOperationException();
+        builder.append(pkInfo.columnName() + "=?");
+        paramValues.add(pkInfo.accessor().get(entity));
     }
 
     @Override

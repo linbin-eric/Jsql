@@ -3,11 +3,17 @@ package com.jfirer.jsql.model.impl;
 import com.jfirer.jsql.model.BaseModel;
 import com.jfirer.jsql.model.InternalParam;
 import com.jfirer.jsql.model.Param;
+import com.jfirer.jsql.model.support.SFunction;
 
 import java.util.List;
 
 public abstract class InternalParamImpl implements InternalParam
 {
+    protected final SFunction<?, ?> fn;
+    protected       RenderConsumer  consumer;
+
+    protected InternalParamImpl(SFunction<?, ?> fn) {this.fn = fn;}
+
     class AndParam extends InternalParamImpl
     {
         private final InternalParam param1;
@@ -15,6 +21,7 @@ public abstract class InternalParamImpl implements InternalParam
 
         public AndParam(InternalParam param1, InternalParam param2)
         {
+            super(null);
             this.param1 = param1;
             this.param2 = param2;
         }
@@ -25,15 +32,6 @@ public abstract class InternalParamImpl implements InternalParam
             param1.renderSql(model, builder, paramValues);
             builder.append(" and ");
             param2.renderSql(model, builder, paramValues);
-            builder.append(" ");
-        }
-
-        @Override
-        public void renderSql(Class ckass, StringBuilder builder, List<Object> paramValues)
-        {
-            param1.renderSql(ckass, builder, paramValues);
-            builder.append(" and ");
-            param2.renderSql(ckass, builder, paramValues);
             builder.append(" ");
         }
     }
@@ -45,6 +43,7 @@ public abstract class InternalParamImpl implements InternalParam
 
         public OrParam(InternalParam param1, InternalParam param2)
         {
+            super(null);
             this.param1 = param1;
             this.param2 = param2;
         }
@@ -57,15 +56,6 @@ public abstract class InternalParamImpl implements InternalParam
             param2.renderSql(model, builder, paramValues);
             builder.append(" ");
         }
-
-        @Override
-        public void renderSql(Class ckass, StringBuilder builder, List<Object> paramValues)
-        {
-            param1.renderSql(ckass, builder, paramValues);
-            builder.append(" or ");
-            param2.renderSql(ckass, builder, paramValues);
-            builder.append(" ");
-        }
     }
 
     class UnionParam extends InternalParamImpl
@@ -74,6 +64,7 @@ public abstract class InternalParamImpl implements InternalParam
 
         public UnionParam(InternalParamImpl param)
         {
+            super(null);
             this.param = param;
         }
 
@@ -82,14 +73,6 @@ public abstract class InternalParamImpl implements InternalParam
         {
             builder.append("( ");
             param.renderSql(model, builder, paramValues);
-            builder.append(" ) ");
-        }
-
-        @Override
-        public void renderSql(Class ckass, StringBuilder builder, List<Object> paramValues)
-        {
-            builder.append("( ");
-            param.renderSql(ckass, builder, paramValues);
             builder.append(" ) ");
         }
     }
@@ -110,5 +93,17 @@ public abstract class InternalParamImpl implements InternalParam
     public Param union()
     {
         return new UnionParam(this);
+    }
+
+    @Override
+    public void renderSql(BaseModel model, StringBuilder builder, List<Object> paramValues)
+    {
+        consumer.accept(model.findColumnName(fn), builder, paramValues);
+    }
+
+    @FunctionalInterface
+    interface RenderConsumer
+    {
+        void accept(String columnName, StringBuilder builder, List<Object> paramValues);
     }
 }

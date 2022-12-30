@@ -226,7 +226,7 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
             prepareStatement = connection.prepareStatement(sql);
             dialect.fillStatement(prepareStatement, params);
             executeQuery = prepareStatement.executeQuery();
-            if (executeQuery.next() == false)
+            if (!executeQuery.next())
             {
                 return null;
             }
@@ -234,7 +234,7 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
                     methodMap.computeIfAbsent(new MethodKey(sql, (Method) element), methodKey -> getTransfer(methodKey.method))//
                     : classMap.computeIfAbsent(new ClassKey(sql, (Class<?>) element), classKey -> getTransfer(classKey.ckass));
             Object result = resultSetTransfer.transfer(executeQuery);
-            if (executeQuery.next() == false)
+            if (!executeQuery.next())
             {
                 return result;
             }

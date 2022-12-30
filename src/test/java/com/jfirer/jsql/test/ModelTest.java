@@ -22,7 +22,6 @@ import java.util.Random;
 
 import static com.jfirer.jsql.test.CURDTest.user2TableDml;
 import static com.jfirer.jsql.test.CURDTest.userTableDml;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class ModelTest
@@ -154,6 +153,4 @@ public class ModelTest
         User user = session.findOne(Model.selectAll().from(User.class).where(Param.eq(User::getName, "aa1").and(Param.eq(User::getAge, age))));
         assertNotNull(user);
     }
-
-
 }

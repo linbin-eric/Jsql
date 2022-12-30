@@ -21,7 +21,7 @@ public class BaseModel implements Model
         query,
         delete,
         update,
-        insert;
+        insert
     }
 
     public record ModelResult(String sql, Class<?> returnType, List<Object> paramValues, TableEntityInfo.PkReturnType pkReturnType) {}
@@ -184,16 +184,16 @@ public class BaseModel implements Model
     List<Record> orderBy = new LinkedList<>();
     List<Record> groupBy = new LinkedList<>();
     List<Record> insert  = new LinkedList<>();
-    private ModelType                    type;
-    private Update                       update;
+    private final ModelType type;
+    private       Update    update;
     private Delete                       delete;
     private InsertInto                   insertInto;
     private Param                        param;
     private Class<?>                     returnType;
     private Page                         page;
     private TableEntityInfo.PkReturnType pkReturnType;
-    private LockMode                     lockMode;
-    private List<Object>                 paramValues = new LinkedList<>();
+    private       LockMode     lockMode;
+    private final List<Object> paramValues = new LinkedList<>();
 
     public BaseModel(Delete delete)
     {
@@ -246,7 +246,7 @@ public class BaseModel implements Model
         {
             set.add(new set(columnInfo.columnName(), columnInfo.accessor().get(entity)));
         }
-        param = new SpecialPkEqParam(entity);
+        param = new SpecialPkEqParam(entity, entityInfo.getPkInfo());
     }
 
     @Override
@@ -266,7 +266,7 @@ public class BaseModel implements Model
     public Model selectAll(Class<?> ckass)
     {
         from.stream()//
-            .filter(record -> FromAs.class.isInstance(record) ? ((FromAs) record).tableClass == ckass : false)//
+            .filter(record -> record instanceof FromAs ? ((FromAs) record).tableClass == ckass : false)//
             .findAny()//
             .ifPresent(record -> {
                 FromAs fromAs = (FromAs) record;
@@ -278,11 +278,33 @@ public class BaseModel implements Model
     public String findColumnName(SFunction<?, ?> fn)
     {
         String implClass = fn.getImplClass();
-        FromAs fromAs = from.stream()//
-                            .filter(record -> FromAs.class.isInstance(record) ? ((FromAs) record).tableClass.getName().equals(implClass) : false) //
-                            .map(record -> ((FromAs) record))//
-                            .findAny().orElseThrow();
-        return fromAs.asName + "." + TableEntityInfo.parse(fromAs.tableClass).getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName();
+        switch (type)
+        {
+            case query ->
+            {
+                FromAs fromAs = from.stream()//
+                                    .filter(record -> record instanceof FromAs ? ((FromAs) record).tableClass.getName().equals(implClass) : false) //
+                                    .map(record -> ((FromAs) record))//
+                                    .findAny().orElseThrow();
+                return fromAs.asName + "." + TableEntityInfo.parse(fromAs.tableClass).getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName();
+            }
+            case delete ->
+            {
+                TableEntityInfo tableEntityInfo = TableEntityInfo.parse(delete.ckass);
+                return tableEntityInfo.getTableName() + "." + tableEntityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName();
+            }
+            case update ->
+            {
+                TableEntityInfo tableEntityInfo = TableEntityInfo.parse(update.ckass);
+                return tableEntityInfo.getTableName() + "." + tableEntityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName();
+            }
+            case insert ->
+            {
+                TableEntityInfo tableEntityInfo = TableEntityInfo.parse(insertInto.ckass);
+                return tableEntityInfo.getTableName() + "." + tableEntityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName();
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + type);
+        }
     }
 
     @Override
@@ -355,8 +377,7 @@ public class BaseModel implements Model
     {
         String        columnName1 = findColumnName(fn1);
         String        columnName2 = findColumnName(fn2);
-        StringBuilder builder     = new StringBuilder().append("on ").append(columnName1).append(" = ").append(columnName2);
-        from.add(new JoinOn(builder.toString()));
+        from.add(new JoinOn("on " + columnName1 + " = " + columnName2));
         return this;
     }
 
@@ -450,17 +471,15 @@ public class BaseModel implements Model
                 }
                 else
                 {
-                    ;
                 }
-                if (groupBy.isEmpty() == false)
+                if (!groupBy.isEmpty())
                 {
                     builder.append(" group by ").append(groupBy.stream().map(record -> record.toString()).collect(Collectors.joining(",")));
                 }
                 else
                 {
-                    ;
                 }
-                if (orderBy.isEmpty() == false)
+                if (!orderBy.isEmpty())
                 {
                     builder.append(" order by ");
                     String orderBy = this.orderBy.stream().map(record -> record.toString()).collect(Collectors.joining(","));
@@ -468,7 +487,6 @@ public class BaseModel implements Model
                 }
                 else
                 {
-                    ;
                 }
                 if (lockMode != null)
                 {
@@ -485,11 +503,10 @@ public class BaseModel implements Model
                 if (param != null)
                 {
                     builder.append(" where ");
-                    ((InternalParam) param).renderSql(delete.ckass, builder, paramValues);
+                    ((InternalParam) param).renderSql(this, builder, paramValues);
                 }
                 else
                 {
-                    ;
                 }
             }
             case update ->
@@ -513,11 +530,10 @@ public class BaseModel implements Model
                 if (param != null)
                 {
                     builder.append(" where ");
-                    ((InternalParam) param).renderSql(update.ckass, builder, paramValues);
+                    ((InternalParam) param).renderSql(this, builder, paramValues);
                 }
                 else
                 {
-                    ;
                 }
             }
             case insert ->

@@ -13,7 +13,7 @@ public class ExecutionBeginParser extends TemplateParser
     @Override
     public int parse(String sentence, int offset, Deque<Execution> executions, Template template, StringBuilder cache, Invoker next)
     {
-        if (isExecutionBegin(offset, sentence) == false)
+        if (!isExecutionBegin(offset, sentence))
         {
             return next.scan(sentence, offset, executions, template, cache);
         }

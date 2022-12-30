@@ -30,7 +30,7 @@ public class OraclePageExecutor extends NextHolder
     public List<Object> queryList(String sql, AnnotatedElement element, List<Object> params, Connection connection, Dialect dialect) throws SQLException
     {
         Object param = params.get(params.size() - 1);
-        if (param instanceof Page == false)
+        if (!(param instanceof Page))
         {
             return next.queryList(sql, element, params, connection, dialect);
         }

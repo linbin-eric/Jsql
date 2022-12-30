@@ -43,14 +43,12 @@ public class ModelTest2
         dataSource.setPassword("");
         config.setDataSource(dataSource);
         config.setDialect(new H2Dialect((preparedStatement, i, value) -> {
-            if (value instanceof User.StringEnum)
+            if (value instanceof User.StringEnum stringEnum)
             {
-                User.StringEnum stringEnum = (User.StringEnum) value;
                 preparedStatement.setString(i, stringEnum.name());
             }
-            else if (value instanceof Enum<?>)
+            else if (value instanceof Enum<?> enum1)
             {
-                Enum<?> enum1 = (Enum<?>) value;
                 preparedStatement.setInt(i, enum1.ordinal());
             }
             else

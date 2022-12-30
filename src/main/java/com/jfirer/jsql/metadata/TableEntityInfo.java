@@ -79,7 +79,6 @@ public class TableEntityInfo
                     }
                     else
                     {
-                        ;
                     }
                 }
             }
@@ -118,10 +117,7 @@ public class TableEntityInfo
         });
         while (entityClass != Object.class && entityClass != null)
         {
-            for (Field each : entityClass.getDeclaredFields())
-            {
-                set.add(each);
-            }
+            Collections.addAll(set, entityClass.getDeclaredFields());
             entityClass = entityClass.getSuperclass();
         }
         return set.toArray(new Field[set.size()]);
