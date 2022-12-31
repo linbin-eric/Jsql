@@ -1,9 +1,6 @@
 package com.jfirer.jsql.model;
 
-import com.jfirer.jsql.model.impl.BetweenParam;
-import com.jfirer.jsql.model.impl.InParam;
-import com.jfirer.jsql.model.impl.OneValueParam;
-import com.jfirer.jsql.model.impl.StringPatternParam;
+import com.jfirer.jsql.model.impl.*;
 import com.jfirer.jsql.model.support.SFunction;
 
 public interface Param
@@ -17,6 +14,11 @@ public interface Param
     static <T> Param eq(SFunction<T, ?> fn, Object value)
     {
         return new OneValueParam(fn, value, "=");
+    }
+
+    static <T, R> Param eq(SFunction<T, ?> fn1, SFunction<R, ?> fn2)
+    {
+        return new TwoFieldEqParam(fn1, fn2);
     }
 
     static <T> Param notEq(SFunction<T, ?> fn, Object value)

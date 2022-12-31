@@ -9,10 +9,14 @@ import java.util.List;
 
 public abstract class InternalParamImpl implements InternalParam
 {
-    protected final SFunction<?, ?> fn;
-    protected       RenderConsumer  consumer;
+    protected SFunction<?, ?> fn;
+    protected RenderConsumer  consumer;
 
     protected InternalParamImpl(SFunction<?, ?> fn) {this.fn = fn;}
+
+    public InternalParamImpl()
+    {
+    }
 
     class AndParam extends InternalParamImpl
     {
@@ -21,7 +25,6 @@ public abstract class InternalParamImpl implements InternalParam
 
         public AndParam(InternalParam param1, InternalParam param2)
         {
-            super(null);
             this.param1 = param1;
             this.param2 = param2;
         }
@@ -43,7 +46,6 @@ public abstract class InternalParamImpl implements InternalParam
 
         public OrParam(InternalParam param1, InternalParam param2)
         {
-            super(null);
             this.param1 = param1;
             this.param2 = param2;
         }
@@ -64,7 +66,6 @@ public abstract class InternalParamImpl implements InternalParam
 
         public UnionParam(InternalParamImpl param)
         {
-            super(null);
             this.param = param;
         }
 

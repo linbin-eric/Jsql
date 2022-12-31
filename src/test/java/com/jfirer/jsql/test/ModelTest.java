@@ -8,6 +8,8 @@ import com.jfirer.jsql.model.Param;
 import com.jfirer.jsql.session.SqlSession;
 import com.jfirer.jsql.test.vo.SqlLog;
 import com.jfirer.jsql.test.vo.User;
+import com.jfirer.jsql.test.vo.User2;
+import com.jfirer.jsql.test.vo.User3;
 import com.zaxxer.hikari.HikariDataSource;
 import org.h2.Driver;
 import org.junit.Assert;
@@ -152,5 +154,29 @@ public class ModelTest
         session.execute(Model.insert(User.class).insert(User::getName, "aa1").insert(User::getAge, age));
         User user = session.findOne(Model.selectAll().from(User.class).where(Param.eq(User::getName, "aa1").and(Param.eq(User::getAge, age))));
         assertNotNull(user);
+    }
+
+    /**
+     * 测试 join
+     */
+    @Test
+    public void test_5()
+    {
+        SqlSession session = sessionFactory.openSession();
+        User2      user2   = new User2();
+        user2.setId(1);
+        user2.setName("user1");
+        user2.setAge(15);
+        session.insert(user2);
+        User3 user3 = new User3();
+        user3.setId("1");
+        user3.setName("user2");
+        user3.setAge(15);
+        session.insert(user3);
+        user3.setId("2");
+        user3.setAge(20);
+        session.insert(user3);
+        int count = session.count(Model.selectCount(User3::getName).from(User3.class).innerJoin(User2.class).on(Param.eq(User3::getAge, User2::getAge)));
+        Assert.assertEquals(1,count);
     }
 }

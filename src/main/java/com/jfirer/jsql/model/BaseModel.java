@@ -26,55 +26,42 @@ public class BaseModel implements Model
 
     public record ModelResult(String sql, Class<?> returnType, List<Object> paramValues, TableEntityInfo.PkReturnType pkReturnType) {}
 
-    public record FromAs(Class tableClass, String asName)
+    record From(Class<?> tableClass, String asName, String mode)
     {
+        @Override
         public String toString()
         {
-            TableEntityInfo parse = TableEntityInfo.parse(tableClass);
-            if (parse.getTableName().equals(asName))
+            TableEntityInfo parse   = TableEntityInfo.parse(tableClass);
+            String          segment = parse.getTableName().equals(asName) ? parse.getTableName() : parse.getTableName() + " as " + asName;
+            switch (mode)
             {
-                return parse.getTableName();
+                case "from":
+                    return "from " + segment + " ";
+                case "left join":
+                    return "left join " + segment + " ";
+                case "right join":
+                    return "right join " + segment + " ";
+                case "inner join":
+                    return "inner join " + segment + " ";
+                case "full join":
+                    return "full join " + segment + " ";
+                default:
+                    throw new IllegalArgumentException();
             }
-            else
-            {
-                return parse.getTableName() + " as " + asName;
-            }
+        }
+
+        public void append(StringBuilder builder)
+        {
+            builder.append(toString());
         }
     }
 
-    record LeftJoin(Class<?> tableClass)
+    record On(Param param)
     {
-        @Override
-        public String toString()
+        public void append(BaseModel model, StringBuilder builder, List<Object> params)
         {
-            return "left join " + TableEntityInfo.parse(tableClass).getTableName();
-        }
-    }
-
-    record RightJoin(Class<?> tableClass)
-    {
-        @Override
-        public String toString()
-        {
-            return "right join " + TableEntityInfo.parse(tableClass).getTableName();
-        }
-    }
-
-    record InnerJoin(Class<?> tableClass)
-    {
-        @Override
-        public String toString()
-        {
-            return "inner join " + TableEntityInfo.parse(tableClass).getTableName();
-        }
-    }
-
-    record FullJoin(Class<?> tableClass)
-    {
-        @Override
-        public String toString()
-        {
-            return "full join " + TableEntityInfo.parse(tableClass).getTableName();
+            builder.append("on ");
+            ((InternalParam) param).renderSql(model, builder, params);
         }
     }
 
@@ -184,16 +171,16 @@ public class BaseModel implements Model
     List<Record> orderBy = new LinkedList<>();
     List<Record> groupBy = new LinkedList<>();
     List<Record> insert  = new LinkedList<>();
-    private final ModelType type;
-    private       Update    update;
-    private Delete                       delete;
-    private InsertInto                   insertInto;
-    private Param                        param;
-    private Class<?>                     returnType;
-    private Page                         page;
-    private TableEntityInfo.PkReturnType pkReturnType;
-    private       LockMode     lockMode;
-    private final List<Object> paramValues = new LinkedList<>();
+    private final ModelType                    type;
+    private       Update                       update;
+    private       Delete                       delete;
+    private       InsertInto                   insertInto;
+    private       Param                        param;
+    private       Class<?>                     returnType;
+    private       Page                         page;
+    private       TableEntityInfo.PkReturnType pkReturnType;
+    private       LockMode                     lockMode;
+    private final List<Object>                 paramValues = new LinkedList<>();
 
     public BaseModel(Delete delete)
     {
@@ -252,7 +239,7 @@ public class BaseModel implements Model
     @Override
     public Model fromAs(Class<?> ckass, String asName)
     {
-        from.add(new FromAs(ckass, asName));
+        from.add(new From(ckass, asName, "from"));
         return this;
     }
 
@@ -266,11 +253,11 @@ public class BaseModel implements Model
     public Model selectAll(Class<?> ckass)
     {
         from.stream()//
-            .filter(record -> record instanceof FromAs ? ((FromAs) record).tableClass == ckass : false)//
+            .filter(record -> record instanceof From ? ((From) record).tableClass == ckass : false)//
             .findAny()//
             .ifPresent(record -> {
-                FromAs fromAs = (FromAs) record;
-                TableEntityInfo.parse(fromAs.tableClass).getPropertyNameKeyMap().values().forEach(columnInfo -> select.add(new SelectWithName(fromAs.asName() + "." + columnInfo.columnName())));
+                From from = (From) record;
+                TableEntityInfo.parse(from.tableClass).getPropertyNameKeyMap().values().forEach(columnInfo -> select.add(new SelectWithName(from.asName() + "." + columnInfo.columnName())));
             });
         return this;
     }
@@ -282,10 +269,11 @@ public class BaseModel implements Model
         {
             case query ->
             {
-                FromAs fromAs = from.stream()//
-                                    .filter(record -> record instanceof FromAs ? ((FromAs) record).tableClass.getName().equals(implClass) : false) //
-                                    .map(record -> ((FromAs) record))//
-                                    .findAny().orElseThrow();
+                From fromAs = from.stream()//
+                                  .filter(record -> record instanceof From) //
+                                  .filter(record -> ((From) record).tableClass().getName().equals(implClass))//
+                                  .map(record -> ((From) record))//
+                                  .findAny().orElseThrow();
                 return fromAs.asName + "." + TableEntityInfo.parse(fromAs.tableClass).getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName();
             }
             case delete ->
@@ -347,37 +335,35 @@ public class BaseModel implements Model
     @Override
     public Model leftJoin(Class ckass)
     {
-        from.add(new LeftJoin(ckass));
+        from.add(new From(ckass, TableEntityInfo.parse(ckass).getTableName(), "left join"));
         return this;
     }
 
     @Override
     public Model rightJoin(Class<?> ckass)
     {
-        from.add(new RightJoin(ckass));
+        from.add(new From(ckass, TableEntityInfo.parse(ckass).getTableName(), "right join"));
         return this;
     }
 
     @Override
     public Model fullJoin(Class<?> ckass)
     {
-        from.add(new FullJoin(ckass));
+        from.add(new From(ckass, TableEntityInfo.parse(ckass).getTableName(), "full join"));
         return this;
     }
 
     @Override
     public Model innerJoin(Class<?> ckass)
     {
-        from.add(new InnerJoin(ckass));
+        from.add(new From(ckass, TableEntityInfo.parse(ckass).getTableName(), "inner join"));
         return this;
     }
 
     @Override
-    public <E, T> Model on(SFunction<T, ?> fn1, SFunction<E, ?> fn2)
+    public <E, T> Model on(Param param)
     {
-        String        columnName1 = findColumnName(fn1);
-        String        columnName2 = findColumnName(fn2);
-        from.add(new JoinOn("on " + columnName1 + " = " + columnName2));
+        from.add(new On(param));
         return this;
     }
 
@@ -420,7 +406,7 @@ public class BaseModel implements Model
     {
         if (type == ModelType.query)
         {
-            return returnType == null ? ((FromAs) from.get(0)).tableClass : returnType;
+            return returnType == null ? ((From) from.get(0)).tableClass : returnType;
         }
         else
         {
@@ -457,13 +443,20 @@ public class BaseModel implements Model
                 builder.append("select ");
                 if (select.isEmpty())
                 {
-                    selectAll(((FromAs) from.get(0)).tableClass);
+                    selectAll(((From) from.get(0)).tableClass);
                 }
                 String segment = select.stream().map(select -> select.toString()).collect(Collectors.joining(","));
-                builder.append(segment);
-                builder.append(" from ");
-                String fromSegment = from.stream().map(fromAs -> fromAs.toString()).collect(Collectors.joining(" "));
-                builder.append(fromSegment);
+                builder.append(segment).append(' ');
+                from.stream().forEach(record -> {
+                    if (record instanceof From from)
+                    {
+                        from.append(builder);
+                    }
+                    else
+                    {
+                        ((On) record).append(BaseModel.this, builder, paramValues);
+                    }
+                });
                 if (param != null)
                 {
                     builder.append(" where ");

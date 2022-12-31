@@ -103,7 +103,7 @@ public interface Model
 
     Model innerJoin(Class<?> ckass);
 
-    <E, T> Model on(SFunction<T, ?> fn1, SFunction<E, ?> fn2);
+    <E, T> Model on(Param param);
 
     Model where(Param param);
 
