@@ -1,7 +1,6 @@
 package com.jfirer.jsql.mapper;
 
-import com.jfirer.baseutil.bytecode.support.AnnotationContextFactory;
-import com.jfirer.baseutil.bytecode.support.SupportOverrideAttributeAnnotationContextFactory;
+import com.jfirer.baseutil.bytecode.support.AnnotationContext;
 import com.jfirer.baseutil.reflect.ReflectUtil;
 import com.jfirer.baseutil.smc.SmcHelper;
 import com.jfirer.baseutil.smc.compiler.CompileHelper;
@@ -28,14 +27,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class MapperGenerator
 {
-    private static final AtomicInteger            count                    = new AtomicInteger(0);
-    private static final AnnotationContextFactory annotationContextFactory = new SupportOverrideAttributeAnnotationContextFactory();
-    private static final CompileHelper            compileHelper            = new CompileHelper(Thread.currentThread().getContextClassLoader());
-    private static final ConcurrentMap<Class<?>, Class<? extends AbstractMapper>> store                    = new ConcurrentHashMap<>();
+    private static final AtomicInteger                                            count         = new AtomicInteger(0);
+    private static final CompileHelper                                            compileHelper = new CompileHelper(Thread.currentThread().getContextClassLoader());
+    private static final ConcurrentMap<Class<?>, Class<? extends AbstractMapper>> store         = new ConcurrentHashMap<>();
 
     public static Class<? extends AbstractMapper> generate(Class<?> ckass)
     {
-        if (!annotationContextFactory.get(ckass).isAnnotationPresent(Mapper.class))
+        if (AnnotationContext.isAnnotationPresent(Mapper.class, ckass) == false)
         {
             throw new IllegalArgumentException();
         }
@@ -49,7 +47,7 @@ public class MapperGenerator
             ClassModel                   classModel       = buildClassModelAndImportNecessaryClass(ckass);
             AtomicInteger                fieldNameCount   = new AtomicInteger(0);
             Map<String, TableEntityInfo> tableEntityInfos = new HashMap<>();
-            Arrays.stream(annotationContextFactory.get(ckass).getAnnotation(Mapper.class).value()).map(value -> TableEntityInfo.parse(value)).forEach(entityInfo -> {
+            Arrays.stream(AnnotationContext.getAnnotation(Mapper.class, ckass).value()).map(value -> TableEntityInfo.parse(value)).forEach(entityInfo -> {
                 tableEntityInfos.put(entityInfo.getClassSimpleName(), entityInfo);
             });
             for (Method method : ckass.getDeclaredMethods())

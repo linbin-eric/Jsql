@@ -1,5 +1,6 @@
 package com.jfirer.jsql.transfer.impl;
 
+import com.jfirer.baseutil.bytecode.support.AnnotationContext;
 import com.jfirer.baseutil.reflect.ReflectUtil;
 import com.jfirer.baseutil.reflect.ValueAccessor;
 import com.jfirer.jsql.metadata.TableEntityInfo;
@@ -37,11 +38,11 @@ public class BeanTransfer implements ResultSetTransfer
                         String         columnName = metaData.getColumnName(i + 1);
                         Field          field      = tableEntityInfo.getColumnInfoByColumnNameIgnoreCase(columnName).field();
                         Class          fieldType  = field.getType().isPrimitive() ? ReflectUtil.wrapPrimitive(field.getType()) : field.getType();
-                        if (field.isAnnotationPresent(CustomTransfer.class))
+                        if (AnnotationContext.isAnnotationPresent(CustomTransfer.class, field))
                         {
                             try
                             {
-                                ColumnNameHolder columnIndexHolder = field.getAnnotation(CustomTransfer.class).value().getDeclaredConstructor(String.class).newInstance(metaData.getColumnName(i + 1));
+                                ColumnNameHolder columnIndexHolder = AnnotationContext.getAnnotation(CustomTransfer.class, field).value().getDeclaredConstructor(String.class).newInstance(metaData.getColumnName(i + 1));
                                 columnIndexHolder.awareType(field.getType());
                                 columnTransfer = new ColumnTransfer(columnIndexHolder, new ValueAccessor(field));
                             }
