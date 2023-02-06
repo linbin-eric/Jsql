@@ -200,7 +200,7 @@ public class TableEntityInfo
         }
         else
         {
-            throw new IllegalArgumentException("不支持非String，Integer，Long以外类型的主键");
+            throw new IllegalArgumentException("不支持非String，Integer，Long以外类型的主键,请检查:" + pkField.getDeclaringClass().getName() + "." + pkField.getName());
         }
     }
 
