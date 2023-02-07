@@ -1,13 +1,10 @@
 package com.jfirer.jsql.metadata;
 
-import java.util.List;
-
 public class Page
 {
     private int     total;
     private int     offset;
     private int     size;
-    private List<?> data;
     /**
      * 是否需要查询总数
      */
@@ -28,11 +25,6 @@ public class Page
         return size;
     }
 
-    public List<?> getData()
-    {
-        return data;
-    }
-
     public void setTotal(int total)
     {
         this.total = total;
@@ -46,11 +38,6 @@ public class Page
     public void setSize(int size)
     {
         this.size = size;
-    }
-
-    public void setData(List<?> data)
-    {
-        this.data = data;
     }
 
     public boolean isFetchSum()

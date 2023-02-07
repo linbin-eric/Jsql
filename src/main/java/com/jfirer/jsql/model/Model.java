@@ -126,5 +126,7 @@ public interface Model
 
     Model page(Page page);
 
+    Model limit(int size);
+
     BaseModel.ModelResult getResult();
 }

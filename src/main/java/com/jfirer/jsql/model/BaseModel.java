@@ -441,6 +441,16 @@ public class BaseModel implements Model
     }
 
     @Override
+    public Model limit(int size)
+    {
+        page = new Page();
+        page.setFetchSum(false);
+        page.setSize(size);
+        page.setOffset(0);
+        return this;
+    }
+
+    @Override
     public ModelResult getResult()
     {
         String sql = getSql();
