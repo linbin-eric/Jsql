@@ -331,6 +331,7 @@ public class BaseModel implements Model
     public Model selectCount()
     {
         select.add(new Select("count(*)"));
+        returnType = Integer.class;
         return this;
     }
 
