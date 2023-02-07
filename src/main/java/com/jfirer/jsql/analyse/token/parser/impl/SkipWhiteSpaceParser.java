@@ -13,4 +13,21 @@ public class SkipWhiteSpaceParser extends TokenParser
         offset = skipWhiteSpace(offset, sql);
         return next.parse(sql, offset, tokens);
     }
+
+    protected int skipWhiteSpace(int offset, String el)
+    {
+        do
+        {
+            char c = getChar(offset, el);
+            if ( c == '\r' || c == '\n' || c == '\t')
+            {
+                offset++;
+            }
+            else
+            {
+                return offset;
+            }
+        }
+        while (true);
+    }
 }

@@ -5,6 +5,7 @@ import java.util.Map;
 
 public enum Symbol
 {
+    SPACE(" "),//
     LEFT_PAREN("("), //
     RIGHT_PAREN(")"), //
     LEFT_BRACE("{"), //

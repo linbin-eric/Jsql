@@ -14,23 +14,6 @@ public abstract class TokenParser
         this.next = next;
     }
 
-    protected int skipWhiteSpace(int offset, String el)
-    {
-        do
-        {
-            char c = getChar(offset, el);
-            if (c == ' ' || c == '\r' || c == '\n' || c == '\t')
-            {
-                offset++;
-            }
-            else
-            {
-                return offset;
-            }
-        }
-        while (true);
-    }
-
     public abstract int parse(String sql, int offset, Deque<Token> tokens);
 
     protected char getChar(int offset, String el)

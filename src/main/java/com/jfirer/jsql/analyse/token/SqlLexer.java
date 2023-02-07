@@ -12,6 +12,7 @@ public class SqlLexer
     static
     {
         TokenParser[] parsers = new TokenParser[]{ //
+                new SpaceParser(),//
                 new SkipWhiteSpaceParser(), //
                 new ExecutionParser(), //
                 new ExpressionParser(), //
@@ -111,25 +112,45 @@ public class SqlLexer
      */
     private Map<String, String> findEntityAliasName()
     {
-        Token               pred               = null;
         boolean             hitAs              = false;
+        Token               tableEntityToken   = null;
         Map<String, String> entityAliasNameMap = new HashMap<String, String>();
-        for (Token token : tokens)
+        for (int i = 0; i < tokens.length; i++)
         {
+            Token current = tokens[i];
+            if (current.getListerals().equals(Symbol.SPACE.literals()))
+            {
+                continue;
+            }
             if (hitAs)
             {
                 hitAs = false;
-                String entityAliasName = token.getListerals();
-                entityAliasNameMap.put(entityAliasName + '.', pred.getListerals());
-                pred = null;
+                String entityAliasName = current.getListerals();
+                entityAliasNameMap.put(entityAliasName + '.', tableEntityToken.getListerals());
             }
-            else if (isAsKeyWord(token) && (pred != null && pred.getTokenType() == TokenType.TABLE_ENTITY))
+            else if (isAsKeyWord(current))
             {
-                hitAs = true;
-            }
-            else
-            {
-                pred = token;
+                if (tokens[i - 1] == null)
+                {
+                    throw new IllegalStateException();
+                }
+                for (int j = i - 1; j >= 0; j--)
+                {
+                    if (tokens[j].getListerals().equals(Symbol.SPACE.literals()))
+                    {
+                        ;
+                    }
+                    else if (tokens[j].getTokenType() == TokenType.TABLE_ENTITY)
+                    {
+                        hitAs = true;
+                        tableEntityToken = tokens[j];
+                        break;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
             }
         }
         return entityAliasNameMap;
@@ -211,12 +232,12 @@ public class SqlLexer
         StringBuilder cache = new StringBuilder();
         for (Token token : tokens)
         {
-            cache.append(token.getListerals()).append(' ');
+            cache.append(token.getListerals());
         }
-        if (cache.length() != 0)
-        {
-            cache.setLength(cache.length() - 1);
-        }
+//        if (cache.length() != 0)
+//        {
+//            cache.setLength(cache.length() - 1);
+//        }
         return cache.toString();
     }
 }
