@@ -73,6 +73,11 @@ public interface Model
         return model;
     }
 
+    static <T> Model selectWithFunction(SFunction<T, ?> fn, String function)
+    {
+        return selectWithFunction(fn, function, null);
+    }
+
     static <T> Model selectCount(SFunction<T, ?> fn)
     {
         BaseModel model = new BaseModel();

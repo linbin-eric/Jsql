@@ -474,6 +474,18 @@ public class BaseModel implements Model
                 {
                     selectAll(((Table) from.get(0)).tableClass);
                 }
+                if (from.isEmpty())
+                {
+                    String tableClassName = select.stream().filter(select -> select.fn != null).map(select -> select.fn.getImplClass()).findFirst().orElseThrow();
+                    try
+                    {
+                        from(Thread.currentThread().getContextClassLoader().loadClass(tableClassName));
+                    }
+                    catch (ClassNotFoundException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                }
                 String segment = select.stream().map(select -> select.toString()).collect(Collectors.joining(","));
                 builder.append(segment).append(' ');
                 from.stream().forEach(record -> {

@@ -142,7 +142,7 @@ public class ModelTest
         user.setAge(12);
         user.setName("aa2");
         session.save(user);
-        List<User> result = session.findList(Model.select(User::getName).from(User.class).orderBy(User::getAge, true));
+        List<User> result = session.findList(Model.select(User::getName).orderBy(User::getAge, true));
         Assert.assertEquals("aa2", result.get(0).getName());
         Assert.assertEquals("aa1", result.get(1).getName());
     }
