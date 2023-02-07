@@ -142,7 +142,7 @@ public class ModelTest
         user.setAge(12);
         user.setName("aa2");
         session.save(user);
-        List<User> result = session.findList(Model.select(User::getName).orderBy(User::getAge, true));
+        List<User> result = session.findList(Model.select(User::getName).returnType(User.class).orderBy(User::getAge, true));
         Assert.assertEquals("aa2", result.get(0).getName());
         Assert.assertEquals("aa1", result.get(1).getName());
     }
@@ -197,5 +197,20 @@ public class ModelTest
         session.insert(user2);
         int maxId = session.findOne(Model.selectWithFunction(User2::getId, "max", null).from(User2.class).returnType(Integer.class));
         assertEquals(3, maxId);
+    }
+
+    /**
+     * 测试返回类型自动获取
+     */
+    @Test
+    public void test_7()
+    {
+        SqlSession session = sessionFactory.openSession();
+        User       user    = new User();
+        user.setName("aa1");
+        user.setAge(10);
+        session.save(user);
+        List<String> result = session.findList(Model.select(User::getName).orderBy(User::getAge, true));
+        Assert.assertEquals("aa1", result.get(0));
     }
 }

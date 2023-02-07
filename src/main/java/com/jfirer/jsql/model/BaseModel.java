@@ -9,6 +9,7 @@ import com.jfirer.jsql.model.impl.SpecialPkEqParam;
 import com.jfirer.jsql.model.support.LockMode;
 import com.jfirer.jsql.model.support.SFunction;
 
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -425,7 +426,34 @@ public class BaseModel implements Model
     {
         if (type == ModelType.query)
         {
-            return returnType == null ? ((Table) from.get(0)).tableClass : returnType;
+            if (returnType != null)
+            {
+                return returnType;
+            }
+            else if (select.size() > 1)
+            {
+                return ((Table) from.get(0)).tableClass;
+            }
+            else
+            {
+                Select select = this.select.get(0);
+                if (select.fn == null)
+                {
+                    return ((Table) from.get(0)).tableClass;
+                }
+                String fieldName     = select.fn.resolveFieldName();
+                String implClass     = select.fn.getImplClass();
+                Field  declaredField = null;
+                try
+                {
+                    declaredField = Thread.currentThread().getContextClassLoader().loadClass(implClass).getDeclaredField(fieldName);
+                    return declaredField.getType();
+                }
+                catch (NoSuchFieldException | ClassNotFoundException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
         }
         else
         {
