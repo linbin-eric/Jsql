@@ -24,6 +24,7 @@ import java.util.Random;
 
 import static com.jfirer.jsql.test.CURDTest.user2TableDml;
 import static com.jfirer.jsql.test.CURDTest.userTableDml;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class ModelTest
@@ -177,6 +178,24 @@ public class ModelTest
         user3.setAge(20);
         session.insert(user3);
         int count = session.count(Model.selectCount(User3::getName).from(User3.class).innerJoin(User2.class).on(Param.eq(User3::getAge, User2::getAge)));
-        Assert.assertEquals(1,count);
+        Assert.assertEquals(1, count);
+    }
+
+    /**
+     * 测试函数方法
+     */
+    @Test
+    public void test_6()
+    {
+        SqlSession session = sessionFactory.openSession();
+        User2      user2   = new User2();
+        user2.setId(1);
+        user2.setName("user1");
+        user2.setAge(15);
+        session.insert(user2);
+        user2.setId(3);
+        session.insert(user2);
+        int maxId = session.findOne(Model.selectWithFunction(User2::getId, "max", null).from(User2.class).returnType(Integer.class));
+        assertEquals(3, maxId);
     }
 }

@@ -66,6 +66,13 @@ public interface Model
         return model;
     }
 
+    static <T> Model selectWithFunction(SFunction<T, ?> fn, String function, String asName)
+    {
+        BaseModel model = new BaseModel();
+        model.addSelectWithFunction(fn, function, asName);
+        return model;
+    }
+
     static <T> Model selectCount(SFunction<T, ?> fn)
     {
         BaseModel model = new BaseModel();
@@ -90,6 +97,8 @@ public interface Model
     <T> Model addSelect(SFunction<T, ?> fns);
 
     <T> Model selectAs(SFunction<T, ?> fn, String asName);
+
+    <T> Model addSelectWithFunction(SFunction<T, ?> fn, String function, String asName);
 
     <T> Model set(SFunction<T, ?> fn, Object value);
 

@@ -10,7 +10,7 @@ import java.util.function.Function;
 public interface SFunction<T, R> extends Function<T, R>, Serializable
 {
     //这个方法返回的SerializedLambda是重点
-    static <T> SerializedLambda getSerializedLambda(SFunction<T, ?> fn) throws Exception
+    static SerializedLambda getSerializedLambda(SFunction<?, ?> fn) throws Exception
     {
         //writeReplace改了好像会报异常
         Method write = fn.getClass().getDeclaredMethod("writeReplace");
@@ -31,7 +31,7 @@ public interface SFunction<T, R> extends Function<T, R>, Serializable
         }
     }
 
-    static <T> String getImplMethodName(SFunction<T, ?> fn)
+    static String getImplMethodName(SFunction<?, ?> fn)
     {
         try
         {
@@ -53,7 +53,7 @@ public interface SFunction<T, R> extends Function<T, R>, Serializable
         return getImplClass(this);
     }
 
-    static <T> String resolveFieldName(SFunction<T, ?> fn)
+    static String resolveFieldName(SFunction<?, ?> fn)
     {
         String methodName = getImplMethodName(fn);
         if (methodName.startsWith("get") || methodName.startsWith("is"))

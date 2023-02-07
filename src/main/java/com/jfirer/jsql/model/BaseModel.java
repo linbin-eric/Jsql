@@ -106,39 +106,52 @@ public class BaseModel implements Model
         }
     }
 
-    record SelectAs(SFunction<?, ?> fn, String asName, BaseModel model)
+    class Select
     {
-        @Override
-        public String toString()
-        {
-            return model.findColumnName(fn) + " as " + asName;
-        }
-    }
+        final String content;
+        SFunction<?, ?> fn;
+        String          function;
+        String          asName;
+        BaseModel       model;
 
-    record Select(SFunction<?, ?> fn, BaseModel model)
-    {
-        @Override
-        public String toString()
+        public Select(SFunction<?, ?> fn, String function, String asName, BaseModel model)
         {
-            return model.findColumnName(fn);
+            this.fn = fn;
+            this.function = function;
+            this.asName = asName;
+            this.model = model;
+            this.content = null;
         }
-    }
 
-    record SelectWithName(String name)
-    {
-        @Override
-        public String toString()
+        public Select(String content)
         {
-            return name;
+            this.content = content;
         }
-    }
 
-    record Count(SFunction<?, ?> fn, BaseModel model)
-    {
         @Override
         public String toString()
         {
-            return "count( " + model.findColumnName(fn) + " )";
+            if (content == null)
+            {
+                String result;
+                if (function == null)
+                {
+                    result = model.findColumnName(fn);
+                }
+                else
+                {
+                    result = function + "(" + model.findColumnName(fn) + ")";
+                }
+                if (asName != null)
+                {
+                    result += " as " + asName;
+                }
+                return result;
+            }
+            else
+            {
+                return content;
+            }
         }
     }
 
@@ -166,7 +179,7 @@ public class BaseModel implements Model
     record Insert(String columnName, Object value) {}
 
     List<Record> from    = new LinkedList<>();
-    List<Record> select  = new LinkedList<>();
+    List<Select> select  = new LinkedList<>();
     List<Record> set     = new LinkedList<>();
     List<Record> orderBy = new LinkedList<>();
     List<Record> groupBy = new LinkedList<>();
@@ -246,7 +259,7 @@ public class BaseModel implements Model
     @Override
     public <T> Model addSelect(SFunction<T, ?> fn)
     {
-        select.add(new Select(fn, this));
+        select.add(new Select(fn, null, null, this));
         return this;
     }
 
@@ -257,7 +270,7 @@ public class BaseModel implements Model
             .findAny()//
             .ifPresent(record -> {
                 Table table = (Table) record;
-                TableEntityInfo.parse(table.tableClass).getPropertyNameKeyMap().values().forEach(columnInfo -> select.add(new SelectWithName(table.asName() + "." + columnInfo.columnName())));
+                TableEntityInfo.parse(table.tableClass).getPropertyNameKeyMap().values().forEach(columnInfo -> select.add(new Select(table.asName() + "." + columnInfo.columnName())));
             });
         return this;
     }
@@ -298,19 +311,25 @@ public class BaseModel implements Model
     @Override
     public <T> Model selectAs(SFunction<T, ?> fn, String asName)
     {
-        select.add(new SelectAs(fn, asName, this));
+        select.add(new Select(fn, null, asName, this));
+        return this;
+    }
+
+    public <T> Model addSelectWithFunction(SFunction<T, ?> fn, String function, String asName)
+    {
+        select.add(new Select(fn, function, asName, this));
         return this;
     }
 
     public <T> Model selectCount(SFunction<T, ?> fn)
     {
-        select.add(new Count(fn, this));
+        select.add(new Select(fn, "count", null, this));
         return this;
     }
 
     public Model selectCount()
     {
-        select.add(new SelectWithName("count(*)"));
+        select.add(new Select("count(*)"));
         return this;
     }
 
