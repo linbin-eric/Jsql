@@ -92,6 +92,14 @@ public interface Model
         return model;
     }
 
+    static Model selectCount(Class<?> ckass)
+    {
+        BaseModel model = new BaseModel();
+        model.from(ckass);
+        model.selectCount();
+        return model;
+    }
+
     default Model from(Class<?> ckass)
     {
         return fromAs(ckass, TableEntityInfo.parse(ckass).getTableName());

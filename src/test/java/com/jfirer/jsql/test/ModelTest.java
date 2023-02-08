@@ -101,7 +101,7 @@ public class ModelTest
         List<User> list = session.findList(Model.selectAll().from(User.class).where(Param.eq(User::getName, "ll")));
         Assert.assertEquals(2, list.size());
         Assert.assertEquals(12 + 19, list.get(0).getAge() + list.get(1).getAge());
-        Assert.assertEquals(2, session.count(Model.selectCount().from(User.class).where(Param.eq(User::getName, "ll"))));
+        Assert.assertEquals(2, session.count(Model.selectCount(User.class).where(Param.eq(User::getName, "ll"))));
         Page page = new Page();
         page.setOffset(0);
         page.setSize(1);
