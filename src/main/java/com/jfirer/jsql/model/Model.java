@@ -55,7 +55,7 @@ public interface Model
     static Model selectAll(Class<?> ckass)
     {
         BaseModel model = new BaseModel();
-        model.selectAll(ckass);
+        model.from(ckass);
         return model;
     }
 

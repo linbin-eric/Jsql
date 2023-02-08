@@ -264,18 +264,6 @@ public class BaseModel implements Model
         return this;
     }
 
-    public Model selectAll(Class<?> ckass)
-    {
-        from.stream()//
-            .filter(record -> record instanceof Table ? ((Table) record).tableClass == ckass : false)//
-            .findAny()//
-            .ifPresent(record -> {
-                Table table = (Table) record;
-                TableEntityInfo.parse(table.tableClass).getPropertyNameKeyMap().values().forEach(columnInfo -> select.add(new Select(table.asName() + "." + columnInfo.columnName())));
-            });
-        return this;
-    }
-
     public String findColumnName(SFunction<?, ?> fn)
     {
         String implClass = fn.getImplClass();
@@ -501,7 +489,16 @@ public class BaseModel implements Model
                 builder.append("select ");
                 if (select.isEmpty())
                 {
-                    selectAll(((Table) from.get(0)).tableClass);
+                    if (from.isEmpty())
+                    {
+                        throw new IllegalArgumentException("from数据为空，请检查语句");
+                    }
+                    from.stream()//
+                        .filter(record -> record instanceof Table)//
+                        .map(record -> ((Table) record))//
+                        .forEach(table -> {
+                            TableEntityInfo.parse(table.tableClass).getPropertyNameKeyMap().values().forEach(columnInfo -> select.add(new Select(table.asName() + "." + columnInfo.columnName())));
+                        });
                 }
                 if (from.isEmpty())
                 {
