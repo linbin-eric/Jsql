@@ -95,16 +95,32 @@
         <repository>
             <id>nexus3</id>
             <name>nexus</name>
-            <url>http://backupnas.jfirer.com:8082/repository/maven-releases/</url>
+            <url>http://backup.yynas.cn:8082/repository/maven-releases/</url>
         </repository>
         <snapshotRepository>
             <id>nexus3</id>
             <name>nexus</name>
-            <url>http://backupnas.jfirer.com:8082/repository/maven-snapshots/</url>
+            <url>http://backup.yynas.cn:8082/repository/maven-snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-source-plugin</artifactId>
+                <version>3.0.1</version>
+                <configuration>
+                    <attach>true</attach>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
