@@ -5,21 +5,22 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
 
-public class UtilDateTransfer extends ColumnNameHolder
+public class UtilDateTransfer extends ColumnIndexHolder
 {
-    public UtilDateTransfer(String columnName)
+    public UtilDateTransfer(int columnIndex)
     {
-        super(columnName);
+        super(columnIndex);
     }
 
     public UtilDateTransfer()
     {
+        super(1);
     }
 
     @Override
     public Object transfer(ResultSet resultSet) throws SQLException
     {
-        Timestamp timestamp = columnName == null ? resultSet.getTimestamp(1) : resultSet.getTimestamp(columnName);
+        Timestamp timestamp = resultSet.getTimestamp(columnIndex);
         if (timestamp != null)
         {
             return new Date(timestamp.getTime());

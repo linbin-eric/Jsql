@@ -3,21 +3,22 @@ package com.jfirer.jsql.transfer.impl;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class DoubleTransfer extends ColumnNameHolder
+public class DoubleTransfer extends ColumnIndexHolder
 {
-    public DoubleTransfer(String columnName)
+    public DoubleTransfer(int columnIndex)
     {
-        super(columnName);
+        super(columnIndex);
     }
 
     public DoubleTransfer()
     {
+        super(1);
     }
 
     @Override
     public Object transfer(ResultSet resultSet) throws SQLException
     {
-        double d = columnName == null ? resultSet.getDouble(1) : resultSet.getDouble(columnName);
+        double d = resultSet.getDouble(columnIndex);
         if (resultSet.wasNull())
         {
             return null;

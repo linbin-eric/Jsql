@@ -105,10 +105,10 @@ public class MapperTest
         @Sql(sql = "select * from User as u where u.name = ${name}", paramNames = "name")
         User find(String name);
 
-        @Sql(sql = "select age from User as u where u.name = ${name}", paramNames = "name")
+        @Sql(sql = "select u.age from User as u where u.name = ${name}", paramNames = "name")
         User find2(String name);
 
-        @Sql(sql = "select age as a from User as u where u.name = ${name}", paramNames = "name")
+        @Sql(sql = "select u.age as a from User as u where u.name = ${name}", paramNames = "name")
         User find3(String name);
         /** 测试as类别名 **/
         /**

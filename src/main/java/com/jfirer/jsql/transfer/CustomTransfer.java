@@ -1,6 +1,6 @@
 package com.jfirer.jsql.transfer;
 
-import com.jfirer.jsql.transfer.impl.ColumnNameHolder;
+import com.jfirer.jsql.transfer.impl.ColumnIndexHolder;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -11,5 +11,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface CustomTransfer
 {
-    Class<? extends ColumnNameHolder> value();
+    Class<? extends ColumnIndexHolder> value();
 }

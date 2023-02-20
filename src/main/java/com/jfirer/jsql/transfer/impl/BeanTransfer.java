@@ -11,6 +11,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
 import java.util.Calendar;
+import java.util.LinkedList;
+import java.util.List;
 
 public class BeanTransfer implements ResultSetTransfer
 {
@@ -28,21 +30,50 @@ public class BeanTransfer implements ResultSetTransfer
             {
                 if (columnTransfers == null)
                 {
-                    ResultSetMetaData metaData        = resultSet.getMetaData();
-                    int               columnCount     = metaData.getColumnCount();
-                    ColumnTransfer[]  transfers       = new ColumnTransfer[columnCount];
-                    TableEntityInfo   tableEntityInfo = TableEntityInfo.parse(ckass);
+                    ResultSetMetaData    metaData       = resultSet.getMetaData();
+                    int                  columnCount    = metaData.getColumnCount();
+                    List<ColumnTransfer> transfers      = new LinkedList<>();
+                    TableEntityInfo      returnTypeInfo = TableEntityInfo.parse(ckass);
+                    /**
+                     * 1. 如果tableName能够和returnType匹配上，则用数据库字段名查找类名对应的映射。
+                     * 2. 如果tableName不能和returnType匹配上，则使用label名称查找类名对应的映射。
+                     */
                     for (int i = 0; i < columnCount; i++)
                     {
+                        int            columnIndex = i + 1;
                         ColumnTransfer columnTransfer;
-                        String         columnName = metaData.getColumnName(i + 1);
-                        Field          field      = tableEntityInfo.getColumnInfoByColumnNameIgnoreCase(columnName).field();
-                        Class          fieldType  = field.getType().isPrimitive() ? ReflectUtil.wrapPrimitive(field.getType()) : field.getType();
+                        String         tableName   = metaData.getTableName(columnIndex);
+                        String         columnName  = metaData.getColumnName(columnIndex);
+                        String         columnLabel = metaData.getColumnLabel(columnIndex);
+                        Field          field;
+                        if (tableName.equalsIgnoreCase(returnTypeInfo.getTableName()))
+                        {
+                            if (returnTypeInfo.getColumnInfoByColumnNameIgnoreCase(columnName) == null)
+                            {
+                                continue;
+                            }
+                            else
+                            {
+                                field = returnTypeInfo.getColumnInfoByColumnNameIgnoreCase(columnName).field();
+                            }
+                        }
+                        else
+                        {
+                            if (returnTypeInfo.getColumnInfoByColumnNameIgnoreCase(columnLabel) == null)
+                            {
+                                continue;
+                            }
+                            else
+                            {
+                                field = returnTypeInfo.getColumnInfoByColumnNameIgnoreCase(columnLabel).field();
+                            }
+                        }
+                        Class fieldType = field.getType().isPrimitive() ? ReflectUtil.wrapPrimitive(field.getType()) : field.getType();
                         if (AnnotationContext.isAnnotationPresent(CustomTransfer.class, field))
                         {
                             try
                             {
-                                ColumnNameHolder columnIndexHolder = AnnotationContext.getAnnotation(CustomTransfer.class, field).value().getDeclaredConstructor(String.class).newInstance(metaData.getColumnName(i + 1));
+                                ColumnIndexHolder columnIndexHolder = AnnotationContext.getAnnotation(CustomTransfer.class, field).value().getDeclaredConstructor(int.class).newInstance(columnIndex);
                                 columnIndexHolder.awareType(field.getType());
                                 columnTransfer = new ColumnTransfer(columnIndexHolder, new ValueAccessor(field));
                             }
@@ -54,75 +85,75 @@ public class BeanTransfer implements ResultSetTransfer
                         }
                         else if (fieldType == Boolean.class)
                         {
-                            columnTransfer = new ColumnTransfer(new BooleanTransfer(metaData.getColumnName(i + 1)), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new BooleanTransfer(columnIndex), new ValueAccessor(field));
                         }
                         else if (fieldType == Double.class)
                         {
-                            columnTransfer = new ColumnTransfer(new DoubleTransfer(metaData.getColumnName(i + 1)), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new DoubleTransfer(columnIndex), new ValueAccessor(field));
                         }
                         else if (fieldType == Float.class)
                         {
-                            columnTransfer = new ColumnTransfer(new FloatTransfer(metaData.getColumnName(i + 1)), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new FloatTransfer(columnIndex), new ValueAccessor(field));
                         }
                         else if (fieldType == Integer.class)
                         {
-                            columnTransfer = new ColumnTransfer(new IntegerTransfer(metaData.getColumnName(i + 1)), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new IntegerTransfer(columnIndex), new ValueAccessor(field));
                         }
                         else if (fieldType == Long.class)
                         {
-                            columnTransfer = new ColumnTransfer(new LongTransfer(metaData.getColumnName(i + 1)), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new LongTransfer(columnIndex), new ValueAccessor(field));
                         }
                         else if (fieldType == Short.class)
                         {
-                            columnTransfer = new ColumnTransfer(new ShortTransfer(metaData.getColumnName(i + 1)), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new ShortTransfer(columnIndex), new ValueAccessor(field));
                         }
                         else if (fieldType == Date.class)
                         {
-                            columnTransfer = new ColumnTransfer(new SqlDateTransfer(metaData.getColumnName(i + 1)), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new SqlDateTransfer(columnIndex), new ValueAccessor(field));
                         }
                         else if (fieldType == java.util.Date.class)
                         {
-                            columnTransfer = new ColumnTransfer(new UtilDateTransfer(metaData.getColumnName(i + 1)), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new UtilDateTransfer(columnIndex), new ValueAccessor(field));
                         }
                         else if (fieldType == String.class)
                         {
-                            columnTransfer = new ColumnTransfer(new StringTransfer(metaData.getColumnName(i + 1)), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new StringTransfer(columnIndex), new ValueAccessor(field));
                         }
                         else if (fieldType == Timestamp.class)
                         {
-                            columnTransfer = new ColumnTransfer(new TimeStampTransfer(metaData.getColumnName(i + 1)), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new TimeStampTransfer(columnIndex), new ValueAccessor(field));
                         }
                         else if (fieldType == Time.class)
                         {
-                            columnTransfer = new ColumnTransfer(new TimeTransfer(metaData.getColumnName(i + 1)), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new TimeTransfer(columnIndex), new ValueAccessor(field));
                         }
                         else if (Enum.class.isAssignableFrom(fieldType))
                         {
-                            columnTransfer = new ColumnTransfer(new EnumNameTransfer(metaData.getColumnName(i + 1)).awareType(fieldType), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new EnumNameTransfer(columnIndex).awareType(fieldType), new ValueAccessor(field));
                         }
                         else if (fieldType == Calendar.class)
                         {
-                            columnTransfer = new ColumnTransfer(new CalendarTransfer(metaData.getColumnName(i + 1)), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new CalendarTransfer(columnIndex), new ValueAccessor(field));
                         }
                         else if (fieldType == byte[].class)
                         {
-                            columnTransfer = new ColumnTransfer(new ByteArrayTransfer(metaData.getColumnName(i + 1)), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new ByteArrayTransfer(columnIndex), new ValueAccessor(field));
                         }
                         else if (fieldType == Clob.class)
                         {
-                            columnTransfer = new ColumnTransfer(new ClobTransfer(metaData.getColumnName(i + 1)), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new ClobTransfer(columnIndex), new ValueAccessor(field));
                         }
                         else if (fieldType.isEnum())
                         {
-                            columnTransfer = new ColumnTransfer(new EnumNameTransfer(metaData.getColumnName(i + 1)), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new EnumNameTransfer(columnIndex), new ValueAccessor(field));
                         }
                         else
                         {
                             throw new IllegalArgumentException();
                         }
-                        transfers[i] = columnTransfer;
+                        transfers.add(columnTransfer);
                     }
-                    this.columnTransfers = transfers;
+                    this.columnTransfers = transfers.toArray(ColumnTransfer[]::new);
                 }
             }
         }

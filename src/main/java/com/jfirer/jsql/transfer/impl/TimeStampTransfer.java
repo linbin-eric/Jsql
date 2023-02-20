@@ -3,20 +3,21 @@ package com.jfirer.jsql.transfer.impl;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class TimeStampTransfer extends ColumnNameHolder
+public class TimeStampTransfer extends ColumnIndexHolder
 {
-    public TimeStampTransfer(String columnName)
+    public TimeStampTransfer(int columnIndex)
     {
-        super(columnName);
+        super(columnIndex);
     }
 
     public TimeStampTransfer()
     {
+        super(1);
     }
 
     @Override
     public Object transfer(ResultSet resultSet) throws SQLException
     {
-        return columnName == null ? resultSet.getTimestamp(1) : resultSet.getTimestamp(columnName);
+        return resultSet.getTimestamp(columnIndex);
     }
 }

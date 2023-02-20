@@ -5,23 +5,24 @@ import com.jfirer.jsql.transfer.ResultSetTransfer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class EnumOrdinalTransfer extends ColumnNameHolder
+public class EnumOrdinalTransfer extends ColumnIndexHolder
 {
     private Enum<?>[] instances;
 
-    public EnumOrdinalTransfer(String columnName)
+    public EnumOrdinalTransfer(int columnIndex)
     {
-        super(columnName);
+        super(columnIndex);
     }
 
     public EnumOrdinalTransfer()
     {
+        super(1);
     }
 
     @Override
     public Object transfer(ResultSet resultSet) throws SQLException
     {
-        int ordinal = columnName == null ? resultSet.getInt(1) : resultSet.getInt(columnName);
+        int ordinal = resultSet.getInt(columnIndex);
         if (resultSet.wasNull())
         {
             return null;

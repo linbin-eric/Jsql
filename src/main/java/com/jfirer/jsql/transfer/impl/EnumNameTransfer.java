@@ -5,25 +5,26 @@ import com.jfirer.jsql.transfer.ResultSetTransfer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class EnumNameTransfer extends ColumnNameHolder
+public class EnumNameTransfer extends ColumnIndexHolder
 {
     @SuppressWarnings("rawtypes")
     private Class<? extends Enum> type;
 
-    public EnumNameTransfer(String columnName)
+    public EnumNameTransfer(int columnIndex)
     {
-        super(columnName);
+        super(columnIndex);
     }
 
     public EnumNameTransfer()
     {
+        super(1);
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public Object transfer(ResultSet resultSet) throws SQLException
     {
-        String enumName = columnName == null ? resultSet.getString(1) : resultSet.getString(columnName);
+        String enumName = resultSet.getString(columnIndex);
         if (enumName == null)
         {
             return null;

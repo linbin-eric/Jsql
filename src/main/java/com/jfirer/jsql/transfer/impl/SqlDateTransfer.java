@@ -3,20 +3,21 @@ package com.jfirer.jsql.transfer.impl;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class SqlDateTransfer extends ColumnNameHolder
+public class SqlDateTransfer extends ColumnIndexHolder
 {
-    public SqlDateTransfer(String columnName)
+    public SqlDateTransfer(int columnIndex)
     {
-        super(columnName);
+        super(columnIndex);
     }
 
     public SqlDateTransfer()
     {
+        super(1);
     }
 
     @Override
     public Object transfer(ResultSet resultSet) throws SQLException
     {
-        return columnName == null ? resultSet.getDate(1) : resultSet.getDate(columnName);
+        return resultSet.getDate(columnIndex);
     }
 }
