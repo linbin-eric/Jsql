@@ -49,10 +49,12 @@ public interface Model
 
     /**
      * 在查询的select列中排除对应字段
+     *
      * @param fns
      * @param <T>
+     * @return
      */
-    <T> void exclude(SFunction<T, ?>... fns);
+    <T> Model exclude(SFunction<T, ?>... fns);
 
     static Model selectAll()
     {

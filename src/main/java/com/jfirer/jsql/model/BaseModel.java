@@ -315,12 +315,13 @@ public class BaseModel implements Model
     }
 
     @Override
-    public <T> void exclude(SFunction<T, ?>... fns)
+    public <T> Model exclude(SFunction<T, ?>... fns)
     {
         for (SFunction<?, ?> each : fns)
         {
             exclude.add(each);
         }
+        return this;
     }
 
     public <T> Model selectCount(SFunction<T, ?> fn)
