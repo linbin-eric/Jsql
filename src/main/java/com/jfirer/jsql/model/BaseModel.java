@@ -179,12 +179,13 @@ public class BaseModel implements Model
 
     record Insert(String columnName, Object value) {}
 
-    List<Record> from    = new LinkedList<>();
-    List<Select> select  = new LinkedList<>();
-    List<Record> set     = new LinkedList<>();
-    List<Record> orderBy = new LinkedList<>();
-    List<Record> groupBy = new LinkedList<>();
-    List<Record> insert  = new LinkedList<>();
+    List<Record>          from    = new LinkedList<>();
+    List<Select>          select  = new LinkedList<>();
+    List<SFunction<?, ?>> exclude = new LinkedList<>();
+    List<Record>          set     = new LinkedList<>();
+    List<Record>          orderBy = new LinkedList<>();
+    List<Record>          groupBy = new LinkedList<>();
+    List<Record>          insert  = new LinkedList<>();
     private final ModelType                    type;
     private       Update                       update;
     private       Delete                       delete;
@@ -258,9 +259,12 @@ public class BaseModel implements Model
     }
 
     @Override
-    public <T> Model addSelect(SFunction<T, ?> fn)
+    public <T> Model addSelect(SFunction<T, ?>... fns)
     {
-        select.add(new Select(fn, null, null, this));
+        for (SFunction<T, ?> fn : fns)
+        {
+            select.add(new Select(fn, null, null, this));
+        }
         return this;
     }
 
@@ -308,6 +312,15 @@ public class BaseModel implements Model
     {
         select.add(new Select(fn, function, asName, this));
         return this;
+    }
+
+    @Override
+    public <T> void exclude(SFunction<T, ?>... fns)
+    {
+        for (SFunction<?, ?> each : fns)
+        {
+            exclude.add(each);
+        }
     }
 
     public <T> Model selectCount(SFunction<T, ?> fn)
@@ -511,6 +524,10 @@ public class BaseModel implements Model
                     {
                         throw new RuntimeException(e);
                     }
+                }
+                if (exclude.isEmpty() == false)
+                {
+                    select = select.stream().filter(v -> exclude.stream().noneMatch(ex -> ex.resolveFieldName().equalsIgnoreCase(v.fn.resolveFieldName()) && ex.getImplClass() == v.fn.getImplClass())).toList();
                 }
                 String segment = select.stream().map(select -> select.toString()).collect(Collectors.joining(","));
                 builder.append(segment).append(' ');

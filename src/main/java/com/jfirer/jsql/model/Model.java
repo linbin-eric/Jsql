@@ -40,12 +40,19 @@ public interface Model
     static <T> Model select(SFunction<T, ?>... fns)
     {
         BaseModel model = new BaseModel();
-        for (SFunction<T, ?> fn : fns)
+        for (SFunction<?, ?> fn : fns)
         {
             model.addSelect(fn);
         }
         return model;
     }
+
+    /**
+     * 在查询的select列中排除对应字段
+     * @param fns
+     * @param <T>
+     */
+    <T> void exclude(SFunction<T, ?>... fns);
 
     static Model selectAll()
     {
@@ -107,7 +114,7 @@ public interface Model
 
     Model fromAs(Class<?> ckass, String asName);
 
-    <T> Model addSelect(SFunction<T, ?> fns);
+    <T> Model addSelect(SFunction<T, ?>... fns);
 
     <T> Model selectAs(SFunction<T, ?> fn, String asName);
 

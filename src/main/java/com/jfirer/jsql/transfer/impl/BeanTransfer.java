@@ -11,8 +11,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
 import java.util.Calendar;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class BeanTransfer implements ResultSetTransfer
 {
@@ -30,10 +30,10 @@ public class BeanTransfer implements ResultSetTransfer
             {
                 if (columnTransfers == null)
                 {
-                    ResultSetMetaData    metaData       = resultSet.getMetaData();
-                    int                  columnCount    = metaData.getColumnCount();
-                    List<ColumnTransfer> transfers      = new LinkedList<>();
-                    TableEntityInfo      returnTypeInfo = TableEntityInfo.parse(ckass);
+                    ResultSetMetaData   metaData       = resultSet.getMetaData();
+                    int                 columnCount    = metaData.getColumnCount();
+                    Set<ColumnTransfer> transfers      = new HashSet<>();
+                    TableEntityInfo     returnTypeInfo = TableEntityInfo.parse(ckass);
                     /**
                      * 1. 如果tableName能够和returnType匹配上，则用数据库字段名查找类名对应的映射。
                      * 2. 如果tableName不能和returnType匹配上，则使用label名称查找类名对应的映射。
@@ -151,7 +151,10 @@ public class BeanTransfer implements ResultSetTransfer
                         {
                             throw new IllegalArgumentException();
                         }
-                        transfers.add(columnTransfer);
+                        if (transfers.add(columnTransfer) == false)
+                        {
+                            throw new IllegalArgumentException("在一个sql语句中出现重复名称字段，重复字段为:" + columnTransfer.accessor.getField().toString());
+                        }
                     }
                     this.columnTransfers = transfers.toArray(ColumnTransfer[]::new);
                 }
