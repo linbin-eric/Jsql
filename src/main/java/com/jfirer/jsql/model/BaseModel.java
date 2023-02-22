@@ -110,6 +110,9 @@ public class BaseModel implements Model
     class Select
     {
         final String content;
+        String          className;
+        String          fieldName;
+        //两种不同的模式
         SFunction<?, ?> fn;
         String          function;
         String          asName;
@@ -127,6 +130,13 @@ public class BaseModel implements Model
         public Select(String content)
         {
             this.content = content;
+        }
+
+        public Select(String content, String className, String fieldName)
+        {
+            this.content = content;
+            this.className = className;
+            this.fieldName = fieldName;
         }
 
         @Override
@@ -510,9 +520,7 @@ public class BaseModel implements Model
                     from.stream()//
                         .filter(record -> record instanceof Table)//
                         .map(record -> ((Table) record))//
-                        .forEach(table -> {
-                            TableEntityInfo.parse(table.tableClass).getPropertyNameKeyMap().values().forEach(columnInfo -> select.add(new Select(table.asName() + "." + columnInfo.columnName())));
-                        });
+                        .forEach(table -> TableEntityInfo.parse(table.tableClass).getPropertyNameKeyMap().values().forEach(columnInfo -> select.add(new Select(table.asName() + "." + columnInfo.columnName(), table.tableClass.getName(), columnInfo.propertyName()))));
                 }
                 if (from.isEmpty())
                 {
@@ -528,7 +536,20 @@ public class BaseModel implements Model
                 }
                 if (exclude.isEmpty() == false)
                 {
-                    select = select.stream().filter(v -> exclude.stream().noneMatch(ex -> ex.resolveFieldName().equalsIgnoreCase(v.fn.resolveFieldName()) && ex.getImplClass() == v.fn.getImplClass())).toList();
+                    select = select.stream().filter(v -> {
+                        if (v.content == null)
+                        {
+                            return exclude.stream().noneMatch(ex -> ex.resolveFieldName().equalsIgnoreCase(v.fn.resolveFieldName()) && ex.getImplClass() == v.fn.getImplClass());
+                        }
+                        else if (v.className == null)
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            return exclude.stream().noneMatch(ex -> ex.resolveFieldName().equalsIgnoreCase(v.fieldName) && ex.getImplClass().equalsIgnoreCase(v.className));
+                        }
+                    }).toList();
                 }
                 String segment = select.stream().map(select -> select.toString()).collect(Collectors.joining(","));
                 builder.append(segment).append(' ');

@@ -1,9 +1,14 @@
 package com.jfirer.jsql.test.vo;
 
 import com.jfirer.jsql.annotation.*;
+import com.jfirer.jsql.model.support.SFunction;
 import com.jfirer.jsql.transfer.CustomTransfer;
 import com.jfirer.jsql.transfer.impl.EnumOrdinalTransfer;
 
+import java.lang.invoke.LambdaConversionException;
+import java.lang.invoke.LambdaMetafactory;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Calendar;
@@ -55,6 +60,7 @@ public class User
     private       Float         F11        = 5.69f;
     private       Long          L11        = 5625L;
     private       long          n          = now;
+
 
     public long getNow()
     {

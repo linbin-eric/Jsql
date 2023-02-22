@@ -9,6 +9,7 @@ import com.jfirer.jsql.transfer.ResultSetTransfer;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
 import java.sql.*;
 import java.util.Calendar;
 import java.util.HashSet;
@@ -146,6 +147,10 @@ public class BeanTransfer implements ResultSetTransfer
                         else if (fieldType.isEnum())
                         {
                             columnTransfer = new ColumnTransfer(new EnumNameTransfer(columnIndex), new ValueAccessor(field));
+                        }
+                        else if (fieldType == BigDecimal.class)
+                        {
+                            columnTransfer = new ColumnTransfer(new BigDecimalTransfer(columnIndex), new ValueAccessor(field));
                         }
                         else
                         {

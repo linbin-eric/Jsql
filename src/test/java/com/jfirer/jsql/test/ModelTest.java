@@ -213,4 +213,17 @@ public class ModelTest
         List<String> result = session.findList(Model.select(User::getName).orderBy(User::getAge, true));
         Assert.assertEquals("aa1", result.get(0));
     }
+
+    @Test
+    public void test_8()
+    {
+        SqlSession session = sessionFactory.openSession();
+        User       user    = new User();
+        user.setName("aa1");
+        user.setAge(10);
+        session.save(user);
+        List<User> list = session.findList(Model.selectAll(User.class).exclude(User::getAge));
+        assertEquals("aa1", list.get(0).getName());
+        assertEquals(0,list.get(0).getAge());
+    }
 }
