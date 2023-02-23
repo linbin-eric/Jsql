@@ -61,11 +61,6 @@ public interface Param
         return new StringPatternParam(fn, StringPatternParam.PatternMode.BEFORE, value);
     }
 
-    static <T> Param like(SFunction<T, ?> fn, Object value)
-    {
-        return new StringPatternParam(fn, StringPatternParam.PatternMode.NONE, value);
-    }
-
     static <T> Param contain(SFunction<T, ?> fn, Object value)
     {
         return new StringPatternParam(fn, StringPatternParam.PatternMode.BOTH, value);

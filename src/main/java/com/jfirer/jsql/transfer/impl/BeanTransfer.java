@@ -17,7 +17,27 @@ import java.util.Set;
 
 public class BeanTransfer implements ResultSetTransfer
 {
-    record ColumnTransfer(ResultSetTransfer transfer, ValueAccessor accessor) {}
+    record ColumnTransfer(ResultSetTransfer transfer, ValueAccessor accessor)
+    {
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (obj instanceof ColumnTransfer columnTransfer)
+            {
+                return columnTransfer.accessor.getField().equals(accessor.getField());
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return accessor.getField().hashCode();
+        }
+    }
 
     private          Class<?>         ckass;
     private volatile ColumnTransfer[] columnTransfers;

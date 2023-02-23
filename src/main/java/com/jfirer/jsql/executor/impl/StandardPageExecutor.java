@@ -38,7 +38,7 @@ public class StandardPageExecutor extends NextHolder
         Page page = (Page) param;
         if (page.isFetchSum())
         {
-            String countSql = "select count(*) from (" + sql + ")";
+            String countSql = "select count(1) from (" + sql + ") as a";
             int    total    = (Integer) next.queryOne(countSql, Integer.class, params, connection, dialect);
             page.setTotal(total);
         }
