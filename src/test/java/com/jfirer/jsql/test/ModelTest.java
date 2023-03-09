@@ -239,4 +239,6 @@ public class ModelTest
         xxx = session.findOne(Model.selectAll(User.class).where(Param.eq(User::getAge, 12).ifOr(() -> true, Param.eq(User::getName, "aa1"))));
         assertEquals(10, xxx.getAge());
     }
+
+
 }

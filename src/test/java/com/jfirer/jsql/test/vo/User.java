@@ -55,9 +55,9 @@ public class User
     private       java.sql.Date sqlDate    = new java.sql.Date(now);
     private       Time          time       = new Time(now);
     private       Timestamp     timestamp  = new Timestamp(now);
+    private       Float         F11        = 5.69f;
     private       Boolean       B11        = false;
     private       Double        D11        = 6.32d;
-    private       Float         F11        = 5.69f;
     private       Long          L11        = 5625L;
     private       long          n          = now;
 

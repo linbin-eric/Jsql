@@ -1,5 +1,6 @@
 package com.jfirer.jsql.metadata;
 
+import com.jfirer.baseutil.Formatter;
 import com.jfirer.baseutil.StringUtil;
 import com.jfirer.baseutil.reflect.ReflectUtil;
 import com.jfirer.baseutil.reflect.ValueAccessor;
@@ -38,6 +39,10 @@ public class TableEntityInfo
         this.ckass = ckass;
         className = ckass.getName();
         classSimpleName = ckass.getSimpleName();
+        if (ckass.isAnnotationPresent(TableDef.class) == false)
+        {
+            throw new IllegalArgumentException(Formatter.format("类:{}没有使用TableDef注解，不能作为查询条件或者返回结果使用", ckass.getName()));
+        }
         tableName = ckass.getAnnotation(TableDef.class).value();
         Map<String, ColumnInfo> propertyNameKeyMap         = new HashMap<String, TableEntityInfo.ColumnInfo>();
         Map<String, ColumnInfo> columnNameIgnoreCaseKeyMap = new HashMap<String, TableEntityInfo.ColumnInfo>();

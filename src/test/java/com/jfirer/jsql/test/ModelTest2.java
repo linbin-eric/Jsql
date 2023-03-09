@@ -8,6 +8,7 @@ import com.jfirer.jsql.model.Param;
 import com.jfirer.jsql.session.SqlSession;
 import com.jfirer.jsql.test.vo.SqlLog;
 import com.jfirer.jsql.test.vo.User;
+import com.jfirer.jsql.test.vo.User4;
 import com.zaxxer.hikari.HikariDataSource;
 import org.h2.Driver;
 import org.junit.After;
@@ -123,5 +124,12 @@ public class ModelTest2
         Assert.assertEquals(1, result);
         user = sqlSession.findOne(Model.selectAll().from(User.class).where(Param.eq(User::getAge, 1)));
         Assert.assertNotNull(user);
+    }
+
+    @Test
+    public void test_2()
+    {
+        User4 user4 = sqlSession.findOne(Model.selectAll(User4.class).where(Param.eq(User4::getAge, 12)));
+        Assert.assertEquals("lin", user4.getName2());
     }
 }
