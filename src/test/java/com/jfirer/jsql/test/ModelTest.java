@@ -24,8 +24,7 @@ import java.util.Random;
 
 import static com.jfirer.jsql.test.CURDTest.user2TableDml;
 import static com.jfirer.jsql.test.CURDTest.userTableDml;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 
 public class ModelTest
 {
@@ -224,6 +223,20 @@ public class ModelTest
         session.save(user);
         List<User> list = session.findList(Model.selectAll(User.class).exclude(User::getAge));
         assertEquals("aa1", list.get(0).getName());
-        assertEquals(0,list.get(0).getAge());
+        assertEquals(0, list.get(0).getAge());
+    }
+
+    @Test
+    public void test_9()
+    {
+        SqlSession session = sessionFactory.openSession();
+        User       user    = new User();
+        user.setName("aa1");
+        user.setAge(10);
+        session.save(user);
+        User xxx = session.findOne(Model.selectAll(User.class).where(Param.eq(User::getAge, 10).ifAnd(() -> true, Param.eq(User::getName, "xxx"))));
+        assertNull(xxx);
+        xxx = session.findOne(Model.selectAll(User.class).where(Param.eq(User::getAge, 12).ifOr(() -> true, Param.eq(User::getName, "aa1"))));
+        assertEquals(10, xxx.getAge());
     }
 }

@@ -287,7 +287,21 @@ public class BaseModel implements Model
             {
                 Table tableAs = from.stream()//
                                     .filter(record -> record instanceof Table) //
-                                    .filter(record -> ((Table) record).tableClass().getName().equals(implClass))//
+                                    .filter(record -> {
+                                        Class<?> tableClass = ((Table) record).tableClass();
+                                        while (tableClass != Object.class)
+                                        {
+                                            if (tableClass.getName().equals(implClass))
+                                            {
+                                                return true;
+                                            }
+                                            else
+                                            {
+                                                tableClass = tableClass.getSuperclass();
+                                            }
+                                        }
+                                        return false;
+                                    })//
                                     .map(record -> ((Table) record))//
                                     .findAny().orElseThrow();
                 return tableAs.asName + "." + TableEntityInfo.parse(tableAs.tableClass).getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName();

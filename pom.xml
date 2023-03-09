@@ -95,12 +95,12 @@
         <repository>
             <id>nexus3</id>
             <name>nexus</name>
-            <url>http://backup.yynas.cn:8082/repository/maven-releases/</url>
+            <url>http://yynas.cn:8081/repository/maven-releases/</url>
         </repository>
         <snapshotRepository>
             <id>nexus3</id>
             <name>nexus</name>
-            <url>http://backup.yynas.cn:8082/repository/maven-snapshots/</url>
+            <url>http://yynas.cn:8081/repository/maven-snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
     <build>

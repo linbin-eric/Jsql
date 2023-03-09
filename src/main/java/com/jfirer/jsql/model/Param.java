@@ -3,11 +3,37 @@ package com.jfirer.jsql.model;
 import com.jfirer.jsql.model.impl.*;
 import com.jfirer.jsql.model.support.SFunction;
 
+import java.util.function.Supplier;
+
 public interface Param
 {
     Param and(Param param);
 
+    default Param ifAnd(Supplier<Boolean> supplier, Param param)
+    {
+        if (supplier.get())
+        {
+            return this.and(param);
+        }
+        else
+        {
+            return this;
+        }
+    }
+
     Param or(Param param);
+
+    default Param ifOr(Supplier<Boolean> supplier, Param param)
+    {
+        if (supplier.get())
+        {
+            return this.or(param);
+        }
+        else
+        {
+            return this;
+        }
+    }
 
     Param union();
 

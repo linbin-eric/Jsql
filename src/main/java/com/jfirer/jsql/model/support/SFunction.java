@@ -4,11 +4,16 @@ import java.io.Serializable;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
 @FunctionalInterface
 public interface SFunction<T, R> extends Function<T, R>, Serializable
 {
+    ConcurrentMap<SFunction, String> implClassNameMap = new ConcurrentHashMap<>();
+    ConcurrentMap<SFunction, String> fieldNameMap     = new ConcurrentHashMap<>();
+
     //这个方法返回的SerializedLambda是重点
     static SerializedLambda getSerializedLambda(SFunction<?, ?> fn) throws Exception
     {
@@ -20,15 +25,17 @@ public interface SFunction<T, R> extends Function<T, R>, Serializable
 
     static String getImplClass(SFunction fn)
     {
-        try
-        {
-            String resourceName = getSerializedLambda(fn).getImplClass();
-            return resourceName.replace("/", ".");
-        }
-        catch (Exception e)
-        {
-            return null;
-        }
+        return implClassNameMap.computeIfAbsent(fn, sfn -> {
+            try
+            {
+                String resourceName = getSerializedLambda(sfn).getImplClass();
+                return resourceName.replace("/", ".");
+            }
+            catch (Exception e)
+            {
+                return null;
+            }
+        });
     }
 
     static String getImplMethodName(SFunction<?, ?> fn)
@@ -55,16 +62,18 @@ public interface SFunction<T, R> extends Function<T, R>, Serializable
 
     static String resolveFieldName(SFunction<?, ?> fn)
     {
-        String methodName = getImplMethodName(fn);
-        if (methodName.startsWith("get") || methodName.startsWith("is"))
-        {
-            return Optional.of(methodName.startsWith("get") ? methodName.substring(3) : methodName.substring(2))//
-                           .map(value -> value.toLowerCase().charAt(0) + value.substring(1))//
-                           .get();
-        }
-        else
-        {
-            return methodName;
-        }
+        return fieldNameMap.computeIfAbsent(fn, sfn -> {
+            String methodName = getImplMethodName(sfn);
+            if (methodName.startsWith("get") || methodName.startsWith("is"))
+            {
+                return Optional.of(methodName.startsWith("get") ? methodName.substring(3) : methodName.substring(2))//
+                               .map(value -> value.toLowerCase().charAt(0) + value.substring(1))//
+                               .get();
+            }
+            else
+            {
+                return methodName;
+            }
+        });
     }
 }

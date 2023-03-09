@@ -11,6 +11,15 @@ public interface ColumnNameStrategy
      */
     String toColumnName(String name);
 
+    class OriginallyName implements ColumnNameStrategy
+    {
+        @Override
+        public String toColumnName(String name)
+        {
+            return name;
+        }
+    }
+
     class LowerCaseName implements ColumnNameStrategy
     {
         static LowerCaseName instance = new LowerCaseName();
