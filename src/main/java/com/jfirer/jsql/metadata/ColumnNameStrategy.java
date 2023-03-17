@@ -55,7 +55,7 @@ public interface ColumnNameStrategy
             }
             else
             {
-                cache.append(c);
+                cache.append(fn.apply(c));
             }
             index += 1;
         }

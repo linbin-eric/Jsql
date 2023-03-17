@@ -39,13 +39,13 @@ public class BaseModel implements Model
                 case "from":
                     return "from " + segment + " ";
                 case "left join":
-                    return "left join " + segment + " ";
+                    return " left join " + segment + " ";
                 case "right join":
-                    return "right join " + segment + " ";
+                    return " right join " + segment + " ";
                 case "inner join":
-                    return "inner join " + segment + " ";
+                    return " inner join " + segment + " ";
                 case "full join":
-                    return "full join " + segment + " ";
+                    return " full join " + segment + " ";
                 default:
                     throw new IllegalArgumentException();
             }
@@ -61,7 +61,7 @@ public class BaseModel implements Model
     {
         public void append(BaseModel model, StringBuilder builder, List<Object> params)
         {
-            builder.append("on ");
+            builder.append(" on ");
             ((InternalParam) param).renderSql(model, builder, params);
         }
     }
