@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.AnnotatedElement;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class SqlSessionImpl implements SqlSession
@@ -170,12 +171,27 @@ public class SqlSessionImpl implements SqlSession
         return execute(result.sql(), result.paramValues());
     }
 
+    public <T> void insert(List<T> entities)
+    {
+        Model                 model   = Model.batchInsert(entities);
+        BaseModel.ModelResult result  = model.getResult();
+        String                sql     = result.sql();
+        List<Object>          objects = result.paramValues();
+    }
+
     @SuppressWarnings({"unchecked"})
     @Override
     public <T> int insert(T entity)
     {
         BaseModel.ModelResult result = Model.insert(entity).getResult();
         return execute(result.sql(), result.paramValues());
+    }
+
+    @Override
+    public <T> void batchInsert(List<T> list)
+    {
+        BaseModel.ModelResult result = Model.batchInsert(list).getResult();
+        executeBatch(result.sql(), result.paramValues());
     }
 
     @Override
@@ -204,6 +220,19 @@ public class SqlSessionImpl implements SqlSession
     {
         BaseModel.ModelResult result = model.getResult();
         return execute(result.sql(), result.paramValues());
+    }
+
+    public void executeBatch(String sql, List<?> params)
+    {
+        checkIfClosed();
+        try
+        {
+            headSqlExecutor.batchInsert(sql, params, connection, dialect);
+        }
+        catch (Throwable e)
+        {
+            ReflectUtil.throwException(e);
+        }
     }
 
     @Override

@@ -82,6 +82,8 @@ public interface SqlSession extends ConnectionOp
      */
     <T> int insert(T entity);
 
+    <T> void batchInsert(List<T> list);
+
     int execute(String sql, List<Object> params);
 
     /**

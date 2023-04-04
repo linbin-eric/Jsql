@@ -43,6 +43,10 @@ public class MysqlDialect implements Dialect
             {
                 preparedStatement.setTimestamp(index, new Timestamp(date.getTime()));
             }
+            else if (value instanceof Enum<?> enumValue)
+            {
+                preparedStatement.setString(index, enumValue.name());
+            }
             else if (value instanceof Calendar calendar)
             {
                 preparedStatement.setTimestamp(index, new Timestamp(calendar.getTimeInMillis()));

@@ -178,7 +178,7 @@ public class BeanTransfer implements ResultSetTransfer
                         }
                         if (transfers.add(columnTransfer) == false)
                         {
-                            throw new IllegalArgumentException("在一个sql语句中出现重复名称字段，重复字段为:" + columnTransfer.accessor.getField().toString());
+                            throw new IllegalArgumentException("在一个sql语句中出现重复名称字段，重复类属性为:" + columnTransfer.accessor.getField().toString()+",重复的数据库字段为"+tableName+"."+columnName);
                         }
                     }
                     this.columnTransfers = transfers.toArray(ColumnTransfer[]::new);

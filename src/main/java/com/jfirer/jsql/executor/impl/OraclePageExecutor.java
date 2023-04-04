@@ -15,12 +15,6 @@ public class OraclePageExecutor extends NextHolder
     private final ResultSetTransfer countResultTransfer = new IntegerTransfer();
 
     @Override
-    public int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
-    {
-        return next.update(sql, params, connection, dialect);
-    }
-
-    @Override
     public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
     {
         return next.insertWithReturnKey(sql, params, connection, dialect);
@@ -48,11 +42,7 @@ public class OraclePageExecutor extends NextHolder
         return next.queryList(sql, element, params, connection, dialect);
     }
 
-    @Override
-    public Object queryOne(String sql, AnnotatedElement element, List<Object> params, Connection connection, Dialect dialect) throws SQLException
-    {
-        return next.queryOne(sql, element, params, connection, dialect);
-    }
+
 
     @Override
     public int order()

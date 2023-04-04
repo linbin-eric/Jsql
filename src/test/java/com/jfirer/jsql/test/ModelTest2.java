@@ -1,5 +1,6 @@
 package com.jfirer.jsql.test;
 
+import com.jfirer.baseutil.time.Timewatch;
 import com.jfirer.jsql.SessionFactory;
 import com.jfirer.jsql.SessionfactoryConfig;
 import com.jfirer.jsql.dialect.impl.H2Dialect;
@@ -17,6 +18,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Random;
 
 import static com.jfirer.jsql.test.CURDTest.user2TableDml;
 import static com.jfirer.jsql.test.CURDTest.userTableDml;
@@ -131,5 +134,47 @@ public class ModelTest2
     {
         User4 user4 = sqlSession.findOne(Model.selectAll(User4.class).where(Param.eq(User4::getAge, 12)));
         Assert.assertEquals("lin", user4.getName2());
+    }
+
+    @Test
+    public void test_3()
+    {
+        sqlSession.execute(Model.update(User.class).set(User::getId, User::getAge).set(User::getStringEnum, null).where(Param.eq(User::getName, "lin")));
+        User user = sqlSession.findOne(Model.selectAll(User.class).where(Param.eq(User::getName, "lin")));
+        Assert.assertEquals(12, user.getAge());
+    }
+
+    @Test
+    public void test_4()
+    {
+        List<User> list       = new LinkedList<>();
+        String     CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        int sum = 50000;
+        for (int i = 0; i < sum; i++)
+        {
+            User user = new User();
+            user.setAge(new Random().nextInt(100));
+            user.setName(String.valueOf(CHARACTERS.charAt(new Random().nextInt(CHARACTERS.length()))));
+            list.add(user);
+        }
+        Timewatch timewatch = new Timewatch();
+        timewatch.start();
+        sqlSession.beginTransAction();
+        sqlSession.batchInsert(list);
+        sqlSession.commit();
+        timewatch.end();
+        System.out.println("批量插入耗时:"+timewatch.getTotal());
+        timewatch.start();
+        for (User user : list)
+        {
+            sqlSession.beginTransAction();
+            sqlSession.insert(user);
+            sqlSession.commit();
+        }
+        timewatch.end();
+        System.out.println("循环插入耗时:"+timewatch.getTotal());
+
+        Integer count = sqlSession.findOne(Model.selectCount(User.class));
+        Assert.assertEquals(sum*2+2, count.intValue());
     }
 }

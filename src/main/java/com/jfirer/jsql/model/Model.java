@@ -5,6 +5,8 @@ import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.support.LockMode;
 import com.jfirer.jsql.model.support.SFunction;
 
+import java.util.List;
+
 public interface Model
 {
     static Model update(Class<?> ckass)
@@ -44,6 +46,12 @@ public interface Model
         {
             model.addSelect(fn);
         }
+        return model;
+    }
+
+    static <T> Model batchInsert(List<T> entities)
+    {
+        BaseModel model = new BaseModel(new BaseModel.InsertIntoWithObject(entities));
         return model;
     }
 
@@ -123,6 +131,8 @@ public interface Model
     <T> Model addSelectWithFunction(SFunction<T, ?> fn, String function, String asName);
 
     <T> Model set(SFunction<T, ?> fn, Object value);
+
+    <T, R> Model set(SFunction<T, ?> fn1, SFunction<R, ?> fn2);
 
     <T> Model insert(SFunction<T, ?> fn, Object value);
 

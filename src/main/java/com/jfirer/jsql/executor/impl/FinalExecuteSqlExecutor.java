@@ -29,6 +29,24 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
     ConcurrentMap<MethodKey, ResultSetTransfer> methodMap = new ConcurrentHashMap<>();
 
     @Override
+    public void batchInsert(String sql, List<?> params, Connection connection, Dialect dialect)
+    {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql))
+        {
+            for (Object param : params)
+            {
+                dialect.fillStatement(preparedStatement, (List<Object>) param);
+                preparedStatement.addBatch();
+            }
+            preparedStatement.executeBatch();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
     {
         PreparedStatement prepareStatement = null;

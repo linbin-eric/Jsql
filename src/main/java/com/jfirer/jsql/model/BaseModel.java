@@ -1,5 +1,6 @@
 package com.jfirer.jsql.model;
 
+import com.jfirer.baseutil.reflect.ValueAccessor;
 import com.jfirer.jsql.annotation.AutoIncrement;
 import com.jfirer.jsql.annotation.PkGenerator;
 import com.jfirer.jsql.annotation.Sequence;
@@ -10,6 +11,7 @@ import com.jfirer.jsql.model.support.LockMode;
 import com.jfirer.jsql.model.support.SFunction;
 
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -22,7 +24,8 @@ public class BaseModel implements Model
         query,
         delete,
         update,
-        insert
+        insert,
+        batchInsert
     }
 
     public record ModelResult(String sql, Class<?> returnType, List<Object> paramValues, TableEntityInfo.PkReturnType pkReturnType) {}
@@ -66,15 +69,6 @@ public class BaseModel implements Model
         }
     }
 
-    record JoinOn(String segment)
-    {
-        @Override
-        public String toString()
-        {
-            return segment;
-        }
-    }
-
     record Update(Class ckass)
     {
         public String toString()
@@ -86,6 +80,8 @@ public class BaseModel implements Model
     record UpdateWithObject(Object value) {}
 
     record InsertIntoWithObject(Object value) {}
+
+    record BatchInsert(List<Object> list) {}
 
     record SaveWithObject(Object value) {}
 
@@ -109,14 +105,16 @@ public class BaseModel implements Model
 
     class Select
     {
+        /*模式1：直接设定select字段的内容*/
         final String content;
-        String          className;
-        String          fieldName;
-        //两种不同的模式
-        SFunction<?, ?> fn;
-        String          function;
-        String          asName;
-        BaseModel       model;
+        String className;
+        String fieldName;
+        /*---*/
+        /*模式2：通过fn来解析出select字段的内容*/ SFunction<?, ?> fn;
+        String    function;
+        String    asName;
+        BaseModel model;
+        /*---*/
 
         public Select(SFunction<?, ?> fn, String function, String asName, BaseModel model)
         {
@@ -166,7 +164,7 @@ public class BaseModel implements Model
         }
     }
 
-    record set(String columnName, Object value) {}
+    record set(String columnName, Object value, boolean anotherField) {}
 
     record OrderBy(SFunction<?, ?> fn, boolean desc, BaseModel model)
     {
@@ -189,14 +187,14 @@ public class BaseModel implements Model
 
     record Insert(String columnName, Object value) {}
 
-    List<Record>          from    = new LinkedList<>();
-    List<Select>          select  = new LinkedList<>();
-    List<SFunction<?, ?>> exclude = new LinkedList<>();
-    List<Record>          set     = new LinkedList<>();
-    List<Record>          orderBy = new LinkedList<>();
-    List<Record>          groupBy = new LinkedList<>();
-    List<Record>          insert  = new LinkedList<>();
-    private final ModelType                    type;
+    List<Record>          from;
+    List<Select>          select;
+    List<SFunction<?, ?>> exclude;
+    List<Record>          set;
+    List<Record>          orderBy;
+    List<Record>          groupBy;
+    List<Record>          insert;
+    private       ModelType                    type;
     private       Update                       update;
     private       Delete                       delete;
     private       InsertInto                   insertInto;
@@ -205,7 +203,8 @@ public class BaseModel implements Model
     private       Page                         page;
     private       TableEntityInfo.PkReturnType pkReturnType;
     private       LockMode                     lockMode;
-    private final List<Object>                 paramValues = new LinkedList<>();
+    private final List<Object>                 paramValues  = new ArrayList<>();
+    private       boolean                      alreadyBuild = false;
 
     public BaseModel(Delete delete)
     {
@@ -217,23 +216,149 @@ public class BaseModel implements Model
     {
         this.update = update;
         type = ModelType.update;
+        set = new LinkedList<>();
     }
 
     public BaseModel(InsertInto insertInto)
     {
         this.insertInto = insertInto;
         type = ModelType.insert;
+        insert = new LinkedList<>();
     }
 
     public BaseModel()
     {
         type = ModelType.query;
+        select = new LinkedList<>();
+        from = new LinkedList<>();
+        exclude = new LinkedList<>();
+        orderBy = new LinkedList<>();
+        groupBy = new LinkedList<>();
     }
 
     public BaseModel(InsertIntoWithObject insert)
     {
-        this(new InsertInto(insert.value.getClass()));
-        insert(insert.value);
+        this(new InsertInto(insert.value instanceof List ? ((List) insert.value).get(0).getClass() : insert.value.getClass()));
+        if (insert.value instanceof List list)
+        {
+            setBatchInsert(list);
+            type = ModelType.batchInsert;
+        }
+        else
+        {
+            setInsert(insert.value);
+        }
+    }
+
+    private void setBatchInsert(List<?> list)
+    {
+        Object              firstForMode = list.get(0);
+        TableEntityInfo     entityInfo   = TableEntityInfo.parse((Class<?>) firstForMode.getClass());
+        List<ValueAccessor> accessors    = new ArrayList<>();
+        if (entityInfo.getPkInfo() == null)
+        {
+            for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
+            {
+                this.insert.add(new Insert(columnInfo.columnName(), null));
+                accessors.add(columnInfo.accessor());
+            }
+        }
+        else
+        {
+            TableEntityInfo.ColumnInfo pkInfo = entityInfo.getPkInfo();
+            Object                     pk     = pkInfo.accessor().get(firstForMode);
+            if (pk != null)
+            {
+                for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
+                {
+                    this.insert.add(new Insert(columnInfo.columnName(), null));
+                    accessors.add(columnInfo.accessor());
+                }
+            }
+            else
+            {
+                if (pkInfo.field().isAnnotationPresent(PkGenerator.class))
+                {
+                    list.stream().forEach(v -> pkInfo.accessor().setObject(v, entityInfo.getPkGenerator().next()));
+                    for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
+                    {
+                        this.insert.add(new Insert(columnInfo.columnName(), null));
+                        accessors.add(columnInfo.accessor());
+                    }
+                }
+                else if (pkInfo.field().isAnnotationPresent(AutoIncrement.class) || pkInfo.field().isAnnotationPresent(Sequence.class))
+                {
+                    entityInfo.getPropertyNameKeyMap().values().stream()//
+                              .filter(columnInfo -> columnInfo.field() != pkInfo.field())//
+                              .forEach(columnInfo -> {
+                                  this.insert.add(new Insert(columnInfo.columnName(), null));
+                                  accessors.add(columnInfo.accessor());
+                              });
+                    if (pkInfo.field().isAnnotationPresent(Sequence.class))
+                    {
+                        this.insert.add(new Insert(pkInfo.columnName(), pkInfo.field().getAnnotation(Sequence.class)));
+                    }
+                }
+                else
+                {
+                    throw new IllegalArgumentException(pkInfo.field() + "主键没有自动生成，也没有标记自增长或者序列注解，不能在空值情况下执行batchInsert操作");
+                }
+            }
+        }
+        for (Object each : list)
+        {
+            List<Object> single = new ArrayList<>();
+            for (ValueAccessor accessor : accessors)
+            {
+                single.add(accessor.get(each));
+            }
+            paramValues.add(single);
+        }
+    }
+
+    private void setInsert(Object value)
+    {
+        TableEntityInfo entityInfo = TableEntityInfo.parse(value.getClass());
+        if (entityInfo.getPkInfo() == null)
+        {
+            insert(value);
+            pkReturnType = TableEntityInfo.PkReturnType.NO_RETURN_PK;
+        }
+        else
+        {
+            TableEntityInfo.ColumnInfo pkInfo = entityInfo.getPkInfo();
+            Object                     pk     = pkInfo.accessor().get(value);
+            if (pk == null)
+            {
+                if (pkInfo.field().isAnnotationPresent(PkGenerator.class))
+                {
+                    Object next = entityInfo.getPkGenerator().next();
+                    pkInfo.accessor().setObject(value, next);
+                    insert(value);
+                    pkReturnType = TableEntityInfo.PkReturnType.NO_RETURN_PK;
+                }
+                else if (pkInfo.field().isAnnotationPresent(AutoIncrement.class) || pkInfo.field().isAnnotationPresent(Sequence.class))
+                {
+                    entityInfo.getPropertyNameKeyMap().values().stream()//
+                              .filter(columnInfo -> columnInfo.field() != pkInfo.field())//
+                              .forEach(columnInfo -> this.insert.add(new Insert(columnInfo.columnName(), columnInfo.accessor().get(value))));
+                    if (pkInfo.field().isAnnotationPresent(Sequence.class))
+                    {
+                        this.insert.add(new Insert(pkInfo.columnName(), pkInfo.field().getAnnotation(Sequence.class)));
+                    }
+                    pkReturnType = entityInfo.getPkReturnType();
+                }
+                else
+                {
+                    throw new IllegalArgumentException(pkInfo.field() + "主键没有自动生成，也没有标记自增长或者序列注解，不能在空值情况下执行insert操作");
+                }
+            }
+            else
+            {
+                insert(value);
+                pkReturnType = TableEntityInfo.PkReturnType.NO_RETURN_PK;
+            }
+        }
     }
 
     private void insert(Object entity)
@@ -245,6 +370,10 @@ public class BaseModel implements Model
         }
     }
 
+    private void batchInsert(List<?> list)
+    {
+    }
+
     public BaseModel(UpdateWithObject update)
     {
         this(new Update(update.value.getClass()));
@@ -254,11 +383,9 @@ public class BaseModel implements Model
     private void updateByPk(Object entity)
     {
         TableEntityInfo entityInfo = TableEntityInfo.parse(entity.getClass());
-        for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
-        {
-            set.add(new set(columnInfo.columnName(), columnInfo.accessor().get(entity)));
-        }
+        entityInfo.getPropertyNameKeyMap().values().stream().filter(columnInfo -> columnInfo.field() != entityInfo.getPkInfo().field()).forEach(columnInfo -> set.add(new set(columnInfo.columnName(), columnInfo.accessor().get(entity), false)));
         param = new SpecialPkEqParam(entity, entityInfo.getPkInfo());
+        pkReturnType = TableEntityInfo.PkReturnType.NO_RETURN_PK;
     }
 
     @Override
@@ -366,7 +493,27 @@ public class BaseModel implements Model
     {
         TableEntityInfo            entityInfo = TableEntityInfo.parse(update.ckass);
         TableEntityInfo.ColumnInfo columnInfo = entityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName());
-        set.add(new set(entityInfo.getTableName() + "." + columnInfo.columnName(), value));
+        set.add(new set(entityInfo.getTableName() + "." + columnInfo.columnName(), value, false));
+        return this;
+    }
+
+    @Override
+    public <T, R> Model set(SFunction<T, ?> fn1, SFunction<R, ?> fn2)
+    {
+        if (fn2 == null)
+        {
+            //这种情况下，实际上是要给这个属性设置为空值
+            TableEntityInfo            entityInfo = TableEntityInfo.parse(update.ckass);
+            TableEntityInfo.ColumnInfo columnInfo = entityInfo.getPropertyNameKeyMap().get(fn1.resolveFieldName());
+            set.add(new set(entityInfo.getTableName() + "." + columnInfo.columnName(), null, false));
+        }
+        else
+        {
+            TableEntityInfo            entityInfo  = TableEntityInfo.parse(update.ckass);
+            TableEntityInfo.ColumnInfo columnInfo1 = entityInfo.getPropertyNameKeyMap().get(fn1.resolveFieldName());
+            TableEntityInfo.ColumnInfo columnInfo2 = entityInfo.getPropertyNameKeyMap().get(fn2.resolveFieldName());
+            set.add(new set(entityInfo.getTableName() + "." + columnInfo1.columnName(), entityInfo.getTableName() + "." + columnInfo2.columnName(), true));
+        }
         return this;
     }
 
@@ -508,6 +655,14 @@ public class BaseModel implements Model
     @Override
     public ModelResult getResult()
     {
+        if (alreadyBuild == false)
+        {
+            alreadyBuild = true;
+        }
+        else
+        {
+            throw new IllegalStateException();
+        }
         String sql = getSql();
         if (page != null)
         {
@@ -518,7 +673,6 @@ public class BaseModel implements Model
 
     private String getSql()
     {
-        paramValues.clear();
         StringBuilder builder = new StringBuilder();
         switch (type)
         {
@@ -633,6 +787,10 @@ public class BaseModel implements Model
                         paramValues.addAll(result.paramValues());
                         return ((set) record).columnName + "=( " + result.sql + ")";
                     }
+                    else if (set.anotherField)
+                    {
+                        return ((set) record).columnName + " = " + ((BaseModel.set) record).value;
+                    }
                     else
                     {
                         paramValues.add(set.value);
@@ -674,6 +832,24 @@ public class BaseModel implements Model
                 builder.append(" ( ").append(Arrays.stream(array).map(data -> data.columnName).collect(Collectors.joining(","))).append(") values ( ");
                 builder.append(Arrays.stream(array).map(data -> data.valueSegment.equals("?") ? "?" : "(" + data.valueSegment + ")").collect(Collectors.joining(","))).append(")");
             }
+            case batchInsert ->
+            {
+                builder.append(insertInto.toString());
+                record WrapperData(String columnName, String valueSegment) {}
+                WrapperData[] array = insert.stream().map(record -> {
+                    Insert insert = (Insert) record;
+                    if (insert.value instanceof Sequence sequence)
+                    {
+                        return new WrapperData(insert.columnName, sequence.value() + ".NEXTVAL");
+                    }
+                    else
+                    {
+                        return new WrapperData(insert.columnName, "?");
+                    }
+                }).toArray(WrapperData[]::new);
+                builder.append(" ( ").append(Arrays.stream(array).map(data -> data.columnName).collect(Collectors.joining(","))).append(") values ( ");
+                builder.append(Arrays.stream(array).map(data -> data.valueSegment.equals("?") ? "?" : "(" + data.valueSegment + ")").collect(Collectors.joining(","))).append(")");
+            }
         }
         return builder.toString();
     }
@@ -692,51 +868,19 @@ public class BaseModel implements Model
     public BaseModel(SaveWithObject save)
     {
         TableEntityInfo entityInfo = TableEntityInfo.parse(save.value.getClass());
-        if (entityInfo.getPkInfo() == null)
+        if (entityInfo.getPkInfo() == null || entityInfo.getPkInfo().accessor().get(save.value) == null)
         {
             type = ModelType.insert;
-            insertInto = new InsertInto(entityInfo.getEntityClass());
-            insert(save.value);
-            pkReturnType = TableEntityInfo.PkReturnType.NO_RETURN_PK;
+            insert = new LinkedList<>();
+            insertInto = new InsertInto(save.value.getClass());
+            setInsert(save.value);
         }
         else
         {
-            TableEntityInfo.ColumnInfo pkInfo = entityInfo.getPkInfo();
-            Object                     pk     = pkInfo.accessor().get(save.value);
-            if (pk == null)
-            {
-                type = ModelType.insert;
-                insertInto = new InsertInto(entityInfo.getEntityClass());
-                if (pkInfo.field().isAnnotationPresent(PkGenerator.class))
-                {
-                    Object next = entityInfo.getPkGenerator().next();
-                    pkInfo.accessor().setObject(save.value, next);
-                    insert(save.value);
-                    pkReturnType = TableEntityInfo.PkReturnType.NO_RETURN_PK;
-                }
-                else if (pkInfo.field().isAnnotationPresent(AutoIncrement.class) || pkInfo.field().isAnnotationPresent(Sequence.class))
-                {
-                    entityInfo.getPropertyNameKeyMap().values().stream()//
-                              .filter(columnInfo -> columnInfo.field() != pkInfo.field())//
-                              .forEach(columnInfo -> insert.add(new Insert(columnInfo.columnName(), columnInfo.accessor().get(save.value))));
-                    if (pkInfo.field().isAnnotationPresent(Sequence.class))
-                    {
-                        insert.add(new Insert(pkInfo.columnName(), pkInfo.field().getAnnotation(Sequence.class)));
-                    }
-                    pkReturnType = entityInfo.getPkReturnType();
-                }
-                else
-                {
-                    throw new IllegalArgumentException(pkInfo.field() + "主键没有自动生成，也没有标记自增长或者序列注解，不能在空值情况下执行save操作");
-                }
-            }
-            else
-            {
-                type = ModelType.update;
-                update = new Update(save.value.getClass());
-                updateByPk(save.value);
-                pkReturnType = TableEntityInfo.PkReturnType.NO_RETURN_PK;
-            }
+            type = ModelType.update;
+            set = new LinkedList<>();
+            update = new Update(save.value.getClass());
+            updateByPk(save.value);
         }
     }
 }
