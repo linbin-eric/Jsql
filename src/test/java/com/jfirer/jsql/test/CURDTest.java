@@ -99,9 +99,10 @@ public class CURDTest
         session.save(user);
         session.close();
         session = sessionFactory.openSession();
-        ResultSet resultSet = session.getConnection().prepareStatement("select age from user where name2 ='1221'").executeQuery();
+        ResultSet resultSet = session.getConnection().prepareStatement("select age,id from user where name2 ='1221'").executeQuery();
         Assert.assertTrue(resultSet.next());
         Assert.assertEquals(12, resultSet.getInt(1));
+        assertEquals(user.getId().intValue(),resultSet.getInt(2));
         session.close();
     }
 

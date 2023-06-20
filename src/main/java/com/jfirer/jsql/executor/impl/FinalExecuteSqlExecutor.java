@@ -33,10 +33,16 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
     {
         try (PreparedStatement preparedStatement = connection.prepareStatement(sql))
         {
+            int count = 0;
             for (Object param : params)
             {
                 dialect.fillStatement(preparedStatement, (List<Object>) param);
                 preparedStatement.addBatch();
+                if (++count > 1000)
+                {
+                    preparedStatement.executeBatch();
+                    preparedStatement.clearBatch();
+                }
             }
             preparedStatement.executeBatch();
         }

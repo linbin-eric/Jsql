@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.AnnotatedElement;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class SqlSessionImpl implements SqlSession
@@ -140,26 +139,18 @@ public class SqlSessionImpl implements SqlSession
         return connection;
     }
 
+
     @SuppressWarnings("unchecked")
     @Override
     public <T> int save(T entity)
     {
-        BaseModel.ModelResult result = Model.save(entity).getResult();
-        if (result.pkReturnType() != TableEntityInfo.PkReturnType.NO_RETURN_PK)
+        TableEntityInfo       tableEntityInfo  = TableEntityInfo.parse(entity.getClass());
+        if (tableEntityInfo.getPkInfo() == null || tableEntityInfo.getPkInfo().accessor().get(entity) == null)
         {
-            String                     pk     = insertReturnPk(result.sql(), result.paramValues());
-            TableEntityInfo.ColumnInfo pkInfo = TableEntityInfo.parse(entity.getClass()).getPkInfo();
-            switch (result.pkReturnType())
-            {
-                case STRING -> pkInfo.accessor().setObject(entity, pk);
-                case INT -> pkInfo.accessor().setObject(entity, Integer.valueOf(pk));
-                case LONG -> pkInfo.accessor().setObject(entity, Long.valueOf(pk));
-            }
-            return 1;
+            return insert(entity);
         }
-        else
-        {
-            return execute(result.sql(), result.paramValues());
+        else{
+         return   update(entity);
         }
     }
 
@@ -184,7 +175,22 @@ public class SqlSessionImpl implements SqlSession
     public <T> int insert(T entity)
     {
         BaseModel.ModelResult result = Model.insert(entity).getResult();
-        return execute(result.sql(), result.paramValues());
+        if (result.pkReturnType() != TableEntityInfo.PkReturnType.NO_RETURN_PK)
+        {
+            String                     pk     = insertReturnPk(result.sql(), result.paramValues());
+            TableEntityInfo.ColumnInfo pkInfo = TableEntityInfo.parse(entity.getClass()).getPkInfo();
+            switch (result.pkReturnType())
+            {
+                case STRING -> pkInfo.accessor().setObject(entity, pk);
+                case INT -> pkInfo.accessor().setObject(entity, Integer.valueOf(pk));
+                case LONG -> pkInfo.accessor().setObject(entity, Long.valueOf(pk));
+            }
+            return 1;
+        }
+        else
+        {
+            return execute(result.sql(), result.paramValues());
+        }
     }
 
     @Override

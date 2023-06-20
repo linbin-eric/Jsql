@@ -81,10 +81,6 @@ public class BaseModel implements Model
 
     record InsertIntoWithObject(Object value) {}
 
-    record BatchInsert(List<Object> list) {}
-
-    record SaveWithObject(Object value) {}
-
     record InsertInto(Class<?> ckass)
     {
         @Override
@@ -368,10 +364,6 @@ public class BaseModel implements Model
         {
             this.insert.add(new Insert(columnInfo.columnName(), columnInfo.accessor().get(entity)));
         }
-    }
-
-    private void batchInsert(List<?> list)
-    {
     }
 
     public BaseModel(UpdateWithObject update)
@@ -852,36 +844,6 @@ public class BaseModel implements Model
             }
         }
         return builder.toString();
-    }
-
-    /**
-     * 保存一个对象到数据库。会根据该对象的主键属性是否为空进行不同的行为。
-     * 1、不存在主键的，则按照全量插入处理。
-     * 2.1、存在主键，且主键属性有值，按照全量插入处理。
-     * 2.2、存在主键，主键属性为空，主键有PkGenerator注解，则使用对应的生成器生成主键属性，赋值给入参对象后，按照全量插入处理。
-     * 2.3、存在主键，主键属性为空，主键上有AutoIncrement主键，则除了主键属性外，所有的属性均插入数据库，并且返回数据库自动生成的主键值。
-     * 2.4、存在主键，主键属性为空，主键上有Sequence主键，则除了主键属性外，所有的属性均插入数据库，并且返回数据库自动生成的主键值。
-     * 2.5、抛出异常
-     *
-     * @return
-     */
-    public BaseModel(SaveWithObject save)
-    {
-        TableEntityInfo entityInfo = TableEntityInfo.parse(save.value.getClass());
-        if (entityInfo.getPkInfo() == null || entityInfo.getPkInfo().accessor().get(save.value) == null)
-        {
-            type = ModelType.insert;
-            insert = new LinkedList<>();
-            insertInto = new InsertInto(save.value.getClass());
-            setInsert(save.value);
-        }
-        else
-        {
-            type = ModelType.update;
-            set = new LinkedList<>();
-            update = new Update(save.value.getClass());
-            updateByPk(save.value);
-        }
     }
 }
 

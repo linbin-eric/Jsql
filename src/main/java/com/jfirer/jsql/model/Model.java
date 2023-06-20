@@ -29,11 +29,6 @@ public interface Model
         return new BaseModel(new BaseModel.Delete(ckass));
     }
 
-    static <T> Model save(T entity)
-    {
-        return new BaseModel(new BaseModel.SaveWithObject(entity));
-    }
-
     static <T> Model update(T entity)
     {
         return new BaseModel(new BaseModel.UpdateWithObject(entity));
