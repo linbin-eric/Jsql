@@ -8,6 +8,7 @@ import com.jfirer.baseutil.smc.model.ClassModel;
 import com.jfirer.baseutil.smc.model.FieldModel;
 import com.jfirer.baseutil.smc.model.MethodModel;
 import com.jfirer.jsql.analyse.template.Template;
+import com.jfirer.jsql.analyse.template2.Template2;
 import com.jfirer.jsql.analyse.token.SqlLexer;
 import com.jfirer.jsql.annotation.Sql;
 import com.jfirer.jsql.metadata.Page;
@@ -207,6 +208,7 @@ public class MapperGenerator
         ClassModel classModel = new ClassModel(ckass.getSimpleName() + "$Mapper$" + count.getAndIncrement(), AbstractMapper.class, ckass);
         classModel.addImport(AbstractMapper.class);
         classModel.addImport(Template.class);
+        classModel.addImport(Template2.class);
         classModel.addImport(Map.class);
         classModel.addImport(HashMap.class);
         classModel.addImport(String.class);
@@ -231,7 +233,7 @@ public class MapperGenerator
         Sql        annotation        = method.getAnnotation(Sql.class);
         String     formatSql         = SqlLexer.parse(annotation.sql()).transfer(tableEntityInfos).format();
         String     templateFieldName = "template_" + (fieldNameCount.getAndIncrement());
-        FieldModel fieldModel        = new FieldModel(templateFieldName, Template.class, "Template.parse(\"" + formatSql + "\")", classModel);
+        FieldModel fieldModel        = new FieldModel(templateFieldName, Template2.class, "Template2.parse(\"" + formatSql + "\")", classModel);
         classModel.addField(fieldModel);
         Class<?>[] parameterTypes = method.getParameterTypes();
         String     paramNames     = annotation.paramNames();
