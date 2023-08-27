@@ -213,7 +213,7 @@ public class Template2
                     {
                         if (mark != index)
                         {
-                            builder.append("print('").append(content.substring(mark, index)).append("',outputStr);\r\n");
+                            builder.append("print('").append(content.substring(mark, index).replace('\'','"')).append("',outputStr);\r\n");
                         }
                         mark = index += 2;
                         type = IN_VARIABLE;
@@ -222,7 +222,7 @@ public class Template2
                     {
                         if (mark != index)
                         {
-                            builder.append("print('").append(content.substring(mark, index)).append("',outputStr);\r\n");
+                            builder.append("print('").append(content.substring(mark, index).replace('\'','"')).append("',outputStr);\r\n");
                         }
                         mark = index += 2;
                         type = IN_PARAM;
@@ -231,7 +231,7 @@ public class Template2
                     {
                         if (mark != index)
                         {
-                            builder.append("print('").append(content.substring(mark, index)).append("',outputStr);\r\n");
+                            builder.append("print('").append(content.substring(mark, index).replace('\'','"')).append("',outputStr);\r\n");
                         }
                         mark = index += 2;
                         type = IN_COLLECTION;
@@ -240,7 +240,7 @@ public class Template2
                     {
                         if (mark != index)
                         {
-                            builder.append("print('").append(content.substring(mark, index)).append("',outputStr);\r\n");
+                            builder.append("print('").append(content.substring(mark, index).replace('\'','"')).append("',outputStr);\r\n");
                         }
                         mark = index += 2;
                         type = IN_CODE_AREA;
@@ -299,7 +299,7 @@ public class Template2
         }
         if (mark != index)
         {
-            builder.append("print('").append(content.substring(mark, index)).append("',outputStr);\r\n");
+            builder.append("print('").append(content.substring(mark, index).replace('\'','"')).append("',outputStr);\r\n");
         }
         return new Template2(Expression2.parseMutli(builder.toString()));
     }
