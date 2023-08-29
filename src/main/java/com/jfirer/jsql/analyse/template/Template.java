@@ -1,4 +1,4 @@
-package com.jfirer.jsql.analyse.template2;
+package com.jfirer.jsql.analyse.template;
 
 import com.jfirer.jfireel.expression.Expression;
 import com.jfirer.jfireel.expression.Operand;
@@ -7,7 +7,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-public class Template2
+public class Template
 {
     public static final Object print(Map<String, Object> params, Operand[] operands)
     {
@@ -165,17 +165,9 @@ public class Template2
 
     static
     {
-        try
-        {
-            Expression.registerInnerCall("print", Template2::print);
-            Expression.registerMethod(Template2.class.getDeclaredMethod("print", Object.class, StringBuilder.class));
-            Expression.registerMethod(Template2.class.getDeclaredMethod("print", Object.class, List.class, StringBuilder.class));
-            Expression.registerMethod(Template2.class.getDeclaredMethod("printCollection", Object.class, List.class, StringBuilder.class));
-        }
-        catch (NoSuchMethodException e)
-        {
-            throw new RuntimeException(e);
-        }
+        Expression.registerInnerCall("print", Template::print);
+        Expression.registerInnerCall("printParam", Template::printParam);
+        Expression.registerInnerCall("printCollection", Template::printCollection);
     }
 
     private static final int     IN_TEXT       = 1;
@@ -185,12 +177,12 @@ public class Template2
     private static final int     IN_COLLECTION = 5;
     private final        Operand operand;
 
-    private Template2(Operand operand)
+    private Template(Operand operand)
     {
         this.operand = operand;
     }
 
-    public static Template2 parse(String content)
+    public static Template parse(String content)
     {
         StringBuilder builder = new StringBuilder();
         int           type    = IN_TEXT;
@@ -248,7 +240,7 @@ public class Template2
                     {
                         if (mark != index)
                         {
-                            builder.append("print('").append(content.substring(mark, index).replace('\'', '"')).append("',outputStr);\r\n");
+                            builder.append("print('").append(content.substring(mark, index).replace('\'', '"')).append("');\r\n");
                         }
                         mark = index += 2;
                         type = IN_CODE_AREA;
@@ -262,7 +254,7 @@ public class Template2
                 {
                     if (c == '}')
                     {
-                        builder.append("print(").append(content.substring(mark, index)).append(",outputStr);\r\n");
+                        builder.append("print(").append(content.substring(mark, index)).append(");\r\n");
                         mark = index += 1;
                         type = IN_TEXT;
                     }
@@ -276,7 +268,7 @@ public class Template2
                     if (c == '}')
                     {
                         String sub = content.substring(mark, index);
-                        builder.append("print(" + sub + ",sqlParams,outputStr);\r\n");
+                        builder.append("printParam(" + sub + ");\r\n");
                         mark = index += 1;
                         type = IN_TEXT;
                     }
@@ -290,7 +282,7 @@ public class Template2
                     if (c == '}')
                     {
                         String sub = content.substring(mark, index);
-                        builder.append("printCollection(" + sub + ",sqlParams,outputStr);\r\n");
+                        builder.append("printCollection(" + sub + ");\r\n");
                         mark = index += 1;
                         type = IN_TEXT;
                     }
@@ -309,7 +301,7 @@ public class Template2
         {
             builder.append("print('").append(content.substring(mark, index).replace('\'', '"')).append("',outputStr);\r\n");
         }
-        return new Template2(Expression.parseMutli(builder.toString()));
+        return new Template(Expression.parseMutli(builder.toString()));
     }
 
     public String render(Map<String, Object> variables, List<Object> sqlParams)
