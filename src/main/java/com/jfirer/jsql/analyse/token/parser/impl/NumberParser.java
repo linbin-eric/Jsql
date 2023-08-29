@@ -1,6 +1,6 @@
 package com.jfirer.jsql.analyse.token.parser.impl;
 
-import com.jfirer.jfireel.expression.util.CharType;
+import com.jfirer.jfireel.expression.CharType;
 import com.jfirer.jsql.analyse.exception.IllegalFormatException;
 import com.jfirer.jsql.analyse.token.Token;
 import com.jfirer.jsql.analyse.token.TokenType;

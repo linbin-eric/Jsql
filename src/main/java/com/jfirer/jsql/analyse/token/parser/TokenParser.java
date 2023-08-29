@@ -1,6 +1,6 @@
 package com.jfirer.jsql.analyse.token.parser;
 
-import com.jfirer.jfireel.expression.util.CharType;
+import com.jfirer.jfireel.expression.CharType;
 import com.jfirer.jsql.analyse.token.Token;
 
 import java.util.Deque;

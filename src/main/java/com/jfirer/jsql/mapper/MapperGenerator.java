@@ -7,7 +7,7 @@ import com.jfirer.baseutil.smc.compiler.CompileHelper;
 import com.jfirer.baseutil.smc.model.ClassModel;
 import com.jfirer.baseutil.smc.model.FieldModel;
 import com.jfirer.baseutil.smc.model.MethodModel;
-import com.jfirer.jsql.analyse.template.Template;
+import com.jfirer.jfireel.template.Template;
 import com.jfirer.jsql.analyse.template2.Template2;
 import com.jfirer.jsql.analyse.token.SqlLexer;
 import com.jfirer.jsql.annotation.Sql;

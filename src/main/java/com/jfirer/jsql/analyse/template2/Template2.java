@@ -1,7 +1,7 @@
 package com.jfirer.jsql.analyse.template2;
 
-import com.jfirer.jfireel.expression2.Expression2;
-import com.jfirer.jfireel.expression2.Operand;
+import com.jfirer.jfireel.expression.Expression;
+import com.jfirer.jfireel.expression.Operand;
 
 import java.util.Collection;
 import java.util.List;
@@ -9,19 +9,25 @@ import java.util.Map;
 
 public class Template2
 {
-    public static final void print(Object value, StringBuilder builder)
+    public static final Object print(Map<String, Object> params, Operand[] operands)
     {
-        builder.append(value);
+        StringBuilder outputStr = (StringBuilder) params.get("outputStr");
+        outputStr.append(operands[0].calculate(params));
+        return null;
     }
 
-    public static final void print(Object value, List<Object> sqlParams, StringBuilder builder)
+    public static final Object printParam(Map<String, Object> params, Operand[] operands)
     {
-        builder.append("?");
-        sqlParams.add(value);
+        ((StringBuilder) params.get("outputStr")).append("?");
+        ((List<Object>) params.get("sqlParams")).add(operands[0].calculate(params));
+        return null;
     }
 
-    public static void printCollection(Object result, List<Object> sqlParams, StringBuilder builder)
+    public static Object printCollection(Map<String, Object> params, Operand[] operands)
     {
+        Object        result    = operands[0].calculate(params);
+        StringBuilder builder   = (StringBuilder) params.get("outputStr");
+        List<Object>  sqlParams = (List<Object>) params.get("sqlParams");
         if (result instanceof Collection<?>)
         {
             builder.append("(");
@@ -154,15 +160,17 @@ public class Template2
         {
             throw new IllegalArgumentException("参数不正确，应该放入集合或者数组，请检查");
         }
+        return null;
     }
 
     static
     {
         try
         {
-            Expression2.registerMethod(Template2.class.getDeclaredMethod("print", Object.class, StringBuilder.class));
-            Expression2.registerMethod(Template2.class.getDeclaredMethod("print", Object.class, List.class, StringBuilder.class));
-            Expression2.registerMethod(Template2.class.getDeclaredMethod("printCollection", Object.class, List.class, StringBuilder.class));
+            Expression.registerInnerCall("print", Template2::print);
+            Expression.registerMethod(Template2.class.getDeclaredMethod("print", Object.class, StringBuilder.class));
+            Expression.registerMethod(Template2.class.getDeclaredMethod("print", Object.class, List.class, StringBuilder.class));
+            Expression.registerMethod(Template2.class.getDeclaredMethod("printCollection", Object.class, List.class, StringBuilder.class));
         }
         catch (NoSuchMethodException e)
         {
@@ -213,7 +221,7 @@ public class Template2
                     {
                         if (mark != index)
                         {
-                            builder.append("print('").append(content.substring(mark, index).replace('\'','"')).append("',outputStr);\r\n");
+                            builder.append("print('").append(content.substring(mark, index).replace('\'', '"')).append("');\r\n");
                         }
                         mark = index += 2;
                         type = IN_VARIABLE;
@@ -222,7 +230,7 @@ public class Template2
                     {
                         if (mark != index)
                         {
-                            builder.append("print('").append(content.substring(mark, index).replace('\'','"')).append("',outputStr);\r\n");
+                            builder.append("print('").append(content.substring(mark, index).replace('\'', '"')).append("');\r\n");
                         }
                         mark = index += 2;
                         type = IN_PARAM;
@@ -231,7 +239,7 @@ public class Template2
                     {
                         if (mark != index)
                         {
-                            builder.append("print('").append(content.substring(mark, index).replace('\'','"')).append("',outputStr);\r\n");
+                            builder.append("print('").append(content.substring(mark, index).replace('\'', '"')).append("');\r\n");
                         }
                         mark = index += 2;
                         type = IN_COLLECTION;
@@ -240,7 +248,7 @@ public class Template2
                     {
                         if (mark != index)
                         {
-                            builder.append("print('").append(content.substring(mark, index).replace('\'','"')).append("',outputStr);\r\n");
+                            builder.append("print('").append(content.substring(mark, index).replace('\'', '"')).append("',outputStr);\r\n");
                         }
                         mark = index += 2;
                         type = IN_CODE_AREA;
@@ -299,9 +307,9 @@ public class Template2
         }
         if (mark != index)
         {
-            builder.append("print('").append(content.substring(mark, index).replace('\'','"')).append("',outputStr);\r\n");
+            builder.append("print('").append(content.substring(mark, index).replace('\'', '"')).append("',outputStr);\r\n");
         }
-        return new Template2(Expression2.parseMutli(builder.toString()));
+        return new Template2(Expression.parseMutli(builder.toString()));
     }
 
     public String render(Map<String, Object> variables, List<Object> sqlParams)
