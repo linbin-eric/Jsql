@@ -38,7 +38,7 @@ public class TextParser extends TokenParser
                 offset++;
             }
             String text = sql.substring(index, offset + 1);
-            tokens.push(new Token(text.replace("\"","\\\""), TokenType.TEXT));
+            tokens.push(new Token(text, TokenType.TEXT));
             return offset + 1;
         }
     }
