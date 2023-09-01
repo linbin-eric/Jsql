@@ -299,7 +299,7 @@ public class Template
         }
         if (mark != index)
         {
-            builder.append("print('").append(content.substring(mark, index).replace('\'', '"')).append("',outputStr);\r\n");
+            builder.append("print(\"").append(content.substring(mark, index)).append("\",outputStr);\r\n");
         }
         return new Template(Expression.parseMutli(builder.toString()));
     }
