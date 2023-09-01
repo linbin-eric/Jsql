@@ -20,7 +20,7 @@ public class TextParser extends TokenParser
             int index = offset;
             offset += 1;
             int length = sql.length();
-            while (offset < length && getChar(offset, sql) != '\'')
+            while (offset < length && (getChar(offset, sql) != '\'' || getChar(offset - 1, sql) == '\\'))
             {
                 offset++;
             }
@@ -33,7 +33,7 @@ public class TextParser extends TokenParser
             int index = offset;
             offset += 1;
             int length = sql.length();
-            while (offset < length && getChar(offset, sql) != '"')
+            while (offset < length && (getChar(offset, sql) != '"' || getChar(offset - 1, sql) == '\\'))
             {
                 offset++;
             }
