@@ -11,35 +11,19 @@ public class TextParser extends TokenParser
     @Override
     public int parse(String sql, int offset, Deque<Token> tokens)
     {
-        if (getChar(offset, sql) != '\'' && getChar(offset, sql) != '"')
+        if (getChar(offset, sql) != '\'')
         {
             return next.parse(sql, offset, tokens);
         }
-        if (getChar(offset, sql) == '\'')
+        int index = offset;
+        offset += 1;
+        int length = sql.length();
+        while (offset < length && getChar(offset, sql) != '\'')
         {
-            int index = offset;
-            offset += 1;
-            int length = sql.length();
-            while (offset < length && (getChar(offset, sql) != '\'' || getChar(offset - 1, sql) == '\\'))
-            {
-                offset++;
-            }
-            String text = sql.substring(index, offset + 1);
-            tokens.push(new Token(text, TokenType.TEXT));
-            return offset + 1;
+            offset++;
         }
-        else
-        {
-            int index = offset;
-            offset += 1;
-            int length = sql.length();
-            while (offset < length && (getChar(offset, sql) != '"' || getChar(offset - 1, sql) == '\\'))
-            {
-                offset++;
-            }
-            String text = sql.substring(index, offset + 1);
-            tokens.push(new Token(text, TokenType.TEXT));
-            return offset + 1;
-        }
+        String text = sql.substring(index, offset + 1);
+        tokens.push(new Token(text, TokenType.TEXT));
+        return offset + 1;
     }
 }
