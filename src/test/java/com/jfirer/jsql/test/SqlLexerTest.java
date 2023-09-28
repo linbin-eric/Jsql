@@ -26,7 +26,9 @@ public class SqlLexerTest
         sql = "select name as n from user where age>14";
         Assert.assertEquals("SELECT name AS n FROM user WHERE age>14", SqlLexer.parse(sql).format());
         //
-        sql = "select name,age from user where id!=1 and sex=1";
+        sql = """
+        select name,age from user where id!=1 
+        and sex=1""";
         Assert.assertEquals("SELECT name,age FROM user WHERE id!=1 AND sex=1", SqlLexer.parse(sql).format());
         //
         sql = "select name ,  age from user where (name='sada' and sex=1) or age >=13";

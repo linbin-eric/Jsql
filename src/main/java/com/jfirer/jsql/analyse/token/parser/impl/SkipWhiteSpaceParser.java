@@ -1,5 +1,6 @@
 package com.jfirer.jsql.analyse.token.parser.impl;
 
+import com.jfirer.jsql.analyse.token.Symbol;
 import com.jfirer.jsql.analyse.token.Token;
 import com.jfirer.jsql.analyse.token.parser.TokenParser;
 
@@ -10,8 +11,12 @@ public class SkipWhiteSpaceParser extends TokenParser
     @Override
     public int parse(String sql, int offset, Deque<Token> tokens)
     {
-        offset = skipWhiteSpace(offset, sql);
-        return next.parse(sql, offset, tokens);
+        int next_offset = skipWhiteSpace(offset, sql);
+        if (next_offset != offset)
+        {
+            tokens.push(new Token(Symbol.SPACE));
+        }
+        return next.parse(sql, next_offset, tokens);
     }
 
     protected int skipWhiteSpace(int offset, String el)
@@ -19,7 +24,7 @@ public class SkipWhiteSpaceParser extends TokenParser
         do
         {
             char c = getChar(offset, el);
-            if ( c == '\r' || c == '\n' || c == '\t')
+            if (c == '\r' || c == '\n' || c == '\t')
             {
                 offset++;
             }
@@ -27,7 +32,6 @@ public class SkipWhiteSpaceParser extends TokenParser
             {
                 return offset;
             }
-        }
-        while (true);
+        } while (true);
     }
 }
