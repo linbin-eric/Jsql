@@ -25,7 +25,7 @@ public class SqlLog extends NextHolder
     @Override
     public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
     {
-        logger.debug("traceId:{} 执行的sql:{},参数：{}", TRACEID.currentTraceId(), sql, params);
+        logger.trace("traceId:{} 执行的sql:{},参数：{}", TRACEID.currentTraceId(), sql, params);
         return next.insertWithReturnKey(sql, params, connection, dialect);
     }
 

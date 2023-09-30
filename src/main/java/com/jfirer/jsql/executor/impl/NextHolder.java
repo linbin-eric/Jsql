@@ -19,12 +19,6 @@ public abstract class NextHolder implements SqlExecutor
     }
 
     @Override
-    public void batchInsert(String sql, List<?> params, Connection connection, Dialect dialect)
-    {
-        next.batchInsert(sql, params, connection, dialect);
-    }
-
-    @Override
     public int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
     {
         return next.update(sql, params, connection, dialect);

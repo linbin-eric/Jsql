@@ -1,6 +1,6 @@
 package com.jfirer.jsql.model;
 
-import com.jfirer.jsql.model.impl.*;
+import com.jfirer.jsql.model.param.*;
 import com.jfirer.jsql.model.support.SFunction;
 
 import java.util.function.Supplier;

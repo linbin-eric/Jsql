@@ -1,34 +1,27 @@
 package com.jfirer.jsql.model;
 
-import com.jfirer.baseutil.reflect.ValueAccessor;
-import com.jfirer.jsql.annotation.AutoIncrement;
-import com.jfirer.jsql.annotation.PkGenerator;
-import com.jfirer.jsql.annotation.Sequence;
 import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.metadata.TableEntityInfo;
-import com.jfirer.jsql.model.impl.SpecialPkEqParam;
 import com.jfirer.jsql.model.support.LockMode;
 import com.jfirer.jsql.model.support.SFunction;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class BaseModel implements Model
 {
-    enum ModelType
+    public enum ModelType
     {
-        query,
-        delete,
-        update,
-        insert,
-        batchInsert
+        query, delete, update, insert, batchInsert
     }
 
-    public record ModelResult(String sql, Class<?> returnType, List<Object> paramValues, TableEntityInfo.PkReturnType pkReturnType) {}
+    public record ModelResult(String sql, Class<?> returnType, List<Object> paramValues,
+                              TableEntityInfo.PkReturnType pkReturnType)
+    {
+    }
 
     record Table(Class<?> tableClass, String asName, String mode)
     {
@@ -77,19 +70,6 @@ public class BaseModel implements Model
         }
     }
 
-    record UpdateWithObject(Object value) {}
-
-    record InsertIntoWithObject(Object value) {}
-
-    record InsertInto(Class<?> ckass)
-    {
-        @Override
-        public String toString()
-        {
-            return "insert into " + TableEntityInfo.parse(ckass).getTableName() + " ";
-        }
-    }
-
     record Delete(Class ckass)
     {
         @Override
@@ -114,11 +94,11 @@ public class BaseModel implements Model
 
         public Select(SFunction<?, ?> fn, String function, String asName, BaseModel model)
         {
-            this.fn = fn;
+            this.fn       = fn;
             this.function = function;
-            this.asName = asName;
-            this.model = model;
-            this.content = null;
+            this.asName   = asName;
+            this.model    = model;
+            this.content  = null;
         }
 
         public Select(String content)
@@ -128,7 +108,7 @@ public class BaseModel implements Model
 
         public Select(String content, String className, String fieldName)
         {
-            this.content = content;
+            this.content   = content;
             this.className = className;
             this.fieldName = fieldName;
         }
@@ -160,7 +140,9 @@ public class BaseModel implements Model
         }
     }
 
-    record set(String columnName, Object value, boolean anotherField) {}
+    record set(String columnName, Object value, boolean anotherField)
+    {
+    }
 
     record OrderBy(SFunction<?, ?> fn, boolean desc, BaseModel model)
     {
@@ -181,203 +163,32 @@ public class BaseModel implements Model
         }
     }
 
-    record Insert(String columnName, Object value) {}
+    public record Insert(String columnName, Object value)
+    {
+    }
 
     List<Record>          from;
     List<Select>          select;
     List<SFunction<?, ?>> exclude;
-    List<Record>          set;
     List<Record>          orderBy;
     List<Record>          groupBy;
-    List<Record>          insert;
-    private       ModelType                    type;
-    private       Update                       update;
-    private       Delete                       delete;
-    private       InsertInto                   insertInto;
-    private       Param                        param;
-    private       Class<?>                     returnType;
-    private       Page                         page;
-    private       TableEntityInfo.PkReturnType pkReturnType;
-    private       LockMode                     lockMode;
-    private final List<Object>                 paramValues  = new ArrayList<>();
-    private       boolean                      alreadyBuild = false;
-
-    public BaseModel(Delete delete)
-    {
-        this.delete = delete;
-        type = ModelType.delete;
-    }
-
-    public BaseModel(Update update)
-    {
-        this.update = update;
-        type = ModelType.update;
-        set = new LinkedList<>();
-    }
-
-    public BaseModel(InsertInto insertInto)
-    {
-        this.insertInto = insertInto;
-        type = ModelType.insert;
-        insert = new LinkedList<>();
-    }
+    protected       ModelType                    type;
+    protected       Param                        param;
+    protected       Class<?>                     returnType;
+    protected       Page                         page;
+    protected       TableEntityInfo.PkReturnType pkReturnType;
+    protected       LockMode                     lockMode;
+    protected final List<Object>                 paramValues  = new ArrayList<>();
+    protected       boolean                      alreadyBuild = false;
 
     public BaseModel()
     {
-        type = ModelType.query;
-        select = new LinkedList<>();
-        from = new LinkedList<>();
+        type    = ModelType.query;
+        select  = new LinkedList<>();
+        from    = new LinkedList<>();
         exclude = new LinkedList<>();
         orderBy = new LinkedList<>();
         groupBy = new LinkedList<>();
-    }
-
-    public BaseModel(InsertIntoWithObject insert)
-    {
-        this(new InsertInto(insert.value instanceof List ? ((List) insert.value).get(0).getClass() : insert.value.getClass()));
-        if (insert.value instanceof List list)
-        {
-            setBatchInsert(list);
-            type = ModelType.batchInsert;
-        }
-        else
-        {
-            setInsert(insert.value);
-        }
-    }
-
-    private void setBatchInsert(List<?> list)
-    {
-        Object              firstForMode = list.get(0);
-        TableEntityInfo     entityInfo   = TableEntityInfo.parse((Class<?>) firstForMode.getClass());
-        List<ValueAccessor> accessors    = new ArrayList<>();
-        if (entityInfo.getPkInfo() == null)
-        {
-            for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
-            {
-                this.insert.add(new Insert(columnInfo.columnName(), null));
-                accessors.add(columnInfo.accessor());
-            }
-        }
-        else
-        {
-            TableEntityInfo.ColumnInfo pkInfo = entityInfo.getPkInfo();
-            Object                     pk     = pkInfo.accessor().get(firstForMode);
-            if (pk != null)
-            {
-                for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
-                {
-                    this.insert.add(new Insert(columnInfo.columnName(), null));
-                    accessors.add(columnInfo.accessor());
-                }
-            }
-            else
-            {
-                if (pkInfo.field().isAnnotationPresent(PkGenerator.class))
-                {
-                    list.stream().forEach(v -> pkInfo.accessor().setObject(v, entityInfo.getPkGenerator().next()));
-                    for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
-                    {
-                        this.insert.add(new Insert(columnInfo.columnName(), null));
-                        accessors.add(columnInfo.accessor());
-                    }
-                }
-                else if (pkInfo.field().isAnnotationPresent(AutoIncrement.class) || pkInfo.field().isAnnotationPresent(Sequence.class))
-                {
-                    entityInfo.getPropertyNameKeyMap().values().stream()//
-                              .filter(columnInfo -> columnInfo.field() != pkInfo.field())//
-                              .forEach(columnInfo -> {
-                                  this.insert.add(new Insert(columnInfo.columnName(), null));
-                                  accessors.add(columnInfo.accessor());
-                              });
-                    if (pkInfo.field().isAnnotationPresent(Sequence.class))
-                    {
-                        this.insert.add(new Insert(pkInfo.columnName(), pkInfo.field().getAnnotation(Sequence.class)));
-                    }
-                }
-                else
-                {
-                    throw new IllegalArgumentException(pkInfo.field() + "主键没有自动生成，也没有标记自增长或者序列注解，不能在空值情况下执行batchInsert操作");
-                }
-            }
-        }
-        for (Object each : list)
-        {
-            List<Object> single = new ArrayList<>();
-            for (ValueAccessor accessor : accessors)
-            {
-                single.add(accessor.get(each));
-            }
-            paramValues.add(single);
-        }
-    }
-
-    private void setInsert(Object value)
-    {
-        TableEntityInfo entityInfo = TableEntityInfo.parse(value.getClass());
-        if (entityInfo.getPkInfo() == null)
-        {
-            insert(value);
-            pkReturnType = TableEntityInfo.PkReturnType.NO_RETURN_PK;
-        }
-        else
-        {
-            TableEntityInfo.ColumnInfo pkInfo = entityInfo.getPkInfo();
-            Object                     pk     = pkInfo.accessor().get(value);
-            if (pk == null)
-            {
-                if (pkInfo.field().isAnnotationPresent(PkGenerator.class))
-                {
-                    Object next = entityInfo.getPkGenerator().next();
-                    pkInfo.accessor().setObject(value, next);
-                    insert(value);
-                    pkReturnType = TableEntityInfo.PkReturnType.NO_RETURN_PK;
-                }
-                else if (pkInfo.field().isAnnotationPresent(AutoIncrement.class) || pkInfo.field().isAnnotationPresent(Sequence.class))
-                {
-                    entityInfo.getPropertyNameKeyMap().values().stream()//
-                              .filter(columnInfo -> columnInfo.field() != pkInfo.field())//
-                              .forEach(columnInfo -> this.insert.add(new Insert(columnInfo.columnName(), columnInfo.accessor().get(value))));
-                    if (pkInfo.field().isAnnotationPresent(Sequence.class))
-                    {
-                        this.insert.add(new Insert(pkInfo.columnName(), pkInfo.field().getAnnotation(Sequence.class)));
-                    }
-                    pkReturnType = entityInfo.getPkReturnType();
-                }
-                else
-                {
-                    throw new IllegalArgumentException(pkInfo.field() + "主键没有自动生成，也没有标记自增长或者序列注解，不能在空值情况下执行insert操作");
-                }
-            }
-            else
-            {
-                insert(value);
-                pkReturnType = TableEntityInfo.PkReturnType.NO_RETURN_PK;
-            }
-        }
-    }
-
-    private void insert(Object entity)
-    {
-        TableEntityInfo entityInfo = TableEntityInfo.parse(entity.getClass());
-        for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
-        {
-            this.insert.add(new Insert(columnInfo.columnName(), columnInfo.accessor().get(entity)));
-        }
-    }
-
-    public BaseModel(UpdateWithObject update)
-    {
-        this(new Update(update.value.getClass()));
-        updateByPk(update.value);
-    }
-
-    private void updateByPk(Object entity)
-    {
-        TableEntityInfo entityInfo = TableEntityInfo.parse(entity.getClass());
-        entityInfo.getPropertyNameKeyMap().values().stream().filter(columnInfo -> columnInfo.field() != entityInfo.getPkInfo().field()).forEach(columnInfo -> set.add(new set(columnInfo.columnName(), columnInfo.accessor().get(entity), false)));
-        param = new SpecialPkEqParam(entity, entityInfo.getPkInfo());
-        pkReturnType = TableEntityInfo.PkReturnType.NO_RETURN_PK;
     }
 
     @Override
@@ -425,21 +236,6 @@ public class BaseModel implements Model
                                     .findAny().orElseThrow();
                 return tableAs.asName + "." + TableEntityInfo.parse(tableAs.tableClass).getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName();
             }
-            case delete ->
-            {
-                TableEntityInfo tableEntityInfo = TableEntityInfo.parse(delete.ckass);
-                return tableEntityInfo.getTableName() + "." + tableEntityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName();
-            }
-            case update ->
-            {
-                TableEntityInfo tableEntityInfo = TableEntityInfo.parse(update.ckass);
-                return tableEntityInfo.getTableName() + "." + tableEntityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName();
-            }
-            case insert ->
-            {
-                TableEntityInfo tableEntityInfo = TableEntityInfo.parse(insertInto.ckass);
-                return tableEntityInfo.getTableName() + "." + tableEntityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName();
-            }
             default -> throw new IllegalStateException("Unexpected value: " + type);
         }
     }
@@ -477,44 +273,6 @@ public class BaseModel implements Model
     {
         select.add(new Select("count(*)"));
         returnType = Integer.class;
-        return this;
-    }
-
-    @Override
-    public <T> Model set(SFunction<T, ?> fn, Object value)
-    {
-        TableEntityInfo            entityInfo = TableEntityInfo.parse(update.ckass);
-        TableEntityInfo.ColumnInfo columnInfo = entityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName());
-        set.add(new set(entityInfo.getTableName() + "." + columnInfo.columnName(), value, false));
-        return this;
-    }
-
-    @Override
-    public <T, R> Model set(SFunction<T, ?> fn1, SFunction<R, ?> fn2)
-    {
-        if (fn2 == null)
-        {
-            //这种情况下，实际上是要给这个属性设置为空值
-            TableEntityInfo            entityInfo = TableEntityInfo.parse(update.ckass);
-            TableEntityInfo.ColumnInfo columnInfo = entityInfo.getPropertyNameKeyMap().get(fn1.resolveFieldName());
-            set.add(new set(entityInfo.getTableName() + "." + columnInfo.columnName(), null, false));
-        }
-        else
-        {
-            TableEntityInfo            entityInfo  = TableEntityInfo.parse(update.ckass);
-            TableEntityInfo.ColumnInfo columnInfo1 = entityInfo.getPropertyNameKeyMap().get(fn1.resolveFieldName());
-            TableEntityInfo.ColumnInfo columnInfo2 = entityInfo.getPropertyNameKeyMap().get(fn2.resolveFieldName());
-            set.add(new set(entityInfo.getTableName() + "." + columnInfo1.columnName(), entityInfo.getTableName() + "." + columnInfo2.columnName(), true));
-        }
-        return this;
-    }
-
-    @Override
-    public <T> Model insert(SFunction<T, ?> fn, Object value)
-    {
-        TableEntityInfo            entityInfo = TableEntityInfo.parse(insertInto.ckass);
-        TableEntityInfo.ColumnInfo columnInfo = entityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName());
-        insert.add(new Insert(columnInfo.columnName(), value));
         return this;
     }
 
@@ -588,7 +346,7 @@ public class BaseModel implements Model
         return this;
     }
 
-    private Class<?> getReturnType()
+    protected Class<?> getReturnType()
     {
         if (type == ModelType.query)
         {
@@ -663,7 +421,7 @@ public class BaseModel implements Model
         return new ModelResult(sql, getReturnType(), paramValues, pkReturnType);
     }
 
-    private String getSql()
+    protected String getSql()
     {
         StringBuilder builder = new StringBuilder();
         switch (type)
@@ -756,92 +514,50 @@ public class BaseModel implements Model
                     }
                 }
             }
-            case delete ->
-            {
-                builder.append(delete.toString());
-                if (param != null)
-                {
-                    builder.append(" where ");
-                    ((InternalParam) param).renderSql(this, builder, paramValues);
-                }
-                else
-                {
-                }
-            }
-            case update ->
-            {
-                builder.append(update.toString()).append(" ");
-                String setSegment = set.stream().map(record -> {
-                    BaseModel.set set = (set) record;
-                    if (set.value instanceof BaseModel m)
-                    {
-                        ModelResult result = m.getResult();
-                        paramValues.addAll(result.paramValues());
-                        return ((set) record).columnName + "=( " + result.sql + ")";
-                    }
-                    else if (set.anotherField)
-                    {
-                        return ((set) record).columnName + " = " + ((BaseModel.set) record).value;
-                    }
-                    else
-                    {
-                        paramValues.add(set.value);
-                        return ((set) record).columnName + "=?";
-                    }
-                }).collect(Collectors.joining(","));
-                builder.append(setSegment);
-                if (param != null)
-                {
-                    builder.append(" where ");
-                    ((InternalParam) param).renderSql(this, builder, paramValues);
-                }
-                else
-                {
-                }
-            }
-            case insert ->
-            {
-                builder.append(insertInto.toString());
-                record WrapperData(String columnName, String valueSegment) {}
-                WrapperData[] array = insert.stream().map(record -> {
-                    Insert insert = (Insert) record;
-                    if (insert.value instanceof Model m)
-                    {
-                        ModelResult result = m.getResult();
-                        paramValues.addAll(result.paramValues);
-                        return new WrapperData(insert.columnName, result.sql);
-                    }
-                    else if (insert.value instanceof Sequence sequence)
-                    {
-                        return new WrapperData(insert.columnName, sequence.value() + ".NEXTVAL");
-                    }
-                    else
-                    {
-                        paramValues.add(insert.value);
-                        return new WrapperData(insert.columnName, "?");
-                    }
-                }).toArray(WrapperData[]::new);
-                builder.append(" ( ").append(Arrays.stream(array).map(data -> data.columnName).collect(Collectors.joining(","))).append(") values ( ");
-                builder.append(Arrays.stream(array).map(data -> data.valueSegment.equals("?") ? "?" : "(" + data.valueSegment + ")").collect(Collectors.joining(","))).append(")");
-            }
-            case batchInsert ->
-            {
-                builder.append(insertInto.toString());
-                record WrapperData(String columnName, String valueSegment) {}
-                WrapperData[] array = insert.stream().map(record -> {
-                    Insert insert = (Insert) record;
-                    if (insert.value instanceof Sequence sequence)
-                    {
-                        return new WrapperData(insert.columnName, sequence.value() + ".NEXTVAL");
-                    }
-                    else
-                    {
-                        return new WrapperData(insert.columnName, "?");
-                    }
-                }).toArray(WrapperData[]::new);
-                builder.append(" ( ").append(Arrays.stream(array).map(data -> data.columnName).collect(Collectors.joining(","))).append(") values ( ");
-                builder.append(Arrays.stream(array).map(data -> data.valueSegment.equals("?") ? "?" : "(" + data.valueSegment + ")").collect(Collectors.joining(","))).append(")");
-            }
+//            case delete ->
+//            {
+//                builder.append(delete.toString());
+//                if (param != null)
+//                {
+//                    builder.append(" where ");
+//                    ((InternalParam) param).renderSql(this, builder, paramValues);
+//                }
+//                else
+//                {
+//                }
+//            }
+//            case update ->
+//            {
+//                builder.append(update.toString()).append(" ");
+//                String setSegment = set.stream().map(record -> {
+//                    BaseModel.set set = (set) record;
+//                    if (set.value instanceof BaseModel m)
+//                    {
+//                        ModelResult result = m.getResult();
+//                        paramValues.addAll(result.paramValues());
+//                        return ((set) record).columnName + "=( " + result.sql + ")";
+//                    }
+//                    else if (set.anotherField)
+//                    {
+//                        return ((set) record).columnName + " = " + ((BaseModel.set) record).value;
+//                    }
+//                    else
+//                    {
+//                        paramValues.add(set.value);
+//                        return ((set) record).columnName + "=?";
+//                    }
+//                }).collect(Collectors.joining(","));
+//                builder.append(setSegment);
+//                if (param != null)
+//                {
+//                    builder.append(" where ");
+//                    ((InternalParam) param).renderSql(this, builder, paramValues);
+//                }
+//                else
+//                {
+//                }
+//            }
+//
         }
         return builder.toString();
     }

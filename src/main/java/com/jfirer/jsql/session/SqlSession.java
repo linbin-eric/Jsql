@@ -50,6 +50,8 @@ public interface SqlSession extends ConnectionOp
 {
     <T> T getMapper(Class<T> mapperClass);
 
+    <T> void batchInsert(List<T> list, int batchSize);
+
     <T> T findOne(Model model);
 
     /**
@@ -87,8 +89,6 @@ public interface SqlSession extends ConnectionOp
      * @param entity
      */
     <T> int insert(T entity);
-
-    <T> void batchInsert(List<T> list);
 
     int execute(String sql, List<Object> params);
 

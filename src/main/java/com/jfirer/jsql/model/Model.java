@@ -2,6 +2,7 @@ package com.jfirer.jsql.model;
 
 import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.metadata.TableEntityInfo;
+import com.jfirer.jsql.model.model.*;
 import com.jfirer.jsql.model.support.LockMode;
 import com.jfirer.jsql.model.support.SFunction;
 
@@ -9,29 +10,29 @@ import java.util.List;
 
 public interface Model
 {
-    static Model update(Class<?> ckass)
+    static UpdateModel update(Class<?> ckass)
     {
-        return new BaseModel(new BaseModel.Update(ckass));
+        return new UpdateModel(ckass);
     }
 
-    static Model insert(Class<?> ckass)
+    static InsertModel insert(Class<?> ckass)
     {
-        return new BaseModel(new BaseModel.InsertInto(ckass));
+        return new InsertModel(ckass);
     }
 
     static <T> Model insert(T entity)
     {
-        return new BaseModel(new BaseModel.InsertIntoWithObject(entity));
+        return new InsertEntityModel(entity);
     }
 
-    static Model deleteFrom(Class<?> ckass)
+    static DeleteModel deleteFrom(Class<?> ckass)
     {
-        return new BaseModel(new BaseModel.Delete(ckass));
+        return new DeleteModel(ckass);
     }
 
     static <T> Model update(T entity)
     {
-        return new BaseModel(new BaseModel.UpdateWithObject(entity));
+        return new UpdateEntityModel(entity);
     }
 
     static <T> Model select(SFunction<T, ?>... fns)
@@ -46,8 +47,7 @@ public interface Model
 
     static <T> Model batchInsert(List<T> entities)
     {
-        BaseModel model = new BaseModel(new BaseModel.InsertIntoWithObject(entities));
-        return model;
+        return new BatchInsertModel((List<Object>) entities);
     }
 
     /**
@@ -125,11 +125,10 @@ public interface Model
 
     <T> Model addSelectWithFunction(SFunction<T, ?> fn, String function, String asName);
 
-    <T> Model set(SFunction<T, ?> fn, Object value);
-
-    <T, R> Model set(SFunction<T, ?> fn1, SFunction<R, ?> fn2);
-
-    <T> Model insert(SFunction<T, ?> fn, Object value);
+//    <T> Model set(SFunction<T, ?> fn, Object value);
+//
+//    <T, R> Model set(SFunction<T, ?> fn1, SFunction<R, ?> fn2);
+//    <T> Model insert(SFunction<T, ?> fn, Object value);
 
     Model leftJoin(Class ckass);
 

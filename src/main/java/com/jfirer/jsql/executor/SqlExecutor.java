@@ -9,8 +9,6 @@ import java.util.List;
 
 public interface SqlExecutor
 {
-    void batchInsert(String sql,List<?> params,Connection connection,Dialect dialect);
-
     int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException;
 
     String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException;

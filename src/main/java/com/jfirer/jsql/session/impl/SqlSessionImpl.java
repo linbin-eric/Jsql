@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.AnnotatedElement;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.LinkedList;
 import java.util.List;
 
 public class SqlSessionImpl implements SqlSession
@@ -28,9 +29,9 @@ public class SqlSessionImpl implements SqlSession
 
     public SqlSessionImpl(Connection connection, SqlExecutor headSqlExecutor, Dialect dialect)
     {
-        this.connection = connection;
+        this.connection      = connection;
         this.headSqlExecutor = headSqlExecutor;
-        this.dialect = dialect;
+        this.dialect         = dialect;
     }
 
     @Override
@@ -139,18 +140,18 @@ public class SqlSessionImpl implements SqlSession
         return connection;
     }
 
-
     @SuppressWarnings("unchecked")
     @Override
     public <T> int save(T entity)
     {
-        TableEntityInfo       tableEntityInfo  = TableEntityInfo.parse(entity.getClass());
+        TableEntityInfo tableEntityInfo = TableEntityInfo.parse(entity.getClass());
         if (tableEntityInfo.getPkInfo() == null || tableEntityInfo.getPkInfo().accessor().get(entity) == null)
         {
             return insert(entity);
         }
-        else{
-         return   update(entity);
+        else
+        {
+            return update(entity);
         }
     }
 
@@ -194,10 +195,34 @@ public class SqlSessionImpl implements SqlSession
     }
 
     @Override
-    public <T> void batchInsert(List<T> list)
+    public <T> void batchInsert(List<T> list, int batchSize)
     {
-        BaseModel.ModelResult result = Model.batchInsert(list).getResult();
-        executeBatch(result.sql(), result.paramValues());
+        if (list.size() > batchSize)
+        {
+            List<Object> batch = new LinkedList<>();
+            int          count = 0;
+            for (T t : list)
+            {
+                batch.add(t);
+                if (count++ >= batchSize)
+                {
+                    count = 0;
+                    BaseModel.ModelResult result = Model.batchInsert(batch).getResult();
+                    execute(result.sql(), result.paramValues());
+                    batch.clear();
+                }
+            }
+            if (count != 0)
+            {
+                BaseModel.ModelResult result = Model.batchInsert(batch).getResult();
+                execute(result.sql(), result.paramValues());
+            }
+        }
+        else
+        {
+            BaseModel.ModelResult result = Model.batchInsert(list).getResult();
+            execute(result.sql(), result.paramValues());
+        }
     }
 
     @Override
@@ -226,19 +251,6 @@ public class SqlSessionImpl implements SqlSession
     {
         BaseModel.ModelResult result = model.getResult();
         return execute(result.sql(), result.paramValues());
-    }
-
-    public void executeBatch(String sql, List<?> params)
-    {
-        checkIfClosed();
-        try
-        {
-            headSqlExecutor.batchInsert(sql, params, connection, dialect);
-        }
-        catch (Throwable e)
-        {
-            ReflectUtil.throwException(e);
-        }
     }
 
     @Override

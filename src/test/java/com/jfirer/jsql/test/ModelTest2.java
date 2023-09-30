@@ -160,7 +160,7 @@ public class ModelTest2
         Timewatch timewatch = new Timewatch();
         timewatch.start();
         sqlSession.beginTransAction();
-        sqlSession.batchInsert(list);
+        sqlSession.batchInsert(list,500);
         sqlSession.commit();
         timewatch.end();
         System.out.println("批量插入耗时:"+timewatch.getTotal());
@@ -173,6 +173,8 @@ public class ModelTest2
         }
         timewatch.end();
         System.out.println("循环插入耗时:"+timewatch.getTotal());
+
+
 
         Integer count = sqlSession.findOne(Model.selectCount(User.class));
         Assert.assertEquals(sum*2+2, count.intValue());

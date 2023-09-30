@@ -1,4 +1,4 @@
-package com.jfirer.jsql.model.impl;
+package com.jfirer.jsql.model.param;
 
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.BaseModel;
