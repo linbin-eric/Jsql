@@ -2,7 +2,6 @@ package com.jfirer.jsql.metadata;
 
 import com.jfirer.baseutil.Formatter;
 import com.jfirer.baseutil.StringUtil;
-import com.jfirer.baseutil.reflect.ReflectUtil;
 import com.jfirer.baseutil.reflect.ValueAccessor;
 import com.jfirer.jsql.annotation.*;
 
@@ -13,7 +12,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class TableEntityInfo
 {
-    public record ColumnInfo(String columnName, String propertyName, Field field, ValueAccessor accessor) {}
+    public record ColumnInfo(String columnName, String propertyName, Field field, ValueAccessor accessor)
+    {
+    }
 
     private static final Map<Class<?>, TableEntityInfo> store        = new ConcurrentHashMap<Class<?>, TableEntityInfo>();
     private final        String                         className;
@@ -25,19 +26,18 @@ public class TableEntityInfo
     private final        Class<?>                       ckass;
     private              PkGenerator.Generator          pkGenerator;
     private              PkReturnType                   pkReturnType = PkReturnType.NO_RETURN_PK;
+    private final        ColumnInfo[]                   allColumnInfos;
+    private final        ColumnInfo[]                   allColumnInfosExcludePk;
 
     public enum PkReturnType
     {
-        STRING,
-        INT,
-        LONG,
-        NO_RETURN_PK
+        STRING, INT, LONG, NO_RETURN_PK
     }
 
     private TableEntityInfo(Class<?> ckass)
     {
-        this.ckass = ckass;
-        className = ckass.getName();
+        this.ckass      = ckass;
+        className       = ckass.getName();
         classSimpleName = ckass.getSimpleName();
         if (ckass.isAnnotationPresent(TableDef.class) == false)
         {
@@ -68,7 +68,7 @@ public class TableEntityInfo
                 {
                     if (pkInfo == null)
                     {
-                        pkInfo = new ColumnInfo(columnName, field.getName(), field, new ValueAccessor(field));
+                        pkInfo = columnInfo;
                     }
                     else
                     {
@@ -87,12 +87,14 @@ public class TableEntityInfo
                     }
                 }
             }
-            this.propertyNameKeyMap = Collections.unmodifiableMap(propertyNameKeyMap);
+            this.propertyNameKeyMap         = Collections.unmodifiableMap(propertyNameKeyMap);
             this.columnNameIgnoreCaseKeyMap = Collections.unmodifiableMap(columnNameIgnoreCaseKeyMap);
+            allColumnInfos                  = propertyNameKeyMap.values().toArray(ColumnInfo[]::new);
+            allColumnInfosExcludePk         = propertyNameKeyMap.values().stream().filter(columnInfo -> columnInfo != pkInfo).toArray(ColumnInfo[]::new);
         }
-        catch (Exception e)
+        catch (Throwable e)
         {
-            ReflectUtil.throwException(e);
+            throw new RuntimeException(e);
         }
     }
 
@@ -212,5 +214,15 @@ public class TableEntityInfo
     public PkReturnType getPkReturnType()
     {
         return pkReturnType;
+    }
+
+    public ColumnInfo[] getAllColumnInfos()
+    {
+        return allColumnInfos;
+    }
+
+    public ColumnInfo[] getAllColumnInfosExcludePk()
+    {
+        return allColumnInfosExcludePk;
     }
 }

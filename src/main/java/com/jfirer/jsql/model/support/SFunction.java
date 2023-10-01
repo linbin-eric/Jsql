@@ -11,8 +11,8 @@ import java.util.function.Function;
 @FunctionalInterface
 public interface SFunction<T, R> extends Function<T, R>, Serializable
 {
-    ConcurrentMap<SFunction, String> implClassNameMap = new ConcurrentHashMap<>();
-    ConcurrentMap<SFunction, String> fieldNameMap     = new ConcurrentHashMap<>();
+    ConcurrentMap<SFunction, Class<?>> implClassNameMap = new ConcurrentHashMap<>();
+    ConcurrentMap<SFunction, String>   fieldNameMap     = new ConcurrentHashMap<>();
 
     //这个方法返回的SerializedLambda是重点
     static SerializedLambda getSerializedLambda(SFunction<?, ?> fn) throws Exception
@@ -23,13 +23,13 @@ public interface SFunction<T, R> extends Function<T, R>, Serializable
         return (SerializedLambda) write.invoke(fn);
     }
 
-    static String getImplClass(SFunction fn)
+    static Class<?> getImplClass(SFunction fn)
     {
         return implClassNameMap.computeIfAbsent(fn, sfn -> {
             try
             {
                 String resourceName = getSerializedLambda(sfn).getImplClass();
-                return resourceName.replace("/", ".");
+                return Thread.currentThread().getContextClassLoader().loadClass(resourceName.replace("/", "."));
             }
             catch (Exception e)
             {
@@ -55,7 +55,7 @@ public interface SFunction<T, R> extends Function<T, R>, Serializable
         return resolveFieldName(this);
     }
 
-    default String getImplClass()
+    default Class<?> getImplClass()
     {
         return getImplClass(this);
     }

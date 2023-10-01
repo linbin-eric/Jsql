@@ -19,44 +19,55 @@ public class QueryModel implements Model
     private         List<Select>          select      = new LinkedList<>();
     private         List<SFunction<?, ?>> exclude     = new LinkedList<>();
     private         List<Table>           from        = new LinkedList<>();
-    private         List<Record>          orderBy     = new LinkedList<>();
-    private         List<Record>          groupBy     = new LinkedList<>();
+    private         List<String>          orderBy     = new LinkedList<>();
+    private         List<String>          groupBy     = new LinkedList<>();
     protected       Page                  page;
     private         Class<?>              returnType;
     protected final List<Object>          paramValues = new ArrayList<>();
     protected       Param                 param;
     protected       LockMode              lockMode;
 
-    public QueryModel fromAs(Class<?> ckass, String asName)
-    {
-        from.add(new Table(ckass, asName, "from"));
-        return this;
-    }
-
     public QueryModel addSelect(SFunction<?, ?>... fns)
     {
         for (SFunction<?, ?> fn : fns)
         {
-            select.add(new Select(fn, null, null, this));
+            addSelect(fn, null, null);
         }
         return this;
     }
 
-    public QueryModel from(Class<?> ckass)
+    private void addSelect(SFunction<?, ?> fn, String function, String asName)
     {
-        fromAs(ckass, TableEntityInfo.parse(ckass).getTableName());
-        return this;
+        Class<?> implClass = fn.getImplClass();
+        if (from.stream().noneMatch(table -> table.tableClass.equals(implClass)))
+        {
+            from(implClass);
+        }
+        select.add(new Select(fn, function, asName, this));
     }
 
     public <T> QueryModel selectAs(SFunction<T, ?> fn, String asName)
     {
-        select.add(new Select(fn, null, asName, this));
+        addSelect(fn, null, asName);
         return this;
     }
 
     public <T> QueryModel addSelectWithFunction(SFunction<T, ?> fn, String function, String asName)
     {
-        select.add(new Select(fn, function, asName, this));
+        addSelect(fn, function, asName);
+        return this;
+    }
+
+    public QueryModel selectCount(SFunction<?, ?> fn)
+    {
+        addSelect(fn, "count", null);
+        return this;
+    }
+
+    public QueryModel selectCount()
+    {
+        select.add(new Select("count(*)"));
+        returnType = Integer.class;
         return this;
     }
 
@@ -69,16 +80,18 @@ public class QueryModel implements Model
         return this;
     }
 
-    public QueryModel selectCount(SFunction<?, ?> fn)
+    public QueryModel fromAs(Class<?> ckass, String asName)
     {
-        select.add(new Select(fn, "count", null, this));
+        if (from.stream().noneMatch(table -> table.tableClass.equals(ckass) && table.asName.equalsIgnoreCase(asName)))
+        {
+            from.add(new Table(ckass, asName, "from"));
+        }
         return this;
     }
 
-    public QueryModel selectCount()
+    public QueryModel from(Class<?> ckass)
     {
-        select.add(new Select("count(*)"));
-        returnType = Integer.class;
+        fromAs(ckass, TableEntityInfo.parse(ckass).getTableName());
         return this;
     }
 
@@ -126,13 +139,14 @@ public class QueryModel implements Model
 
     public <T> QueryModel orderBy(SFunction<T, ?> fn, boolean desc)
     {
-        orderBy.add(new OrderBy(fn, desc, this));
+        String s = desc ? " desc" : " asc";
+        orderBy.add(findColumnName(fn) + s);
         return this;
     }
 
     public <T> QueryModel groupBy(SFunction<T, ?> fn)
     {
-        groupBy.add(new GroupBy(fn, this));
+        groupBy.add(findColumnName(fn));
         return this;
     }
 
@@ -165,15 +179,15 @@ public class QueryModel implements Model
             {
                 return ((Table) from.get(0)).tableClass;
             }
-            String fieldName     = select.fn.resolveFieldName();
-            String implClass     = select.fn.getImplClass();
-            Field  declaredField = null;
+            String   fieldName     = select.fn.resolveFieldName();
+            Class<?> implClass     = select.fn.getImplClass();
+            Field    declaredField = null;
             try
             {
-                declaredField = Thread.currentThread().getContextClassLoader().loadClass(implClass).getDeclaredField(fieldName);
+                declaredField = implClass.getDeclaredField(fieldName);
                 return declaredField.getType();
             }
-            catch (NoSuchFieldException | ClassNotFoundException e)
+            catch (NoSuchFieldException e)
             {
                 throw new RuntimeException(e);
             }
@@ -213,24 +227,12 @@ public class QueryModel implements Model
             }
             from.forEach(table -> TableEntityInfo.parse(table.tableClass).getPropertyNameKeyMap().values().forEach(columnInfo -> select.add(new Select(table.asName + "." + columnInfo.columnName(), table.tableClass.getName(), columnInfo.propertyName()))));
         }
-        if (from.isEmpty())
-        {
-            String tableClassName = select.stream().filter(select -> select.fn != null).map(select -> select.fn.getImplClass()).findFirst().orElseThrow();
-            try
-            {
-                from(Thread.currentThread().getContextClassLoader().loadClass(tableClassName));
-            }
-            catch (ClassNotFoundException e)
-            {
-                throw new RuntimeException(e);
-            }
-        }
         if (exclude.isEmpty() == false)
         {
             select = select.stream().filter(v -> {
                 if (v.content == null)
                 {
-                    return exclude.stream().noneMatch(ex -> ex.resolveFieldName().equalsIgnoreCase(v.fn.resolveFieldName()) && ex.getImplClass() == v.fn.getImplClass());
+                    return exclude.stream().noneMatch(ex -> ex.resolveFieldName().equalsIgnoreCase(v.fn.resolveFieldName()) && ex.getImplClass().equals(v.fn.getImplClass()));
                 }
                 else if (v.className == null)
                 {
@@ -238,7 +240,7 @@ public class QueryModel implements Model
                 }
                 else
                 {
-                    return exclude.stream().noneMatch(ex -> ex.resolveFieldName().equalsIgnoreCase(v.fieldName) && ex.getImplClass().equalsIgnoreCase(v.className));
+                    return exclude.stream().noneMatch(ex -> ex.resolveFieldName().equalsIgnoreCase(v.fieldName) && ex.getImplClass().getName().equalsIgnoreCase(v.className));
                 }
             }).toList();
         }
@@ -255,7 +257,7 @@ public class QueryModel implements Model
         }
         if (!groupBy.isEmpty())
         {
-            builder.append(" group by ").append(groupBy.stream().map(record -> record.toString()).collect(Collectors.joining(",")));
+            builder.append(" group by ").append(String.join(",", groupBy));
         }
         else
         {
@@ -263,8 +265,7 @@ public class QueryModel implements Model
         if (!orderBy.isEmpty())
         {
             builder.append(" order by ");
-            String orderBy = this.orderBy.stream().map(record -> record.toString()).collect(Collectors.joining(","));
-            builder.append(orderBy);
+            builder.append(String.join(",", orderBy));
         }
         else
         {
@@ -282,13 +283,13 @@ public class QueryModel implements Model
 
     public String findColumnName(SFunction<?, ?> fn)
     {
-        String implClass = fn.getImplClass();
+        Class implClass = fn.getImplClass();
         Table tableAs = from.stream()//
                             .filter(record -> {
                                 Class<?> tableClass = record.tableClass;
                                 while (tableClass != Object.class)
                                 {
-                                    if (tableClass.getName().equals(implClass))
+                                    if (tableClass.equals(implClass))
                                     {
                                         return true;
                                     }
@@ -299,7 +300,6 @@ public class QueryModel implements Model
                                 }
                                 return false;
                             })//
-                            .map(record -> ((Table) record))//
                             .findAny().orElseThrow();
         return tableAs.asName + "." + TableEntityInfo.parse(tableAs.tableClass).getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName();
     }
@@ -402,25 +402,6 @@ public class QueryModel implements Model
             {
                 return content;
             }
-        }
-    }
-
-    record OrderBy(SFunction<?, ?> fn, boolean desc, Model model)
-    {
-        @Override
-        public String toString()
-        {
-            String columnName = model.findColumnName(fn);
-            return desc ? columnName + " desc" : columnName + " asc";
-        }
-    }
-
-    record GroupBy(SFunction<?, ?> fn, Model model)
-    {
-        @Override
-        public String toString()
-        {
-            return model.findColumnName(fn);
         }
     }
 }

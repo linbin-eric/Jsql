@@ -17,12 +17,11 @@ public class UpdateEntityModel implements Model
         tableEntityInfo = TableEntityInfo.parse(entity.getClass());
         StringBuilder builder = new StringBuilder("update ");
         builder.append(tableEntityInfo.getTableName()).append(" set ");
-        tableEntityInfo.getPropertyNameKeyMap().values().stream()//
-                       .filter(columnInfo -> columnInfo.field() != tableEntityInfo.getPkInfo().field())//
-                       .forEach(columnInfo -> {
-                           builder.append(columnInfo.columnName()).append("=?,");
-                           paramValues.add(columnInfo.accessor().get(entity));
-                       });
+        for (TableEntityInfo.ColumnInfo each : tableEntityInfo.getAllColumnInfosExcludePk())
+        {
+            builder.append(each.columnName()).append("=?,");
+            paramValues.add(each.accessor().get(entity));
+        }
         builder.setLength(builder.length() - 1);
         builder.append(" where ").append(tableEntityInfo.getPkInfo().columnName()).append(" =?");
         paramValues.add(tableEntityInfo.getPkInfo().accessor().get(entity));

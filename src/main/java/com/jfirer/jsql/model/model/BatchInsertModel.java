@@ -1,40 +1,30 @@
 package com.jfirer.jsql.model.model;
 
-import com.jfirer.baseutil.reflect.ValueAccessor;
 import com.jfirer.jsql.annotation.AutoIncrement;
 import com.jfirer.jsql.annotation.PkGenerator;
 import com.jfirer.jsql.annotation.Sequence;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.Model;
-import com.jfirer.jsql.model.support.SFunction;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 public class BatchInsertModel implements Model
 {
-    private         String       sql;
+    private final   String       sql;
     protected final List<Object> paramValues = new ArrayList<>();
-
-    record Insert(String columnName, Object value)
-    {
-    }
 
     public BatchInsertModel(List<Object> list)
     {
         StringBuilder   builder      = new StringBuilder();
-        List<Insert>    inserts      = new ArrayList<>();
         Object          firstForMode = list.get(0);
         TableEntityInfo entityInfo   = TableEntityInfo.parse((Class<?>) firstForMode.getClass());
         builder.append("insert into ").append(entityInfo.getTableName()).append(" ");
         if (entityInfo.getPkInfo() == null)
         {
-            for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
-            {
-                inserts.add(new Insert(columnInfo.columnName(), columnInfo.accessor()));
-            }
-            processBatchValues(list, builder, inserts);
+            processBatchValues(list, builder, entityInfo.getAllColumnInfos());
         }
         else
         {
@@ -42,54 +32,46 @@ public class BatchInsertModel implements Model
             Object                     pk     = pkInfo.accessor().get(firstForMode);
             if (pk != null)
             {
-                for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
-                {
-                    inserts.add(new Insert(columnInfo.columnName(), columnInfo.accessor()));
-                }
-                processBatchValues(list, builder, inserts);
+                processBatchValues(list, builder, entityInfo.getAllColumnInfos());
             }
             else
             {
                 if (pkInfo.field().isAnnotationPresent(PkGenerator.class))
                 {
                     list.stream().forEach(v -> pkInfo.accessor().setObject(v, entityInfo.getPkGenerator().next()));
-                    for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
-                    {
-                        inserts.add(new Insert(columnInfo.columnName(), columnInfo.accessor()));
-                    }
-                    processBatchValues(list, builder, inserts);
+                    processBatchValues(list, builder, entityInfo.getAllColumnInfos());
                 }
                 else if (pkInfo.field().isAnnotationPresent(AutoIncrement.class) || pkInfo.field().isAnnotationPresent(Sequence.class))
                 {
-                    entityInfo.getPropertyNameKeyMap().values().stream()//
-                              .filter(columnInfo -> columnInfo.field() != pkInfo.field())//
-                              .forEach(columnInfo -> inserts.add(new Insert(columnInfo.columnName(), columnInfo.accessor())));
                     if (pkInfo.field().isAnnotationPresent(Sequence.class))
                     {
-                        inserts.add(new Insert(pkInfo.columnName(), pkInfo.field().getAnnotation(Sequence.class)));
-                        builder.append(" ( ").append(inserts.stream().map(data -> data.columnName()).collect(Collectors.joining(","))).append(") values  ");
+                        builder.append(" ( ");
+                        TableEntityInfo.ColumnInfo[] allColumnInfosExcludePk = entityInfo.getAllColumnInfosExcludePk();
+                        for (TableEntityInfo.ColumnInfo columnInfo : allColumnInfosExcludePk)
+                        {
+                            builder.append(columnInfo.columnName()).append(",");
+                        }
+                        builder.append(pkInfo.columnName()).append(") values ");
+                        StringBuilder segment = new StringBuilder("(");
+                        for (TableEntityInfo.ColumnInfo columnInfo : allColumnInfosExcludePk)
+                        {
+                            segment.append(",");
+                        }
+                        segment.append(pkInfo.field().getAnnotation(Sequence.class).value()).append(".NEXTVAL),");
+                        String _segment = segment.toString();
                         for (Object obj : list)
                         {
-                            builder.append("(");
-                            int last = inserts.size() - 1;
-                            for (int i = 0; i < inserts.size(); i++)
+                            builder.append(_segment);
+                            for (TableEntityInfo.ColumnInfo each : allColumnInfosExcludePk)
                             {
-                                if (i != last)
-                                {
-                                    builder.append("?,");
-                                    paramValues.add(((ValueAccessor) inserts.get(i).value()).get(obj));
-                                }
-                                else
-                                {
-                                    builder.append(((Sequence) inserts.get(i).value()).value()).append(".NEXTVAL),");
-                                }
+                                paramValues.add(each.accessor().get(obj));
                             }
                         }
                         builder.setLength(builder.length() - 1);
                     }
                     else
                     {
-                        processBatchValues(list, builder, inserts);
+                        processBatchValues(list, builder, entityInfo.getAllColumnInfosExcludePk());
                     }
                 }
                 else
@@ -97,8 +79,8 @@ public class BatchInsertModel implements Model
                     throw new IllegalArgumentException(pkInfo.field() + "主键没有自动生成，也没有标记自增长或者序列注解，不能在空值情况下执行batchInsert操作");
                 }
             }
-            sql = builder.toString();
         }
+        sql = builder.toString();
     }
 
     @Override
@@ -107,25 +89,17 @@ public class BatchInsertModel implements Model
         return new ModelResult(sql, paramValues, null, null);
     }
 
-    @Override
-    public String findColumnName(SFunction<?, ?> fn)
+    private void processBatchValues(List<Object> list, StringBuilder builder, TableEntityInfo.ColumnInfo[] inserts)
     {
-        return null;
-    }
-
-    private void processBatchValues(List<Object> list, StringBuilder builder, List<Insert> inserts)
-    {
-        builder.append(" ( ").append(inserts.stream().map(data -> data.columnName()).collect(Collectors.joining(","))).append(") values  ");
+        builder.append(" ( ").append(Arrays.stream(inserts).map(data -> data.columnName()).collect(Collectors.joining(","))).append(") values  ");
+        String segment = "(" + Arrays.stream(inserts).map(insert -> "?").collect(Collectors.joining(",")).toString() + "),";
         for (Object obj : list)
         {
-            builder.append("(");
-            for (int i = 0; i < inserts.size(); i++)
+            builder.append(segment);
+            for (TableEntityInfo.ColumnInfo insert : inserts)
             {
-                builder.append("?,");
-                paramValues.add(((ValueAccessor) inserts.get(i).value()).get(obj));
+                paramValues.add(insert.accessor().get(obj));
             }
-            builder.setLength(builder.length() - 1);
-            builder.append("),");
         }
         builder.setLength(builder.length() - 1);
     }

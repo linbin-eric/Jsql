@@ -162,14 +162,6 @@ public class SqlSessionImpl implements SqlSession
         return execute(result.sql(), result.paramValues());
     }
 
-//    public <T> void insert(List<T> entities)
-//    {
-//        Model             model   = Model.batchInsert(entities);
-//        Model.ModelResult result  = model.getResult();
-//        String            sql     = result.sql();
-//        List<Object>      objects = result.paramValues();
-//    }
-
     @SuppressWarnings({"unchecked"})
     @Override
     public <T> int insert(T entity)

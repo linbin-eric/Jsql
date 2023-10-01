@@ -160,7 +160,7 @@ public class ModelTest2
         Timewatch timewatch = new Timewatch();
         timewatch.start();
         sqlSession.beginTransAction();
-        sqlSession.batchInsert(list,500);
+        sqlSession.batchInsert(list,100);
         sqlSession.commit();
         timewatch.end();
         System.out.println("批量插入耗时:"+timewatch.getTotal());
