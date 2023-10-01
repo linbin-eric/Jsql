@@ -1,6 +1,6 @@
 package com.jfirer.jsql.model.param;
 
-import com.jfirer.jsql.model.BaseModel;
+import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.support.SFunction;
 
 import java.util.List;
@@ -17,7 +17,7 @@ public class TwoFieldEqParam extends InternalParamImpl
     }
 
     @Override
-    public void renderSql(BaseModel model, StringBuilder builder, List<Object> paramValues)
+    public void renderSql(Model model, StringBuilder builder, List<Object> paramValues)
     {
         builder.append(model.findColumnName(fn1)).append(" = ").append(model.findColumnName(fn2));
     }

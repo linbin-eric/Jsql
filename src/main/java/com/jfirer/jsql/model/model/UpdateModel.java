@@ -1,17 +1,21 @@
 package com.jfirer.jsql.model.model;
 
 import com.jfirer.jsql.metadata.TableEntityInfo;
-import com.jfirer.jsql.model.BaseModel;
 import com.jfirer.jsql.model.InternalParam;
+import com.jfirer.jsql.model.Model;
+import com.jfirer.jsql.model.Param;
 import com.jfirer.jsql.model.support.SFunction;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-public class UpdateModel extends BaseModel
+public class UpdateModel implements Model
 {
-    private TableEntityInfo tableEntityInfo;
-    private List<Set>       sets = new LinkedList<>();
+    private         TableEntityInfo tableEntityInfo;
+    private         List<Set>       sets        = new LinkedList<>();
+    protected       Param           param;
+    protected final List<Object>    paramValues = new ArrayList<>();
 
     record Set(String columnName, Object value, boolean anotherField)
     {
@@ -20,7 +24,6 @@ public class UpdateModel extends BaseModel
     public UpdateModel(Class ckass)
     {
         tableEntityInfo = TableEntityInfo.parse(ckass);
-        type            = ModelType.update;
     }
 
     public <T> UpdateModel set(SFunction<T, ?> fn, Object value)
@@ -47,13 +50,12 @@ public class UpdateModel extends BaseModel
         return this;
     }
 
-    @Override
     protected String getSql()
     {
         StringBuilder builder = new StringBuilder("update ").append(tableEntityInfo.getTableName()).append(" set ");
         for (Set set : sets)
         {
-            if (set.value instanceof BaseModel m)
+            if (set.value instanceof Model m)
             {
                 ModelResult result = m.getResult();
                 builder.append(set.columnName).append("=(").append(result.sql()).append("),");
@@ -82,8 +84,20 @@ public class UpdateModel extends BaseModel
     }
 
     @Override
+    public ModelResult getResult()
+    {
+        return new ModelResult(getSql(), paramValues, null, null);
+    }
+
+    @Override
     public String findColumnName(SFunction<?, ?> fn)
     {
         return tableEntityInfo.getTableName() + "." + tableEntityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName();
+    }
+
+    public UpdateModel where(Param param)
+    {
+        this.param = param;
+        return this;
     }
 }

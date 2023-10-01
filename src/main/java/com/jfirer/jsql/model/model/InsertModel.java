@@ -1,26 +1,32 @@
 package com.jfirer.jsql.model.model;
 
 import com.jfirer.jsql.metadata.TableEntityInfo;
-import com.jfirer.jsql.model.BaseModel;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.support.SFunction;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-public class InsertModel extends BaseModel
+public class InsertModel implements Model
 {
-    private List<Insert>    inserts = new LinkedList<>();
-    private TableEntityInfo tableEntityInfo;
+    record Insert(String name, Object value)
+    {
+    }
+
+    private         List<Insert>    inserts     = new LinkedList<>();
+    private         TableEntityInfo tableEntityInfo;
+    protected final List<Object>    paramValues = new ArrayList<>();
 
     public InsertModel(Class ckass)
     {
         tableEntityInfo = TableEntityInfo.parse(ckass);
-        type            = ModelType.insert;
     }
 
-    record Insert(String name, Object value)
+    @Override
+    public ModelResult getResult()
     {
+        return new ModelResult(getSql(), paramValues, null, TableEntityInfo.PkReturnType.NO_RETURN_PK);
     }
 
     public <T> InsertModel insert(SFunction<T, ?> fn, Object value)
@@ -30,7 +36,6 @@ public class InsertModel extends BaseModel
         return this;
     }
 
-    @Override
     protected String getSql()
     {
         StringBuilder builder = new StringBuilder();

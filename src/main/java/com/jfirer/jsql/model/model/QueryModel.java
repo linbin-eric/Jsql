@@ -1,0 +1,426 @@
+package com.jfirer.jsql.model.model;
+
+import com.jfirer.jsql.metadata.Page;
+import com.jfirer.jsql.metadata.TableEntityInfo;
+import com.jfirer.jsql.model.InternalParam;
+import com.jfirer.jsql.model.Model;
+import com.jfirer.jsql.model.Param;
+import com.jfirer.jsql.model.support.LockMode;
+import com.jfirer.jsql.model.support.SFunction;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class QueryModel implements Model
+{
+    private         List<Select>          select      = new LinkedList<>();
+    private         List<SFunction<?, ?>> exclude     = new LinkedList<>();
+    private         List<Table>           from        = new LinkedList<>();
+    private         List<Record>          orderBy     = new LinkedList<>();
+    private         List<Record>          groupBy     = new LinkedList<>();
+    protected       Page                  page;
+    private         Class<?>              returnType;
+    protected final List<Object>          paramValues = new ArrayList<>();
+    protected       Param                 param;
+    protected       LockMode              lockMode;
+
+    public QueryModel fromAs(Class<?> ckass, String asName)
+    {
+        from.add(new Table(ckass, asName, "from"));
+        return this;
+    }
+
+    public QueryModel addSelect(SFunction<?, ?>... fns)
+    {
+        for (SFunction<?, ?> fn : fns)
+        {
+            select.add(new Select(fn, null, null, this));
+        }
+        return this;
+    }
+
+    public QueryModel from(Class<?> ckass)
+    {
+        fromAs(ckass, TableEntityInfo.parse(ckass).getTableName());
+        return this;
+    }
+
+    public <T> QueryModel selectAs(SFunction<T, ?> fn, String asName)
+    {
+        select.add(new Select(fn, null, asName, this));
+        return this;
+    }
+
+    public <T> QueryModel addSelectWithFunction(SFunction<T, ?> fn, String function, String asName)
+    {
+        select.add(new Select(fn, function, asName, this));
+        return this;
+    }
+
+    public <T> QueryModel exclude(SFunction<T, ?>... fns)
+    {
+        for (SFunction<?, ?> each : fns)
+        {
+            exclude.add(each);
+        }
+        return this;
+    }
+
+    public QueryModel selectCount(SFunction<?, ?> fn)
+    {
+        select.add(new Select(fn, "count", null, this));
+        return this;
+    }
+
+    public QueryModel selectCount()
+    {
+        select.add(new Select("count(*)"));
+        returnType = Integer.class;
+        return this;
+    }
+
+    @Override
+    public ModelResult getResult()
+    {
+        String sql = getSql();
+        if (page != null)
+        {
+            paramValues.add(page);
+        }
+        return new ModelResult(sql, paramValues, getReturnType(), null);
+    }
+
+    public QueryModel leftJoin(Class ckass)
+    {
+        from.add(new Table(ckass, TableEntityInfo.parse(ckass).getTableName(), "left join"));
+        return this;
+    }
+
+    public QueryModel rightJoin(Class<?> ckass)
+    {
+        from.add(new Table(ckass, TableEntityInfo.parse(ckass).getTableName(), "right join"));
+        return this;
+    }
+
+    public QueryModel fullJoin(Class<?> ckass)
+    {
+        from.add(new Table(ckass, TableEntityInfo.parse(ckass).getTableName(), "full join"));
+        return this;
+    }
+
+    public QueryModel innerJoin(Class<?> ckass)
+    {
+        from.add(new Table(ckass, TableEntityInfo.parse(ckass).getTableName(), "inner join"));
+        return this;
+    }
+
+    public <E, T> QueryModel on(Param param)
+    {
+        Table table = from.get(from.size() - 1);
+        table.setOn(param);
+        return this;
+    }
+
+    public <T> QueryModel orderBy(SFunction<T, ?> fn, boolean desc)
+    {
+        orderBy.add(new OrderBy(fn, desc, this));
+        return this;
+    }
+
+    public <T> QueryModel groupBy(SFunction<T, ?> fn)
+    {
+        groupBy.add(new GroupBy(fn, this));
+        return this;
+    }
+
+    public QueryModel returnType(Class<?> ckass)
+    {
+        returnType = ckass;
+        return this;
+    }
+
+    public QueryModel lockMode(LockMode lockMode)
+    {
+        this.lockMode = lockMode;
+        return this;
+    }
+
+    protected Class<?> getReturnType()
+    {
+        if (returnType != null)
+        {
+            return returnType;
+        }
+        else if (select.size() > 1)
+        {
+            return ((Table) from.get(0)).tableClass;
+        }
+        else
+        {
+            Select select = this.select.get(0);
+            if (select.fn == null)
+            {
+                return ((Table) from.get(0)).tableClass;
+            }
+            String fieldName     = select.fn.resolveFieldName();
+            String implClass     = select.fn.getImplClass();
+            Field  declaredField = null;
+            try
+            {
+                declaredField = Thread.currentThread().getContextClassLoader().loadClass(implClass).getDeclaredField(fieldName);
+                return declaredField.getType();
+            }
+            catch (NoSuchFieldException | ClassNotFoundException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public QueryModel page(Page page)
+    {
+        this.page = page;
+        return this;
+    }
+
+    public QueryModel limit(int size)
+    {
+        page = new Page();
+        page.setFetchSum(false);
+        page.setSize(size);
+        page.setOffset(0);
+        return this;
+    }
+
+    public QueryModel where(Param param)
+    {
+        this.param = param;
+        return this;
+    }
+
+    protected String getSql()
+    {
+        StringBuilder builder = new StringBuilder();
+        builder.append("select ");
+        if (select.isEmpty())
+        {
+            if (from.isEmpty())
+            {
+                throw new IllegalArgumentException("from数据为空，请检查语句");
+            }
+            from.forEach(table -> TableEntityInfo.parse(table.tableClass).getPropertyNameKeyMap().values().forEach(columnInfo -> select.add(new Select(table.asName + "." + columnInfo.columnName(), table.tableClass.getName(), columnInfo.propertyName()))));
+        }
+        if (from.isEmpty())
+        {
+            String tableClassName = select.stream().filter(select -> select.fn != null).map(select -> select.fn.getImplClass()).findFirst().orElseThrow();
+            try
+            {
+                from(Thread.currentThread().getContextClassLoader().loadClass(tableClassName));
+            }
+            catch (ClassNotFoundException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+        if (exclude.isEmpty() == false)
+        {
+            select = select.stream().filter(v -> {
+                if (v.content == null)
+                {
+                    return exclude.stream().noneMatch(ex -> ex.resolveFieldName().equalsIgnoreCase(v.fn.resolveFieldName()) && ex.getImplClass() == v.fn.getImplClass());
+                }
+                else if (v.className == null)
+                {
+                    return true;
+                }
+                else
+                {
+                    return exclude.stream().noneMatch(ex -> ex.resolveFieldName().equalsIgnoreCase(v.fieldName) && ex.getImplClass().equalsIgnoreCase(v.className));
+                }
+            }).toList();
+        }
+        String segment = select.stream().map(select -> select.toString()).collect(Collectors.joining(","));
+        builder.append(segment).append(' ');
+        from.forEach(table -> table.append(builder));
+        if (param != null)
+        {
+            builder.append(" where ");
+            ((InternalParam) param).renderSql(this, builder, paramValues);
+        }
+        else
+        {
+        }
+        if (!groupBy.isEmpty())
+        {
+            builder.append(" group by ").append(groupBy.stream().map(record -> record.toString()).collect(Collectors.joining(",")));
+        }
+        else
+        {
+        }
+        if (!orderBy.isEmpty())
+        {
+            builder.append(" order by ");
+            String orderBy = this.orderBy.stream().map(record -> record.toString()).collect(Collectors.joining(","));
+            builder.append(orderBy);
+        }
+        else
+        {
+        }
+        if (lockMode != null)
+        {
+            switch (lockMode)
+            {
+                case SHARE -> builder.append(" lock in share mode ");
+                case UPDATE -> builder.append(" for update ");
+            }
+        }
+        return builder.toString();
+    }
+
+    public String findColumnName(SFunction<?, ?> fn)
+    {
+        String implClass = fn.getImplClass();
+        Table tableAs = from.stream()//
+                            .filter(record -> {
+                                Class<?> tableClass = record.tableClass;
+                                while (tableClass != Object.class)
+                                {
+                                    if (tableClass.getName().equals(implClass))
+                                    {
+                                        return true;
+                                    }
+                                    else
+                                    {
+                                        tableClass = tableClass.getSuperclass();
+                                    }
+                                }
+                                return false;
+                            })//
+                            .map(record -> ((Table) record))//
+                            .findAny().orElseThrow();
+        return tableAs.asName + "." + TableEntityInfo.parse(tableAs.tableClass).getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName();
+    }
+
+    class Table
+    {
+        private Class<?> tableClass;
+        private String   asName;
+        private String   mode;
+        private Param    on;
+
+        public Table(Class<?> tableClass, String asName, String mode)
+        {
+            this.tableClass = tableClass;
+            this.asName     = asName;
+            this.mode       = mode;
+        }
+
+        public void setOn(Param on)
+        {
+            this.on = on;
+        }
+
+        public void append(StringBuilder builder)
+        {
+            TableEntityInfo parse   = TableEntityInfo.parse(tableClass);
+            String          segment = parse.getTableName().equals(asName) ? parse.getTableName() : parse.getTableName() + " as " + asName;
+            switch (mode)
+            {
+                case "from" -> builder.append("from " + segment + " ");
+                case "left join" -> builder.append(" left join " + segment + " ");
+                case "right join" -> builder.append(" right join " + segment + " ");
+                case "inner join" -> builder.append(" inner join " + segment + " ");
+                case "full join" -> builder.append(" full join " + segment + " ");
+                default -> throw new IllegalArgumentException();
+            }
+            if (on != null)
+            {
+                builder.append("on ");
+                ((InternalParam) on).renderSql(QueryModel.this, builder, paramValues);
+            }
+        }
+    }
+
+    class Select
+    {
+        /*模式1：直接设定select字段的内容*/
+        final String content;
+        String className;
+        String fieldName;
+        /*---*/
+        /*模式2：通过fn来解析出select字段的内容*/ SFunction<?, ?> fn;
+        String function;
+        String asName;
+        Model  model;
+        /*---*/
+
+        public Select(SFunction<?, ?> fn, String function, String asName, Model model)
+        {
+            this.fn       = fn;
+            this.function = function;
+            this.asName   = asName;
+            this.model    = model;
+            this.content  = null;
+        }
+
+        public Select(String content)
+        {
+            this.content = content;
+        }
+
+        public Select(String content, String className, String fieldName)
+        {
+            this.content   = content;
+            this.className = className;
+            this.fieldName = fieldName;
+        }
+
+        @Override
+        public String toString()
+        {
+            if (content == null)
+            {
+                String result;
+                if (function == null)
+                {
+                    result = model.findColumnName(fn);
+                }
+                else
+                {
+                    result = function + "(" + model.findColumnName(fn) + ")";
+                }
+                if (asName != null)
+                {
+                    result += " as " + asName;
+                }
+                return result;
+            }
+            else
+            {
+                return content;
+            }
+        }
+    }
+
+    record OrderBy(SFunction<?, ?> fn, boolean desc, Model model)
+    {
+        @Override
+        public String toString()
+        {
+            String columnName = model.findColumnName(fn);
+            return desc ? columnName + " desc" : columnName + " asc";
+        }
+    }
+
+    record GroupBy(SFunction<?, ?> fn, Model model)
+    {
+        @Override
+        public String toString()
+        {
+            return model.findColumnName(fn);
+        }
+    }
+}

@@ -1,8 +1,8 @@
 package com.jfirer.jsql.model.param;
 
 import com.jfirer.jsql.metadata.TableEntityInfo;
-import com.jfirer.jsql.model.BaseModel;
 import com.jfirer.jsql.model.InternalParam;
+import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.Param;
 
 import java.util.List;
@@ -19,7 +19,7 @@ public class SpecialPkEqParam implements InternalParam
     }
 
     @Override
-    public void renderSql(BaseModel model, StringBuilder builder, List<Object> paramValues)
+    public void renderSql(Model model, StringBuilder builder, List<Object> paramValues)
     {
         builder.append(pkInfo.columnName() + "=?");
         paramValues.add(pkInfo.accessor().get(entity));

@@ -1,6 +1,5 @@
 package com.jfirer.jsql.model.param;
 
-import com.jfirer.jsql.model.BaseModel;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.support.SFunction;
 
@@ -23,7 +22,7 @@ public class InParam extends InternalParamImpl
                                    .map(value -> {
                                        if (value instanceof Model m)
                                        {
-                                           BaseModel.ModelResult result = m.getResult();
+                                           Model.ModelResult result = m.getResult();
                                            return new WrapperData("(" + result.sql() + ")", result.paramValues());
                                        }
                                        else

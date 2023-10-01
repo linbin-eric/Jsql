@@ -5,15 +5,17 @@ import com.jfirer.jsql.annotation.AutoIncrement;
 import com.jfirer.jsql.annotation.PkGenerator;
 import com.jfirer.jsql.annotation.Sequence;
 import com.jfirer.jsql.metadata.TableEntityInfo;
-import com.jfirer.jsql.model.BaseModel;
+import com.jfirer.jsql.model.Model;
+import com.jfirer.jsql.model.support.SFunction;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class BatchInsertModel extends BaseModel
+public class BatchInsertModel implements Model
 {
-    private String sql;
+    private         String       sql;
+    protected final List<Object> paramValues = new ArrayList<>();
 
     record Insert(String columnName, Object value)
     {
@@ -21,13 +23,11 @@ public class BatchInsertModel extends BaseModel
 
     public BatchInsertModel(List<Object> list)
     {
-        this.type = ModelType.batchInsert;
         StringBuilder   builder      = new StringBuilder();
         List<Insert>    inserts      = new ArrayList<>();
         Object          firstForMode = list.get(0);
         TableEntityInfo entityInfo   = TableEntityInfo.parse((Class<?>) firstForMode.getClass());
         builder.append("insert into ").append(entityInfo.getTableName()).append(" ");
-        pkReturnType = TableEntityInfo.PkReturnType.NO_RETURN_PK;
         if (entityInfo.getPkInfo() == null)
         {
             for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
@@ -102,9 +102,15 @@ public class BatchInsertModel extends BaseModel
     }
 
     @Override
-    public String getSql()
+    public ModelResult getResult()
     {
-        return sql;
+        return new ModelResult(sql, paramValues, null, null);
+    }
+
+    @Override
+    public String findColumnName(SFunction<?, ?> fn)
+    {
+        return null;
     }
 
     private void processBatchValues(List<Object> list, StringBuilder builder, List<Insert> inserts)

@@ -1,6 +1,5 @@
 package com.jfirer.jsql.model.param;
 
-import com.jfirer.jsql.model.BaseModel;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.support.SFunction;
 
@@ -23,7 +22,7 @@ public class BetweenParam extends InternalParamImpl
     {
         if (value instanceof Model m)
         {
-            BaseModel.ModelResult result = m.getResult();
+            Model.ModelResult result = m.getResult();
             builder.append(" ( ").append(result.sql()).append(" )");
             paramValues.addAll(result.paramValues());
         }

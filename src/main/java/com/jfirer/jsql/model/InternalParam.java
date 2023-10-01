@@ -4,5 +4,5 @@ import java.util.List;
 
 public interface InternalParam extends Param
 {
-    void renderSql(BaseModel model, StringBuilder builder, List<Object> paramValues);
+    void renderSql(Model model, StringBuilder builder, List<Object> paramValues);
 }

@@ -4,15 +4,19 @@ import com.jfirer.jsql.annotation.AutoIncrement;
 import com.jfirer.jsql.annotation.PkGenerator;
 import com.jfirer.jsql.annotation.Sequence;
 import com.jfirer.jsql.metadata.TableEntityInfo;
-import com.jfirer.jsql.model.BaseModel;
+import com.jfirer.jsql.model.Model;
 
-public class InsertEntityModel extends BaseModel
+import java.util.ArrayList;
+import java.util.List;
+
+public class InsertEntityModel implements Model
 {
-    private String sql;
+    private         String                       sql;
+    private         TableEntityInfo.PkReturnType pkReturnType;
+    protected final List<Object>                 paramValues = new ArrayList<>();
 
     public InsertEntityModel(Object entity)
     {
-        type = ModelType.insert;
         StringBuilder   builder    = new StringBuilder();
         TableEntityInfo entityInfo = TableEntityInfo.parse(entity.getClass());
         builder.append("insert into ").append(entityInfo.getTableName()).append(" (");
@@ -98,8 +102,8 @@ public class InsertEntityModel extends BaseModel
     }
 
     @Override
-    public String getSql()
+    public ModelResult getResult()
     {
-        return sql;
+        return new ModelResult(sql, paramValues, null, pkReturnType);
     }
 }

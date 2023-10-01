@@ -1,7 +1,7 @@
 package com.jfirer.jsql.model.param;
 
-import com.jfirer.jsql.model.BaseModel;
 import com.jfirer.jsql.model.InternalParam;
+import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.Param;
 import com.jfirer.jsql.model.support.SFunction;
 
@@ -30,7 +30,7 @@ public abstract class InternalParamImpl implements InternalParam
         }
 
         @Override
-        public void renderSql(BaseModel model, StringBuilder builder, List<Object> paramValues)
+        public void renderSql(Model model, StringBuilder builder, List<Object> paramValues)
         {
             param1.renderSql(model, builder, paramValues);
             builder.append(" and ");
@@ -51,7 +51,7 @@ public abstract class InternalParamImpl implements InternalParam
         }
 
         @Override
-        public void renderSql(BaseModel model, StringBuilder builder, List<Object> paramValues)
+        public void renderSql(Model model, StringBuilder builder, List<Object> paramValues)
         {
             param1.renderSql(model, builder, paramValues);
             builder.append(" or ");
@@ -70,7 +70,7 @@ public abstract class InternalParamImpl implements InternalParam
         }
 
         @Override
-        public void renderSql(BaseModel model, StringBuilder builder, List<Object> paramValues)
+        public void renderSql(Model model, StringBuilder builder, List<Object> paramValues)
         {
             builder.append("( ");
             param.renderSql(model, builder, paramValues);
@@ -97,7 +97,7 @@ public abstract class InternalParamImpl implements InternalParam
     }
 
     @Override
-    public void renderSql(BaseModel model, StringBuilder builder, List<Object> paramValues)
+    public void renderSql(Model model, StringBuilder builder, List<Object> paramValues)
     {
         consumer.accept(model.findColumnName(fn), builder, paramValues);
     }

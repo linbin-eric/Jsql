@@ -6,7 +6,6 @@ import com.jfirer.jsql.executor.SqlExecutor;
 import com.jfirer.jsql.mapper.AbstractMapper;
 import com.jfirer.jsql.mapper.MapperGenerator;
 import com.jfirer.jsql.metadata.TableEntityInfo;
-import com.jfirer.jsql.model.BaseModel;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.session.SqlSession;
 import org.slf4j.Logger;
@@ -159,23 +158,23 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> int update(T entity)
     {
-        BaseModel.ModelResult result = Model.update(entity).getResult();
+        Model.ModelResult result = Model.update(entity).getResult();
         return execute(result.sql(), result.paramValues());
     }
 
-    public <T> void insert(List<T> entities)
-    {
-        Model                 model   = Model.batchInsert(entities);
-        BaseModel.ModelResult result  = model.getResult();
-        String                sql     = result.sql();
-        List<Object>          objects = result.paramValues();
-    }
+//    public <T> void insert(List<T> entities)
+//    {
+//        Model             model   = Model.batchInsert(entities);
+//        Model.ModelResult result  = model.getResult();
+//        String            sql     = result.sql();
+//        List<Object>      objects = result.paramValues();
+//    }
 
     @SuppressWarnings({"unchecked"})
     @Override
     public <T> int insert(T entity)
     {
-        BaseModel.ModelResult result = Model.insert(entity).getResult();
+        Model.ModelResult result = Model.insert(entity).getResult();
         if (result.pkReturnType() != TableEntityInfo.PkReturnType.NO_RETURN_PK)
         {
             String                     pk     = insertReturnPk(result.sql(), result.paramValues());
@@ -207,20 +206,20 @@ public class SqlSessionImpl implements SqlSession
                 if (count++ >= batchSize)
                 {
                     count = 0;
-                    BaseModel.ModelResult result = Model.batchInsert(batch).getResult();
+                    Model.ModelResult result = Model.batchInsert(batch).getResult();
                     execute(result.sql(), result.paramValues());
                     batch.clear();
                 }
             }
             if (count != 0)
             {
-                BaseModel.ModelResult result = Model.batchInsert(batch).getResult();
+                Model.ModelResult result = Model.batchInsert(batch).getResult();
                 execute(result.sql(), result.paramValues());
             }
         }
         else
         {
-            BaseModel.ModelResult result = Model.batchInsert(list).getResult();
+            Model.ModelResult result = Model.batchInsert(list).getResult();
             execute(result.sql(), result.paramValues());
         }
     }
@@ -228,28 +227,28 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> T findOne(Model model)
     {
-        BaseModel.ModelResult result = model.getResult();
+        Model.ModelResult result = model.getResult();
         return query(result.sql(), result.returnType(), result.paramValues());
     }
 
     @Override
     public <T> List<T> findList(Model model)
     {
-        BaseModel.ModelResult result = model.getResult();
+        Model.ModelResult result = model.getResult();
         return queryList(result.sql(), result.returnType(), result.paramValues());
     }
 
     @Override
     public int count(Model model)
     {
-        BaseModel.ModelResult result = model.getResult();
+        Model.ModelResult result = model.getResult();
         return query(result.sql(), Integer.class, result.paramValues());
     }
 
     @Override
     public int execute(Model model)
     {
-        BaseModel.ModelResult result = model.getResult();
+        Model.ModelResult result = model.getResult();
         return execute(result.sql(), result.paramValues());
     }
 

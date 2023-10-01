@@ -1,9 +1,7 @@
 package com.jfirer.jsql.model;
 
-import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.model.*;
-import com.jfirer.jsql.model.support.LockMode;
 import com.jfirer.jsql.model.support.SFunction;
 
 import java.util.List;
@@ -20,7 +18,7 @@ public interface Model
         return new InsertModel(ckass);
     }
 
-    static <T> Model insert(T entity)
+    static <T> InsertEntityModel insert(T entity)
     {
         return new InsertEntityModel(entity);
     }
@@ -30,14 +28,14 @@ public interface Model
         return new DeleteModel(ckass);
     }
 
-    static <T> Model update(T entity)
+    static <T> UpdateEntityModel update(T entity)
     {
         return new UpdateEntityModel(entity);
     }
 
-    static <T> Model select(SFunction<T, ?>... fns)
+    static <T> QueryModel select(SFunction<T, ?>... fns)
     {
-        BaseModel model = new BaseModel();
+        QueryModel model = new QueryModel();
         for (SFunction<?, ?> fn : fns)
         {
             model.addSelect(fn);
@@ -45,114 +43,73 @@ public interface Model
         return model;
     }
 
-    static <T> Model batchInsert(List<T> entities)
+    static <T> BatchInsertModel batchInsert(List<T> entities)
     {
         return new BatchInsertModel((List<Object>) entities);
     }
 
-    /**
-     * 在查询的select列中排除对应字段
-     *
-     * @param fns
-     * @param <T>
-     * @return
-     */
-    <T> Model exclude(SFunction<T, ?>... fns);
-
-    static Model selectAll()
+    static QueryModel selectAll()
     {
-        return new BaseModel();
+        return new QueryModel();
     }
 
-    static Model selectAll(Class<?> ckass)
+    static QueryModel selectAll(Class<?> ckass)
     {
-        BaseModel model = new BaseModel();
+        QueryModel model = new QueryModel();
         model.from(ckass);
         return model;
     }
 
-    static <T> Model selectAlias(SFunction<T, ?> fn, String asName)
+    static <T> QueryModel selectAlias(SFunction<T, ?> fn, String asName)
     {
-        BaseModel model = new BaseModel();
+        QueryModel model = new QueryModel();
         model.selectAs(fn, asName);
         return model;
     }
 
-    static <T> Model selectWithFunction(SFunction<T, ?> fn, String function, String asName)
+    static <T> QueryModel selectWithFunction(SFunction<T, ?> fn, String function, String asName)
     {
-        BaseModel model = new BaseModel();
+        QueryModel model = new QueryModel();
         model.addSelectWithFunction(fn, function, asName);
         return model;
     }
 
-    static <T> Model selectWithFunction(SFunction<T, ?> fn, String function)
+    static <T> QueryModel selectWithFunction(SFunction<T, ?> fn, String function)
     {
         return selectWithFunction(fn, function, null);
     }
 
-    static <T> Model selectCount(SFunction<T, ?> fn)
+    static <T> QueryModel selectCount(SFunction<T, ?> fn)
     {
-        BaseModel model = new BaseModel();
+        QueryModel model = new QueryModel();
         model.selectCount(fn);
         return model;
     }
 
-    static Model selectCount()
+    static QueryModel selectCount()
     {
-        BaseModel model = new BaseModel();
+        QueryModel model = new QueryModel();
         model.selectCount();
         return model;
     }
 
-    static Model selectCount(Class<?> ckass)
+    static QueryModel selectCount(Class<?> ckass)
     {
-        BaseModel model = new BaseModel();
+        QueryModel model = new QueryModel();
         model.from(ckass);
         model.selectCount();
         return model;
     }
 
-    default Model from(Class<?> ckass)
+    record ModelResult(String sql, List<Object> paramValues, Class returnType,
+                       TableEntityInfo.PkReturnType pkReturnType)
     {
-        return fromAs(ckass, TableEntityInfo.parse(ckass).getTableName());
     }
 
-    Model fromAs(Class<?> ckass, String asName);
+    ModelResult getResult();
 
-    <T> Model addSelect(SFunction<T, ?>... fns);
-
-    <T> Model selectAs(SFunction<T, ?> fn, String asName);
-
-    <T> Model addSelectWithFunction(SFunction<T, ?> fn, String function, String asName);
-
-//    <T> Model set(SFunction<T, ?> fn, Object value);
-//
-//    <T, R> Model set(SFunction<T, ?> fn1, SFunction<R, ?> fn2);
-//    <T> Model insert(SFunction<T, ?> fn, Object value);
-
-    Model leftJoin(Class ckass);
-
-    Model rightJoin(Class<?> ckass);
-
-    Model fullJoin(Class<?> ckass);
-
-    Model innerJoin(Class<?> ckass);
-
-    <E, T> Model on(Param param);
-
-    Model where(Param param);
-
-    <T> Model orderBy(SFunction<T, ?> fn, boolean desc);
-
-    <T> Model groupBy(SFunction<T, ?> fn);
-
-    Model returnType(Class<?> ckass);
-
-    Model lockMode(LockMode lockMode);
-
-    Model page(Page page);
-
-    Model limit(int size);
-
-    BaseModel.ModelResult getResult();
+    default String findColumnName(SFunction<?, ?> fn)
+    {
+        throw new UnsupportedOperationException();
+    }
 }
