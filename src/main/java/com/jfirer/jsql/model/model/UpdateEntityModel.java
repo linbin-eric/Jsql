@@ -31,6 +31,6 @@ public class UpdateEntityModel implements Model
     @Override
     public ModelResult getResult()
     {
-        return new ModelResult(sql, paramValues, null, null);
+        return new ModelResult(sql, paramValues);
     }
 }

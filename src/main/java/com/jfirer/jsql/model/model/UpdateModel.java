@@ -14,7 +14,7 @@ public class UpdateModel implements Model
 {
     private         TableEntityInfo tableEntityInfo;
     private         List<Set>       sets        = new LinkedList<>();
-    protected       Param           param;
+    protected       Param           where;
     protected final List<Object>    paramValues = new ArrayList<>();
 
     record Set(String columnName, Object value, boolean anotherField)
@@ -72,10 +72,10 @@ public class UpdateModel implements Model
             }
         }
         builder.setLength(builder.length() - 1);
-        if (param != null)
+        if (where != null)
         {
             builder.append(" where ");
-            ((InternalParam) param).renderSql(this, builder, paramValues);
+            ((InternalParam) where).renderSql(this, builder, paramValues);
         }
         else
         {
@@ -86,7 +86,7 @@ public class UpdateModel implements Model
     @Override
     public ModelResult getResult()
     {
-        return new ModelResult(getSql(), paramValues, null, null);
+        return new ModelResult(getSql(), paramValues);
     }
 
     @Override
@@ -97,7 +97,7 @@ public class UpdateModel implements Model
 
     public UpdateModel where(Param param)
     {
-        this.param = param;
+        this.where = param;
         return this;
     }
 }

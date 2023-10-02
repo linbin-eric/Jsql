@@ -26,7 +26,7 @@ public class InsertModel implements Model
     @Override
     public ModelResult getResult()
     {
-        return new ModelResult(getSql(), paramValues, null, TableEntityInfo.PkReturnType.NO_RETURN_PK);
+        return new ModelResult(getSql(), paramValues);
     }
 
     public <T> InsertModel insert(SFunction<T, ?> fn, Object value)

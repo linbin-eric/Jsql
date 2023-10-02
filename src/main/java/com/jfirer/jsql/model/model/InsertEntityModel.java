@@ -104,6 +104,11 @@ public class InsertEntityModel implements Model
     @Override
     public ModelResult getResult()
     {
-        return new ModelResult(sql, paramValues, null, pkReturnType);
+        return new ModelResult(sql, paramValues);
+    }
+
+    public TableEntityInfo.PkReturnType getPkReturnType()
+    {
+        return pkReturnType;
     }
 }

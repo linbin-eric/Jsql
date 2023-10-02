@@ -1,6 +1,5 @@
 package com.jfirer.jsql.model.model;
 
-import com.jfirer.jsql.annotation.Sql;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.InternalParam;
 import com.jfirer.jsql.model.Model;
@@ -14,7 +13,7 @@ public class DeleteModel implements Model
 {
     private         TableEntityInfo tableEntityInfo;
     protected final List<Object>    paramValues = new ArrayList<>();
-    protected       Param           param;
+    protected       Param           where;
 
     public DeleteModel(Class ckass)
     {
@@ -25,10 +24,10 @@ public class DeleteModel implements Model
     {
         StringBuilder builder = new StringBuilder("delete from ");
         builder.append(tableEntityInfo.getTableName()).append(" ");
-        if (param != null)
+        if (where != null)
         {
             builder.append(" where ");
-            ((InternalParam) param).renderSql(this, builder, paramValues);
+            ((InternalParam) where).renderSql(this, builder, paramValues);
         }
         else
         {
@@ -44,13 +43,13 @@ public class DeleteModel implements Model
 
     public DeleteModel where(Param param)
     {
-        this.param = param;
+        this.where = param;
         return this;
     }
 
     @Override
     public ModelResult getResult()
     {
-        return new ModelResult(getSql(), paramValues, null, null);
+        return new ModelResult(getSql(), paramValues);
     }
 }

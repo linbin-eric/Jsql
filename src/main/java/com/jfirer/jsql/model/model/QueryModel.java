@@ -8,7 +8,6 @@ import com.jfirer.jsql.model.Param;
 import com.jfirer.jsql.model.support.LockMode;
 import com.jfirer.jsql.model.support.SFunction;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -24,7 +23,7 @@ public class QueryModel implements Model
     protected       Page                  page;
     private         Class<?>              returnType;
     protected final List<Object>          paramValues = new ArrayList<>();
-    protected       Param                 param;
+    protected       Param                 where;
     protected       LockMode              lockMode;
 
     public QueryModel addSelect(SFunction<?, ?>... fns)
@@ -103,7 +102,7 @@ public class QueryModel implements Model
         {
             paramValues.add(page);
         }
-        return new ModelResult(sql, paramValues, getReturnType(), null);
+        return new ModelResult(sql, paramValues);
     }
 
     public QueryModel leftJoin(Class ckass)
@@ -162,7 +161,7 @@ public class QueryModel implements Model
         return this;
     }
 
-    protected Class<?> getReturnType()
+    public Class<?> getReturnType()
     {
         if (returnType != null)
         {
@@ -170,26 +169,25 @@ public class QueryModel implements Model
         }
         else if (select.size() > 1)
         {
-            return ((Table) from.get(0)).tableClass;
+            return from.get(0).tableClass;
         }
         else
         {
-            Select select = this.select.get(0);
-            if (select.fn == null)
+            SFunction<?, ?> fn = this.select.get(0).fn;
+            if (fn == null)
             {
-                return ((Table) from.get(0)).tableClass;
+                return from.get(0).tableClass;
             }
-            String   fieldName     = select.fn.resolveFieldName();
-            Class<?> implClass     = select.fn.getImplClass();
-            Field    declaredField = null;
-            try
+            else
             {
-                declaredField = implClass.getDeclaredField(fieldName);
-                return declaredField.getType();
-            }
-            catch (NoSuchFieldException e)
-            {
-                throw new RuntimeException(e);
+                try
+                {
+                    return fn.getImplClass().getDeclaredField(fn.resolveFieldName()).getType();
+                }
+                catch (NoSuchFieldException e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }
@@ -211,7 +209,7 @@ public class QueryModel implements Model
 
     public QueryModel where(Param param)
     {
-        this.param = param;
+        this.where = param;
         return this;
     }
 
@@ -247,10 +245,10 @@ public class QueryModel implements Model
         String segment = select.stream().map(select -> select.toString()).collect(Collectors.joining(","));
         builder.append(segment).append(' ');
         from.forEach(table -> table.append(builder));
-        if (param != null)
+        if (where != null)
         {
             builder.append(" where ");
-            ((InternalParam) param).renderSql(this, builder, paramValues);
+            ((InternalParam) where).renderSql(this, builder, paramValues);
         }
         else
         {

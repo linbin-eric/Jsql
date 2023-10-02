@@ -1,6 +1,5 @@
 package com.jfirer.jsql.model;
 
-import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.model.*;
 import com.jfirer.jsql.model.support.SFunction;
 
@@ -101,8 +100,7 @@ public interface Model
         return model;
     }
 
-    record ModelResult(String sql, List<Object> paramValues, Class returnType,
-                       TableEntityInfo.PkReturnType pkReturnType)
+    record ModelResult(String sql, List<Object> paramValues)
     {
     }
 

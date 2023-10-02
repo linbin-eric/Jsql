@@ -7,6 +7,8 @@ import com.jfirer.jsql.mapper.AbstractMapper;
 import com.jfirer.jsql.mapper.MapperGenerator;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.Model;
+import com.jfirer.jsql.model.model.InsertEntityModel;
+import com.jfirer.jsql.model.model.QueryModel;
 import com.jfirer.jsql.session.SqlSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -166,12 +168,14 @@ public class SqlSessionImpl implements SqlSession
     @Override
     public <T> int insert(T entity)
     {
-        Model.ModelResult result = Model.insert(entity).getResult();
-        if (result.pkReturnType() != TableEntityInfo.PkReturnType.NO_RETURN_PK)
+        InsertEntityModel            insert       = Model.insert(entity);
+        Model.ModelResult            result       = insert.getResult();
+        TableEntityInfo.PkReturnType pkReturnType = insert.getPkReturnType();
+        if (pkReturnType != TableEntityInfo.PkReturnType.NO_RETURN_PK)
         {
             String                     pk     = insertReturnPk(result.sql(), result.paramValues());
             TableEntityInfo.ColumnInfo pkInfo = TableEntityInfo.parse(entity.getClass()).getPkInfo();
-            switch (result.pkReturnType())
+            switch (pkReturnType)
             {
                 case STRING -> pkInfo.accessor().setObject(entity, pk);
                 case INT -> pkInfo.accessor().setObject(entity, Integer.valueOf(pk));
@@ -217,17 +221,17 @@ public class SqlSessionImpl implements SqlSession
     }
 
     @Override
-    public <T> T findOne(Model model)
+    public <T> T findOne(QueryModel model)
     {
         Model.ModelResult result = model.getResult();
-        return query(result.sql(), result.returnType(), result.paramValues());
+        return query(result.sql(), model.getReturnType(), result.paramValues());
     }
 
     @Override
-    public <T> List<T> findList(Model model)
+    public <T> List<T> findList(QueryModel model)
     {
         Model.ModelResult result = model.getResult();
-        return queryList(result.sql(), result.returnType(), result.paramValues());
+        return queryList(result.sql(), model.getReturnType(), result.paramValues());
     }
 
     @Override

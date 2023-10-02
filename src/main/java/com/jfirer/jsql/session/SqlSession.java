@@ -1,6 +1,7 @@
 package com.jfirer.jsql.session;
 
 import com.jfirer.jsql.model.Model;
+import com.jfirer.jsql.model.model.QueryModel;
 
 import java.lang.reflect.AnnotatedElement;
 import java.sql.Connection;
@@ -52,14 +53,14 @@ public interface SqlSession extends ConnectionOp
 
     <T> void batchInsert(List<T> list, int batchSize);
 
-    <T> T findOne(Model model);
+    <T> T findOne(QueryModel model);
 
     /**
      * 如果最后一个参数是Page，则会触发分页查询
      *
      * @return
      */
-    <T> List<T> findList(Model model);
+    <T> List<T> findList(QueryModel model);
 
     int count(Model model);
 

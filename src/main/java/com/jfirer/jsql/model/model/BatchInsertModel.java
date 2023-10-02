@@ -86,7 +86,7 @@ public class BatchInsertModel implements Model
     @Override
     public ModelResult getResult()
     {
-        return new ModelResult(sql, paramValues, null, null);
+        return new ModelResult(sql, paramValues);
     }
 
     private void processBatchValues(List<Object> list, StringBuilder builder, TableEntityInfo.ColumnInfo[] inserts)

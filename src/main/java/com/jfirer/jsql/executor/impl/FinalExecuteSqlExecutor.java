@@ -35,49 +35,23 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
     @Override
     public int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
     {
-        PreparedStatement prepareStatement = null;
-        try
+        try (PreparedStatement prepareStatement = connection.prepareStatement(sql))
         {
-            prepareStatement = connection.prepareStatement(sql);
             dialect.fillStatement(prepareStatement, params);
-            int count = prepareStatement.executeUpdate();
-            prepareStatement.close();
-            return count;
-        }
-        finally
-        {
-            if (prepareStatement != null)
-            {
-                prepareStatement.close();
-            }
+            return prepareStatement.executeUpdate();
         }
     }
 
     @Override
     public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
     {
-        PreparedStatement prepareStatement = null;
-        ResultSet         generatedKeys    = null;
-        try
+        try (PreparedStatement prepareStatement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS))
         {
-            prepareStatement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             dialect.fillStatement(prepareStatement, params);
             prepareStatement.executeUpdate();
-            generatedKeys = prepareStatement.getGeneratedKeys();
-            String pk = generatedKeys.next() ? generatedKeys.getString(1) : null;
-            generatedKeys.close();
-            prepareStatement.close();
-            return pk;
-        }
-        finally
-        {
-            if (generatedKeys != null)
+            try (ResultSet generatedKeys = prepareStatement.getGeneratedKeys())
             {
-                generatedKeys.close();
-            }
-            if (prepareStatement != null)
-            {
-                prepareStatement.close();
+                return generatedKeys.next() ? generatedKeys.getString(1) : null;
             }
         }
     }
@@ -85,32 +59,20 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
     @Override
     public List<Object> queryList(String sql, AnnotatedElement element, List<Object> params, Connection connection, Dialect dialect) throws SQLException
     {
-        PreparedStatement prepareStatement = null;
-        ResultSet         resultSet        = null;
-        try
+        try (PreparedStatement prepareStatement = connection.prepareStatement(sql))
         {
-            prepareStatement = connection.prepareStatement(sql);
             dialect.fillStatement(prepareStatement, params);
-            resultSet = prepareStatement.executeQuery();
-            List<Object> list = new LinkedList<>();
-            ResultSetTransfer resultSetTransfer = element instanceof Method ?//
-                    methodMap.computeIfAbsent(new MethodKey(sql, (Method) element), methodKey -> getTransfer(methodKey.method))//
-                    : classMap.computeIfAbsent(new ClassKey(sql, (Class<?>) element), classKey -> getTransfer(classKey.ckass));
-            while (resultSet.next())
+            try (ResultSet resultSet = prepareStatement.executeQuery())
             {
-                list.add(resultSetTransfer.transfer(resultSet));
-            }
-            return list;
-        }
-        finally
-        {
-            if (resultSet != null)
-            {
-                resultSet.close();
-            }
-            if (prepareStatement != null)
-            {
-                prepareStatement.close();
+                List<Object> list = new LinkedList<>();
+                ResultSetTransfer resultSetTransfer = element instanceof Method ?//
+                        methodMap.computeIfAbsent(new MethodKey(sql, (Method) element), methodKey -> getTransfer(methodKey.method))//
+                        : classMap.computeIfAbsent(new ClassKey(sql, (Class<?>) element), classKey -> getTransfer(classKey.ckass));
+                while (resultSet.next())
+                {
+                    list.add(resultSetTransfer.transfer(resultSet));
+                }
+                return list;
             }
         }
     }
@@ -223,39 +185,27 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
     @Override
     public Object queryOne(String sql, AnnotatedElement element, List<Object> params, Connection connection, Dialect dialect) throws SQLException
     {
-        PreparedStatement prepareStatement = null;
-        ResultSet         executeQuery     = null;
-        try
+        try (PreparedStatement prepareStatement = connection.prepareStatement(sql))
         {
-            prepareStatement = connection.prepareStatement(sql);
             dialect.fillStatement(prepareStatement, params);
-            executeQuery = prepareStatement.executeQuery();
-            if (!executeQuery.next())
+            try (ResultSet executeQuery = prepareStatement.executeQuery())
             {
-                return null;
-            }
-            ResultSetTransfer resultSetTransfer = element instanceof Method ?//
-                    methodMap.computeIfAbsent(new MethodKey(sql, (Method) element), methodKey -> getTransfer(methodKey.method))//
-                    : classMap.computeIfAbsent(new ClassKey(sql, (Class<?>) element), classKey -> getTransfer(classKey.ckass));
-            Object result = resultSetTransfer.transfer(executeQuery);
-            if (!executeQuery.next())
-            {
-                return result;
-            }
-            else
-            {
-                throw new NotSingleResultException();
-            }
-        }
-        finally
-        {
-            if (executeQuery != null)
-            {
-                executeQuery.close();
-            }
-            if (prepareStatement != null)
-            {
-                prepareStatement.close();
+                if (!executeQuery.next())
+                {
+                    return null;
+                }
+                ResultSetTransfer resultSetTransfer = element instanceof Method ?//
+                        methodMap.computeIfAbsent(new MethodKey(sql, (Method) element), methodKey -> getTransfer(methodKey.method))//
+                        : classMap.computeIfAbsent(new ClassKey(sql, (Class<?>) element), classKey -> getTransfer(classKey.ckass));
+                Object result = resultSetTransfer.transfer(executeQuery);
+                if (!executeQuery.next())
+                {
+                    return result;
+                }
+                else
+                {
+                    throw new NotSingleResultException();
+                }
             }
         }
     }
