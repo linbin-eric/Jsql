@@ -54,23 +54,17 @@ public interface Model
 
     static QueryModel selectAll(Class<?> ckass)
     {
-        QueryModel model = new QueryModel();
-        model.from(ckass);
-        return model;
+        return new QueryModel().from(ckass);
     }
 
     static <T> QueryModel selectAlias(SFunction<T, ?> fn, String asName)
     {
-        QueryModel model = new QueryModel();
-        model.selectAs(fn, asName);
-        return model;
+        return new QueryModel().selectAs(fn, asName);
     }
 
     static <T> QueryModel selectWithFunction(SFunction<T, ?> fn, String function, String asName)
     {
-        QueryModel model = new QueryModel();
-        model.addSelectWithFunction(fn, function, asName);
-        return model;
+        return new QueryModel().addSelectWithFunction(fn, function, asName);
     }
 
     static <T> QueryModel selectWithFunction(SFunction<T, ?> fn, String function)
@@ -80,24 +74,17 @@ public interface Model
 
     static <T> QueryModel selectCount(SFunction<T, ?> fn)
     {
-        QueryModel model = new QueryModel();
-        model.selectCount(fn);
-        return model;
+        return new QueryModel().selectCount(fn);
     }
 
     static QueryModel selectCount()
     {
-        QueryModel model = new QueryModel();
-        model.selectCount();
-        return model;
+        return new QueryModel().selectCount();
     }
 
     static QueryModel selectCount(Class<?> ckass)
     {
-        QueryModel model = new QueryModel();
-        model.from(ckass);
-        model.selectCount();
-        return model;
+        return new QueryModel().from(ckass).selectCount();
     }
 
     record ModelResult(String sql, List<Object> paramValues)
