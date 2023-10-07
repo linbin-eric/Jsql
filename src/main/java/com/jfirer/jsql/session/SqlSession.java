@@ -7,7 +7,7 @@ import java.lang.reflect.AnnotatedElement;
 import java.sql.Connection;
 import java.util.List;
 
-interface ConnectionOp
+interface ConnectionOp extends  AutoCloseable
 {
     /**
      * 关闭session，释放数据库链接
