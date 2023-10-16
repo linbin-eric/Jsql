@@ -240,5 +240,16 @@ public class ModelTest
         assertEquals(10, xxx.getAge());
     }
 
-
+    @Test
+    public void test_10()
+    {
+        SqlSession session = sessionFactory.openSession();
+        User       user    = new User();
+        user.setName("aa1");
+        user.setAge(10);
+        session.save(user);
+        User one = session.findOne(Model.selectAll(User.class).where(Param.notEq(User::getName, null)));
+        assertNotNull(one);
+        assertEquals(10, one.getAge());
+    }
 }
