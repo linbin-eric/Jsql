@@ -45,7 +45,7 @@ public class SessionfactoryConfig
 
     private Dialect generateDialect(String productName)
     {
-        if (productName.equals("mariadb") || "mysql".equals(productName))
+        if (productName.equals("mariadb") || "mysql".equals(productName) || "sqlite".equalsIgnoreCase(productName) || "duckdb".equalsIgnoreCase(productName))
         {
             return new MysqlDialect();
         }
