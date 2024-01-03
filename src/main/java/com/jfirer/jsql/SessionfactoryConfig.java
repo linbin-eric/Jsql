@@ -4,10 +4,9 @@ import com.jfirer.baseutil.TRACEID;
 import com.jfirer.baseutil.Verify;
 import com.jfirer.baseutil.reflect.ReflectUtil;
 import com.jfirer.jsql.dialect.Dialect;
-import com.jfirer.jsql.dialect.impl.H2Dialect;
-import com.jfirer.jsql.dialect.impl.MysqlDialect;
-import com.jfirer.jsql.dialect.impl.OracleDialect;
+import com.jfirer.jsql.dialect.impl.StandardDialect;
 import com.jfirer.jsql.executor.SqlExecutor;
+import com.jfirer.jsql.executor.impl.DuckdbPageExecutor;
 import com.jfirer.jsql.executor.impl.FinalExecuteSqlExecutor;
 import com.jfirer.jsql.executor.impl.OraclePageExecutor;
 import com.jfirer.jsql.executor.impl.StandardPageExecutor;
@@ -45,17 +44,16 @@ public class SessionfactoryConfig
 
     private Dialect generateDialect(String productName)
     {
-        if (productName.equals("mariadb") || "mysql".equals(productName) || "sqlite".equalsIgnoreCase(productName) || "duckdb".equalsIgnoreCase(productName))
+        if (productName.equals("mariadb")//
+            || "mysql".equals(productName)//
+            || "sqlite".equalsIgnoreCase(productName)//
+            || "duckdb".equalsIgnoreCase(productName)//
+            || "oracle".equalsIgnoreCase(productName)//
+            || "h2".equalsIgnoreCase(productName)//
+            || "hsql database engine".equalsIgnoreCase(productName)//
+        )
         {
-            return new MysqlDialect();
-        }
-        else if (productName.equals("oracle"))
-        {
-            return new OracleDialect();
-        }
-        else if (productName.equals("h2"))
-        {
-            return new H2Dialect();
+            return new StandardDialect();
         }
         else
         {
@@ -65,13 +63,21 @@ public class SessionfactoryConfig
 
     private SqlExecutor generateHeadSqlExecutor(String productName)
     {
-        if ("mysql".equalsIgnoreCase(productName) || "h2".equalsIgnoreCase(productName))
+        if (productName.contains("mysql")//
+            || productName.contains("h2")//
+            || productName.contains("hsql")//
+            || productName.contains("sqlite")//
+        )
         {
             sqlExecutors.add(new StandardPageExecutor());
         }
         else if ("oracle".equalsIgnoreCase(productName))
         {
             sqlExecutors.add(new OraclePageExecutor());
+        }
+        else if ("duckdb".equalsIgnoreCase(productName))
+        {
+            sqlExecutors.add(new DuckdbPageExecutor());
         }
         sqlExecutors.add(new FinalExecuteSqlExecutor());
         Optional<SqlExecutor> minOrderExecutor = sqlExecutors.stream()//

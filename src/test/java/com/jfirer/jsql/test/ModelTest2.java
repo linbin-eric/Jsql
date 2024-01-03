@@ -3,7 +3,7 @@ package com.jfirer.jsql.test;
 import com.jfirer.baseutil.time.Timewatch;
 import com.jfirer.jsql.SessionFactory;
 import com.jfirer.jsql.SessionfactoryConfig;
-import com.jfirer.jsql.dialect.impl.H2Dialect;
+import com.jfirer.jsql.dialect.impl.StandardDialect;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.Param;
 import com.jfirer.jsql.session.SqlSession;
@@ -46,7 +46,7 @@ public class ModelTest2
         dataSource.setUsername("sa");
         dataSource.setPassword("");
         config.setDataSource(dataSource);
-        config.setDialect(new H2Dialect((preparedStatement, i, value) -> {
+        config.setDialect(new StandardDialect((preparedStatement, i, value) -> {
             if (value instanceof User.StringEnum stringEnum)
             {
                 preparedStatement.setString(i, stringEnum.name());

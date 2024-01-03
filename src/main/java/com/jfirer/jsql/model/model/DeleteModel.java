@@ -14,6 +14,7 @@ public class DeleteModel implements Model
     private         TableEntityInfo tableEntityInfo;
     protected final List<Object>    paramValues = new ArrayList<>();
     protected       Param           where;
+    protected       int             limit;
 
     public DeleteModel(Class ckass)
     {
@@ -32,6 +33,10 @@ public class DeleteModel implements Model
         else
         {
         }
+        if (limit != 0)
+        {
+            builder.append(" limit ").append(limit);
+        }
         return builder.toString();
     }
 
@@ -44,6 +49,12 @@ public class DeleteModel implements Model
     public DeleteModel where(Param param)
     {
         this.where = param;
+        return this;
+    }
+
+    public DeleteModel limit(int limit)
+    {
+        this.limit = limit;
         return this;
     }
 

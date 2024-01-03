@@ -3,7 +3,7 @@ package com.jfirer.jsql.test;
 import com.jfirer.jsql.SessionFactory;
 import com.jfirer.jsql.SessionfactoryConfig;
 import com.jfirer.jsql.annotation.Sql;
-import com.jfirer.jsql.dialect.impl.H2Dialect;
+import com.jfirer.jsql.dialect.impl.StandardDialect;
 import com.jfirer.jsql.mapper.Mapper;
 import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.session.SqlSession;
@@ -228,7 +228,7 @@ public class MapperTest2
         dataSource.setUsername("sa");
         dataSource.setPassword("");
         config.setDataSource(dataSource);
-        config.setDialect(new H2Dialect((PreparedStatement preparedStatement, int i, Object value) -> {
+        config.setDialect(new StandardDialect((PreparedStatement preparedStatement, int i, Object value) -> {
             if (value instanceof User.StringEnum stringEnum)
             {
                 preparedStatement.setString(i, stringEnum.name());

@@ -9,16 +9,16 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-public class OracleDialect implements Dialect
+public class StandardDialect implements Dialect
 {
     ThreeConsumer consumer;
 
-    public OracleDialect(ThreeConsumer consumer)
+    public StandardDialect(ThreeConsumer consumer)
     {
         this.consumer = consumer;
     }
 
-    public OracleDialect()
+    public StandardDialect()
     {
         this(ThreeConsumer::defaultAccept);
     }
