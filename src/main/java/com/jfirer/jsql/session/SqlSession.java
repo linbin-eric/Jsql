@@ -1,5 +1,6 @@
 package com.jfirer.jsql.session;
 
+import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.model.QueryModel;
 
@@ -7,7 +8,7 @@ import java.lang.reflect.AnnotatedElement;
 import java.sql.Connection;
 import java.util.List;
 
-interface ConnectionOp extends  AutoCloseable
+interface ConnectionOp extends AutoCloseable
 {
     /**
      * 关闭session，释放数据库链接
@@ -61,6 +62,14 @@ public interface SqlSession extends ConnectionOp
      * @return
      */
     <T> List<T> findList(QueryModel model);
+
+    /**
+     * 以分页的形式查询数据，会返回单次查询的数据内容和总条数。
+     * 默认情况下，返回数据总数为：10，偏移量为：0.
+     * @param model
+     * @return
+     */
+    Page findListByPage(QueryModel model);
 
     int count(Model model);
 

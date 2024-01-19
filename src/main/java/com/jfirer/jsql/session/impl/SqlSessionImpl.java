@@ -5,6 +5,7 @@ import com.jfirer.jsql.dialect.Dialect;
 import com.jfirer.jsql.executor.SqlExecutor;
 import com.jfirer.jsql.mapper.AbstractMapper;
 import com.jfirer.jsql.mapper.MapperGenerator;
+import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.model.InsertEntityModel;
@@ -232,6 +233,14 @@ public class SqlSessionImpl implements SqlSession
     {
         Model.ModelResult result = model.getResult();
         return queryList(result.sql(), model.getReturnType(), result.paramValues());
+    }
+
+    @Override
+    public Page findListByPage(QueryModel model)
+    {
+        Page page = model.getPage();
+        findList(model);
+        return page;
     }
 
     @Override

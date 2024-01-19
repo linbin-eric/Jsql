@@ -7,6 +7,7 @@ import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.Param;
 import com.jfirer.jsql.model.support.LockMode;
 import com.jfirer.jsql.model.support.SFunction;
+import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -20,6 +21,7 @@ public class QueryModel implements Model
     private         List<Table>           from        = new LinkedList<>();
     private         List<String>          orderBy     = new LinkedList<>();
     private         List<String>          groupBy     = new LinkedList<>();
+    @Getter
     protected       Page                  page;
     private         Class<?>              returnType;
     protected final List<Object>          paramValues = new ArrayList<>();
@@ -198,12 +200,29 @@ public class QueryModel implements Model
         return this;
     }
 
+    public QueryModel offset(int offset)
+    {
+        if (page == null)
+        {
+            page = new Page();
+            page.setFetchSum(true);
+            page.setOffset(0);
+            page.setSize(10);
+        }
+        page.setOffset(offset);
+        return this;
+    }
+
     public QueryModel limit(int size)
     {
-        page = new Page();
-        page.setFetchSum(false);
+        if (page == null)
+        {
+            page = new Page();
+            page.setFetchSum(true);
+            page.setOffset(0);
+            page.setSize(10);
+        }
         page.setSize(size);
-        page.setOffset(0);
         return this;
     }
 
