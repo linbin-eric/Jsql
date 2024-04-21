@@ -72,7 +72,7 @@ public class MapperGenerator
                     }
                     else
                     {
-                        String returnTypeName = method.getReturnType().isPrimitive() ? ReflectUtil.wrapPrimitive(method.getReturnType()).getName() : SmcHelper.getReferenceName(method.getReturnType(), classModel);
+                        String returnTypeName = ReflectUtil.isPrimitive(method.getReturnType()) ? ReflectUtil.getBoxedType(method.getReturnType()).getName() : SmcHelper.getReferenceName(method.getReturnType(), classModel);
                         methodBody.append(returnTypeName).append(" result = session.query(sql,methods.get(").append(methodIndex).append("),params);\r\n");
                     }
                 }
@@ -127,9 +127,9 @@ public class MapperGenerator
         Method      count       = ckass.getMethod("count", Param.class);
         MethodModel methodModel = new MethodModel(count, classModel);
         methodModel.setBody("""
-                            if(session==null){throw new NullPointerException("当前没有session");}
-                            return session.count(Model.selectCount().from(
-                            """ + SmcHelper.getReferenceName(repositoryEntityClass, classModel) + ".class).where($0));");
+                                    if(session==null){throw new NullPointerException("当前没有session");}
+                                    return session.count(Model.selectCount().from(
+                                    """ + SmcHelper.getReferenceName(repositoryEntityClass, classModel) + ".class).where($0));");
         classModel.putMethodModel(methodModel);
     }
 
@@ -139,9 +139,9 @@ public class MapperGenerator
         MethodModel methodModel = new MethodModel(update, classModel);
         methodModel.setParamterTypes(repositoryEntityClass);
         methodModel.setBody("""
-                            if(session==null){throw new NullPointerException("当前没有session");}
-                            return session.update($0);
-                            """);
+                                    if(session==null){throw new NullPointerException("当前没有session");}
+                                    return session.update($0);
+                                    """);
         classModel.putMethodModel(methodModel);
     }
 
@@ -151,9 +151,9 @@ public class MapperGenerator
         MethodModel methodModel = new MethodModel(save, classModel);
         methodModel.setParamterTypes(repositoryEntityClass);
         methodModel.setBody("""
-                            if(session==null){throw new NullPointerException("当前没有session");}
-                            return session.save($0);
-                            """);
+                                    if(session==null){throw new NullPointerException("当前没有session");}
+                                    return session.save($0);
+                                    """);
         classModel.putMethodModel(methodModel);
     }
 
@@ -163,9 +163,9 @@ public class MapperGenerator
         MethodModel methodModel = new MethodModel(insert, classModel);
         methodModel.setParamterTypes(repositoryEntityClass);
         methodModel.setBody("""
-                            if(session==null){throw new NullPointerException("当前没有session");}
-                            return session.insert($0);
-                            """);
+                                    if(session==null){throw new NullPointerException("当前没有session");}
+                                    return session.insert($0);
+                                    """);
         classModel.putMethodModel(methodModel);
     }
 
@@ -174,8 +174,8 @@ public class MapperGenerator
         Method      delete      = ckass.getMethod("delete", Param.class);
         MethodModel methodModel = new MethodModel(delete, classModel);
         methodModel.setBody("""
-                            if(session==null){throw new NullPointerException("当前没有session");}
-                            return session.execute(Model.deleteFrom(""" + SmcHelper.getReferenceName(repositoryEntityClass, classModel) + ".class).where($0));");
+                                    if(session==null){throw new NullPointerException("当前没有session");}
+                                    return session.execute(Model.deleteFrom(""" + SmcHelper.getReferenceName(repositoryEntityClass, classModel) + ".class).where($0));");
         classModel.putMethodModel(methodModel);
     }
 
@@ -184,8 +184,8 @@ public class MapperGenerator
         Method      findList    = ckass.getMethod("findList", Param.class);
         MethodModel methodModel = new MethodModel(findList, classModel);
         methodModel.setBody("""
-                            if(session==null){throw new NullPointerException("当前没有session");}
-                            return session.findList(Model.selectAll().from(""" //
+                                    if(session==null){throw new NullPointerException("当前没有session");}
+                                    return session.findList(Model.selectAll().from(""" //
                             + SmcHelper.getReferenceName(repositoryEntityClass, classModel) + ".class).where($0));");
         classModel.putMethodModel(methodModel);
     }
@@ -196,8 +196,8 @@ public class MapperGenerator
         MethodModel findOne = new MethodModel(method, classModel);
         findOne.setReturnType(repositoryEntityClass);
         findOne.setBody("""
-                        if(session==null){throw new NullPointerException("当前没有session");}
-                        return session.findOne(Model.selectAll().from(""" //
+                                if(session==null){throw new NullPointerException("当前没有session");}
+                                return session.findOne(Model.selectAll().from(""" //
                         + SmcHelper.getReferenceName(repositoryEntityClass, classModel) + ".class).where($0));");
         classModel.putMethodModel(findOne);
     }

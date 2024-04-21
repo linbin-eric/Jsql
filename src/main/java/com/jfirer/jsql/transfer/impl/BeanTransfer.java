@@ -89,7 +89,7 @@ public class BeanTransfer implements ResultSetTransfer
                                 field = returnTypeInfo.getColumnInfoByColumnNameIgnoreCase(columnLabel).field();
                             }
                         }
-                        Class fieldType = field.getType().isPrimitive() ? ReflectUtil.wrapPrimitive(field.getType()) : field.getType();
+                        Class fieldType = field.getType().isPrimitive() ? ReflectUtil.getBoxedType(field.getType()) : field.getType();
                         if (AnnotationContext.isAnnotationPresent(CustomTransfer.class, field))
                         {
                             try
@@ -98,8 +98,7 @@ public class BeanTransfer implements ResultSetTransfer
                                 columnIndexHolder.awareType(field.getType());
                                 columnTransfer = new ColumnTransfer(columnIndexHolder, new ValueAccessor(field));
                             }
-                            catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                                   NoSuchMethodException e)
+                            catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e)
                             {
                                 throw new RuntimeException(e);
                             }
@@ -178,7 +177,7 @@ public class BeanTransfer implements ResultSetTransfer
                         }
                         if (transfers.add(columnTransfer) == false)
                         {
-                            throw new IllegalArgumentException("在一个sql语句中出现重复名称字段，重复类属性为:" + columnTransfer.accessor.getField().toString()+",重复的数据库字段为"+tableName+"."+columnName);
+                            throw new IllegalArgumentException("在一个sql语句中出现重复名称字段，重复类属性为:" + columnTransfer.accessor.getField().toString() + ",重复的数据库字段为" + tableName + "." + columnName);
                         }
                     }
                     this.columnTransfers = transfers.toArray(ColumnTransfer[]::new);
