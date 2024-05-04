@@ -248,7 +248,7 @@ public class ModelTest
         user.setName("aa1");
         user.setAge(10);
         session.save(user);
-        User one = session.findOne(Model.selectAll(User.class).where(Param.notEq(User::getName, null)));
+        User one = session.findOne(Model.selectAll(User.class).where(Param.notNull(User::getName)));
         assertNotNull(one);
         assertEquals(10, one.getAge());
     }
