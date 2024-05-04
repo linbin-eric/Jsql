@@ -37,16 +37,19 @@ public interface Param
 
     Param union();
 
+    static <T> Param isNull(SFunction<T, ?> fn)
+    {
+        return new NullValueParam(fn);
+    }
+
+    static <T> Param notNull(SFunction<T, ?> fn)
+    {
+        return new NotNullValueParam(fn);
+    }
+
     static <T> Param eq(SFunction<T, ?> fn, Object value)
     {
-        if (value == null)
-        {
-            return new NullValueParam(fn, true);
-        }
-        else
-        {
-            return new OneValueParam(fn, value, "=");
-        }
+        return new OneValueParam(fn, value, "=");
     }
 
     static <T, R> Param eq(SFunction<T, ?> fn1, SFunction<R, ?> fn2)
@@ -56,14 +59,7 @@ public interface Param
 
     static <T> Param notEq(SFunction<T, ?> fn, Object value)
     {
-        if (value == null)
-        {
-            return new NullValueParam(fn, false);
-        }
-        else
-        {
-            return new OneValueParam(fn, value, "!=");
-        }
+        return new OneValueParam(fn, value, "!=");
     }
 
     static <T> Param bt(SFunction<T, ?> fn, Object value)
