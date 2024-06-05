@@ -18,18 +18,12 @@ public interface Dialect
     @FunctionalInterface
     interface ThreeConsumer
     {
-        void accept(PreparedStatement preparedStatement, int index, Object value) throws SQLException;
 
-        static void defaultAccept(PreparedStatement preparedStatement, int index, Object value)
+        boolean accept(PreparedStatement preparedStatement, int index, Object value) throws SQLException;
+
+        static boolean defaultAccept(PreparedStatement preparedStatement, int index, Object value)
         {
-            try
-            {
-                preparedStatement.setObject(index, value);
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeException(e);
-            }
+            return false;
         }
     }
 }

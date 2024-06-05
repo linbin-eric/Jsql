@@ -8,6 +8,7 @@ import com.jfirer.jsql.model.Model;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -16,15 +17,15 @@ public class BatchInsertModel implements Model
     private final   String       sql;
     protected final List<Object> paramValues = new ArrayList<>();
 
-    public BatchInsertModel(List<Object> list)
+    public BatchInsertModel(Collection<Object> collection)
     {
         StringBuilder   builder      = new StringBuilder();
-        Object          firstForMode = list.get(0);
+        Object          firstForMode = collection.iterator().next();
         TableEntityInfo entityInfo   = TableEntityInfo.parse((Class<?>) firstForMode.getClass());
         builder.append("insert into ").append(entityInfo.getTableName()).append(" ");
         if (entityInfo.getPkInfo() == null)
         {
-            processBatchValues(list, builder, entityInfo.getAllColumnInfos());
+            processBatchValues(collection, builder, entityInfo.getAllColumnInfos());
         }
         else
         {
@@ -32,14 +33,14 @@ public class BatchInsertModel implements Model
             Object                     pk     = pkInfo.accessor().get(firstForMode);
             if (pk != null)
             {
-                processBatchValues(list, builder, entityInfo.getAllColumnInfos());
+                processBatchValues(collection, builder, entityInfo.getAllColumnInfos());
             }
             else
             {
                 if (pkInfo.field().isAnnotationPresent(PkGenerator.class))
                 {
-                    list.stream().forEach(v -> pkInfo.accessor().setObject(v, entityInfo.getPkGenerator().next()));
-                    processBatchValues(list, builder, entityInfo.getAllColumnInfos());
+                    collection.forEach(v -> pkInfo.accessor().setObject(v, entityInfo.getPkGenerator().next()));
+                    processBatchValues(collection, builder, entityInfo.getAllColumnInfos());
                 }
                 else if (pkInfo.field().isAnnotationPresent(AutoIncrement.class) || pkInfo.field().isAnnotationPresent(Sequence.class))
                 {
@@ -59,7 +60,7 @@ public class BatchInsertModel implements Model
                         }
                         segment.append(pkInfo.field().getAnnotation(Sequence.class).value()).append(".NEXTVAL),");
                         String _segment = segment.toString();
-                        for (Object obj : list)
+                        for (Object obj : collection)
                         {
                             builder.append(_segment);
                             for (TableEntityInfo.ColumnInfo each : allColumnInfosExcludePk)
@@ -71,7 +72,7 @@ public class BatchInsertModel implements Model
                     }
                     else
                     {
-                        processBatchValues(list, builder, entityInfo.getAllColumnInfosExcludePk());
+                        processBatchValues(collection, builder, entityInfo.getAllColumnInfosExcludePk());
                     }
                 }
                 else
@@ -89,10 +90,10 @@ public class BatchInsertModel implements Model
         return new ModelResult(sql, paramValues);
     }
 
-    private void processBatchValues(List<Object> list, StringBuilder builder, TableEntityInfo.ColumnInfo[] inserts)
+    private void processBatchValues(Collection<Object> list, StringBuilder builder, TableEntityInfo.ColumnInfo[] inserts)
     {
-        builder.append(" ( ").append(Arrays.stream(inserts).map(data -> data.columnName()).collect(Collectors.joining(","))).append(") values  ");
-        String segment = "(" + Arrays.stream(inserts).map(insert -> "?").collect(Collectors.joining(",")).toString() + "),";
+        builder.append(" ( ").append(Arrays.stream(inserts).map(TableEntityInfo.ColumnInfo::columnName).collect(Collectors.joining(","))).append(") values  ");
+        String segment = "(" + Arrays.stream(inserts).map(insert -> "?").collect(Collectors.joining(",")) + "),";
         for (Object obj : list)
         {
             builder.append(segment);

@@ -31,6 +31,10 @@ public class StandardDialect implements Dialect
         {
             Object value = params.get(i);
             int    index = i + 1;
+            if (consumer.accept(preparedStatement, index, value))
+            {
+                continue;
+            }
             if (value instanceof java.sql.Date)
             {
                 preparedStatement.setDate(index, (java.sql.Date) value);
@@ -53,7 +57,7 @@ public class StandardDialect implements Dialect
             }
             else
             {
-                consumer.accept(preparedStatement, index, value);
+                preparedStatement.setObject(index, value);
             }
         }
     }

@@ -136,13 +136,13 @@ public class MapperTest2
         /* 测试page */
 //        @Sql(sql = "select * from User <%  if( name != null) {    %>" + " where name like ${'%'+name+'%'}" + " <%} else {%> " + "where id=${id}" + " <%}%> ", paramNames = "name,id")
         @Sql(sql = """
-                   select * from User 
-                   <%  if( name != null) {    %>
-                    where name like ${'%'+name+'%'}
-                   <%} else {%>
-                    where id=${id}
-                    <%}%>
-                   """, paramNames = "name,id")
+                select * from User 
+                <%  if( name != null) {    %>
+                 where name like ${'%'+name+'%'}
+                <%} else {%>
+                 where id=${id}
+                 <%}%>
+                """, paramNames = "name,id")
         List<User> find(String name, int id, Page page);
 
         @Sql(sql = "select * from User where name like ${'%'+name+'%'}", paramNames = "name")
@@ -232,14 +232,16 @@ public class MapperTest2
             if (value instanceof User.StringEnum stringEnum)
             {
                 preparedStatement.setString(i, stringEnum.name());
+                return true;
             }
             else if (value instanceof Enum<?> enum1)
             {
                 preparedStatement.setInt(i, enum1.ordinal());
+                return true;
             }
             else
             {
-                preparedStatement.setObject(i, value);
+                return false;
             }
         }));
         config.addSqlExecutor(new SqlLog());
@@ -265,7 +267,7 @@ public class MapperTest2
         session.save(user);
         session.close();
         sqlSession = sessionFactory.openSession();
-        testOp = sqlSession.getMapper(TestOp.class);
+        testOp     = sqlSession.getMapper(TestOp.class);
     }
 
     /**

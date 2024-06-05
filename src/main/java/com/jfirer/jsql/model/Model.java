@@ -3,6 +3,7 @@ package com.jfirer.jsql.model;
 import com.jfirer.jsql.model.model.*;
 import com.jfirer.jsql.model.support.SFunction;
 
+import java.util.Collection;
 import java.util.List;
 
 public interface Model
@@ -42,9 +43,9 @@ public interface Model
         return model;
     }
 
-    static <T> BatchInsertModel batchInsert(List<T> entities)
+    static <T> BatchInsertModel batchInsert(Collection<T> entities)
     {
-        return new BatchInsertModel((List<Object>) entities);
+        return new BatchInsertModel((Collection<Object>) entities);
     }
 
     static QueryModel selectAll()

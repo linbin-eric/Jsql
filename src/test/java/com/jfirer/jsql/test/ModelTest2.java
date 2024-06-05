@@ -50,14 +50,16 @@ public class ModelTest2
             if (value instanceof User.StringEnum stringEnum)
             {
                 preparedStatement.setString(i, stringEnum.name());
+                return true;
             }
             else if (value instanceof Enum<?> enum1)
             {
                 preparedStatement.setInt(i, enum1.ordinal());
+                return true;
             }
             else
             {
-                preparedStatement.setObject(i, value);
+                return false;
             }
         }));
         config.addSqlExecutor(new SqlLog());

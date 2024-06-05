@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.AnnotatedElement;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -191,13 +192,13 @@ public class SqlSessionImpl implements SqlSession
     }
 
     @Override
-    public <T> void batchInsert(List<T> list, int batchSize)
+    public <T> void batchInsert(Collection<T> collection, int batchSize)
     {
-        if (list.size() > batchSize)
+        if (collection.size() > batchSize)
         {
             List<Object> batch = new LinkedList<>();
             int          count = 0;
-            for (T t : list)
+            for (T t : collection)
             {
                 batch.add(t);
                 if (count++ >= batchSize)
@@ -216,7 +217,7 @@ public class SqlSessionImpl implements SqlSession
         }
         else
         {
-            Model.ModelResult result = Model.batchInsert(list).getResult();
+            Model.ModelResult result = Model.batchInsert(collection).getResult();
             execute(result.sql(), result.paramValues());
         }
     }

@@ -6,6 +6,7 @@ import com.jfirer.jsql.model.model.QueryModel;
 
 import java.lang.reflect.AnnotatedElement;
 import java.sql.Connection;
+import java.util.Collection;
 import java.util.List;
 
 interface ConnectionOp extends AutoCloseable
@@ -52,7 +53,7 @@ public interface SqlSession extends ConnectionOp
 {
     <T> T getMapper(Class<T> mapperClass);
 
-    <T> void batchInsert(List<T> list, int batchSize);
+    <T> void batchInsert(Collection<T> collection, int batchSize);
 
     <T> T findOne(QueryModel model);
 
@@ -66,6 +67,7 @@ public interface SqlSession extends ConnectionOp
     /**
      * 以分页的形式查询数据，会返回单次查询的数据内容和总条数。
      * 默认情况下，返回数据总数为：10，偏移量为：0.
+     *
      * @param model
      * @return
      */
