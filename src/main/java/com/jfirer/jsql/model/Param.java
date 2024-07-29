@@ -89,17 +89,32 @@ public interface Param
 
     static <T> Param startWith(SFunction<T, ?> fn, Object value)
     {
-        return new StringPatternParam(fn, StringPatternParam.PatternMode.AFTER, value);
+        return new StringPatternParam(fn, StringPatternParam.PatternMode.AFTER, value, false);
     }
 
     static <T> Param endWith(SFunction<T, ?> fn, Object value)
     {
-        return new StringPatternParam(fn, StringPatternParam.PatternMode.BEFORE, value);
+        return new StringPatternParam(fn, StringPatternParam.PatternMode.BEFORE, value, false);
     }
 
     static <T> Param contain(SFunction<T, ?> fn, Object value)
     {
-        return new StringPatternParam(fn, StringPatternParam.PatternMode.BOTH, value);
+        return new StringPatternParam(fn, StringPatternParam.PatternMode.BOTH, value, false);
+    }
+
+    static <T> Param notStartWith(SFunction<T, ?> fn, Object value)
+    {
+        return new StringPatternParam(fn, StringPatternParam.PatternMode.AFTER, value, true);
+    }
+
+    static <T> Param notEndWith(SFunction<T, ?> fn, Object value)
+    {
+        return new StringPatternParam(fn, StringPatternParam.PatternMode.BEFORE, value, true);
+    }
+
+    static <T> Param notContain(SFunction<T, ?> fn, Object value)
+    {
+        return new StringPatternParam(fn, StringPatternParam.PatternMode.BOTH, value, true);
     }
 
     static <T> Param in(SFunction<T, ?> fn, Object... values)

@@ -301,7 +301,7 @@ public class Template
         {
             builder.append("print(\"").append(content.substring(mark, index)).append("\");\r\n");
         }
-        return new Template(Expression.parseMutli(builder.toString()));
+        return new Template(Expression.parse(builder.toString()));
     }
 
     public String render(Map<String, Object> variables, List<Object> sqlParams)
