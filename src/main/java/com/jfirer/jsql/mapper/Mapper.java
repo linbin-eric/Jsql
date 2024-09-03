@@ -12,5 +12,8 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface Mapper
 {
+    /**
+     * 本 Mapper 中会使用的代表实体的类
+     */
     Class<?>[] value() default {};
 }
