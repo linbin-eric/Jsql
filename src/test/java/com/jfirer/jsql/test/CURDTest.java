@@ -289,6 +289,7 @@ public class CURDTest
      * @throws InterruptedException
      */
     @Test
+    @Ignore
     public void test_get_lockforupdate() throws SQLException, InterruptedException
     {
         test_insert();

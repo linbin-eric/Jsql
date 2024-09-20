@@ -72,7 +72,7 @@ public class MapperGenerator
                     }
                     else
                     {
-                        String returnTypeName = ReflectUtil.isPrimitive(method.getReturnType()) ? ReflectUtil.getBoxedType(method.getReturnType()).getName() : SmcHelper.getReferenceName(method.getReturnType(), classModel);
+                        String returnTypeName = SmcHelper.getReferenceName(ReflectUtil.getBoxedTypeOrOrigin(method.getReturnType()), classModel);
                         methodBody.append(returnTypeName).append(" result = session.query(sql,methods.get(").append(methodIndex).append("),params);\r\n");
                     }
                 }

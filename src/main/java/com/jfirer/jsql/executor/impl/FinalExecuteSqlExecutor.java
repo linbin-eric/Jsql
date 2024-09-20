@@ -106,7 +106,7 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
         }
         else
         {
-            itemType = itemType.isPrimitive() ? ReflectUtil.getBoxedType(itemType) : itemType;
+            itemType = ReflectUtil.getBoxedTypeOrOrigin(itemType) ;
             if (itemType == Boolean.class)
             {
                 transferClass = BooleanTransfer.class;

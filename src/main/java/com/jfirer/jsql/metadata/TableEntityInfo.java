@@ -1,8 +1,8 @@
 package com.jfirer.jsql.metadata;
 
-import com.jfirer.baseutil.Formatter;
+import com.jfirer.baseutil.STR;
 import com.jfirer.baseutil.StringUtil;
-import com.jfirer.baseutil.reflect.ValueAccessor;
+import com.jfirer.baseutil.reflect.valueaccessor.ValueAccessor;
 import com.jfirer.jsql.annotation.*;
 
 import java.lang.reflect.Field;
@@ -41,7 +41,7 @@ public class TableEntityInfo
         classSimpleName = ckass.getSimpleName();
         if (ckass.isAnnotationPresent(TableDef.class) == false)
         {
-            throw new IllegalArgumentException(Formatter.format("类:{}没有使用TableDef注解，不能作为查询条件或者返回结果使用", ckass.getName()));
+            throw new IllegalArgumentException(STR.format("类:{}没有使用TableDef注解，不能作为查询条件或者返回结果使用", ckass.getName()));
         }
         tableName = ckass.getAnnotation(TableDef.class).value();
         Map<String, ColumnInfo> propertyNameKeyMap         = new HashMap<String, TableEntityInfo.ColumnInfo>();
@@ -61,7 +61,7 @@ public class TableEntityInfo
                 String columnName = field.isAnnotationPresent(ColumnName.class) && StringUtil.isNotBlank(field.getAnnotation(ColumnName.class).value()) ? //
                         field.getAnnotation(ColumnName.class).value()//
                         : strategy.toColumnName(field.getName());
-                ColumnInfo columnInfo = new ColumnInfo(columnName, field.getName(), field, new ValueAccessor(field));
+                ColumnInfo columnInfo = new ColumnInfo(columnName, field.getName(), field, ValueAccessor.compile(field));
                 propertyNameKeyMap.put(columnInfo.propertyName, columnInfo);
                 columnNameIgnoreCaseKeyMap.put(columnName.toLowerCase(), columnInfo);
                 if (field.isAnnotationPresent(Pk.class))

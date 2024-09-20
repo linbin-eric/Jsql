@@ -2,7 +2,7 @@ package com.jfirer.jsql.transfer.impl;
 
 import com.jfirer.baseutil.bytecode.support.AnnotationContext;
 import com.jfirer.baseutil.reflect.ReflectUtil;
-import com.jfirer.baseutil.reflect.ValueAccessor;
+import com.jfirer.baseutil.reflect.valueaccessor.ValueAccessor;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.transfer.CustomTransfer;
 import com.jfirer.jsql.transfer.ResultSetTransfer;
@@ -89,14 +89,14 @@ public class BeanTransfer implements ResultSetTransfer
                                 field = returnTypeInfo.getColumnInfoByColumnNameIgnoreCase(columnLabel).field();
                             }
                         }
-                        Class fieldType = field.getType().isPrimitive() ? ReflectUtil.getBoxedType(field.getType()) : field.getType();
+                        Class fieldType = ReflectUtil.getBoxedTypeOrOrigin(field.getType());
                         if (AnnotationContext.isAnnotationPresent(CustomTransfer.class, field))
                         {
                             try
                             {
                                 ColumnIndexHolder columnIndexHolder = AnnotationContext.getAnnotation(CustomTransfer.class, field).value().getDeclaredConstructor(int.class).newInstance(columnIndex);
                                 columnIndexHolder.awareType(field.getType());
-                                columnTransfer = new ColumnTransfer(columnIndexHolder, new ValueAccessor(field));
+                                columnTransfer = new ColumnTransfer(columnIndexHolder, ValueAccessor.compile(field));
                             }
                             catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e)
                             {
@@ -105,71 +105,71 @@ public class BeanTransfer implements ResultSetTransfer
                         }
                         else if (fieldType == Boolean.class)
                         {
-                            columnTransfer = new ColumnTransfer(new BooleanTransfer(columnIndex), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new BooleanTransfer(columnIndex), ValueAccessor.compile(field));
                         }
                         else if (fieldType == Double.class)
                         {
-                            columnTransfer = new ColumnTransfer(new DoubleTransfer(columnIndex), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new DoubleTransfer(columnIndex), ValueAccessor.compile(field));
                         }
                         else if (fieldType == Float.class)
                         {
-                            columnTransfer = new ColumnTransfer(new FloatTransfer(columnIndex), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new FloatTransfer(columnIndex), ValueAccessor.compile(field));
                         }
                         else if (fieldType == Integer.class)
                         {
-                            columnTransfer = new ColumnTransfer(new IntegerTransfer(columnIndex), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new IntegerTransfer(columnIndex), ValueAccessor.compile(field));
                         }
                         else if (fieldType == Long.class)
                         {
-                            columnTransfer = new ColumnTransfer(new LongTransfer(columnIndex), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new LongTransfer(columnIndex), ValueAccessor.compile(field));
                         }
                         else if (fieldType == Short.class)
                         {
-                            columnTransfer = new ColumnTransfer(new ShortTransfer(columnIndex), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new ShortTransfer(columnIndex), ValueAccessor.compile(field));
                         }
                         else if (fieldType == Date.class)
                         {
-                            columnTransfer = new ColumnTransfer(new SqlDateTransfer(columnIndex), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new SqlDateTransfer(columnIndex), ValueAccessor.compile(field));
                         }
                         else if (fieldType == java.util.Date.class)
                         {
-                            columnTransfer = new ColumnTransfer(new UtilDateTransfer(columnIndex), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new UtilDateTransfer(columnIndex), ValueAccessor.compile(field));
                         }
                         else if (fieldType == String.class)
                         {
-                            columnTransfer = new ColumnTransfer(new StringTransfer(columnIndex), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new StringTransfer(columnIndex), ValueAccessor.compile(field));
                         }
                         else if (fieldType == Timestamp.class)
                         {
-                            columnTransfer = new ColumnTransfer(new TimeStampTransfer(columnIndex), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new TimeStampTransfer(columnIndex), ValueAccessor.compile(field));
                         }
                         else if (fieldType == Time.class)
                         {
-                            columnTransfer = new ColumnTransfer(new TimeTransfer(columnIndex), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new TimeTransfer(columnIndex), ValueAccessor.compile(field));
                         }
                         else if (Enum.class.isAssignableFrom(fieldType))
                         {
-                            columnTransfer = new ColumnTransfer(new EnumNameTransfer(columnIndex).awareType(fieldType), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new EnumNameTransfer(columnIndex).awareType(fieldType), ValueAccessor.compile(field));
                         }
                         else if (fieldType == Calendar.class)
                         {
-                            columnTransfer = new ColumnTransfer(new CalendarTransfer(columnIndex), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new CalendarTransfer(columnIndex), ValueAccessor.compile(field));
                         }
                         else if (fieldType == byte[].class)
                         {
-                            columnTransfer = new ColumnTransfer(new ByteArrayTransfer(columnIndex), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new ByteArrayTransfer(columnIndex), ValueAccessor.compile(field));
                         }
                         else if (fieldType == Clob.class)
                         {
-                            columnTransfer = new ColumnTransfer(new ClobTransfer(columnIndex), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new ClobTransfer(columnIndex), ValueAccessor.compile(field));
                         }
                         else if (fieldType.isEnum())
                         {
-                            columnTransfer = new ColumnTransfer(new EnumNameTransfer(columnIndex), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new EnumNameTransfer(columnIndex), ValueAccessor.compile(field));
                         }
                         else if (fieldType == BigDecimal.class)
                         {
-                            columnTransfer = new ColumnTransfer(new BigDecimalTransfer(columnIndex), new ValueAccessor(field));
+                            columnTransfer = new ColumnTransfer(new BigDecimalTransfer(columnIndex), ValueAccessor.compile(field));
                         }
                         else
                         {
