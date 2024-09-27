@@ -1,6 +1,7 @@
 package com.jfirer.jsql.test;
 
 import com.jfirer.jsql.analyse.token.SqlLexer;
+import com.jfirer.jsql.analyse.token.SqlLexer2;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.test.vo.User;
 import org.junit.Assert;
@@ -15,7 +16,7 @@ public class SqlLexerTest
     public void test_1()
     {
         String sql = "select * from user where name = ${name}";
-        Assert.assertEquals("SELECT * FROM user WHERE name = ${name}", SqlLexer.parse(sql).format());
+        Assert.assertEquals("select * from user where name = ${name}", SqlLexer2.parse(sql, User.class));
         //
         sql = "select sum(age) from user";
         Assert.assertEquals("SELECT SUM(age) FROM user", SqlLexer.parse(sql).format());
@@ -27,8 +28,8 @@ public class SqlLexerTest
         Assert.assertEquals("SELECT name AS n FROM user WHERE age>14", SqlLexer.parse(sql).format());
         //
         sql = """
-        select name,age from user where id!=1 
-        and sex=1""";
+                select name,age from user where id!=1 
+                and sex=1""";
         Assert.assertEquals("SELECT name,age FROM user WHERE id!=1 AND sex=1", SqlLexer.parse(sql).format());
         //
         sql = "select name ,  age from user where (name='sada' and sex=1) or age >=13";
