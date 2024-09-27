@@ -6,10 +6,7 @@ import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.Param;
 import com.jfirer.jsql.session.SqlSession;
-import com.jfirer.jsql.test.vo.SqlLog;
-import com.jfirer.jsql.test.vo.User;
-import com.jfirer.jsql.test.vo.User2;
-import com.jfirer.jsql.test.vo.User3;
+import com.jfirer.jsql.test.vo.*;
 import com.zaxxer.hikari.HikariDataSource;
 import org.h2.Driver;
 import org.junit.Assert;
@@ -251,5 +248,23 @@ public class ModelTest
         User one = session.findOne(Model.selectAll(User.class).where(Param.notNull(User::getName)));
         assertNotNull(one);
         assertEquals(10, one.getAge());
+    }
+
+    @Test
+    public void test_11()
+    {
+        SqlSession session = sessionFactory.openSession();
+        User2      user2   = new User2();
+        user2.setName("A");
+        user2.setAge(14);
+        session.save(user2);
+        User3 user3 = new User3();
+        user3.setName("B");
+        user3.setAge(14);
+        session.save(user3);
+        List<UserDTO> list = session.findList(Model.selectAll(User2.class).leftJoin(User3.class).on(Param.eq(User2::getAge, User3::getAge))//
+                                                   .where(Param.eq(User2::getId, 1))//
+                                                   .returnType(UserDTO.class));
+        System.out.println(list.get(0).getName2());
     }
 }

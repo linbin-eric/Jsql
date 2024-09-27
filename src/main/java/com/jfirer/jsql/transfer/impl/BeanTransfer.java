@@ -66,6 +66,7 @@ public class BeanTransfer implements ResultSetTransfer
                         String         tableName   = metaData.getTableName(columnIndex);
                         String         columnName  = metaData.getColumnName(columnIndex);
                         String         columnLabel = metaData.getColumnLabel(columnIndex);
+                        System.out.println(tableName+"."+columnName+":"+columnLabel);
                         Field          field;
                         if (tableName.equalsIgnoreCase(returnTypeInfo.getTableName()))
                         {

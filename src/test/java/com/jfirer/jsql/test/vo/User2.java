@@ -1,5 +1,6 @@
 package com.jfirer.jsql.test.vo;
 
+import com.jfirer.jsql.annotation.AutoIncrement;
 import com.jfirer.jsql.annotation.ColumnName;
 import com.jfirer.jsql.annotation.Pk;
 import com.jfirer.jsql.annotation.TableDef;
@@ -8,6 +9,7 @@ import com.jfirer.jsql.annotation.TableDef;
 public class User2
 {
     @Pk
+    @AutoIncrement
     private Integer id;
     @ColumnName("name2")
     private String  name;
