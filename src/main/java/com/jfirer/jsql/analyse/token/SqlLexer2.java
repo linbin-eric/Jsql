@@ -1,12 +1,12 @@
 package com.jfirer.jsql.analyse.token;
 
-import com.jfirer.baseutil.STR;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class SqlLexer2
@@ -18,7 +18,8 @@ public class SqlLexer2
 
     public static String parse(String sql, Class<?>... entities)
     {
-        List<Segment> list = parseSegments(sql);
+        List<Segment> list         = parseSegments(sql);
+        List<Segment> pureTextList = list.stream().filter(Segment::isText).collect(Collectors.toList());
         /**
          * 需要分析的有几种情况：
          * 1、User 类的简单名称
@@ -26,59 +27,118 @@ public class SqlLexer2
          * 3、user.name  类的别名.类的属性名
          * 4、User.name 类的简单名称.类的属性名
          * 5、concat(user.name,'ss');
-         * 6、concat(name,'ss')
-         * 7、concat(User.name,'ss')
+         * 6、concat(User.name,'ss')
+         * 7、concat(name,'ss')
+         * 8、concat(User.name1,u.na2,name3)
+         * u.na2->u.name3
+         * name3->nnnn3
+         * 如何解决一个类是User，表名是user，而它的一个字段也是user，对应的列名是user2。当第一次将User替换为user后，后续检查到user，又会将user替换为user2.就导致了错误。
+         * 简而言之，如何解决字段名和表名重复带来的冲突
          */
-        Map<String, TableEntityInfo> tableEntityInfoMap = findHitTableEntityInfoMap(list, entities);
-        Map<String, String>          tableAsNameMap     = parseTableAsNameMap(list, tableEntityInfoMap);
-        replaceEntityNameToTableName(list, tableEntityInfoMap);
-        replacePropertyNameToColumnName(list, tableEntityInfoMap);
-        replaceEntityPropertyNameToColumnName(list, tableAsNameMap, tableEntityInfoMap);
-        return list.stream().map(Segment::getContent).collect(Collectors.joining());
+        Map<String, TableEntityInfo> tableEntityInfoMap = findUsedEntity(entities, list);
+        Map<String, String>          entityAliasNameMap = parseTableAsNameMap(pureTextList, tableEntityInfoMap);
+        replaceEntityNameToTableName(pureTextList, tableEntityInfoMap);
+        list         = flatmapForNewList(list);
+        pureTextList = list.stream().filter(Segment::isText).collect(Collectors.toList());
+        replaceEntityPropertyNameToColumnName(pureTextList, entityAliasNameMap, tableEntityInfoMap);
+        list         = flatmapForNewList(list);
+        pureTextList = list.stream().filter(Segment::isText).collect(Collectors.toList());
+        replacePropertyNameToColumnName(pureTextList, tableEntityInfoMap);
+        list = flatmapForNewList(list);
+        return String.join(" ", list.stream().map(Segment::getContent).toList());
+    }
+
+    private static Map<String, TableEntityInfo> findUsedEntity(Class<?>[] entities, List<Segment> list)
+    {
+        Map<String, TableEntityInfo> tableEntityInfoMap = Arrays.stream(entities).map(TableEntityInfo::parse).collect(Collectors.toMap(TableEntityInfo::getClassSimpleName, Function.identity()));
+        List<String>                 hit                = new LinkedList<>();
+        for (Segment each : list)
+        {
+            Set<String> entityNames = tableEntityInfoMap.keySet();
+            for (String entityName : entityNames)
+            {
+                if (each.getContent().contains(entityName) && isIndependent(each.getContent(), entityName))
+                {
+                    hit.add(entityName);
+                }
+            }
+        }
+        return hit.stream().distinct().map(tableEntityInfoMap::get).collect(Collectors.toMap(TableEntityInfo::getClassSimpleName, Function.identity()));
+    }
+
+    private static List<Segment> flatmapForNewList(List<Segment> list)
+    {
+        List<Segment> newList = new ArrayList<>();
+        for (Segment segment : list)
+        {
+            if (segment.getSplit() == null)
+            {
+                newList.add(segment);
+            }
+            else
+            {
+                newList.addAll(segment.getSplit());
+            }
+        }
+        list = newList;
+        return list;
     }
 
     private static void replaceEntityPropertyNameToColumnName(List<Segment> list, Map<String, String> tableAsNameMap, Map<String, TableEntityInfo> tableEntityInfoMap)
     {
         for (Segment segment : list)
         {
-            if (segment.getType() != TEXT)
+            if (segment.isMarkForEntity())
             {
                 continue;
             }
-            String[]      split   = segment.getContent().split(" ");
-            StringBuilder builder = new StringBuilder();
-            for (String word : split)
+            Set<String> aliasTableProperties = tableAsNameMap.entrySet().stream()//
+                                                             .flatMap(entry -> tableEntityInfoMap.get(entry.getValue()).getPropertyNameKeyMap().keySet().stream().map(propertyName -> entry.getKey() + "." + propertyName))//
+                                                             .collect(Collectors.toSet());
+            Set<String> entityTableProperties = tableEntityInfoMap.values().stream()//
+                                                                  .flatMap(tableEntityInfo -> tableEntityInfo.getPropertyNameKeyMap().values().stream().map(columnInfo -> tableEntityInfo.getClassSimpleName() + "." + columnInfo.propertyName()))//
+                                                                  .collect(Collectors.toSet());
+            List<String> matches   = new LinkedList<>();
+            String       word      = segment.getContent();
+            String       finalWord = word;
+            aliasTableProperties.stream().filter(alias -> finalWord.contains(alias) && isIndependent(finalWord, alias)).forEach(matches::add);
+            entityTableProperties.stream().filter(entity -> finalWord.contains(entity) && isIndependent(finalWord, entity)).forEach(matches::add);
+            if (matches.isEmpty())
             {
-                if (word.indexOf('.') != -1 && word.split("\\.").length == 2)
-                {
-                    String[] split1                = word.split("\\.");
-                    String   aliasNameOrEntityName = split1[0];
-                    String   propertyName          = split[1];
-                    if (tableAsNameMap.containsKey(aliasNameOrEntityName))
-                    {
-                        TableEntityInfo tableEntityInfo = tableEntityInfoMap.get(tableAsNameMap.get(aliasNameOrEntityName));
-                        builder.append(STR.format("{}.{} ", aliasNameOrEntityName, tableEntityInfo.getPropertyNameKeyMap().get(propertyName).columnName()));
-                    }
-                    else if (tableEntityInfoMap.containsKey(aliasNameOrEntityName))
-                    {
-                        TableEntityInfo tableEntityInfo = tableEntityInfoMap.get(aliasNameOrEntityName);
-                        builder.append(STR.format("{}.{} ", aliasNameOrEntityName, tableEntityInfo.getPropertyNameKeyMap().get(propertyName).columnName()));
-                    }
-                    else
-                    {
-                        builder.append(word).append(' ');
-                    }
-                }
-                else
-                {
-                    builder.append(word).append(' ');
-                }
+                ;
             }
-            if (!segment.content.endsWith(" "))
+            else
             {
-                builder.deleteCharAt(builder.length() - 1);
+                List<Segment> segments = new ArrayList<>();
+                for (String match : matches)
+                {
+                    int      index           = word.indexOf(match);
+                    String[] nameAndProperty = match.split("\\.");
+                    String   name            = nameAndProperty[0];
+                    String   propertyName    = nameAndProperty[1];
+                    String   columnName      = null;
+                    if (aliasTableProperties.contains(match))
+                    {
+                        columnName = tableEntityInfoMap.get(tableAsNameMap.get(name)).getPropertyNameKeyMap().get(propertyName).columnName();
+                    }
+                    else if (entityTableProperties.contains(match))
+                    {
+                        columnName = tableEntityInfoMap.get(name).getPropertyNameKeyMap().get(propertyName).columnName();
+                        name       = tableEntityInfoMap.get(name).getTableName();
+                    }
+                    if (index != 0)
+                    {
+                        segments.add(new Segment().setType(TEXT).setContent(word.substring(0, index)));
+                    }
+                    segments.add(new Segment().setType(TEXT).setContent(name + "." + columnName).setMarkForEntity(true));
+                    word = word.substring(index + match.length());
+                }
+                if (word.length() != 0)
+                {
+                    segments.add(new Segment().setType(TEXT).setContent(word));
+                }
+                segment.setSplit(segments);
             }
-            segment.setContent(builder.toString());
         }
     }
 
@@ -87,144 +147,138 @@ public class SqlLexer2
         Collection<TableEntityInfo> tableEntityInfos = hitTableEntityInfoMap.values();
         for (Segment segment : list)
         {
-            if (segment.getType() != TEXT)
+            if (segment.isMarkForEntity())
             {
                 continue;
             }
-            String[]      split   = segment.getContent().split(" ");
-            StringBuilder builder = new StringBuilder();
-            for (String word : split)
+            String word      = segment.getContent();
+            String finalWord = word;
+            List<TableEntityInfo.ColumnInfo> matchColumns = tableEntityInfos.stream().flatMap(tableEntityInfo -> tableEntityInfo.getPropertyNameKeyMap().values().stream())//
+                                                                            .filter(columnInfo -> finalWord.contains(columnInfo.propertyName()) && isIndependent(finalWord, columnInfo.propertyName()))//
+                                                                            .toList();
+            if (matchColumns.isEmpty())
             {
-                if (tableEntityInfos.stream().filter(tableEntityInfo -> tableEntityInfo.getPropertyNameKeyMap().containsKey(word)).count() > 1)
+                ;
+            }
+            else
+            {
+                Set<String> set = new HashSet<>();
+                for (TableEntityInfo.ColumnInfo matchColumn : matchColumns)
                 {
-                    throw new IllegalArgumentException("sql 中包含重复的无法区分的属性名:" + word);
-                }
-                else
-                {
-                    Optional<TableEntityInfo.ColumnInfo> any = tableEntityInfos.stream().map(tableEntityInfo -> tableEntityInfo.getPropertyNameKeyMap().get(word)).filter(Objects::nonNull).findAny();
-                    if (any.isPresent())
+                    if (!set.add(matchColumn.propertyName()))
                     {
-                        builder.append(any.get().columnName()).append(' ');
-                    }
-                    else
-                    {
-                        List<TableEntityInfo.ColumnInfo> matchColumns = tableEntityInfos.stream().flatMap(tableEntityInfo -> tableEntityInfo.getPropertyNameKeyMap().values().stream())//
-                                                                                        .filter(columnInfo -> word.contains(columnInfo.propertyName()) && isIndependent(word, columnInfo.propertyName()))//
-                                                                                        .toList();
-                        if (matchColumns.isEmpty())
-                        {
-                            builder.append(word).append(' ');
-                        }
-                        else
-                        {
-                            Set<String> set = new HashSet<>();
-                            for (TableEntityInfo.ColumnInfo matchColumn : matchColumns)
-                            {
-                                if (!set.add(matchColumn.propertyName()))
-                                {
-                                    throw new IllegalArgumentException("sql 中包含重复的无法区分的属性名:" + matchColumns.get(0).propertyName());
-                                }
-                            }
-                            for (TableEntityInfo.ColumnInfo columnInfo : matchColumns)
-                            {
-                                word = word.replace(columnInfo.propertyName(), columnInfo.columnName());
-                            }
-                            builder.append(word).append(' ');
-                        }
+                        throw new IllegalArgumentException("sql 中包含重复的无法区分的属性名:" + matchColumns.get(0).propertyName());
                     }
                 }
+                List<Segment> segments = new ArrayList<>();
+                for (TableEntityInfo.ColumnInfo columnInfo : matchColumns)
+                {
+                    int index = word.indexOf(columnInfo.propertyName());
+                    if (index != 0)
+                    {
+                        segments.add(new Segment().setType(TEXT).setContent(word.substring(0, index)));
+                    }
+                    segments.add(new Segment().setType(TEXT).setContent(columnInfo.columnName()).setMarkForEntity(true));
+                    word = word.substring(index + columnInfo.propertyName().length());
+                }
+                if (word.length() != 0)
+                {
+                    segments.add(new Segment().setType(TEXT).setContent(word));
+                }
+                segment.setSplit(segments);
             }
-            if (!segment.content.endsWith(" "))
-            {
-                builder.deleteCharAt(builder.length() - 1);
-            }
-            segment.setContent(builder.toString());
         }
     }
 
     private static boolean isIndependent(String s, String str)
     {
-        int     index   = s.indexOf(str);
-        boolean findPre = false, findAfter = false;
-        for (int i = index - 1; i >= 0; i--)
+        if (s.equals(str))
         {
-            if (s.charAt(i) == ' ')
-            {
-                ;
-            }
-            else if (s.charAt(i) == ',' || s.charAt(i) == '(')
+            return true;
+        }
+        int     index   = s.indexOf(str);
+        boolean findPre = true, findAfter = true;
+        int     i       = index - 1;
+        if (i >= 0)
+        {
+            char c = s.charAt(i);
+            if (c == ',' || c == '(' || c == ')' ||//
+                c == '!' || c == '#' || c == '>' || c == '<' || c == ';' || c == '?'//
+                || c == ':' || c == '=' || c == '+' || c == '-' || c == '*' || c == '/' || c == '%' || c == '^'//
+                || c == '&' || c == '|' || c == '~' || c == '$' || c == '@' || c == '`' || c == ']' || c == '}' || c == ' ')
             {
                 findPre = true;
-                break;
+            }
+            else
+            {
+                findPre = false;
             }
         }
         if (!findPre)
         {
             return false;
         }
-        for (int i = index + str.length(); i < s.length(); i++)
+        i = index + str.length();
+        if (i < s.length())
         {
-            if (s.charAt(i) == ' ')
+            char c = s.charAt(i);
+            if (c == ' ')
             {
                 ;
             }
-            else if (s.charAt(i) == ',' || s.charAt(i) == ')')
+            else if (c == ',' || c == ')' ||//
+                     c == '!' || c == '#' || c == '>' || c == '<' || c == ';' || c == '?'//
+                     || c == ':' || c == '=' || c == '+' || c == '-' || c == '*' || c == '/' || c == '%' || c == '^'//
+                     || c == '&' || c == '|' || c == '~' || c == '$' || c == '@' || c == '`' || c == ']' || c == '}')
             {
                 findAfter = true;
-                break;
+            }
+            else
+            {
+                findAfter = false;
             }
         }
         return findAfter;
-    }
-
-    private static Map<String, TableEntityInfo> findHitTableEntityInfoMap(List<Segment> list, Class<?>... entities)
-    {
-        Map<String, TableEntityInfo> tableEntityInfoMap    = Arrays.stream(entities).map(TableEntityInfo::parse).collect(Collectors.toMap(TableEntityInfo::getClassSimpleName, Function.identity()));
-        Map<String, TableEntityInfo> hitTableEntityInfoMap = new HashMap<>();
-        for (Segment each : list)
-        {
-            if (each.getType() != TEXT)
-            {
-                continue;
-            }
-            String[] split = each.getContent().split(" ");
-            for (String s : split)
-            {
-                if (tableEntityInfoMap.containsKey(s))
-                {
-                    hitTableEntityInfoMap.put(s, tableEntityInfoMap.get(s));
-                }
-            }
-        }
-        return hitTableEntityInfoMap;
     }
 
     private static void replaceEntityNameToTableName(List<Segment> list, Map<String, TableEntityInfo> tableEntityInfoMap)
     {
         for (Segment each : list)
         {
-            if (each.getType() != TEXT)
+            Set<String>  entityNames = tableEntityInfoMap.keySet();
+            List<String> matches     = new LinkedList<>();
+            for (String entityName : entityNames)
             {
-                continue;
-            }
-            String[]      split   = each.content.split(" ");
-            StringBuilder builder = new StringBuilder();
-            for (String s : split)
-            {
-                if (tableEntityInfoMap.containsKey(s))
+                if (each.getContent().contains(entityName) && isIndependent(each.getContent(), entityName))
                 {
-                    builder.append(tableEntityInfoMap.get(s).getTableName()).append(' ');
-                }
-                else
-                {
-                    builder.append(s).append(' ');
+                    matches.add(entityName);
                 }
             }
-            if (!each.content.endsWith(" "))
+            if (matches.isEmpty())
             {
-                builder.deleteCharAt(builder.length() - 1);
+                ;
             }
-            each.content = builder.toString();
+            else
+            {
+                List<Segment> segments = new ArrayList<>();
+                String        s        = each.getContent();
+                for (String match : matches)
+                {
+                    int    index     = s.indexOf(match);
+                    String substring = s.substring(0, index);
+                    if (index != 0)
+                    {
+                        segments.add(new Segment().setType(TEXT).setContent(substring));
+                    }
+                    segments.add(new Segment().setType(TEXT).setContent(tableEntityInfoMap.get(match).getTableName()).setMarkForEntity(true));
+                    s = s.substring(index + match.length());
+                }
+                if (s.length() != 0)
+                {
+                    segments.add(new Segment().setType(TEXT).setContent(s));
+                }
+                each.setSplit(segments);
+            }
         }
     }
 
@@ -237,30 +291,23 @@ public class SqlLexer2
      */
     private static Map<String, String> parseTableAsNameMap(List<Segment> list, Map<String, TableEntityInfo> tableEntityInfoMap)
     {
-        Map<String, String> tableAsNameMap = new HashMap<>();
-        for (Segment each : list)
+        Map<String, String> entityAliasNameMap = new HashMap<>();
+        for (int i = 0; i < list.size(); i++)
         {
-            if (each.getType() != TEXT)
+            Segment segment = list.get(i);
+            if (tableEntityInfoMap.containsKey(segment.getContent()))
             {
-                continue;
-            }
-            String[] split = each.content.split(" ");
-            for (int i = 0; i < split.length; i++)
-            {
-                if (tableEntityInfoMap.containsKey(split[i]))
+                if (i + 2 < list.size() && list.get(i + 1).getContent().equalsIgnoreCase("as"))
                 {
-                    if (i + 2 < split.length && split[i + 1].equalsIgnoreCase("as"))
-                    {
-                        tableAsNameMap.put(split[i + 2], split[i]);
-                    }
-                    else if (i + 1 > split.length && !KeyWord.isKeyWord(split[i + 1]))
-                    {
-                        tableAsNameMap.put(split[i + 1], split[i]);
-                    }
+                    entityAliasNameMap.put(list.get(i + 2).getContent(), segment.getContent());
+                }
+                else if (i + 1 < list.size() && !KeyWord.isKeyWord(list.get(i + 1).getContent()))
+                {
+                    entityAliasNameMap.put(list.get(i + 1).getContent(), segment.getContent());
                 }
             }
         }
-        return tableAsNameMap;
+        return entityAliasNameMap;
     }
 
     /**
@@ -283,19 +330,19 @@ public class SqlLexer2
                 {
                     if (c == '#' && i + 1 < sql.length() && sql.charAt(i + 1) == '{')
                     {
-                        list.add(new Segment().setType(TEXT).setContent(sql.substring(start, i)));
+                        list.addAll(Arrays.stream(sql.substring(start, i).split(" ")).map(str -> new Segment().setType(TEXT).setContent(str)).toList());
                         start = i;
                         type  = VARIABLE;
                     }
                     else if (c == '$' && i + 1 < sql.length() && sql.charAt(i + 1) == '{')
                     {
-                        list.add(new Segment().setType(TEXT).setContent(sql.substring(start, i)));
+                        list.addAll(Arrays.stream(sql.substring(start, i).split(" ")).map(str -> new Segment().setType(TEXT).setContent(str)).toList());
                         start = i;
                         type  = PARAM;
                     }
                     else if (c == '<' && i + 1 < sql.length() && sql.charAt(i + 1) == '%')
                     {
-                        list.add(new Segment().setType(TEXT).setContent(sql.substring(start, i)));
+                        list.addAll(Arrays.stream(sql.substring(start, i).split(" ")).map(str -> new Segment().setType(TEXT).setContent(str)).toList());
                         start = i;
                         type  = EXECUTION;
                     }
@@ -334,16 +381,28 @@ public class SqlLexer2
         }
         if (start < sql.length())
         {
-            list.add(new Segment().setContent(sql.substring(start)).setType(TEXT));
+            list.addAll(Arrays.stream(sql.substring(start).split(" ")).map(str -> new Segment().setType(TEXT).setContent(str)).toList());
         }
-        return list;
+        return list.stream().filter(Predicate.not(segment -> segment.isEmptyText())).toList();
     }
 
     @Data
     @Accessors(chain = true)
     static class Segment
     {
-        String content;
-        int    type;
+        String        content;
+        int           type;
+        boolean       markForEntity = false;
+        List<Segment> split;
+
+        public boolean isText()
+        {
+            return TEXT == type;
+        }
+
+        public boolean isEmptyText()
+        {
+            return TEXT == type && content.trim().equals("");
+        }
     }
 }
