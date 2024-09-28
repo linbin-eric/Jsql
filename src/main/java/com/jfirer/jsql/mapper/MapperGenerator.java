@@ -62,7 +62,7 @@ public class MapperGenerator
                 methodBody.append("List<Object> params = cachedParams.get();\r\n");
                 methodBody.append("try{\r\n");
                 MethodModel methodModel = new MethodModel(method, classModel);
-                String      formatSql   = generateSqlAndTemplateField(tableEntityInfos, classModel, fieldNameCount, method, methodBody);
+                String      formatSql   = generateSqlAndTemplateField(AnnotationContext.getAnnotation(Mapper.class, ckass).value(), classModel, fieldNameCount, method, methodBody);
                 if (formatSql.startsWith("SELECT") || formatSql.startsWith("select"))
                 {
                     int methodIndex = AbstractMapper.put(method);
@@ -219,17 +219,16 @@ public class MapperGenerator
     /**
      * 生成并添加模板字段，并且生成解析格式化Sql的代码。最终返回格式化的sql
      *
-     * @param tableEntityInfos
      * @param classModel
      * @param fieldNameCount
      * @param method
      * @param cache
      * @return
      */
-    private static String generateSqlAndTemplateField(Map<String, TableEntityInfo> tableEntityInfos, ClassModel classModel, AtomicInteger fieldNameCount, Method method, StringBuilder cache)
+    private static String generateSqlAndTemplateField(Class[] ckazzes, ClassModel classModel, AtomicInteger fieldNameCount, Method method, StringBuilder cache)
     {
         Sql        annotation        = method.getAnnotation(Sql.class);
-        String     formatSql         = SqlLexer.parse(annotation.sql()).transfer(tableEntityInfos).format();
+        String     formatSql         = SqlLexer.parse(annotation.sql(),ckazzes);
         String     templateFieldName = "template_" + (fieldNameCount.getAndIncrement());
         FieldModel fieldModel        = new FieldModel(templateFieldName, Template.class, "Template.parse(\"" + formatSql + "\")", classModel);
         classModel.addField(fieldModel);

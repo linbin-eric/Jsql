@@ -11,7 +11,7 @@ public class User2
     @Pk
     @AutoIncrement
     private Integer id;
-    @ColumnName("name2")
+    @ColumnName(value = "name2")
     private String  name;
     private int     age;
 

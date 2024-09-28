@@ -2,30 +2,33 @@ package com.jfirer.jsql.metadata;
 
 import com.jfirer.baseutil.STR;
 import com.jfirer.baseutil.StringUtil;
+import com.jfirer.baseutil.reflect.ReflectUtil;
 import com.jfirer.baseutil.reflect.valueaccessor.ValueAccessor;
 import com.jfirer.jsql.annotation.*;
+import lombok.Data;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Data
 public class TableEntityInfo
 {
-    public record ColumnInfo(String columnName, String propertyName, Field field, ValueAccessor accessor)
+    public record ColumnInfo(String columnName, String propertyName, Field field, ValueAccessor accessor, String fullname)
     {
     }
 
-    private static final Map<Class<?>, TableEntityInfo> store        = new ConcurrentHashMap<Class<?>, TableEntityInfo>();
+    private static final Map<Class<?>, TableEntityInfo> store                 = new ConcurrentHashMap<>();
     private final        String                         className;
     private final        String                         classSimpleName;
     private final        String                         tableName;
     private              Map<String, ColumnInfo>        propertyNameKeyMap;
-    private              Map<String, ColumnInfo>        columnNameIgnoreCaseKeyMap;
+    private              Map<String, ColumnInfo>        fullnameColumnInfoMap = new HashMap<>();
     private              ColumnInfo                     pkInfo;
     private final        Class<?>                       ckass;
     private              PkGenerator.Generator          pkGenerator;
-    private              PkReturnType                   pkReturnType = PkReturnType.NO_RETURN_PK;
+    private              PkReturnType                   pkReturnType          = PkReturnType.NO_RETURN_PK;
     private final        ColumnInfo[]                   allColumnInfos;
     private final        ColumnInfo[]                   allColumnInfosExcludePk;
 
@@ -39,18 +42,17 @@ public class TableEntityInfo
         this.ckass      = ckass;
         className       = ckass.getName();
         classSimpleName = ckass.getSimpleName();
-        if (ckass.isAnnotationPresent(TableDef.class) == false)
+        if (!ckass.isAnnotationPresent(TableDef.class))
         {
             throw new IllegalArgumentException(STR.format("类:{}没有使用TableDef注解，不能作为查询条件或者返回结果使用", ckass.getName()));
         }
         tableName = ckass.getAnnotation(TableDef.class).value();
-        Map<String, ColumnInfo> propertyNameKeyMap         = new HashMap<String, TableEntityInfo.ColumnInfo>();
-        Map<String, ColumnInfo> columnNameIgnoreCaseKeyMap = new HashMap<String, TableEntityInfo.ColumnInfo>();
+        Map<String, ColumnInfo> propertyNameKeyMap         = new HashMap<>();
         try
         {
-            ColumnNameStrategy strategy = ckass.isAnnotationPresent(ColumnNameStrategyDef.class) ? //
-                    ckass.getAnnotation(ColumnNameStrategyDef.class).value().getDeclaredConstructor().newInstance()//
-                    : ColumnNameStrategy.LowerCaseName.instance;
+            ColumnNameStrategy strategy = ckass.isAnnotationPresent(ColumnName.class) ? //
+                    ckass.getAnnotation(ColumnName.class).strategy().getDeclaredConstructor().newInstance()//
+                    : ColumnNameStrategy.LOW_CASE;
             for (Field field : getAllFields(ckass))
             {
                 if (isNotColumnField(field))
@@ -58,12 +60,30 @@ public class TableEntityInfo
                     continue;
                 }
                 field.setAccessible(true);
-                String columnName = field.isAnnotationPresent(ColumnName.class) && StringUtil.isNotBlank(field.getAnnotation(ColumnName.class).value()) ? //
-                        field.getAnnotation(ColumnName.class).value()//
-                        : strategy.toColumnName(field.getName());
-                ColumnInfo columnInfo = new ColumnInfo(columnName, field.getName(), field, ValueAccessor.compile(field));
+                String     fullName, columnName;
+                ColumnName annotation = field.getAnnotation(ColumnName.class);
+                if (annotation == null)
+                {
+                    columnName = strategy.toColumnName(field.getName());
+                    fullName   = tableName + '.' + columnName;
+                }
+                else if (StringUtil.isNotBlank(annotation.fullname()))
+                {
+                    fullName   = annotation.fullname();
+                    columnName = fullName.substring(fullName.lastIndexOf('.') + 1);
+                }
+                else if (StringUtil.isNotBlank(annotation.value()))
+                {
+                    columnName = annotation.value();
+                    fullName   = tableName + '.' + columnName;
+                }
+                else
+                {
+                    throw new IllegalArgumentException("注解ColumnName中value和fullname的值都是空");
+                }
+                ColumnInfo columnInfo = new ColumnInfo(columnName, field.getName(), field, ValueAccessor.compile(field), fullName);
                 propertyNameKeyMap.put(columnInfo.propertyName, columnInfo);
-                columnNameIgnoreCaseKeyMap.put(columnName.toLowerCase(), columnInfo);
+                fullnameColumnInfoMap.put(columnInfo.fullname(), columnInfo);
                 if (field.isAnnotationPresent(Pk.class))
                 {
                     if (pkInfo == null)
@@ -87,10 +107,9 @@ public class TableEntityInfo
                     }
                 }
             }
-            this.propertyNameKeyMap         = Collections.unmodifiableMap(propertyNameKeyMap);
-            this.columnNameIgnoreCaseKeyMap = Collections.unmodifiableMap(columnNameIgnoreCaseKeyMap);
-            allColumnInfos                  = propertyNameKeyMap.values().toArray(ColumnInfo[]::new);
-            allColumnInfosExcludePk         = propertyNameKeyMap.values().stream().filter(columnInfo -> columnInfo != pkInfo).toArray(ColumnInfo[]::new);
+            this.propertyNameKeyMap = Collections.unmodifiableMap(propertyNameKeyMap);
+            allColumnInfos          = propertyNameKeyMap.values().toArray(ColumnInfo[]::new);
+            allColumnInfosExcludePk = propertyNameKeyMap.values().stream().filter(columnInfo -> columnInfo != pkInfo).toArray(ColumnInfo[]::new);
         }
         catch (Throwable e)
         {
@@ -101,25 +120,18 @@ public class TableEntityInfo
     /**
      * 获取该类的所有field对象，如果子类重写了父类的field，则只包含子类的field
      *
-     * @param entityClass
-     * @return
      */
     private Field[] getAllFields(Class<?> entityClass)
     {
-        Set<Field> set = new TreeSet<Field>(new Comparator<Field>()
-        {
-            // 只需要去重，并且希望父类的field在返回数组中排在后面，所以比较全部返回1
-            @Override
-            public int compare(Field o1, Field o2)
+        // 只需要去重，并且希望父类的field在返回数组中排在后面，所以比较全部返回1
+        Set<Field> set = new TreeSet<Field>((o1, o2) -> {
+            if (o1.getName().equals(o2.getName()))
             {
-                if (o1.getName().equals(o2.getName()))
-                {
-                    return 0;
-                }
-                else
-                {
-                    return 1;
-                }
+                return 0;
+            }
+            else
+            {
+                return 1;
             }
         });
         while (entityClass != Object.class && entityClass != null)
@@ -127,7 +139,7 @@ public class TableEntityInfo
             Collections.addAll(set, entityClass.getDeclaredFields());
             entityClass = entityClass.getSuperclass();
         }
-        return set.toArray(new Field[set.size()]);
+        return set.toArray(new Field[0]);
     }
 
     private boolean isNotColumnField(Field field)
@@ -145,84 +157,24 @@ public class TableEntityInfo
         return Collection.class.isAssignableFrom(type) || Map.class.isAssignableFrom(type);
     }
 
-    public String getClassSimpleName()
+    public ColumnInfo findColumnInfoByFullname(String fullname)
     {
-        return classSimpleName;
-    }
-
-    public String getTableName()
-    {
-        return tableName;
-    }
-
-    public Map<String, ColumnInfo> getPropertyNameKeyMap()
-    {
-        return propertyNameKeyMap;
-    }
-
-    public ColumnInfo getPkInfo()
-    {
-        return pkInfo;
-    }
-
-    @Override
-    public String toString()
-    {
-        return "TableTransfer [className=" + className + ", tableName=" + tableName + "]";
-    }
-
-    public Class<?> getEntityClass()
-    {
-        return ckass;
-    }
-
-    public ColumnInfo getColumnInfoByColumnNameIgnoreCase(String columnName)
-    {
-        return columnNameIgnoreCaseKeyMap.get(columnName.toLowerCase());
+        return fullnameColumnInfoMap.get(fullname.toLowerCase());
     }
 
     public static TableEntityInfo parse(Class<?> entityClass)
     {
-        return store.computeIfAbsent(entityClass, ckass -> new TableEntityInfo(ckass));
-    }
-
-    public PkGenerator.Generator getPkGenerator()
-    {
-        return pkGenerator;
+        return store.computeIfAbsent(entityClass, TableEntityInfo::new);
     }
 
     private PkReturnType detectPkValueType(Field pkField)
     {
-        if (pkField.getType() == String.class)
+        return switch (ReflectUtil.getClassId(pkField.getType()))
         {
-            return PkReturnType.STRING;
-        }
-        else if (pkField.getType() == Integer.class)
-        {
-            return PkReturnType.INT;
-        }
-        else if (pkField.getGenericType() == Long.class)
-        {
-            return PkReturnType.LONG;
-        }
-        else
-        {
-            throw new IllegalArgumentException("不支持非String，Integer，Long以外类型的主键,请检查:" + pkField.getDeclaringClass().getName() + "." + pkField.getName());
-        }
-    }
-
-    public PkReturnType getPkReturnType()
-    {
-        return pkReturnType;
-    }
-
-    public ColumnInfo[] getAllColumnInfos()
-    {
-        return allColumnInfos;
-    }
-
-    public ColumnInfo[] getAllColumnInfosExcludePk()
-    {
-        return allColumnInfosExcludePk;
+            case ReflectUtil.CLASS_STRING -> PkReturnType.STRING;
+            case ReflectUtil.CLASS_INT -> PkReturnType.INT;
+            case ReflectUtil.CLASS_LONG -> PkReturnType.LONG;
+            default -> throw new IllegalArgumentException("不支持非String，Integer，Long以外类型的主键,请检查:" + pkField.getDeclaringClass().getName() + "." + pkField.getName());
+        };
     }
 }

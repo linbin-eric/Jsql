@@ -6,7 +6,7 @@ import lombok.experimental.Accessors;
 
 @Data
 @Accessors(chain = true)
-@TableDef("userdto")
+@TableDef("user")
 public class UserDTO
 {
     private int    age;
