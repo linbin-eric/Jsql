@@ -1,26 +1,17 @@
 package com.jfirer.jsql.transfer.impl;
 
 import com.jfirer.jsql.transfer.ResultSetTransfer;
+import lombok.SneakyThrows;
 
 import java.sql.ResultSet;
-import java.sql.SQLException;
 
-public class EnumOrdinalTransfer extends ColumnIndexHolder
+public class EnumOrdinalTransfer implements ResultSetTransfer
 {
     private Enum<?>[] instances;
 
-    public EnumOrdinalTransfer(int columnIndex)
-    {
-        super(columnIndex);
-    }
-
-    public EnumOrdinalTransfer()
-    {
-        super(1);
-    }
-
+    @SneakyThrows
     @Override
-    public Object transfer(ResultSet resultSet) throws SQLException
+    public Object transfer(ResultSet resultSet, int columnIndex)
     {
         int ordinal = resultSet.getInt(columnIndex);
         if (resultSet.wasNull())
@@ -31,9 +22,8 @@ public class EnumOrdinalTransfer extends ColumnIndexHolder
     }
 
     @Override
-    public ResultSetTransfer awareType(Class type)
+    public void awareType(Class type)
     {
         instances = (Enum<?>[]) type.getEnumConstants();
-        return this;
     }
 }

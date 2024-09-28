@@ -191,7 +191,9 @@ public class CURDTest
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
-        Assert.assertEquals(new Time(User.now - calendar.getTimeInMillis() - 8 * 60 * 60 * 1000), query.getTime());
+        System.out.println(new Time(User.now ).getTime());
+        System.out.println(query.getTime().getTime());
+        Assert.assertEquals(new Time(User.now-calendar.getTimeInMillis()-8*60*60*1000 ), query.getTime());
         Assert.assertEquals(calendar.getTimeInMillis(), query.getSqlDate().getTime());
         Assert.assertEquals(2.53d, query.getD1(), 0.001);
         Assert.assertEquals(5.36f, query.getF1(), 0.001);

@@ -20,10 +20,9 @@ public class TableEntityInfo
     }
 
     private static final Map<Class<?>, TableEntityInfo> store                 = new ConcurrentHashMap<>();
-    private final        String                         className;
     private final        String                         classSimpleName;
     private final        String                         tableName;
-    private              Map<String, ColumnInfo>        propertyNameKeyMap;
+    private              Map<String, ColumnInfo>        propertyNameKeyMap    = new HashMap<>();
     private              Map<String, ColumnInfo>        fullnameColumnInfoMap = new HashMap<>();
     private              ColumnInfo                     pkInfo;
     private final        Class<?>                       ckass;
@@ -40,25 +39,19 @@ public class TableEntityInfo
     private TableEntityInfo(Class<?> ckass)
     {
         this.ckass      = ckass;
-        className       = ckass.getName();
         classSimpleName = ckass.getSimpleName();
         if (!ckass.isAnnotationPresent(TableDef.class))
         {
             throw new IllegalArgumentException(STR.format("类:{}没有使用TableDef注解，不能作为查询条件或者返回结果使用", ckass.getName()));
         }
         tableName = ckass.getAnnotation(TableDef.class).value();
-        Map<String, ColumnInfo> propertyNameKeyMap         = new HashMap<>();
         try
         {
             ColumnNameStrategy strategy = ckass.isAnnotationPresent(ColumnName.class) ? //
                     ckass.getAnnotation(ColumnName.class).strategy().getDeclaredConstructor().newInstance()//
                     : ColumnNameStrategy.LOW_CASE;
-            for (Field field : getAllFields(ckass))
+            for (Field field : getAllSuitableFields(ckass))
             {
-                if (isNotColumnField(field))
-                {
-                    continue;
-                }
                 field.setAccessible(true);
                 String     fullName, columnName;
                 ColumnName annotation = field.getAnnotation(ColumnName.class);
@@ -79,7 +72,7 @@ public class TableEntityInfo
                 }
                 else
                 {
-                    throw new IllegalArgumentException("注解ColumnName中value和fullname的值都是空");
+                    throw new IllegalArgumentException(STR.format("注解在:{}上ColumnName中value和fullname的值都是空", field));
                 }
                 ColumnInfo columnInfo = new ColumnInfo(columnName, field.getName(), field, ValueAccessor.compile(field), fullName);
                 propertyNameKeyMap.put(columnInfo.propertyName, columnInfo);
@@ -107,7 +100,6 @@ public class TableEntityInfo
                     }
                 }
             }
-            this.propertyNameKeyMap = Collections.unmodifiableMap(propertyNameKeyMap);
             allColumnInfos          = propertyNameKeyMap.values().toArray(ColumnInfo[]::new);
             allColumnInfosExcludePk = propertyNameKeyMap.values().stream().filter(columnInfo -> columnInfo != pkInfo).toArray(ColumnInfo[]::new);
         }
@@ -118,31 +110,26 @@ public class TableEntityInfo
     }
 
     /**
-     * 获取该类的所有field对象，如果子类重写了父类的field，则只包含子类的field
-     *
+     * 获取该类的所有的合适sql的field对象，如果子类重写了父类的field，则只包含子类的field
      */
-    private Field[] getAllFields(Class<?> entityClass)
+    private Field[] getAllSuitableFields(Class<?> entityClass)
     {
-        // 只需要去重，并且希望父类的field在返回数组中排在后面，所以比较全部返回1
-        Set<Field> set = new TreeSet<Field>((o1, o2) -> {
-            if (o1.getName().equals(o2.getName()))
-            {
-                return 0;
-            }
-            else
-            {
-                return 1;
-            }
-        });
+        Map<String, Field> map = new HashMap<>();
         while (entityClass != Object.class && entityClass != null)
         {
-            Collections.addAll(set, entityClass.getDeclaredFields());
+            for (Field each : entityClass.getDeclaredFields())
+            {
+                if (!notSuitableField(each))
+                {
+                    map.putIfAbsent(each.getName(), each);
+                }
+            }
             entityClass = entityClass.getSuperclass();
         }
-        return set.toArray(new Field[0]);
+        return map.values().toArray(new Field[0]);
     }
 
-    private boolean isNotColumnField(Field field)
+    private boolean notSuitableField(Field field)
     {
         if (field.isAnnotationPresent(SqlIgnore.class))
         {

@@ -1,28 +1,19 @@
 package com.jfirer.jsql.transfer.impl;
 
 import com.jfirer.jsql.transfer.ResultSetTransfer;
+import lombok.SneakyThrows;
 
 import java.sql.ResultSet;
-import java.sql.SQLException;
 
-public class EnumNameTransfer extends ColumnIndexHolder
+public class EnumNameTransfer implements ResultSetTransfer
 {
     @SuppressWarnings("rawtypes")
     private Class<? extends Enum> type;
 
-    public EnumNameTransfer(int columnIndex)
-    {
-        super(columnIndex);
-    }
-
-    public EnumNameTransfer()
-    {
-        super(1);
-    }
-
+    @SneakyThrows
     @SuppressWarnings("unchecked")
     @Override
-    public Object transfer(ResultSet resultSet) throws SQLException
+    public Object transfer(ResultSet resultSet, int columnIndex)
     {
         String enumName = resultSet.getString(columnIndex);
         if (enumName == null)
@@ -33,9 +24,8 @@ public class EnumNameTransfer extends ColumnIndexHolder
     }
 
     @Override
-    public ResultSetTransfer awareType(Class type)
+    public void awareType(Class type)
     {
         this.type = type;
-        return this;
     }
 }

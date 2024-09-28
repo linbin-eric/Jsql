@@ -1,22 +1,15 @@
 package com.jfirer.jsql.transfer.impl;
 
+import com.jfirer.jsql.transfer.ResultSetTransfer;
+import lombok.SneakyThrows;
+
 import java.sql.ResultSet;
-import java.sql.SQLException;
 
-public class ShortTransfer extends ColumnIndexHolder
+public class ShortTransfer implements ResultSetTransfer
 {
-    public ShortTransfer(int columnIndex)
-    {
-        super(columnIndex);
-    }
-
-    public ShortTransfer()
-    {
-        super(1);
-    }
-
+    @SneakyThrows
     @Override
-    public Object transfer(ResultSet resultSet) throws SQLException
+    public Object transfer(ResultSet resultSet, int columnIndex)
     {
         short s = resultSet.getShort(columnIndex);
         if (resultSet.wasNull())

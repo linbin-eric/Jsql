@@ -1,22 +1,15 @@
 package com.jfirer.jsql.transfer.impl;
 
+import com.jfirer.jsql.transfer.ResultSetTransfer;
+import lombok.SneakyThrows;
+
 import java.sql.ResultSet;
-import java.sql.SQLException;
 
-public class FloatTransfer extends ColumnIndexHolder
+public class FloatTransfer implements ResultSetTransfer
 {
-    public FloatTransfer(int columnIndex)
-    {
-        super(columnIndex);
-    }
-
-    public FloatTransfer()
-    {
-        super(1);
-    }
-
+    @SneakyThrows
     @Override
-    public Object transfer(ResultSet resultSet) throws SQLException
+    public Object transfer(ResultSet resultSet, int columnIndex)
     {
         float f = resultSet.getFloat(columnIndex);
         if (resultSet.wasNull())

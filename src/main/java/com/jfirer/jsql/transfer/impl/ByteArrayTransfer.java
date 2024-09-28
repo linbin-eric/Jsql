@@ -1,23 +1,16 @@
 package com.jfirer.jsql.transfer.impl;
 
+import com.jfirer.jsql.transfer.ResultSetTransfer;
+import lombok.SneakyThrows;
+
 import java.sql.Blob;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 
-public class ByteArrayTransfer extends ColumnIndexHolder
+public class ByteArrayTransfer implements ResultSetTransfer
 {
-    public ByteArrayTransfer()
-    {
-        super(1);
-    }
-
-    public ByteArrayTransfer(int columnIndex)
-    {
-        super(columnIndex);
-    }
-
+    @SneakyThrows
     @Override
-    public Object transfer(ResultSet resultSet) throws SQLException
+    public Object transfer(ResultSet resultSet, int columnIndex)
     {
         Blob blob = resultSet.getBlob(columnIndex);
         if (blob != null)

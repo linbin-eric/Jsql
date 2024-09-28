@@ -106,7 +106,7 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
         }
         else
         {
-            itemType = ReflectUtil.getBoxedTypeOrOrigin(itemType) ;
+            itemType = ReflectUtil.getBoxedTypeOrOrigin(itemType);
             if (itemType == Boolean.class)
             {
                 transferClass = BooleanTransfer.class;
@@ -174,7 +174,9 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
         }
         try
         {
-            return transferClass.getDeclaredConstructor().newInstance().awareType(itemType);
+            ResultSetTransfer resultSetTransfer = transferClass.getDeclaredConstructor().newInstance();
+            resultSetTransfer.awareType(itemType);
+            return resultSetTransfer;
         }
         catch (InstantiationException | NoSuchMethodException | IllegalAccessException | InvocationTargetException e)
         {

@@ -1,22 +1,15 @@
 package com.jfirer.jsql.transfer.impl;
 
+import com.jfirer.jsql.transfer.ResultSetTransfer;
+import lombok.SneakyThrows;
+
 import java.sql.ResultSet;
-import java.sql.SQLException;
 
-public class TimeStampTransfer extends ColumnIndexHolder
+public class TimeStampTransfer implements ResultSetTransfer
 {
-    public TimeStampTransfer(int columnIndex)
-    {
-        super(columnIndex);
-    }
-
-    public TimeStampTransfer()
-    {
-        super(1);
-    }
-
+    @SneakyThrows
     @Override
-    public Object transfer(ResultSet resultSet) throws SQLException
+    public Object transfer(ResultSet resultSet, int columnIndex)
     {
         return resultSet.getTimestamp(columnIndex);
     }

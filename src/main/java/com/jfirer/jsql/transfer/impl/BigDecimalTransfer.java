@@ -1,22 +1,15 @@
 package com.jfirer.jsql.transfer.impl;
 
+import com.jfirer.jsql.transfer.ResultSetTransfer;
+import lombok.SneakyThrows;
+
 import java.sql.ResultSet;
-import java.sql.SQLException;
 
-public class BigDecimalTransfer extends ColumnIndexHolder
+public class BigDecimalTransfer implements ResultSetTransfer
 {
-    public BigDecimalTransfer(int columnIndex)
-    {
-        super(columnIndex);
-    }
-
-    public BigDecimalTransfer()
-    {
-        super(1);
-    }
-
+    @SneakyThrows
     @Override
-    public Object transfer(ResultSet resultSet) throws SQLException
+    public Object transfer(ResultSet resultSet, int columnIndex)
     {
         return resultSet.getBigDecimal(columnIndex);
     }

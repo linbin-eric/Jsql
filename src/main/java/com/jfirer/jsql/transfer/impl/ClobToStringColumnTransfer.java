@@ -1,23 +1,16 @@
 package com.jfirer.jsql.transfer.impl;
 
+import com.jfirer.jsql.transfer.ResultSetTransfer;
+import lombok.SneakyThrows;
+
 import java.sql.Clob;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 
-public class ClobToStringColumnTransfer extends ColumnIndexHolder
+public class ClobToStringColumnTransfer implements ResultSetTransfer
 {
-    public ClobToStringColumnTransfer(int columnIndex)
-    {
-        super(columnIndex);
-    }
-
-    public ClobToStringColumnTransfer()
-    {
-        super(1);
-    }
-
+    @SneakyThrows
     @Override
-    public Object transfer(ResultSet resultSet) throws SQLException
+    public Object transfer(ResultSet resultSet, int columnIndex)
     {
         Clob clob = resultSet.getClob(columnIndex);
         if (clob != null)

@@ -1,22 +1,15 @@
 package com.jfirer.jsql.transfer.impl;
 
+import com.jfirer.jsql.transfer.ResultSetTransfer;
+import lombok.SneakyThrows;
+
 import java.sql.ResultSet;
-import java.sql.SQLException;
 
-public class BooleanTransfer extends ColumnIndexHolder
+public class BooleanTransfer implements ResultSetTransfer
 {
-    public BooleanTransfer()
-    {
-        super(1);
-    }
-
-    public BooleanTransfer(int columnIndex)
-    {
-        super(columnIndex);
-    }
-
+    @SneakyThrows
     @Override
-    public Object transfer(ResultSet resultSet) throws SQLException
+    public Object transfer(ResultSet resultSet, int columnIndex)
     {
         boolean b = resultSet.getBoolean(columnIndex);
         if (resultSet.wasNull())

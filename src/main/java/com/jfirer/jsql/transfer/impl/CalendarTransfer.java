@@ -1,24 +1,17 @@
 package com.jfirer.jsql.transfer.impl;
 
+import com.jfirer.jsql.transfer.ResultSetTransfer;
+import lombok.SneakyThrows;
+
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Calendar;
 
-public class CalendarTransfer extends ColumnIndexHolder
+public class CalendarTransfer implements ResultSetTransfer
 {
-    public CalendarTransfer(int columnIndex)
-    {
-        super(columnIndex);
-    }
-
-    public CalendarTransfer()
-    {
-        super(1);
-    }
-
+    @SneakyThrows
     @Override
-    public Object transfer(ResultSet resultSet) throws SQLException
+    public Object transfer(ResultSet resultSet, int columnIndex)
     {
         Timestamp timestamp = resultSet.getTimestamp(columnIndex);
         if (timestamp != null)

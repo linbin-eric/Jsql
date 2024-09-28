@@ -1,197 +1,328 @@
 package com.jfirer.jsql.transfer.impl;
 
-import com.jfirer.baseutil.bytecode.support.AnnotationContext;
+import com.jfirer.baseutil.STR;
 import com.jfirer.baseutil.reflect.ReflectUtil;
 import com.jfirer.baseutil.reflect.valueaccessor.ValueAccessor;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.transfer.CustomTransfer;
 import com.jfirer.jsql.transfer.ResultSetTransfer;
+import lombok.Data;
+import lombok.SneakyThrows;
+import lombok.experimental.Accessors;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Constructor;
 import java.math.BigDecimal;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Date;
+import java.util.List;
 
 public class BeanTransfer implements ResultSetTransfer
 {
-    record ColumnTransfer(ResultSetTransfer transfer, ValueAccessor accessor)
-    {
-        @Override
-        public boolean equals(Object obj)
-        {
-            if (obj instanceof ColumnTransfer columnTransfer)
-            {
-                return columnTransfer.accessor.getField().equals(accessor.getField());
-            }
-            else
-            {
-                return false;
-            }
-        }
+    private          Class<?>       ckass;
+    private          Constructor<?> constructor;
+    private volatile Entry[]        entries;
 
-        @Override
-        public int hashCode()
-        {
-            return accessor.getField().hashCode();
-        }
-    }
-
-    private          Class<?>         ckass;
-    private volatile ColumnTransfer[] columnTransfers;
-
+    @SneakyThrows
     @Override
-    public Object transfer(ResultSet resultSet) throws SQLException
+    public Object transfer(ResultSet resultSet, int ignored)
     {
-        if (columnTransfers == null)
+        if (entries == null)
         {
-            synchronized (ckass)
+            synchronized (this)
             {
-                if (columnTransfers == null)
+                if (entries == null)
                 {
-                    ResultSetMetaData   metaData       = resultSet.getMetaData();
-                    int                 columnCount    = metaData.getColumnCount();
-                    Set<ColumnTransfer> transfers      = new HashSet<>();
-                    TableEntityInfo     returnTypeInfo = TableEntityInfo.parse(ckass);
-                    /**
-                     * 1. 如果tableName能够和returnType匹配上，则用数据库字段名查找类名对应的映射。
-                     * 2. 如果tableName不能和returnType匹配上，则使用label名称查找类名对应的映射。
-                     */
+                    ResultSetMetaData metaData       = resultSet.getMetaData();
+                    int               columnCount    = metaData.getColumnCount();
+                    List<Entry>       list           = new ArrayList<>();
+                    TableEntityInfo   returnTypeInfo = TableEntityInfo.parse(ckass);
                     for (int i = 0; i < columnCount; i++)
                     {
                         int                        columnIndex = i + 1;
-                        ColumnTransfer             columnTransfer;
                         String                     tableName   = metaData.getTableName(columnIndex);
                         String                     columnName  = metaData.getColumnName(columnIndex);
-                        Field                      field;
                         String                     fullname    = (tableName + '.' + columnName);
                         TableEntityInfo.ColumnInfo columnInfo  = returnTypeInfo.findColumnInfoByFullname(fullname);
                         if (columnInfo == null)
                         {
                             continue;
                         }
-                        field = columnInfo.field();
-                        Class fieldType = ReflectUtil.getBoxedTypeOrOrigin(field.getType());
-                        if (AnnotationContext.isAnnotationPresent(CustomTransfer.class, field))
+                        int classId = ReflectUtil.getClassId(columnInfo.field().getType());
+                        if (columnInfo.field().isAnnotationPresent(CustomTransfer.class))
                         {
-                            try
+                            if (ReflectUtil.isPrimitive(columnInfo.field().getType()))
                             {
-                                ColumnIndexHolder columnIndexHolder = AnnotationContext.getAnnotation(CustomTransfer.class, field).value().getDeclaredConstructor(int.class).newInstance(columnIndex);
-                                columnIndexHolder.awareType(field.getType());
-                                columnTransfer = new ColumnTransfer(columnIndexHolder, columnInfo.accessor());
+                                throw new IllegalArgumentException(STR.format("字段:{}的类型为基础类型，要使用包装类型才能使用注解CustomTransfer", columnInfo.field()));
                             }
-                            catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e)
-                            {
-                                throw new RuntimeException(e);
-                            }
-                        }
-                        else if (fieldType == Boolean.class)
-                        {
-                            columnTransfer = new ColumnTransfer(new BooleanTransfer(columnIndex), columnInfo.accessor());
-                        }
-                        else if (fieldType == Double.class)
-                        {
-                            columnTransfer = new ColumnTransfer(new DoubleTransfer(columnIndex), columnInfo.accessor());
-                        }
-                        else if (fieldType == Float.class)
-                        {
-                            columnTransfer = new ColumnTransfer(new FloatTransfer(columnIndex), columnInfo.accessor());
-                        }
-                        else if (fieldType == Integer.class)
-                        {
-                            columnTransfer = new ColumnTransfer(new IntegerTransfer(columnIndex), columnInfo.accessor());
-                        }
-                        else if (fieldType == Long.class)
-                        {
-                            columnTransfer = new ColumnTransfer(new LongTransfer(columnIndex), columnInfo.accessor());
-                        }
-                        else if (fieldType == Short.class)
-                        {
-                            columnTransfer = new ColumnTransfer(new ShortTransfer(columnIndex), columnInfo.accessor());
-                        }
-                        else if (fieldType == Date.class)
-                        {
-                            columnTransfer = new ColumnTransfer(new SqlDateTransfer(columnIndex), columnInfo.accessor());
-                        }
-                        else if (fieldType == java.util.Date.class)
-                        {
-                            columnTransfer = new ColumnTransfer(new UtilDateTransfer(columnIndex), columnInfo.accessor());
-                        }
-                        else if (fieldType == String.class)
-                        {
-                            columnTransfer = new ColumnTransfer(new StringTransfer(columnIndex), columnInfo.accessor());
-                        }
-                        else if (fieldType == Timestamp.class)
-                        {
-                            columnTransfer = new ColumnTransfer(new TimeStampTransfer(columnIndex), columnInfo.accessor());
-                        }
-                        else if (fieldType == Time.class)
-                        {
-                            columnTransfer = new ColumnTransfer(new TimeTransfer(columnIndex), columnInfo.accessor());
-                        }
-                        else if (Enum.class.isAssignableFrom(fieldType))
-                        {
-                            columnTransfer = new ColumnTransfer(new EnumNameTransfer(columnIndex).awareType(fieldType), columnInfo.accessor());
-                        }
-                        else if (fieldType == Calendar.class)
-                        {
-                            columnTransfer = new ColumnTransfer(new CalendarTransfer(columnIndex), columnInfo.accessor());
-                        }
-                        else if (fieldType == byte[].class)
-                        {
-                            columnTransfer = new ColumnTransfer(new ByteArrayTransfer(columnIndex), columnInfo.accessor());
-                        }
-                        else if (fieldType == Clob.class)
-                        {
-                            columnTransfer = new ColumnTransfer(new ClobTransfer(columnIndex), columnInfo.accessor());
-                        }
-                        else if (fieldType.isEnum())
-                        {
-                            columnTransfer = new ColumnTransfer(new EnumNameTransfer(columnIndex), columnInfo.accessor());
-                        }
-                        else if (fieldType == BigDecimal.class)
-                        {
-                            columnTransfer = new ColumnTransfer(new BigDecimalTransfer(columnIndex), columnInfo.accessor());
+                            Class<? extends ResultSetTransfer> value             = columnInfo.field().getAnnotation(CustomTransfer.class).value();
+                            ResultSetTransfer                  resultSetTransfer = value.getConstructor().newInstance();
+                            resultSetTransfer.awareType(columnInfo.field().getType());
+                            list.add(new Entry().setAccessor(columnInfo.accessor())//
+                                                .setCkazz(columnInfo.field().getType())//
+                                                .setClassId(classId)//
+                                                .setColumnIndex(columnIndex)//
+                                                .setTransfer(resultSetTransfer));
                         }
                         else
                         {
-                            throw new IllegalArgumentException();
-                        }
-                        if (transfers.add(columnTransfer) == false)
-                        {
-                            throw new IllegalArgumentException("在一个sql语句中出现重复名称字段，重复类属性为:" + columnTransfer.accessor.getField().toString() + ",重复的数据库字段为" + tableName + "." + columnName);
+                            list.add(new Entry().setAccessor(columnInfo.accessor())//
+                                                .setClassId(classId)//
+                                                .setColumnIndex(columnIndex)//
+                                                .setCkazz(columnInfo.field().getType())//
+                            );
                         }
                     }
-                    this.columnTransfers = transfers.toArray(ColumnTransfer[]::new);
+                    entries = list.toArray(new Entry[0]);
                 }
             }
         }
-        try
+        Object result = constructor.newInstance();
+        for (Entry entry : entries)
         {
-            Object entity = ckass.getConstructor().newInstance();
-            for (ColumnTransfer each : columnTransfers)
-            {
-                Object value = each.transfer.transfer(resultSet);
-                if (value != null)
-                {
-                    each.accessor.setObject(entity, value);
-                }
-            }
-            return entity;
+            entry.fetchSqlValue(result, resultSet);
         }
-        catch (Exception e)
-        {
-            ReflectUtil.throwException(e);
-            return null;
-        }
+        return result;
     }
 
+    @SneakyThrows
     @Override
-    public ResultSetTransfer awareType(Class type)
+    public void awareType(Class type)
     {
-        this.ckass = type;
-        return this;
+        this.ckass  = type;
+        constructor = ckass.getConstructor();
+    }
+
+    @Data
+    @Accessors(chain = true)
+    static class Entry
+    {
+        protected int               columnIndex;
+        protected int               classId;
+        protected ValueAccessor     accessor;
+        protected ResultSetTransfer transfer;
+        protected Class             ckazz;
+
+        @SneakyThrows
+        public void fetchSqlValue(Object result, ResultSet resultSet)
+        {
+            if (transfer != null)
+            {
+                Object value = transfer.transfer(resultSet, columnIndex);
+                accessor.setReference(result, value);
+                return;
+            }
+            switch (classId)
+            {
+                case ReflectUtil.PRIMITIVE_INT ->
+                {
+                    int i = resultSet.getInt(columnIndex);
+                    if (!resultSet.wasNull())
+                    {
+                        accessor.set(result, i);
+                    }
+                }
+                case ReflectUtil.PRIMITIVE_BOOL ->
+                {
+                    boolean b = resultSet.getBoolean(columnIndex);
+                    if (!resultSet.wasNull())
+                    {
+                        accessor.set(result, b);
+                    }
+                }
+                case ReflectUtil.PRIMITIVE_FLOAT ->
+                {
+                    float f = resultSet.getFloat(columnIndex);
+                    if (!resultSet.wasNull())
+                    {
+                        accessor.set(result, f);
+                    }
+                }
+                case ReflectUtil.PRIMITIVE_DOUBLE ->
+                {
+                    double d = resultSet.getDouble(columnIndex);
+                    if (!resultSet.wasNull())
+                    {
+                        accessor.set(result, d);
+                    }
+                }
+                case ReflectUtil.PRIMITIVE_LONG ->
+                {
+                    long l = resultSet.getLong(columnIndex);
+                    if (!resultSet.wasNull())
+                    {
+                        accessor.set(result, l);
+                    }
+                }
+                case ReflectUtil.PRIMITIVE_SHORT ->
+                {
+                    short s = resultSet.getShort(columnIndex);
+                    if (!resultSet.wasNull())
+                    {
+                        accessor.set(result, s);
+                    }
+                }
+                case ReflectUtil.PRIMITIVE_BYTE ->
+                {
+                    byte b = resultSet.getByte(columnIndex);
+                    if (!resultSet.wasNull())
+                    {
+                        accessor.set(result, b);
+                    }
+                }
+                case ReflectUtil.PRIMITIVE_CHAR ->
+                {
+                    String string = resultSet.getString(columnIndex);
+                    if (string != null && !string.isEmpty())
+                    {
+                        accessor.set(result, string.charAt(0));
+                    }
+                }
+                case ReflectUtil.CLASS_INT ->
+                {
+                    int i = resultSet.getInt(columnIndex);
+                    if (!resultSet.wasNull())
+                    {
+                        accessor.setReference(result, i);
+                    }
+                }
+                case ReflectUtil.CLASS_BOOL ->
+                {
+                    boolean b = resultSet.getBoolean(columnIndex);
+                    if (!resultSet.wasNull())
+                    {
+                        accessor.setReference(result, b);
+                    }
+                }
+                case ReflectUtil.CLASS_FLOAT ->
+                {
+                    float f = resultSet.getFloat(columnIndex);
+                    if (!resultSet.wasNull())
+                    {
+                        accessor.setReference(result, f);
+                    }
+                }
+                case ReflectUtil.CLASS_DOUBLE ->
+                {
+                    double d = resultSet.getDouble(columnIndex);
+                    if (!resultSet.wasNull())
+                    {
+                        accessor.setReference(result, d);
+                    }
+                }
+                case ReflectUtil.CLASS_LONG ->
+                {
+                    long l = resultSet.getLong(columnIndex);
+                    if (!resultSet.wasNull())
+                    {
+                        accessor.setReference(result, l);
+                    }
+                }
+                case ReflectUtil.CLASS_SHORT ->
+                {
+                    short s = resultSet.getShort(columnIndex);
+                    if (!resultSet.wasNull())
+                    {
+                        accessor.setReference(result, s);
+                    }
+                }
+                case ReflectUtil.CLASS_BYTE ->
+                {
+                    byte b = resultSet.getByte(columnIndex);
+                    if (!resultSet.wasNull())
+                    {
+                        accessor.setReference(result, b);
+                    }
+                }
+                case ReflectUtil.CLASS_CHAR ->
+                {
+                    String string = resultSet.getString(columnIndex);
+                    if (string != null && !string.isEmpty())
+                    {
+                        accessor.setReference(result, string.charAt(0));
+                    }
+                }
+                case ReflectUtil.CLASS_STRING ->
+                {
+                    String str = resultSet.getString(columnIndex);
+                    if (str != null)
+                    {
+                        accessor.setReference(result, str);
+                    }
+                }
+                case ReflectUtil.CLASS_ENUM ->
+                {
+                    String enumName = resultSet.getString(columnIndex);
+                    if (enumName != null)
+                    {
+                        accessor.setReference(result, Enum.valueOf(ckazz, enumName));
+                    }
+                }
+                case ReflectUtil.CLASS_BLOB ->
+                {
+                    Blob blob = resultSet.getBlob(columnIndex);
+                    if (blob != null)
+                    {
+                        accessor.setReference(result, blob);
+                    }
+                }
+                case ReflectUtil.CLASS_CLOB ->
+                {
+                    Clob clob = resultSet.getClob(columnIndex);
+                    if (clob != null)
+                    {
+                        accessor.setReference(result, clob);
+                    }
+                }
+                case ReflectUtil.CLASS_TIMESTAMP ->
+                {
+                    Timestamp l = resultSet.getTimestamp(columnIndex);
+                    if (!resultSet.wasNull())
+                    {
+                        accessor.setReference(result, l);
+                    }
+                }
+                case ReflectUtil.CLASS_BIGDECIMAL ->
+                {
+                    String string = resultSet.getString(columnIndex);
+                    if (!resultSet.wasNull())
+                    {
+                        accessor.setReference(result, new BigDecimal(string));
+                    }
+                }
+                case ReflectUtil.PRIMITIVE_BYTE_ARRAY ->
+                {
+                    Blob blob = resultSet.getBlob(columnIndex);
+                    if (blob != null)
+                    {
+                        byte[] array = blob.getBytes(1, (int) blob.length());
+                        blob.free();
+                        accessor.setReference(result, array);
+                    }
+                }
+                case ReflectUtil.CLASS_CALENDAR ->
+                {
+                    Timestamp timestamp = resultSet.getTimestamp(columnIndex);
+                    if (timestamp != null)
+                    {
+                        Calendar calendar = Calendar.getInstance();
+                        calendar.setTimeInMillis(timestamp.getTime());
+                        accessor.setReference(result, calendar);
+                    }
+                }
+                case ReflectUtil.CLASS_DATE ->
+                {
+                    Timestamp timestamp = resultSet.getTimestamp(columnIndex);
+                    if (timestamp != null)
+                    {
+                        accessor.setReference(result, new Date(timestamp.getTime()));
+                    }
+                }
+                case ReflectUtil.CLASS_TIME -> accessor.setReference(result, resultSet.getTime(columnIndex));
+                case ReflectUtil.CLASS_SQL_DATE -> accessor.setReference(result, resultSet.getDate(columnIndex));
+                default -> throw new IllegalArgumentException("不能默认获取值的类型:{}" + accessor.getField());
+            }
+        }
     }
 }
