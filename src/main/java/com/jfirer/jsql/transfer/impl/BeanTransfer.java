@@ -1,6 +1,7 @@
 package com.jfirer.jsql.transfer.impl;
 
 import com.jfirer.baseutil.STR;
+import com.jfirer.baseutil.StringUtil;
 import com.jfirer.baseutil.reflect.ReflectUtil;
 import com.jfirer.baseutil.reflect.valueaccessor.ValueAccessor;
 import com.jfirer.jsql.metadata.TableEntityInfo;
@@ -43,7 +44,7 @@ public class BeanTransfer implements ResultSetTransfer
                         int                        columnIndex = i + 1;
                         String                     tableName   = metaData.getTableName(columnIndex);
                         String                     columnName  = metaData.getColumnName(columnIndex);
-                        String                     fullname    = (tableName + '.' + columnName);
+                        String                     fullname    = StringUtil.isNotBlank(tableName) ? (tableName + '.' + columnName) : columnName;
                         TableEntityInfo.ColumnInfo columnInfo  = returnTypeInfo.findColumnInfoByFullname(fullname);
                         if (columnInfo == null)
                         {
