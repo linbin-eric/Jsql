@@ -39,10 +39,9 @@ public class OraclePageExecutor extends NextHolder
         sql = "select * from ( select a.*,rownum rn from(" + sql + ") a where rownum<=?) where rn>=?";
         params.add(page.getOffset() + page.getSize());
         params.add(page.getOffset() + 1);
-        return next.queryList(sql, element, params, connection, dialect);
+        page.setResult(next.queryList(sql, element, params, connection, dialect));
+        return page.getResult();
     }
-
-
 
     @Override
     public int order()

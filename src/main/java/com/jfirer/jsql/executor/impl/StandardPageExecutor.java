@@ -45,7 +45,8 @@ public class StandardPageExecutor extends NextHolder
         sql = sql + " limit ?,?";
         params.add(page.getOffset());
         params.add(page.getSize());
-        return next.queryList(sql, element, params, connection, dialect);
+        page.setResult(next.queryList(sql, element, params, connection, dialect));
+        return page.getResult();
     }
 
     @Override

@@ -45,7 +45,9 @@ public class DuckdbPageExecutor extends NextHolder
         sql = sql + " limit ? offset ?";
         params.add(page.getSize());
         params.add(page.getOffset());
-        return next.queryList(sql, element, params, connection, dialect);
+        List<Object> result = next.queryList(sql, element, params, connection, dialect);
+        page.setResult(result);
+        return result;
     }
 
     @Override
