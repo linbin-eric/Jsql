@@ -9,7 +9,9 @@ import lombok.Data;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Data
@@ -58,7 +60,14 @@ public class TableEntityInfo
                 if (annotation == null)
                 {
                     columnName = strategy.toColumnName(field.getName());
-                    fullName   = tableName + '.' + columnName;
+                    if (StringUtil.isNotBlank(tableName))
+                    {
+                        fullName = tableName + '.' + columnName;
+                    }
+                    else
+                    {
+                        fullName = columnName;
+                    }
                 }
                 else if (StringUtil.isNotBlank(annotation.fullname()))
                 {
@@ -68,7 +77,14 @@ public class TableEntityInfo
                 else if (StringUtil.isNotBlank(annotation.value()))
                 {
                     columnName = annotation.value();
-                    fullName   = tableName + '.' + columnName;
+                    if (StringUtil.isNotBlank(tableName))
+                    {
+                        fullName = tableName + '.' + columnName;
+                    }
+                    else
+                    {
+                        fullName = columnName;
+                    }
                 }
                 else
                 {

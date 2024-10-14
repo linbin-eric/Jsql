@@ -8,7 +8,7 @@ public interface ColumnNameStrategy
      *
      * @return
      */
-    String toColumnName(String name);
+    String toColumnName(String fieldName);
 
     ColumnNameStrategy LOW_CASE = name -> name.replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase();
 
