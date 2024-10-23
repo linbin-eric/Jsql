@@ -20,4 +20,13 @@ public interface ColumnNameStrategy
             return name.replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase();
         }
     }
+
+    class SameName implements ColumnNameStrategy
+    {
+        @Override
+        public String toColumnName(String name)
+        {
+            return name;
+        }
+    }
 }
