@@ -21,15 +21,15 @@ public class TableEntityInfo
     {
     }
 
-    private static final Map<Class<?>, TableEntityInfo> store                 = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, TableEntityInfo> store                           = new ConcurrentHashMap<>();
     private final        String                         classSimpleName;
     private final        String                         tableName;
-    private              Map<String, ColumnInfo>        propertyNameKeyMap    = new HashMap<>();
-    private              Map<String, ColumnInfo>        fullnameColumnInfoMap = new HashMap<>();
+    private              Map<String, ColumnInfo>        propertyNameKeyMap              = new HashMap<>();
+    private              Map<String, ColumnInfo>        fullnameIgnoreCaseColumnInfoMap = new HashMap<>();
     private              ColumnInfo                     pkInfo;
     private final        Class<?>                       ckass;
     private              PkGenerator.Generator          pkGenerator;
-    private              PkReturnType                   pkReturnType          = PkReturnType.NO_RETURN_PK;
+    private              PkReturnType                   pkReturnType                    = PkReturnType.NO_RETURN_PK;
     private final        ColumnInfo[]                   allColumnInfos;
     private final        ColumnInfo[]                   allColumnInfosExcludePk;
 
@@ -92,7 +92,7 @@ public class TableEntityInfo
                 }
                 ColumnInfo columnInfo = new ColumnInfo(columnName, field.getName(), field, ValueAccessor.compile(field), fullName);
                 propertyNameKeyMap.put(columnInfo.propertyName, columnInfo);
-                fullnameColumnInfoMap.put(columnInfo.fullname(), columnInfo);
+                fullnameIgnoreCaseColumnInfoMap.put(columnInfo.fullname().toLowerCase(), columnInfo);
                 if (field.isAnnotationPresent(Pk.class))
                 {
                     if (pkInfo == null)
@@ -160,9 +160,9 @@ public class TableEntityInfo
         return Collection.class.isAssignableFrom(type) || Map.class.isAssignableFrom(type);
     }
 
-    public ColumnInfo findColumnInfoByFullname(String fullname)
+    public ColumnInfo findColumnInfoByFullnameIgnoreCase(String fullname)
     {
-        return fullnameColumnInfoMap.get(fullname.toLowerCase());
+        return fullnameIgnoreCaseColumnInfoMap.get(fullname.toLowerCase());
     }
 
     public static TableEntityInfo parse(Class<?> entityClass)

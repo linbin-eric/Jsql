@@ -45,7 +45,7 @@ public class BeanTransfer implements ResultSetTransfer
                         String                     tableName   = metaData.getTableName(columnIndex);
                         String                     columnName  = metaData.getColumnName(columnIndex);
                         String                     fullname    = StringUtil.isNotBlank(tableName) ? (tableName + '.' + columnName) : columnName;
-                        TableEntityInfo.ColumnInfo columnInfo  = returnTypeInfo.findColumnInfoByFullname(fullname);
+                        TableEntityInfo.ColumnInfo columnInfo  = returnTypeInfo.findColumnInfoByFullnameIgnoreCase(fullname);
                         if (columnInfo == null)
                         {
                             continue;
