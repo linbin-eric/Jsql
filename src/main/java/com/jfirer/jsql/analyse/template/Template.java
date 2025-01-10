@@ -1,5 +1,6 @@
 package com.jfirer.jsql.analyse.template;
 
+import com.jfirer.jfireel.ReferenceCall;
 import com.jfirer.jfireel.expression.Expression;
 import com.jfirer.jfireel.expression.Operand;
 
@@ -9,25 +10,22 @@ import java.util.Map;
 
 public class Template
 {
-    public static final Object print(Map<String, Object> params, Operand[] operands)
+    @ReferenceCall
+    public static final void print(StringBuilder outputStr, Object param)
     {
-        StringBuilder outputStr = (StringBuilder) params.get("outputStr");
-        outputStr.append(operands[0].calculate(params));
-        return null;
+        outputStr.append(param);
     }
 
-    public static final Object printParam(Map<String, Object> params, Operand[] operands)
+    @ReferenceCall
+    public static final void printParam(StringBuilder outputStr, List<Object> sqlParams, Object param)
     {
-        ((StringBuilder) params.get("outputStr")).append("?");
-        ((List<Object>) params.get("sqlParams")).add(operands[0].calculate(params));
-        return null;
+        outputStr.append("?");
+        sqlParams.add(param);
     }
 
-    public static Object printCollection(Map<String, Object> params, Operand[] operands)
+    @ReferenceCall
+    public static Object printCollection(StringBuilder builder, List<Object> sqlParams, Object result)
     {
-        Object        result    = operands[0].calculate(params);
-        StringBuilder builder   = (StringBuilder) params.get("outputStr");
-        List<Object>  sqlParams = (List<Object>) params.get("sqlParams");
         if (result instanceof Collection<?>)
         {
             builder.append("(");
@@ -165,9 +163,7 @@ public class Template
 
     static
     {
-        Expression.registerInnerCall("print", Template::print);
-        Expression.registerInnerCall("printParam", Template::printParam);
-        Expression.registerInnerCall("printCollection", Template::printCollection);
+        Expression.scanForReferenceCall(Template.class);
     }
 
     private static final int     IN_TEXT       = 1;
@@ -213,7 +209,7 @@ public class Template
                     {
                         if (mark != index)
                         {
-                            builder.append("print(\"").append(content.substring(mark, index)).append("\");\r\n");
+                            builder.append("print(outputStr,'").append(content.substring(mark, index)).append("');\r\n");
                         }
                         mark = index += 2;
                         type = IN_VARIABLE;
@@ -222,7 +218,7 @@ public class Template
                     {
                         if (mark != index)
                         {
-                            builder.append("print(\"").append(content.substring(mark, index)).append("\");\r\n");
+                            builder.append("print(outputStr,'").append(content.substring(mark, index)).append("');\r\n");
                         }
                         mark = index += 2;
                         type = IN_PARAM;
@@ -231,7 +227,7 @@ public class Template
                     {
                         if (mark != index)
                         {
-                            builder.append("print(\"").append(content.substring(mark, index)).append("\");\r\n");
+                            builder.append("print(outputStr,'").append(content.substring(mark, index)).append("');\r\n");
                         }
                         mark = index += 2;
                         type = IN_COLLECTION;
@@ -240,7 +236,7 @@ public class Template
                     {
                         if (mark != index)
                         {
-                            builder.append("print(\"").append(content.substring(mark, index)).append("\");\r\n");
+                            builder.append("print(outputStr,'").append(content.substring(mark, index)).append("');\r\n");
                         }
                         mark = index += 2;
                         type = IN_CODE_AREA;
@@ -254,7 +250,7 @@ public class Template
                 {
                     if (c == '}')
                     {
-                        builder.append("print(").append(content.substring(mark, index)).append(");\r\n");
+                        builder.append("print(outputStr,").append(content.substring(mark, index)).append(");\r\n");
                         mark = index += 1;
                         type = IN_TEXT;
                     }
@@ -268,7 +264,7 @@ public class Template
                     if (c == '}')
                     {
                         String sub = content.substring(mark, index);
-                        builder.append("printParam(" + sub + ");\r\n");
+                        builder.append("printParam(outputStr,sqlParams," + sub + ");\r\n");
                         mark = index += 1;
                         type = IN_TEXT;
                     }
@@ -282,7 +278,7 @@ public class Template
                     if (c == '}')
                     {
                         String sub = content.substring(mark, index);
-                        builder.append("printCollection(" + sub + ");\r\n");
+                        builder.append("printCollection(outputStr,sqlParams," + sub + ");\r\n");
                         mark = index += 1;
                         type = IN_TEXT;
                     }

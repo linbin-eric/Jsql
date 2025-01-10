@@ -12,6 +12,7 @@ import lombok.SneakyThrows;
 import lombok.experimental.Accessors;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
@@ -62,6 +63,7 @@ public class BeanTransfer implements ResultSetTransfer
                             resultSetTransfer.awareType(columnInfo.field().getType());
                             list.add(new Entry().setAccessor(columnInfo.accessor())//
                                                 .setCkazz(columnInfo.field().getType())//
+                                                .setField(columnInfo.field())//
                                                 .setClassId(classId)//
                                                 .setColumnIndex(columnIndex)//
                                                 .setTransfer(resultSetTransfer));
@@ -69,6 +71,7 @@ public class BeanTransfer implements ResultSetTransfer
                         else
                         {
                             list.add(new Entry().setAccessor(columnInfo.accessor())//
+                                                .setField(columnInfo.field())//
                                                 .setClassId(classId)//
                                                 .setColumnIndex(columnIndex)//
                                                 .setCkazz(columnInfo.field().getType())//
@@ -104,6 +107,7 @@ public class BeanTransfer implements ResultSetTransfer
         protected ValueAccessor     accessor;
         protected ResultSetTransfer transfer;
         protected Class             ckazz;
+        protected Field             field;
 
         @SneakyThrows
         public void fetchSqlValue(Object result, ResultSet resultSet)
@@ -322,7 +326,7 @@ public class BeanTransfer implements ResultSetTransfer
                 }
                 case ReflectUtil.CLASS_TIME -> accessor.setReference(result, resultSet.getTime(columnIndex));
                 case ReflectUtil.CLASS_SQL_DATE -> accessor.setReference(result, resultSet.getDate(columnIndex));
-                default -> throw new IllegalArgumentException("不能默认获取值的类型:{}" + accessor.getField());
+                default -> throw new IllegalArgumentException("不能默认获取值的类型:{}" + field);
             }
         }
     }
