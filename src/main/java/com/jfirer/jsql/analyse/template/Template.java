@@ -295,7 +295,7 @@ public class Template
         }
         if (mark != index)
         {
-            builder.append("print(\"").append(content.substring(mark, index)).append("\");\r\n");
+            builder.append("print(outputStr,'").append(content.substring(mark, index)).append("');\r\n");
         }
         return new Template(Expression.parse(builder.toString()));
     }

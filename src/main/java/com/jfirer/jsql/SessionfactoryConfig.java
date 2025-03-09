@@ -50,6 +50,7 @@ public class SessionfactoryConfig
             || "duckdb".equalsIgnoreCase(productName)//
             || "oracle".equalsIgnoreCase(productName)//
             || "h2".equalsIgnoreCase(productName)//
+            || "postgresql".equalsIgnoreCase(productName)//
             || "hsql database engine".equalsIgnoreCase(productName)//
         )
         {

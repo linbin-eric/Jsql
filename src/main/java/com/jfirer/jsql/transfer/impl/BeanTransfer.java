@@ -49,7 +49,11 @@ public class BeanTransfer implements ResultSetTransfer
                         TableEntityInfo.ColumnInfo columnInfo  = returnTypeInfo.findColumnInfoByFullnameIgnoreCase(fullname);
                         if (columnInfo == null)
                         {
-                            continue;
+                            columnInfo = returnTypeInfo.getColumnNameKeyMap().get(columnName);
+                            if (columnInfo == null)
+                            {
+                                continue;
+                            }
                         }
                         int classId = ReflectUtil.getClassId(columnInfo.field().getType());
                         if (columnInfo.field().isAnnotationPresent(CustomTransfer.class))

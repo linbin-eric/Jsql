@@ -25,6 +25,7 @@ public class TableEntityInfo
     private final        String                         classSimpleName;
     private final        String                         tableName;
     private              Map<String, ColumnInfo>        propertyNameKeyMap              = new HashMap<>();
+    private              Map<String, ColumnInfo>        columnNameKeyMap                = new HashMap<>();
     private              Map<String, ColumnInfo>        fullnameIgnoreCaseColumnInfoMap = new HashMap<>();
     private              ColumnInfo                     pkInfo;
     private final        Class<?>                       ckass;
@@ -92,6 +93,7 @@ public class TableEntityInfo
                 }
                 ColumnInfo columnInfo = new ColumnInfo(columnName, field.getName(), field, ValueAccessor.compile(field), fullName);
                 propertyNameKeyMap.put(columnInfo.propertyName, columnInfo);
+                columnNameKeyMap.put(columnInfo.columnName(), columnInfo);
                 fullnameIgnoreCaseColumnInfoMap.put(columnInfo.fullname().toLowerCase(), columnInfo);
                 if (field.isAnnotationPresent(Pk.class))
                 {

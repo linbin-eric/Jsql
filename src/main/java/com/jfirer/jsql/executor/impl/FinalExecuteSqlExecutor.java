@@ -23,10 +23,32 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
 {
     record ClassKey(String sql, Class<?> ckass)
     {
+        @Override
+        public int hashCode()
+        {
+            return ckass.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            return ckass.equals(obj);
+        }
     }
 
     record MethodKey(String sql, Method method)
     {
+        @Override
+        public int hashCode()
+        {
+            return method.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            return method.equals(obj);
+        }
     }
 
     ConcurrentMap<ClassKey, ResultSetTransfer>  classMap  = new ConcurrentHashMap<>();
