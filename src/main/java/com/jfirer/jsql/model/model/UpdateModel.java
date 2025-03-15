@@ -29,7 +29,7 @@ public class UpdateModel implements Model
     public <T> UpdateModel set(SFunction<T, ?> fn, Object value)
     {
         TableEntityInfo.ColumnInfo columnInfo = tableEntityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName());
-        sets.add(new Set(tableEntityInfo.getTableName() + "." + columnInfo.columnName(), value, false));
+        sets.add(new Set( columnInfo.columnName(), value, false));
         return this;
     }
 
@@ -39,13 +39,13 @@ public class UpdateModel implements Model
         {
             //这种情况下，实际上是要给这个属性设置为空值
             TableEntityInfo.ColumnInfo columnInfo = tableEntityInfo.getPropertyNameKeyMap().get(fn1.resolveFieldName());
-            sets.add(new Set(tableEntityInfo.getTableName() + "." + columnInfo.columnName(), null, false));
+            sets.add(new Set(columnInfo.columnName(), null, false));
         }
         else
         {
             TableEntityInfo.ColumnInfo columnInfo1 = tableEntityInfo.getPropertyNameKeyMap().get(fn1.resolveFieldName());
             TableEntityInfo.ColumnInfo columnInfo2 = tableEntityInfo.getPropertyNameKeyMap().get(fn2.resolveFieldName());
-            sets.add(new Set(tableEntityInfo.getTableName() + "." + columnInfo1.columnName(), tableEntityInfo.getTableName() + "." + columnInfo2.columnName(), true));
+            sets.add(new Set( columnInfo1.columnName(), columnInfo2.columnName(), true));
         }
         return this;
     }

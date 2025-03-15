@@ -43,7 +43,7 @@ public class DeleteModel implements Model
     @Override
     public String findColumnName(SFunction<?, ?> fn)
     {
-        return tableEntityInfo.getTableName() + "." + tableEntityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName();
+        return tableEntityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName();
     }
 
     public DeleteModel where(Param param)
