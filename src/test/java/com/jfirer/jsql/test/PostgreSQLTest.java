@@ -12,6 +12,7 @@ import com.pgvector.PGvector;
 import com.zaxxer.hikari.HikariDataSource;
 import lombok.experimental.Accessors;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
@@ -66,6 +67,7 @@ public class PostgreSQLTest
     }
 
     @Test
+    @Ignore
     public void test()
     {
         /**

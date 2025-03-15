@@ -173,7 +173,7 @@ public class ModelTest
         user3.setId("2");
         user3.setAge(20);
         session.insert(user3);
-        int count = session.count(Model.selectCount(User3::getName).from(User3.class).innerJoin(User2.class).on(Param.eq(User3::getAge, User2::getAge)));
+        int count = session.count(Model.selectCount(User3::getName).fromAs(User3.class, "user2").innerJoin(User2.class, "user").on(Param.eq(User3::getAge, User2::getAge)));
         Assert.assertEquals(1, count);
     }
 
@@ -206,7 +206,7 @@ public class ModelTest
         user.setName("aa1");
         user.setAge(10);
         session.save(user);
-        List<String> result = session.findList(Model.select(User::getName).orderBy(User::getAge, true));
+        List<String> result = session.findList(Model.select(User::getName).from(User.class).orderBy(User::getAge, true));
         Assert.assertEquals("aa1", result.get(0));
     }
 
@@ -262,7 +262,7 @@ public class ModelTest
         user3.setName("B");
         user3.setAge(14);
         session.save(user3);
-        List<UserDTO> list = session.findList(Model.selectAll().fromAs(User2.class, "u").leftJoin(User3.class).on(Param.eq(User2::getAge, User3::getAge))//
+        List<UserDTO> list = session.findList(Model.selectAll().fromAs(User2.class, "u").leftJoin(User3.class, "user3").on(Param.eq(User2::getAge, User3::getAge))//
                                                    .where(Param.eq(User2::getId, 1))//
                                                    .returnType(UserDTO.class));
         assertEquals("A", list.get(0).getName2());

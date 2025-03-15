@@ -1,5 +1,7 @@
 package com.jfirer.jsql.model.model;
 
+import com.jfirer.baseutil.STR;
+import com.jfirer.baseutil.StringUtil;
 import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.InternalParam;
@@ -8,10 +10,12 @@ import com.jfirer.jsql.model.Param;
 import com.jfirer.jsql.model.support.LockMode;
 import com.jfirer.jsql.model.support.SFunction;
 import lombok.Getter;
+import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class QueryModel implements Model
@@ -19,8 +23,8 @@ public class QueryModel implements Model
     private         List<Select>          select      = new LinkedList<>();
     private         List<SFunction<?, ?>> exclude     = new LinkedList<>();
     private         List<Table>           from        = new LinkedList<>();
-    private         List<String>          orderBy     = new LinkedList<>();
-    private         List<String>          groupBy     = new LinkedList<>();
+    private         List<OrderBy>         orderBy     = new LinkedList<>();
+    private         List<GroupBy>         groupBy     = new LinkedList<>();
     @Getter
     protected       Page                  page;
     private         Class<?>              returnType;
@@ -39,11 +43,6 @@ public class QueryModel implements Model
 
     private void addSelect(SFunction<?, ?> fn, String function, String asName)
     {
-        Class<?> implClass = fn.getImplClass();
-        if (from.stream().noneMatch(table -> table.tableClass.equals(implClass)))
-        {
-            from(implClass);
-        }
         select.add(new Select(fn, function, asName, this));
     }
 
@@ -92,7 +91,7 @@ public class QueryModel implements Model
 
     public QueryModel from(Class<?> ckass)
     {
-        fromAs(ckass, TableEntityInfo.parse(ckass).getTableName());
+        fromAs(ckass, "");
         return this;
     }
 
@@ -109,25 +108,49 @@ public class QueryModel implements Model
 
     public QueryModel leftJoin(Class ckass)
     {
-        from.add(new Table(ckass, TableEntityInfo.parse(ckass).getTableName(), "left join"));
+        from.add(new Table(ckass, "", "left join"));
+        return this;
+    }
+
+    public QueryModel leftJoin(Class ckass, String asName)
+    {
+        from.add(new Table(ckass, asName, "left join"));
         return this;
     }
 
     public QueryModel rightJoin(Class<?> ckass)
     {
-        from.add(new Table(ckass, TableEntityInfo.parse(ckass).getTableName(), "right join"));
+        from.add(new Table(ckass, "", "right join"));
+        return this;
+    }
+
+    public QueryModel rightJoin(Class<?> ckass, String asName)
+    {
+        from.add(new Table(ckass, asName, "right join"));
         return this;
     }
 
     public QueryModel fullJoin(Class<?> ckass)
     {
-        from.add(new Table(ckass, TableEntityInfo.parse(ckass).getTableName(), "full join"));
+        from.add(new Table(ckass, "", "full join"));
+        return this;
+    }
+
+    public QueryModel fullJoin(Class<?> ckass, String asName)
+    {
+        from.add(new Table(ckass, asName, "full join"));
         return this;
     }
 
     public QueryModel innerJoin(Class<?> ckass)
     {
-        from.add(new Table(ckass, TableEntityInfo.parse(ckass).getTableName(), "inner join"));
+        from.add(new Table(ckass, "", "inner join"));
+        return this;
+    }
+
+    public QueryModel innerJoin(Class<?> ckass, String asName)
+    {
+        from.add(new Table(ckass, asName, "inner join"));
         return this;
     }
 
@@ -141,13 +164,13 @@ public class QueryModel implements Model
     public <T> QueryModel orderBy(SFunction<T, ?> fn, boolean desc)
     {
         String s = desc ? " desc" : " asc";
-        orderBy.add(findColumnName(fn) + s);
+        orderBy.add(new OrderBy(fn, desc));
         return this;
     }
 
     public <T> QueryModel groupBy(SFunction<T, ?> fn)
     {
-        groupBy.add(findColumnName(fn));
+        groupBy.add(new GroupBy(fn));
         return this;
     }
 
@@ -242,7 +265,39 @@ public class QueryModel implements Model
             {
                 throw new IllegalArgumentException("from数据为空，请检查语句");
             }
-            from.forEach(table -> TableEntityInfo.parse(table.tableClass).getPropertyNameKeyMap().values().forEach(columnInfo -> select.add(new Select(table.asName + "." + columnInfo.columnName(), table.tableClass.getName(), columnInfo.propertyName()))));
+            for (Table table : from)
+            {
+                TableEntityInfo entityInfo = TableEntityInfo.parse(table.tableClass);
+                if (StringUtil.isBlank(table.asName))
+                {
+                    for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
+                    {
+                        select.add(new Select(columnInfo.columnName(), table.tableClass.getName(), columnInfo.propertyName()));
+                    }
+                }
+                else
+                {
+                    for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
+                    {
+                        select.add(new Select(table.asName + "." + columnInfo.columnName(), table.tableClass.getName(), columnInfo.propertyName()));
+                    }
+                }
+            }
+        }
+        else
+        {
+            if (from.isEmpty())
+            {
+                Set<? extends Class<?>> collect = select.stream().filter(s -> s.fn != null).map(s -> s.fn.getImplClass()).collect(Collectors.toSet());
+                if (collect.size() > 1)
+                {
+                    throw new IllegalArgumentException("使用Select添加了1张以上的表，需要显式的使用from方法添加表");
+                }
+                else
+                {
+                    from(collect.iterator().next());
+                }
+            }
         }
         if (exclude.isEmpty() == false)
         {
@@ -274,7 +329,7 @@ public class QueryModel implements Model
         }
         if (!groupBy.isEmpty())
         {
-            builder.append(" group by ").append(String.join(",", groupBy));
+            builder.append(" group by ").append(groupBy.stream().map(g -> g.toString(QueryModel.this)).collect(Collectors.joining(",")));
         }
         else
         {
@@ -282,7 +337,7 @@ public class QueryModel implements Model
         if (!orderBy.isEmpty())
         {
             builder.append(" order by ");
-            builder.append(String.join(",", orderBy));
+            builder.append(orderBy.stream().map(o -> o.toString(QueryModel.this)).collect(Collectors.joining(",")));
         }
         else
         {
@@ -317,8 +372,16 @@ public class QueryModel implements Model
                                 }
                                 return false;
                             })//
-                            .findAny().orElseThrow();
-        return tableAs.asName + "." + TableEntityInfo.parse(tableAs.tableClass).getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName();
+                            .findAny().orElseThrow(() -> new IllegalArgumentException(STR.format("在from内容中没有类:{}对应的表", implClass.getName())));
+        TableEntityInfo tableEntityInfo = TableEntityInfo.parse(tableAs.tableClass);
+        if (StringUtil.isBlank(tableAs.asName))
+        {
+            return tableEntityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName();
+        }
+        else
+        {
+            return tableAs.asName + "." + tableEntityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName();
+        }
     }
 
     class Table
@@ -343,7 +406,7 @@ public class QueryModel implements Model
         public void append(StringBuilder builder)
         {
             TableEntityInfo parse   = TableEntityInfo.parse(tableClass);
-            String          segment = parse.getTableName().equals(asName) ? parse.getTableName() : parse.getTableName() + " as " + asName;
+            String          segment = StringUtil.isBlank(asName) ? parse.getTableName() : parse.getTableName() + " as " + asName;
             switch (mode)
             {
                 case "from" -> builder.append("from " + segment + " ");
@@ -419,6 +482,22 @@ public class QueryModel implements Model
             {
                 return content;
             }
+        }
+    }
+
+    record OrderBy(SFunction<?, ?> fn, boolean desc)
+    {
+        public String toString(QueryModel model)
+        {
+            return model.findColumnName(fn) + (desc ? " desc" : " asc");
+        }
+    }
+
+    record GroupBy(SFunction<?, ?> fn)
+    {
+        public String toString(QueryModel model)
+        {
+            return model.findColumnName(fn);
         }
     }
 }
