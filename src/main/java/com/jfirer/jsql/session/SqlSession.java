@@ -1,6 +1,7 @@
 package com.jfirer.jsql.session;
 
 import com.jfirer.jsql.metadata.Page;
+import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.model.QueryModel;
 
@@ -109,9 +110,10 @@ public interface SqlSession extends ConnectionOp
      *
      * @param sql
      * @param params
+     * @param pkInfo
      * @return
      */
-    String insertReturnPk(String sql, List<Object> params);
+    String insertReturnPk(String sql, List<Object> params, TableEntityInfo.ColumnInfo pkInfo);
 
     <T> T query(String sql, AnnotatedElement element, List<Object> params);
 

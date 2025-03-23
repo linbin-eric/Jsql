@@ -4,6 +4,7 @@ import com.jfirer.baseutil.reflect.ReflectUtil;
 import com.jfirer.jsql.dialect.Dialect;
 import com.jfirer.jsql.exception.NotSingleResultException;
 import com.jfirer.jsql.executor.SqlExecutor;
+import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.transfer.CustomTransfer;
 import com.jfirer.jsql.transfer.ResultSetTransfer;
 import com.jfirer.jsql.transfer.impl.*;
@@ -65,7 +66,7 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
     }
 
     @Override
-    public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
+    public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect, TableEntityInfo.ColumnInfo pkInfo) throws SQLException
     {
         try (PreparedStatement prepareStatement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS))
         {
@@ -73,7 +74,15 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
             prepareStatement.executeUpdate();
             try (ResultSet generatedKeys = prepareStatement.getGeneratedKeys())
             {
-                return generatedKeys.next() ? generatedKeys.getString(1) : null;
+                ResultSetMetaData metaData = generatedKeys.getMetaData();
+                if (metaData.getColumnCount() == 1)
+                {
+                    return generatedKeys.next() ? generatedKeys.getString(1) : null;
+                }
+                else
+                {
+                    return generatedKeys.next() ? generatedKeys.getString(pkInfo.columnName()) : null;
+                }
             }
         }
     }

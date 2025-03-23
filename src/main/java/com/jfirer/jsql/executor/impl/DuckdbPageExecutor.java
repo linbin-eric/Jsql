@@ -2,6 +2,7 @@ package com.jfirer.jsql.executor.impl;
 
 import com.jfirer.jsql.dialect.Dialect;
 import com.jfirer.jsql.metadata.Page;
+import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.transfer.ResultSetTransfer;
 import com.jfirer.jsql.transfer.impl.IntegerTransfer;
 
@@ -21,9 +22,9 @@ public class DuckdbPageExecutor extends NextHolder
     }
 
     @Override
-    public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
+    public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect, TableEntityInfo.ColumnInfo pkInfo) throws SQLException
     {
-        return next.insertWithReturnKey(sql, params, connection, dialect);
+        return next.insertWithReturnKey(sql, params, connection, dialect, pkInfo);
     }
 
     @Override

@@ -13,6 +13,7 @@ public class InsertEntityModel implements Model
 {
     private         String                       sql;
     private         TableEntityInfo.PkReturnType pkReturnType;
+    private         TableEntityInfo.ColumnInfo   pkInfo;
     protected final List<Object>                 paramValues = new ArrayList<>();
 
     public InsertEntityModel(Object entity)
@@ -24,11 +25,12 @@ public class InsertEntityModel implements Model
         {
             makeSql(entity, entityInfo, builder);
             pkReturnType = TableEntityInfo.PkReturnType.NO_RETURN_PK;
+            pkInfo       = null;
         }
         else
         {
-            TableEntityInfo.ColumnInfo pkInfo = entityInfo.getPkInfo();
-            Object                     pk     = pkInfo.accessor().get(entity);
+            pkInfo = entityInfo.getPkInfo();
+            Object pk = pkInfo.accessor().get(entity);
             if (pk == null)
             {
                 if (pkInfo.field().isAnnotationPresent(PkGenerator.class))

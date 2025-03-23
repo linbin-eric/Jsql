@@ -1,6 +1,7 @@
 package com.jfirer.jsql.executor;
 
 import com.jfirer.jsql.dialect.Dialect;
+import com.jfirer.jsql.metadata.TableEntityInfo;
 
 import java.lang.reflect.AnnotatedElement;
 import java.sql.Connection;
@@ -11,7 +12,7 @@ public interface SqlExecutor
 {
     int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException;
 
-    String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException;
+    String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect, TableEntityInfo.ColumnInfo pkInfo) throws SQLException;
 
     List<Object> queryList(String sql, AnnotatedElement element, List<Object> params, Connection connection, Dialect dialect) throws SQLException;
 

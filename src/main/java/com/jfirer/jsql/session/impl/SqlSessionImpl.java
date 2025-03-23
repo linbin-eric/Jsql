@@ -175,8 +175,9 @@ public class SqlSessionImpl implements SqlSession
         TableEntityInfo.PkReturnType pkReturnType = insert.getPkReturnType();
         if (pkReturnType != TableEntityInfo.PkReturnType.NO_RETURN_PK)
         {
-            String                     pk     = insertReturnPk(result.sql(), result.paramValues());
             TableEntityInfo.ColumnInfo pkInfo = TableEntityInfo.parse(entity.getClass()).getPkInfo();
+            String                     pk     = insertReturnPk(result.sql(), result.paramValues(),pkInfo);
+
             switch (pkReturnType)
             {
                 case STRING -> pkInfo.accessor().setObject(entity, pk);
@@ -274,12 +275,12 @@ public class SqlSessionImpl implements SqlSession
     }
 
     @Override
-    public String insertReturnPk(String sql, List<Object> params)
+    public String insertReturnPk(String sql, List<Object> params, TableEntityInfo.ColumnInfo pkInfo)
     {
         checkIfClosed();
         try
         {
-            return headSqlExecutor.insertWithReturnKey(sql, params, connection, dialect);
+            return headSqlExecutor.insertWithReturnKey(sql, params, connection, dialect,pkInfo);
         }
         catch (SQLException e)
         {
