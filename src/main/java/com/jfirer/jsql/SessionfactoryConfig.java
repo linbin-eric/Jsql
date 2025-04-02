@@ -68,6 +68,7 @@ public class SessionfactoryConfig
             || productName.contains("h2")//
             || productName.contains("hsql")//
             || productName.contains("sqlite")//
+            || productName.contains("postgresql")//
         )
         {
             sqlExecutors.add(new StandardPageExecutor());
