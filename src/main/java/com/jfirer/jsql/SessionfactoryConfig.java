@@ -6,10 +6,7 @@ import com.jfirer.baseutil.reflect.ReflectUtil;
 import com.jfirer.jsql.dialect.Dialect;
 import com.jfirer.jsql.dialect.impl.StandardDialect;
 import com.jfirer.jsql.executor.SqlExecutor;
-import com.jfirer.jsql.executor.impl.DuckdbPageExecutor;
-import com.jfirer.jsql.executor.impl.FinalExecuteSqlExecutor;
-import com.jfirer.jsql.executor.impl.OraclePageExecutor;
-import com.jfirer.jsql.executor.impl.StandardPageExecutor;
+import com.jfirer.jsql.executor.impl.*;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -68,10 +65,13 @@ public class SessionfactoryConfig
             || productName.contains("h2")//
             || productName.contains("hsql")//
             || productName.contains("sqlite")//
-            || productName.contains("postgresql")//
         )
         {
             sqlExecutors.add(new StandardPageExecutor());
+        }
+        else if (productName.contains("postgresql"))
+        {
+            sqlExecutors.add(new PostgresPageExecutor());
         }
         else if ("oracle".equalsIgnoreCase(productName))
         {
