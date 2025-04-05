@@ -3,10 +3,8 @@ package com.jfirer.jsql.model.param;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.support.SFunction;
 
-import javax.swing.*;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 public class InParam extends InternalParamImpl
@@ -99,6 +97,36 @@ public class InParam extends InternalParamImpl
                         builder.append(",?");
                         paramValues.add(array[i]);
                     }
+                }
+                else if (values[0] instanceof Integer i)
+                {
+                    builder.append("?");
+                    paramValues.add(i);
+                }
+                else if (values[0] instanceof Long l)
+                {
+                    builder.append("?");
+                    paramValues.add(l);
+                }
+                else if (values[0] instanceof String s)
+                {
+                    builder.append("?");
+                    paramValues.add(s);
+                }
+                else if (values[0] instanceof Double d)
+                {
+                    builder.append("?");
+                    paramValues.add(d);
+                }
+                else if (values[0] instanceof Float f)
+                {
+                    builder.append("?");
+                    paramValues.add(f);
+                }
+                else if (values[0] instanceof Boolean b)
+                {
+                    builder.append("?");
+                    paramValues.add(b);
                 }
                 else
                 {
