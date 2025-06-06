@@ -54,12 +54,17 @@ public interface Param
 
     static <T, R> Param eq(SFunction<T, ?> fn1, SFunction<R, ?> fn2)
     {
-        return new TwoFieldEqParam(fn1, fn2);
+        return new TwoFieldParam(fn1, fn2, " = ");
     }
 
     static <T> Param notEq(SFunction<T, ?> fn, Object value)
     {
         return new OneValueParam(fn, value, "!=");
+    }
+
+    static <T, R> Param noteEq(SFunction<T, ?> fn1, SFunction<R, ?> fn2)
+    {
+        return new TwoFieldParam(fn1, fn2, " != ");
     }
 
     static <T> Param bt(SFunction<T, ?> fn, Object value)

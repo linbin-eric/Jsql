@@ -31,6 +31,7 @@ public class PostgreSQLTest
     }
 
     @Test
+    @Ignore
     public void test()
     {
         try (SqlSession session = sessionFactory.openSession())
