@@ -16,7 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 
-public class SessionfactoryConfig
+public class SessionFactoryConfig
 {
     private       DataSource        dataSource;
     private final List<SqlExecutor> sqlExecutors = new LinkedList<SqlExecutor>();

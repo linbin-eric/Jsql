@@ -2,7 +2,7 @@ package com.jfirer.jsql.test;
 
 import com.jfirer.baseutil.time.Timewatch;
 import com.jfirer.jsql.SessionFactory;
-import com.jfirer.jsql.SessionfactoryConfig;
+import com.jfirer.jsql.SessionFactoryConfig;
 import com.jfirer.jsql.dialect.impl.StandardDialect;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.Param;
@@ -27,7 +27,7 @@ import static com.jfirer.jsql.test.CURDTest.userTableDml;
 public class ModelTest2
 {
     private SessionFactory       sessionFactory;
-    private SessionfactoryConfig config;
+    private SessionFactoryConfig config;
     SqlSession sqlSession;
 
     @After
@@ -39,7 +39,7 @@ public class ModelTest2
     @Before
     public void before() throws ClassNotFoundException, InstantiationException, IllegalAccessException
     {
-        config = new SessionfactoryConfig();
+        config = new SessionFactoryConfig();
         HikariDataSource dataSource = new HikariDataSource();
         dataSource.setJdbcUrl("jdbc:h2:mem:orderdb");
         dataSource.setDriverClassName(Driver.class.getName());

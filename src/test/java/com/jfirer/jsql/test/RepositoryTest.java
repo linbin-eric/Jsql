@@ -1,7 +1,7 @@
 package com.jfirer.jsql.test;
 
 import com.jfirer.jsql.SessionFactory;
-import com.jfirer.jsql.SessionfactoryConfig;
+import com.jfirer.jsql.SessionFactoryConfig;
 import com.jfirer.jsql.mapper.Mapper;
 import com.jfirer.jsql.mapper.Repository;
 import com.jfirer.jsql.model.Param;
@@ -31,7 +31,7 @@ public class RepositoryTest
     @Before
     public void before()
     {
-        SessionfactoryConfig config     = new SessionfactoryConfig();
+        SessionFactoryConfig config     = new SessionFactoryConfig();
         HikariDataSource     dataSource = new HikariDataSource();
         dataSource.setJdbcUrl("jdbc:h2:mem:orderdb");
         dataSource.setDriverClassName(Driver.class.getName());

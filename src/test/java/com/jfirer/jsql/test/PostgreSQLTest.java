@@ -1,7 +1,7 @@
 package com.jfirer.jsql.test;
 
 import com.jfirer.jsql.SessionFactory;
-import com.jfirer.jsql.SessionfactoryConfig;
+import com.jfirer.jsql.SessionFactoryConfig;
 import com.jfirer.jsql.annotation.AutoIncrement;
 import com.jfirer.jsql.annotation.Pk;
 import com.jfirer.jsql.annotation.TableDef;
@@ -25,7 +25,7 @@ public class PostgreSQLTest
         dataSource.setJdbcUrl("jdbc:postgresql://localhost:5432/postgres");
         dataSource.setUsername("postgres");
         dataSource.setPassword("root");
-        SessionfactoryConfig config = new SessionfactoryConfig();
+        SessionFactoryConfig config = new SessionFactoryConfig();
         config.setDataSource(dataSource);
         sessionFactory = config.build();
     }

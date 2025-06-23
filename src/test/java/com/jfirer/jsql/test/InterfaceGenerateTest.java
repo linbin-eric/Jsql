@@ -1,7 +1,7 @@
 package com.jfirer.jsql.test;
 
 import com.jfirer.jsql.SessionFactory;
-import com.jfirer.jsql.SessionfactoryConfig;
+import com.jfirer.jsql.SessionFactoryConfig;
 import com.jfirer.jsql.annotation.Sql;
 import com.jfirer.jsql.mapper.Mapper;
 import com.jfirer.jsql.session.SqlSession;
@@ -22,12 +22,12 @@ import static com.jfirer.jsql.test.CURDTest.userTableDml;
 
 public class InterfaceGenerateTest
 {
-    private SessionfactoryConfig config;
+    private SessionFactoryConfig config;
 
     @Before
     public void before() throws ClassNotFoundException, InstantiationException, IllegalAccessException
     {
-        config = new SessionfactoryConfig();
+        config = new SessionFactoryConfig();
         HikariDataSource dataSource = new HikariDataSource();
         dataSource.setJdbcUrl("jdbc:h2:mem:orderdb");
         dataSource.setDriverClassName(Driver.class.getName());
