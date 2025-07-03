@@ -62,7 +62,7 @@ public interface Param
         return new OneValueParam(fn, value, "!=");
     }
 
-    static <T, R> Param noteEq(SFunction<T, ?> fn1, SFunction<R, ?> fn2)
+    static <T, R> Param notEq(SFunction<T, ?> fn1, SFunction<R, ?> fn2)
     {
         return new TwoFieldParam(fn1, fn2, " != ");
     }
