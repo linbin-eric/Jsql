@@ -1,10 +1,13 @@
 package com.jfirer.jsql.dialect.impl;
 
 import com.jfirer.jsql.dialect.Dialect;
+import com.jfirer.jsql.dialect.DialectDict;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -12,15 +15,17 @@ import java.util.List;
 public class StandardDialect implements Dialect
 {
     ThreeConsumer consumer;
+    private DialectDict product;
 
-    public StandardDialect(ThreeConsumer consumer)
+    public StandardDialect(ThreeConsumer consumer, DialectDict dialectDict)
     {
         this.consumer = consumer;
+        this.product  = dialectDict;
     }
 
-    public StandardDialect()
+    public StandardDialect(DialectDict dialectDict)
     {
-        this(ThreeConsumer::defaultAccept);
+        this(ThreeConsumer::defaultAccept, dialectDict);
     }
 
     @Override
@@ -47,6 +52,14 @@ public class StandardDialect implements Dialect
             {
                 preparedStatement.setTimestamp(index, new Timestamp(date.getTime()));
             }
+            else if (value instanceof LocalDate localDate)
+            {
+                preparedStatement.setDate(index, java.sql.Date.valueOf(localDate));
+            }
+            else if (value instanceof LocalDateTime localDateTime)
+            {
+                preparedStatement.setTimestamp(index, Timestamp.valueOf(localDateTime));
+            }
             else if (value instanceof Enum<?> enumValue)
             {
                 preparedStatement.setString(index, enumValue.name());
@@ -60,5 +73,11 @@ public class StandardDialect implements Dialect
                 preparedStatement.setObject(index, value);
             }
         }
+    }
+
+    @Override
+    public DialectDict product()
+    {
+        return product;
     }
 }

@@ -3,6 +3,7 @@ package com.jfirer.jsql.test;
 import com.jfirer.jsql.SessionFactory;
 import com.jfirer.jsql.SessionFactoryConfig;
 import com.jfirer.jsql.annotation.Sql;
+import com.jfirer.jsql.dialect.DialectDict;
 import com.jfirer.jsql.dialect.impl.StandardDialect;
 import com.jfirer.jsql.mapper.Mapper;
 import com.jfirer.jsql.metadata.Page;
@@ -243,7 +244,7 @@ public class MapperTest2
             {
                 return false;
             }
-        }));
+        }, DialectDict.H2));
         config.addSqlExecutor(new SqlLog());
         sessionFactory = config.build();
         SqlSession session = sessionFactory.openSession();

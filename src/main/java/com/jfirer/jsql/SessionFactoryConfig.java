@@ -4,6 +4,7 @@ import com.jfirer.baseutil.TRACEID;
 import com.jfirer.baseutil.Verify;
 import com.jfirer.baseutil.reflect.ReflectUtil;
 import com.jfirer.jsql.dialect.Dialect;
+import com.jfirer.jsql.dialect.DialectDict;
 import com.jfirer.jsql.dialect.impl.StandardDialect;
 import com.jfirer.jsql.executor.SqlExecutor;
 import com.jfirer.jsql.executor.impl.*;
@@ -41,17 +42,33 @@ public class SessionFactoryConfig
 
     private Dialect generateDialect(String productName)
     {
-        if (productName.equals("mariadb")//
-            || "mysql".equals(productName)//
-            || "sqlite".equalsIgnoreCase(productName)//
-            || "duckdb".equalsIgnoreCase(productName)//
-            || "oracle".equalsIgnoreCase(productName)//
-            || "h2".equalsIgnoreCase(productName)//
-            || "postgresql".equalsIgnoreCase(productName)//
-            || "hsql database engine".equalsIgnoreCase(productName)//
-        )
+        if (productName.equalsIgnoreCase("mysql"))
         {
-            return new StandardDialect();
+            return new StandardDialect(DialectDict.MYSQL);
+        }
+        else if (productName.equalsIgnoreCase("sqlserver"))
+        {
+            return new StandardDialect(DialectDict.SQLSERVER);
+        }
+        else if (productName.equalsIgnoreCase("postgresql"))
+        {
+            return new StandardDialect(DialectDict.POSTGRESQL);
+        }
+        else if (productName.equalsIgnoreCase("oracle"))
+        {
+            return new StandardDialect(DialectDict.ORACLE);
+        }
+        else if (productName.equalsIgnoreCase("sqlite"))
+        {
+            return new StandardDialect(DialectDict.SQLITE);
+        }
+        else if (productName.equalsIgnoreCase("duckdb"))
+        {
+            return new StandardDialect(DialectDict.DUCKDB);
+        }
+        else if (productName.equalsIgnoreCase("h2"))
+        {
+            return new StandardDialect(DialectDict.H2);
         }
         else
         {

@@ -15,6 +15,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -330,7 +333,25 @@ public class BeanTransfer implements ResultSetTransfer
                 }
                 case ReflectUtil.CLASS_TIME -> accessor.setReference(result, resultSet.getTime(columnIndex));
                 case ReflectUtil.CLASS_SQL_DATE -> accessor.setReference(result, resultSet.getDate(columnIndex));
-                default -> throw new IllegalArgumentException("不能默认获取值的类型:{}" + field);
+                default ->
+                {
+                    if (ckazz == LocalDate.class)
+                    {
+                        java.sql.Date date = resultSet.getDate(columnIndex);
+                        accessor.setReference(result, date.toLocalDate());
+                    }
+                    else if (ckazz == LocalDateTime.class)
+                    {
+                        java.sql.Timestamp timestamp = resultSet.getTimestamp(columnIndex);
+                        accessor.setReference(result, timestamp.toLocalDateTime());
+                    }
+                    else if (ckazz == LocalTime.class)
+                    {
+                        java.sql.Time time = resultSet.getTime(columnIndex);
+                        accessor.setReference(result, time.toLocalTime());
+                    }
+                    throw new IllegalArgumentException("不能默认获取值的类型:{}" + field);
+                }
             }
         }
     }

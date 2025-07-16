@@ -3,6 +3,7 @@ package com.jfirer.jsql.test;
 import com.jfirer.baseutil.time.Timewatch;
 import com.jfirer.jsql.SessionFactory;
 import com.jfirer.jsql.SessionFactoryConfig;
+import com.jfirer.jsql.dialect.DialectDict;
 import com.jfirer.jsql.dialect.impl.StandardDialect;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.Param;
@@ -61,7 +62,7 @@ public class ModelTest2
             {
                 return false;
             }
-        }));
+        }, DialectDict.H2));
         config.addSqlExecutor(new SqlLog());
         sessionFactory = config.build();
         SqlSession session = sessionFactory.openSession();
@@ -151,7 +152,7 @@ public class ModelTest2
     {
         List<User> list       = new LinkedList<>();
         String     CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        int sum = 50000;
+        int        sum        = 50000;
         for (int i = 0; i < sum; i++)
         {
             User user = new User();
@@ -162,10 +163,10 @@ public class ModelTest2
         Timewatch timewatch = new Timewatch();
         timewatch.start();
         sqlSession.beginTransAction();
-        sqlSession.batchInsert(list,100);
+        sqlSession.batchInsert(list, 100);
         sqlSession.commit();
         timewatch.end();
-        System.out.println("批量插入耗时:"+timewatch.getTotal());
+        System.out.println("批量插入耗时:" + timewatch.getTotal());
         timewatch.start();
         for (User user : list)
         {
@@ -174,11 +175,8 @@ public class ModelTest2
             sqlSession.commit();
         }
         timewatch.end();
-        System.out.println("循环插入耗时:"+timewatch.getTotal());
-
-
-
+        System.out.println("循环插入耗时:" + timewatch.getTotal());
         Integer count = sqlSession.findOne(Model.selectCount(User.class));
-        Assert.assertEquals(sum*2+2, count.intValue());
+        Assert.assertEquals(sum * 2 + 2, count.intValue());
     }
 }

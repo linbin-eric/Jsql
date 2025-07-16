@@ -15,10 +15,11 @@ public interface Dialect
      */
     void fillStatement(PreparedStatement preparedStatement, List<Object> params) throws SQLException;
 
+    DialectDict product();
+
     @FunctionalInterface
     interface ThreeConsumer
     {
-
         boolean accept(PreparedStatement preparedStatement, int index, Object value) throws SQLException;
 
         static boolean defaultAccept(PreparedStatement preparedStatement, int index, Object value)

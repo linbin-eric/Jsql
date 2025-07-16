@@ -14,6 +14,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.sql.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
@@ -68,22 +70,47 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
     @Override
     public String insertWithReturnKey(String sql, List<Object> params, Connection connection, Dialect dialect, TableEntityInfo.ColumnInfo pkInfo) throws SQLException
     {
-        try (PreparedStatement prepareStatement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS))
+        switch (dialect.product())
         {
-            dialect.fillStatement(prepareStatement, params);
-            prepareStatement.executeUpdate();
-            try (ResultSet generatedKeys = prepareStatement.getGeneratedKeys())
+            case MYSQL, H2 ->
             {
-                ResultSetMetaData metaData = generatedKeys.getMetaData();
-                if (metaData.getColumnCount() == 1)
+                try (PreparedStatement prepareStatement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS))
                 {
-                    return generatedKeys.next() ? generatedKeys.getString(1) : null;
-                }
-                else
-                {
-                    return generatedKeys.next() ? generatedKeys.getString(pkInfo.columnName()) : null;
+                    dialect.fillStatement(prepareStatement, params);
+                    prepareStatement.executeUpdate();
+                    try (ResultSet generatedKeys = prepareStatement.getGeneratedKeys())
+                    {
+                        ResultSetMetaData metaData = generatedKeys.getMetaData();
+                        if (metaData.getColumnCount() == 1)
+                        {
+                            return generatedKeys.next() ? generatedKeys.getString(1) : null;
+                        }
+                        else
+                        {
+                            return generatedKeys.next() ? generatedKeys.getString(pkInfo.columnName()) : null;
+                        }
+                    }
                 }
             }
+            case DUCKDB ->
+            {
+                try (PreparedStatement prepareStatement = connection.prepareStatement(sql + " RETURNING " + pkInfo.columnName()))
+                {
+                    dialect.fillStatement(prepareStatement, params);
+                    try (ResultSet resultSet = prepareStatement.executeQuery())
+                    {
+                        if (resultSet.next())
+                        {
+                            return resultSet.getString(1);
+                        }
+                        else
+                        {
+                            throw new IllegalStateException();
+                        }
+                    }
+                }
+            }
+            default -> throw new UnsupportedOperationException("插入数据返回主键不支持的数据库类型：" + dialect.product());
         }
     }
 
@@ -197,6 +224,14 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
             else if (itemType == Clob.class)
             {
                 transferClass = ClobTransfer.class;
+            }
+            else if (itemType == LocalDate.class)
+            {
+                transferClass = LocalDateTransfer.class;
+            }
+            else if (itemType == LocalDateTime.class)
+            {
+                transferClass = LocalDateTimeTransfer.class;
             }
             else
             {

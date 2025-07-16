@@ -3,7 +3,10 @@ package com.jfirer.jsql.model;
 import com.jfirer.jsql.model.param.*;
 import com.jfirer.jsql.model.support.SFunction;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public interface Param
 {
@@ -124,10 +127,20 @@ public interface Param
 
     static <T> Param in(SFunction<T, ?> fn, Object... values)
     {
+        return new InParam(fn, InParam.IN, Arrays.stream(values).collect(Collectors.toSet()));
+    }
+
+    static <T> Param in(SFunction<T, ?> fn, Collection<Object> values)
+    {
         return new InParam(fn, InParam.IN, values);
     }
 
     static <T> Param notIn(SFunction<T, ?> fn, Object... values)
+    {
+        return new InParam(fn, InParam.NOT_IN, Arrays.stream(values).collect(Collectors.toSet()));
+    }
+
+    static <T> Param notIn(SFunction<T, ?> fn, Collection<Object> values)
     {
         return new InParam(fn, InParam.NOT_IN, values);
     }

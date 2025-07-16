@@ -4,6 +4,7 @@ import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.support.SFunction;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -12,17 +13,21 @@ public class InParam extends InternalParamImpl
     public static final String IN     = " in (";
     public static final String NOT_IN = " not in (";
 
-    public InParam(SFunction<?, ?> fn, String mode, Object... values)
+    public InParam(SFunction<?, ?> fn, String mode, Collection<Object> values)
     {
         super(fn);
+        if (values.isEmpty())
+        {
+            throw new IllegalArgumentException("集合参数不能为空");
+        }
         consumer = (columnName, builder, paramValues) -> {
             builder.append(columnName).append(mode);
             record WrapperData(String segment, Object paramValue)
             {
             }
-            if (values.length > 1)
+            if (values.size() > 1)
             {
-                String segment = Arrays.stream(values)//
+                String segment = values.stream()//
                                        .map(value -> {
                                            if (value instanceof Model m)
                                            {
@@ -48,7 +53,8 @@ public class InParam extends InternalParamImpl
             }
             else
             {
-                if (values[0] instanceof int[] array)
+                Object value = values.iterator().next();
+                if (value instanceof int[] array)
                 {
                     builder.append("?");
                     paramValues.add(array[0]);
@@ -58,7 +64,7 @@ public class InParam extends InternalParamImpl
                         paramValues.add(array[i]);
                     }
                 }
-                else if (values[0] instanceof long[] array)
+                else if (value instanceof long[] array)
                 {
                     builder.append("?");
                     paramValues.add(array[0]);
@@ -68,7 +74,7 @@ public class InParam extends InternalParamImpl
                         paramValues.add(array[i]);
                     }
                 }
-                else if (values[0] instanceof Integer[] array)
+                else if (value instanceof Integer[] array)
                 {
                     builder.append("?");
                     paramValues.add(array[0]);
@@ -78,7 +84,7 @@ public class InParam extends InternalParamImpl
                         paramValues.add(array[i]);
                     }
                 }
-                else if (values[0] instanceof Long[] array)
+                else if (value instanceof Long[] array)
                 {
                     builder.append("?");
                     paramValues.add(array[0]);
@@ -88,7 +94,7 @@ public class InParam extends InternalParamImpl
                         paramValues.add(array[i]);
                     }
                 }
-                else if (values[0] instanceof String[] array)
+                else if (value instanceof String[] array)
                 {
                     builder.append("?");
                     paramValues.add(array[0]);
@@ -98,39 +104,39 @@ public class InParam extends InternalParamImpl
                         paramValues.add(array[i]);
                     }
                 }
-                else if (values[0] instanceof Integer i)
+                else if (value instanceof Integer i)
                 {
                     builder.append("?");
                     paramValues.add(i);
                 }
-                else if (values[0] instanceof Long l)
+                else if (value instanceof Long l)
                 {
                     builder.append("?");
                     paramValues.add(l);
                 }
-                else if (values[0] instanceof String s)
+                else if (value instanceof String s)
                 {
                     builder.append("?");
                     paramValues.add(s);
                 }
-                else if (values[0] instanceof Double d)
+                else if (value instanceof Double d)
                 {
                     builder.append("?");
                     paramValues.add(d);
                 }
-                else if (values[0] instanceof Float f)
+                else if (value instanceof Float f)
                 {
                     builder.append("?");
                     paramValues.add(f);
                 }
-                else if (values[0] instanceof Boolean b)
+                else if (value instanceof Boolean b)
                 {
                     builder.append("?");
                     paramValues.add(b);
                 }
                 else
                 {
-                    throw new IllegalArgumentException("无法识别的类型:" + values[0].getClass().getName());
+                    throw new IllegalArgumentException("无法识别的类型:" + value.getClass().getName());
                 }
                 builder.append(" )");
             }
