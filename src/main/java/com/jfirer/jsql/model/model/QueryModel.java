@@ -10,7 +10,6 @@ import com.jfirer.jsql.model.Param;
 import com.jfirer.jsql.model.support.LockMode;
 import com.jfirer.jsql.model.support.SFunction;
 import lombok.Getter;
-import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -32,7 +31,7 @@ public class QueryModel implements Model
     protected       Param                 where;
     protected       LockMode              lockMode;
 
-    public QueryModel addSelect(SFunction<?, ?>... fns)
+    public <T> QueryModel addSelect(SFunction<T, ?>... fns)
     {
         for (SFunction<?, ?> fn : fns)
         {
@@ -41,7 +40,7 @@ public class QueryModel implements Model
         return this;
     }
 
-    private void addSelect(SFunction<?, ?> fn, String function, String asName)
+    private <T> void addSelect(SFunction<T, ?> fn, String function, String asName)
     {
         select.add(new Select(fn, function, asName, this));
     }
@@ -58,7 +57,7 @@ public class QueryModel implements Model
         return this;
     }
 
-    public QueryModel selectCount(SFunction<?, ?> fn)
+    public <T> QueryModel selectCount(SFunction<T, ?> fn)
     {
         addSelect(fn, "count", null);
         return this;
