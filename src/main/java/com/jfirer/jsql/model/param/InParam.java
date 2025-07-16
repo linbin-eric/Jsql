@@ -3,7 +3,6 @@ package com.jfirer.jsql.model.param;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.support.SFunction;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -13,7 +12,7 @@ public class InParam extends InternalParamImpl
     public static final String IN     = " in (";
     public static final String NOT_IN = " not in (";
 
-    public InParam(SFunction<?, ?> fn, String mode, Collection<Object> values)
+    public InParam(SFunction<?, ?> fn, String mode, Collection<?> values)
     {
         super(fn);
         if (values.isEmpty())
