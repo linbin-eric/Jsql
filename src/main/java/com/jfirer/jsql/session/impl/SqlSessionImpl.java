@@ -11,24 +11,51 @@ import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.model.InsertEntityModel;
 import com.jfirer.jsql.model.model.QueryModel;
 import com.jfirer.jsql.session.SqlSession;
+import com.jfirer.jsql.transfer.ResultSetTransfer;
+import com.jfirer.jsql.transfer.impl.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.AnnotatedElement;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class SqlSessionImpl implements SqlSession
 {
-    private              boolean     transactionActive = false;
-    private              boolean     closed            = false;
-    private final        Connection  connection;
-    private final        SqlExecutor headSqlExecutor;
-    private final        Dialect     dialect;
-    private final static Logger      logger            = LoggerFactory.getLogger(SqlSession.class);
+    private              boolean                                    transactionActive = false;
+    private              boolean                                    closed            = false;
+    private final        Connection                                 connection;
+    private final        SqlExecutor                                headSqlExecutor;
+    private final        Dialect                                    dialect;
+    private final static Logger                                     logger            = LoggerFactory.getLogger(SqlSession.class);
+    private static final ConcurrentMap<String, ResultSetTransfer>   transferCache     = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<Class<?>, ResultSetTransfer> MAP               = new ConcurrentHashMap<>();
+
+    static
+    {
+        MAP.put(Integer.class, IntegerTransfer.INSTANCE);
+        MAP.put(int.class, IntegerTransfer.INSTANCE);
+        MAP.put(Long.class, LongTransfer.INSTANCE);
+        MAP.put(long.class, LongTransfer.INSTANCE);
+        MAP.put(Float.class, FloatTransfer.INSTANCE);
+        MAP.put(float.class, FloatTransfer.INSTANCE);
+        MAP.put(Double.class, DoubleTransfer.INSTANCE);
+        MAP.put(double.class, DoubleTransfer.INSTANCE);
+        MAP.put(Boolean.class, BooleanTransfer.INSTANCE);
+        MAP.put(boolean.class, BooleanTransfer.INSTANCE);
+        MAP.put(String.class, StringTransfer.INSTANCE);
+        MAP.put(Short.class, ShortTransfer.INSTANCE);
+        MAP.put(short.class, ShortTransfer.INSTANCE);
+        MAP.put(BigDecimal.class, BigDecimalTransfer.INSTANCE);
+        MAP.put(Date.class, UtilDateTransfer.INSTANCE);
+        MAP.put(java.sql.Date.class, SqlDateTransfer.INSTANCE);
+    }
 
     public SqlSessionImpl(Connection connection, SqlExecutor headSqlExecutor, Dialect dialect)
     {
@@ -176,8 +203,7 @@ public class SqlSessionImpl implements SqlSession
         if (pkReturnType != TableEntityInfo.PkReturnType.NO_RETURN_PK)
         {
             TableEntityInfo.ColumnInfo pkInfo = TableEntityInfo.parse(entity.getClass()).getPkInfo();
-            String                     pk     = insertReturnPk(result.sql(), result.paramValues(),pkInfo);
-
+            String                     pk     = insertReturnPk(result.sql(), result.paramValues(), pkInfo);
             switch (pkReturnType)
             {
                 case STRING -> pkInfo.accessor().setObject(entity, pk);
@@ -227,14 +253,40 @@ public class SqlSessionImpl implements SqlSession
     public <T> T findOne(QueryModel model)
     {
         Model.ModelResult result = model.getResult();
-        return query(result.sql(), model.getReturnType(), result.paramValues());
+        String            sql    = result.sql();
+        String            key    = sql + model.getReturnType().getSimpleName();
+        ResultSetTransfer transfer = transferCache.computeIfAbsent(key, s -> {
+            ResultSetTransfer resultSetTransfer = MAP.get(model.getReturnType());
+            if (resultSetTransfer != null)
+            {
+                return resultSetTransfer;
+            }
+            else
+            {
+                return new BeanTransfer(model.getReturnType());
+            }
+        });
+        return query(sql, transfer, result.paramValues());
     }
 
     @Override
     public <T> List<T> findList(QueryModel model)
     {
         Model.ModelResult result = model.getResult();
-        return queryList(result.sql(), model.getReturnType(), result.paramValues());
+        String            sql    = result.sql();
+        String            key    = sql + model.getReturnType().getSimpleName();
+        ResultSetTransfer transfer = transferCache.computeIfAbsent(key, s -> {
+            ResultSetTransfer resultSetTransfer = MAP.get(model.getReturnType());
+            if (resultSetTransfer != null)
+            {
+                return resultSetTransfer;
+            }
+            else
+            {
+                return new BeanTransfer(model.getReturnType());
+            }
+        });
+        return queryList(sql, transfer, result.paramValues());
     }
 
     @Override
@@ -249,7 +301,7 @@ public class SqlSessionImpl implements SqlSession
     public int count(Model model)
     {
         Model.ModelResult result = model.getResult();
-        return query(result.sql(), Integer.class, result.paramValues());
+        return query(result.sql(), IntegerTransfer.INSTANCE, result.paramValues());
     }
 
     @Override
@@ -280,7 +332,7 @@ public class SqlSessionImpl implements SqlSession
         checkIfClosed();
         try
         {
-            return headSqlExecutor.insertWithReturnKey(sql, params, connection, dialect,pkInfo);
+            return headSqlExecutor.insertWithReturnKey(sql, params, connection, dialect, pkInfo);
         }
         catch (SQLException e)
         {
@@ -291,12 +343,12 @@ public class SqlSessionImpl implements SqlSession
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T query(String sql, AnnotatedElement element, List<Object> params)
+    public <T> T query(String sql, ResultSetTransfer transfer, List<Object> params)
     {
         checkIfClosed();
         try
         {
-            return (T) headSqlExecutor.queryOne(sql, element, params, connection, dialect);
+            return (T) headSqlExecutor.queryOne(sql, transfer, params, connection, dialect);
         }
         catch (SQLException e)
         {
@@ -307,12 +359,12 @@ public class SqlSessionImpl implements SqlSession
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> List<T> queryList(String sql, AnnotatedElement element, List<Object> params)
+    public <T> List<T> queryList(String sql, ResultSetTransfer transfer, List<Object> params)
     {
         checkIfClosed();
         try
         {
-            return (List<T>) headSqlExecutor.queryList(sql, element, params, connection, dialect);
+            return (List<T>) headSqlExecutor.queryList(sql, transfer, params, connection, dialect);
         }
         catch (SQLException e)
         {

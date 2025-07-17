@@ -4,6 +4,7 @@ import com.jfirer.baseutil.TRACEID;
 import com.jfirer.jsql.dialect.Dialect;
 import com.jfirer.jsql.executor.impl.NextHolder;
 import com.jfirer.jsql.metadata.TableEntityInfo;
+import com.jfirer.jsql.transfer.ResultSetTransfer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,17 +32,17 @@ public class SqlLog extends NextHolder
     }
 
     @Override
-    public List<Object> queryList(String sql, AnnotatedElement element, List<Object> params, Connection connection, Dialect dialect) throws SQLException
+    public List<Object> queryList(String sql, ResultSetTransfer transfer, List<Object> params, Connection connection, Dialect dialect) throws SQLException
     {
         logger.debug("traceId:{} 执行的sql:{}", TRACEID.currentTraceId(), sql);
-        return next.queryList(sql, element, params, connection, dialect);
+        return next.queryList(sql, transfer, params, connection, dialect);
     }
 
     @Override
-    public Object queryOne(String sql, AnnotatedElement element, List<Object> params, Connection connection, Dialect dialect) throws SQLException
+    public Object queryOne(String sql, ResultSetTransfer transfer, List<Object> params, Connection connection, Dialect dialect) throws SQLException
     {
         logger.debug("traceId:{} 执行的sql:{}", TRACEID.currentTraceId(), sql);
-        return next.queryOne(sql, element, params, connection, dialect);
+        return next.queryOne(sql, transfer, params, connection, dialect);
     }
 
     @Override

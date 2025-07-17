@@ -7,6 +7,8 @@ import java.sql.ResultSet;
 
 public class BooleanTransfer implements ResultSetTransfer
 {
+    public static final BooleanTransfer INSTANCE = new BooleanTransfer();
+
     @SneakyThrows
     @Override
     public Object transfer(ResultSet resultSet, int columnIndex)

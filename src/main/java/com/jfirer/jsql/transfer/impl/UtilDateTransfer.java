@@ -9,6 +9,8 @@ import java.util.Date;
 
 public class UtilDateTransfer implements ResultSetTransfer
 {
+    public static final UtilDateTransfer INSTANCE = new UtilDateTransfer();
+
     @SneakyThrows
     @Override
     public Object transfer(ResultSet resultSet, int columnIndex)

@@ -18,12 +18,5 @@ public @interface ColumnName
      */
     String value() default "";
 
-    /**
-     * 代表该字段的全名，格式为{}.{}，代表着{数据库表名}.{数据库列名}
-     *
-     * @return
-     */
-    String fullname() default "";
-
     Class<? extends ColumnNameStrategy> strategy() default ColumnNameStrategy.LowCase.class;
 }

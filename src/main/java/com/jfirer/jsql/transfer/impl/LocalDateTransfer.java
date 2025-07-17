@@ -8,6 +8,8 @@ import java.sql.ResultSet;
 
 public class LocalDateTransfer implements ResultSetTransfer
 {
+    public static final LocalDateTransfer INSTANCE = new LocalDateTransfer();
+
     @SneakyThrows
     @Override
     public Object transfer(ResultSet resultSet, int columnIndex)

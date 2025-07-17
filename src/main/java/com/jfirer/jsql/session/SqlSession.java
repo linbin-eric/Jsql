@@ -4,6 +4,7 @@ import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.model.QueryModel;
+import com.jfirer.jsql.transfer.ResultSetTransfer;
 
 import java.lang.reflect.AnnotatedElement;
 import java.sql.Connection;
@@ -115,7 +116,7 @@ public interface SqlSession extends ConnectionOp
      */
     String insertReturnPk(String sql, List<Object> params, TableEntityInfo.ColumnInfo pkInfo);
 
-    <T> T query(String sql, AnnotatedElement element, List<Object> params);
+    <T> T query(String sql, ResultSetTransfer transfer, List<Object> params);
 
     /**
      * 如果最后一个参数是Page，则会触发page查询
@@ -124,5 +125,5 @@ public interface SqlSession extends ConnectionOp
      * @param params
      * @return
      */
-    <T> List<T> queryList(String sql, AnnotatedElement element, List<Object> params);
+    <T> List<T> queryList(String sql, ResultSetTransfer transfer, List<Object> params);
 }

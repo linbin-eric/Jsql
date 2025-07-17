@@ -22,25 +22,25 @@ public class OraclePageExecutor extends NextHolder
     }
 
     @Override
-    public List<Object> queryList(String sql, AnnotatedElement element, List<Object> params, Connection connection, Dialect dialect) throws SQLException
+    public List<Object> queryList(String sql, ResultSetTransfer transfer, List<Object> params, Connection connection, Dialect dialect) throws SQLException
     {
         Object param = params.get(params.size() - 1);
         if (!(param instanceof Page))
         {
-            return next.queryList(sql, element, params, connection, dialect);
+            return next.queryList(sql, transfer, params, connection, dialect);
         }
         params.remove(params.size() - 1);
         Page page = (Page) param;
         if (page.isFetchSum())
         {
             String countSql = "select count(*) from (" + sql + ")";
-            int    total    = (Integer) next.queryOne(countSql, Integer.class, params, connection, dialect);
+            int    total    = (Integer) next.queryOne(countSql, countResultTransfer, params, connection, dialect);
             page.setTotal(total);
         }
         sql = "select * from ( select a.*,rownum rn from(" + sql + ") a where rownum<=?) where rn>=?";
         params.add(page.getOffset() + page.getSize());
         params.add(page.getOffset() + 1);
-        page.setResult(next.queryList(sql, element, params, connection, dialect));
+        page.setResult(next.queryList(sql, transfer, params, connection, dialect));
         return page.getResult();
     }
 

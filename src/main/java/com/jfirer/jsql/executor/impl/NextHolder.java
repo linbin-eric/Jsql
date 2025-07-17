@@ -2,8 +2,8 @@ package com.jfirer.jsql.executor.impl;
 
 import com.jfirer.jsql.dialect.Dialect;
 import com.jfirer.jsql.executor.SqlExecutor;
+import com.jfirer.jsql.transfer.ResultSetTransfer;
 
-import java.lang.reflect.AnnotatedElement;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.List;
@@ -25,8 +25,8 @@ public abstract class NextHolder implements SqlExecutor
     }
 
     @Override
-    public Object queryOne(String sql, AnnotatedElement element, List<Object> params, Connection connection, Dialect dialect) throws SQLException
+    public Object queryOne(String sql, ResultSetTransfer transfer, List<Object> params, Connection connection, Dialect dialect) throws SQLException
     {
-        return next.queryOne(sql, element, params, connection, dialect);
+        return next.queryOne(sql, transfer, params, connection, dialect);
     }
 }

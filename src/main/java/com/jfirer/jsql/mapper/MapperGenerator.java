@@ -1,5 +1,6 @@
 package com.jfirer.jsql.mapper;
 
+import com.jfirer.baseutil.STR;
 import com.jfirer.baseutil.bytecode.support.AnnotationContext;
 import com.jfirer.baseutil.reflect.ReflectUtil;
 import com.jfirer.baseutil.smc.SmcHelper;
@@ -15,7 +16,7 @@ import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.Param;
 import com.jfirer.jsql.session.SqlSession;
-import com.jfirer.jsql.transfer.impl.BeanTransfer;
+import com.jfirer.jsql.transfer.impl.*;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -44,8 +45,8 @@ public class MapperGenerator
     {
         try
         {
-            ClassModel                   classModel       = buildClassModelAndImportNecessaryClass(ckass);
-            AtomicInteger                fieldNameCount   = new AtomicInteger(0);
+            ClassModel    classModel     = buildClassModelAndImportNecessaryClass(ckass);
+            AtomicInteger fieldNameCount = new AtomicInteger(0);
             Arrays.stream(AnnotationContext.getAnnotation(Mapper.class, ckass).value()).forEach(TableEntityInfo::parse);
             for (Method method : ckass.getDeclaredMethods())
             {
@@ -62,15 +63,45 @@ public class MapperGenerator
                 String      formatSql   = generateSqlAndTemplateField(AnnotationContext.getAnnotation(Mapper.class, ckass).value(), classModel, fieldNameCount, method, methodBody);
                 if (formatSql.startsWith("SELECT") || formatSql.startsWith("select"))
                 {
-                    int methodIndex = AbstractMapper.put(method);
+                    String transferFieldName = "transfer_" + fieldNameCount.getAndIncrement();
+                    Class  resultType;
                     if (List.class.isAssignableFrom(method.getReturnType()))
                     {
-                        methodBody.append("List result = session.queryList(sql,methods.get(").append(methodIndex).append("),params);\r\n");
+                        Type genericReturnType = method.getGenericReturnType();
+                        resultType = (Class) ((ParameterizedType) genericReturnType).getActualTypeArguments()[0];
                     }
                     else
                     {
-                        String returnTypeName = SmcHelper.getReferenceName(ReflectUtil.getBoxedTypeOrOrigin(method.getReturnType()), classModel);
-                        methodBody.append(returnTypeName).append(" result = session.query(sql,methods.get(").append(methodIndex).append("),params);\r\n");
+                        resultType = method.getReturnType();
+                    }
+                    FieldModel fieldModel = switch (ReflectUtil.getClassId(resultType))
+                    {
+                        case ReflectUtil.CLASS_INT,
+                             ReflectUtil.PRIMITIVE_INT -> new FieldModel(transferFieldName, IntegerTransfer.class, "com.jfirer.jsql.transfer.impl.IntegerTransfer.INSTANCE", classModel);
+                        case ReflectUtil.CLASS_LONG,
+                             ReflectUtil.PRIMITIVE_LONG -> new FieldModel(transferFieldName, LongTransfer.class, "com.jfirer.jsql.transfer.impl.LongTransfer.INSTANCE", classModel);
+                        case ReflectUtil.CLASS_DOUBLE,
+                             ReflectUtil.PRIMITIVE_DOUBLE -> new FieldModel(transferFieldName, DoubleTransfer.class, "com.jfirer.jsql.transfer.impl.DoubleTransfer.INSTANCE", classModel);
+                        case ReflectUtil.CLASS_FLOAT,
+                             ReflectUtil.PRIMITIVE_FLOAT -> new FieldModel(transferFieldName, FloatTransfer.class, "com.jfirer.jsql.transfer.impl.FloatTransfer.INSTANCE", classModel);
+                        case ReflectUtil.CLASS_STRING -> new FieldModel(transferFieldName, StringTransfer.class, "com.jfirer.jsql.transfer.impl.StringTransfer.INSTANCE", classModel);
+                        case ReflectUtil.CLASS_DATE -> new FieldModel(transferFieldName, UtilDateTransfer.class, "com.jfirer.jsql.transfer.impl.UtilDateTransfer.INSTANCE", classModel);
+                        case ReflectUtil.CLASS_SQL_DATE -> new FieldModel(transferFieldName, SqlDateTransfer.class, "com.jfirer.jsql.transfer.impl.SqlDateTransfer.INSTANCE", classModel);
+                        case ReflectUtil.CLASS_TIMESTAMP -> new FieldModel(transferFieldName, TimeStampTransfer.class, "com.jfirer.jsql.transfer.impl.TimeStampTransfer.INSTANCE", classModel);
+                        case ReflectUtil.CLASS_BIGDECIMAL -> new FieldModel(transferFieldName, BigDecimalTransfer.class, "com.jfirer.jsql.transfer.impl.BigDecimalTransfer.INSTANCE", classModel);
+                        case ReflectUtil.CLASS_SHORT,
+                             ReflectUtil.PRIMITIVE_SHORT -> new FieldModel(transferFieldName, ShortTransfer.class, "com.jfirer.jsql.transfer.impl.ShortTransfer.INSTANCE", classModel);
+                        case ReflectUtil.CLASS_OBJECT -> new FieldModel(transferFieldName, BeanTransfer.class, STR.format("new BeanTransfer({}.class)", SmcHelper.getReferenceName(resultType, classModel)), classModel);
+                        default -> throw new IllegalArgumentException();
+                    };
+                    classModel.addField(fieldModel);
+                    if (List.class.isAssignableFrom(method.getReturnType()))
+                    {
+                        methodBody.append(STR.format("List result = session.queryList(sql,{},params);\r\n", transferFieldName));
+                    }
+                    else
+                    {
+                        methodBody.append(SmcHelper.getReferenceName(method.getReturnType(), classModel)).append(STR.format(" result = session.query(sql,{},params);\r\n", transferFieldName));
                     }
                 }
                 else
@@ -225,7 +256,7 @@ public class MapperGenerator
     private static String generateSqlAndTemplateField(Class[] ckazzes, ClassModel classModel, AtomicInteger fieldNameCount, Method method, StringBuilder cache)
     {
         Sql        annotation        = method.getAnnotation(Sql.class);
-        String     formatSql         = SqlLexer.parse(annotation.sql(),ckazzes);
+        String     formatSql         = SqlLexer.parse(annotation.sql(), ckazzes);
         String     templateFieldName = "template_" + (fieldNameCount.getAndIncrement());
         FieldModel fieldModel        = new FieldModel(templateFieldName, Template.class, "Template.parse(\"" + formatSql + "\")", classModel);
         classModel.addField(fieldModel);

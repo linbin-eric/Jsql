@@ -7,6 +7,8 @@ import java.sql.ResultSet;
 
 public class TimeStampTransfer implements ResultSetTransfer
 {
+    public static final TimeStampTransfer INSTANCE = new TimeStampTransfer();
+
     @SneakyThrows
     @Override
     public Object transfer(ResultSet resultSet, int columnIndex)

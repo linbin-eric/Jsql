@@ -7,6 +7,8 @@ import java.sql.ResultSet;
 
 public class LongTransfer implements ResultSetTransfer
 {
+    public static final LongTransfer INSTANCE = new LongTransfer();
+
     @SneakyThrows
     @Override
     public Object transfer(ResultSet resultSet, int columnIndex)

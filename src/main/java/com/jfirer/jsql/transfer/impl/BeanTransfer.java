@@ -1,7 +1,6 @@
 package com.jfirer.jsql.transfer.impl;
 
 import com.jfirer.baseutil.STR;
-import com.jfirer.baseutil.StringUtil;
 import com.jfirer.baseutil.reflect.ReflectUtil;
 import com.jfirer.baseutil.reflect.valueaccessor.ValueAccessor;
 import com.jfirer.jsql.metadata.TableEntityInfo;
@@ -29,6 +28,17 @@ public class BeanTransfer implements ResultSetTransfer
     private          Constructor<?> constructor;
     private volatile Entry[]        entries;
 
+    public BeanTransfer()
+    {
+    }
+
+    @SneakyThrows
+    public BeanTransfer(Class ckass)
+    {
+        this.ckass  = ckass;
+        constructor = ckass.getConstructor();
+    }
+
     @SneakyThrows
     @Override
     public Object transfer(ResultSet resultSet, int ignored)
@@ -45,18 +55,13 @@ public class BeanTransfer implements ResultSetTransfer
                     TableEntityInfo   returnTypeInfo = TableEntityInfo.parse(ckass);
                     for (int i = 0; i < columnCount; i++)
                     {
-                        int                        columnIndex = i + 1;
-                        String                     tableName   = metaData.getTableName(columnIndex);
-                        String                     columnName  = metaData.getColumnName(columnIndex);
-                        String                     fullname    = StringUtil.isNotBlank(tableName) ? (tableName + '.' + columnName) : columnName;
-                        TableEntityInfo.ColumnInfo columnInfo  = returnTypeInfo.findColumnInfoByFullnameIgnoreCase(fullname);
+                        int columnIndex = i + 1;
+                        //全局都采用小写作为数据库字段名
+                        String                     columnName = metaData.getColumnLabel(columnIndex).toLowerCase();
+                        TableEntityInfo.ColumnInfo columnInfo = returnTypeInfo.getColumnNameKeyMap().get(columnName);
                         if (columnInfo == null)
                         {
-                            columnInfo = returnTypeInfo.getColumnNameKeyMap().get(columnName);
-                            if (columnInfo == null)
-                            {
-                                continue;
-                            }
+                            continue;
                         }
                         int classId = ReflectUtil.getClassId(columnInfo.field().getType());
                         if (columnInfo.field().isAnnotationPresent(CustomTransfer.class))

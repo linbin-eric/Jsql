@@ -19,44 +19,9 @@ import java.time.LocalDateTime;
 import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 public class FinalExecuteSqlExecutor implements SqlExecutor
 {
-    record ClassKey(String sql, Class<?> ckass)
-    {
-        @Override
-        public int hashCode()
-        {
-            return ckass.hashCode();
-        }
-
-        @Override
-        public boolean equals(Object obj)
-        {
-            return ckass.equals(obj);
-        }
-    }
-
-    record MethodKey(String sql, Method method)
-    {
-        @Override
-        public int hashCode()
-        {
-            return method.hashCode();
-        }
-
-        @Override
-        public boolean equals(Object obj)
-        {
-            return method.equals(obj);
-        }
-    }
-
-    ConcurrentMap<ClassKey, ResultSetTransfer>  classMap  = new ConcurrentHashMap<>();
-    ConcurrentMap<MethodKey, ResultSetTransfer> methodMap = new ConcurrentHashMap<>();
-
     @Override
     public int update(String sql, List<Object> params, Connection connection, Dialect dialect) throws SQLException
     {
@@ -115,7 +80,7 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
     }
 
     @Override
-    public List<Object> queryList(String sql, AnnotatedElement element, List<Object> params, Connection connection, Dialect dialect) throws SQLException
+    public List<Object> queryList(String sql, ResultSetTransfer transfer, List<Object> params, Connection connection, Dialect dialect) throws SQLException
     {
         try (PreparedStatement prepareStatement = connection.prepareStatement(sql))
         {
@@ -123,12 +88,9 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
             try (ResultSet resultSet = prepareStatement.executeQuery())
             {
                 List<Object> list = new LinkedList<>();
-                ResultSetTransfer resultSetTransfer = element instanceof Method ?//
-                        methodMap.computeIfAbsent(new MethodKey(sql, (Method) element), methodKey -> getTransfer(methodKey.method))//
-                        : classMap.computeIfAbsent(new ClassKey(sql, (Class<?>) element), classKey -> getTransfer(classKey.ckass));
                 while (resultSet.next())
                 {
-                    list.add(resultSetTransfer.transfer(resultSet));
+                    list.add(transfer.transfer(resultSet));
                 }
                 return list;
             }
@@ -251,7 +213,7 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
     }
 
     @Override
-    public Object queryOne(String sql, AnnotatedElement element, List<Object> params, Connection connection, Dialect dialect) throws SQLException
+    public Object queryOne(String sql, ResultSetTransfer transfer, List<Object> params, Connection connection, Dialect dialect) throws SQLException
     {
         try (PreparedStatement prepareStatement = connection.prepareStatement(sql))
         {
@@ -262,10 +224,7 @@ public class FinalExecuteSqlExecutor implements SqlExecutor
                 {
                     return null;
                 }
-                ResultSetTransfer resultSetTransfer = element instanceof Method ?//
-                        methodMap.computeIfAbsent(new MethodKey(sql, (Method) element), methodKey -> getTransfer(methodKey.method))//
-                        : classMap.computeIfAbsent(new ClassKey(sql, (Class<?>) element), classKey -> getTransfer(classKey.ckass));
-                Object result = resultSetTransfer.transfer(executeQuery);
+                Object result = transfer.transfer(executeQuery);
                 if (!executeQuery.next())
                 {
                     return result;

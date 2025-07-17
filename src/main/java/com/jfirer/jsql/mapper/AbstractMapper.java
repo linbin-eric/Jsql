@@ -2,7 +2,6 @@ package com.jfirer.jsql.mapper;
 
 import com.jfirer.jsql.session.SqlSession;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,22 +16,7 @@ public abstract class AbstractMapper
 {
     protected static final ThreadLocal<Map<String, Object>> cachedVariables = ThreadLocal.withInitial(() -> new HashMap<>());
     protected static final ThreadLocal<List<Object>>        cachedParams    = ThreadLocal.withInitial(() -> new ArrayList<>());
-    public static          List<Method>                     methods         = new ArrayList<>();
-    private static         int                              index           = 0;
-
-    public static int put(Method method)
-    {
-        methods.add(index, method);
-        index++;
-        return index - 1;
-    }
-
-    protected Method getMethod(int index)
-    {
-        return methods.get(index);
-    }
-
-    protected SqlSession session;
+    protected              SqlSession                       session;
 
     public SqlSession getSession()
     {

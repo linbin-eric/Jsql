@@ -262,7 +262,7 @@ public class ModelTest
         user3.setName("B");
         user3.setAge(14);
         session.save(user3);
-        List<UserDTO> list = session.findList(Model.selectAll().fromAs(User2.class, "u").leftJoin(User3.class, "user3").on(Param.eq(User2::getAge, User3::getAge))//
+        List<UserDTO> list = session.findList(Model.selectAlias(User2::getName,"name2").fromAs(User2.class, "u").leftJoin(User3.class, "user3").on(Param.eq(User2::getAge, User3::getAge))//
                                                    .where(Param.eq(User2::getId, 1))//
                                                    .returnType(UserDTO.class));
         assertEquals("A", list.get(0).getName2());

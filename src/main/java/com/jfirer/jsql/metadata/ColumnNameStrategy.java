@@ -1,5 +1,8 @@
 package com.jfirer.jsql.metadata;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 @FunctionalInterface
 public interface ColumnNameStrategy
 {
@@ -10,7 +13,8 @@ public interface ColumnNameStrategy
      */
     String toColumnName(String fieldName);
 
-    ColumnNameStrategy LOW_CASE = name -> name.replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase();
+    ColumnNameStrategy                                                     LOW_CASE              = new LowCase();
+    ConcurrentMap<Class<? extends ColumnNameStrategy>, ColumnNameStrategy> STRATEGY_INSTANCE_MAP = new ConcurrentHashMap<>();
 
     class LowCase implements ColumnNameStrategy
     {
@@ -28,5 +32,19 @@ public interface ColumnNameStrategy
         {
             return name;
         }
+    }
+
+    static ColumnNameStrategy find(Class<? extends ColumnNameStrategy> columnNameStrategy)
+    {
+        return STRATEGY_INSTANCE_MAP.computeIfAbsent(columnNameStrategy, k -> {
+            try
+            {
+                return columnNameStrategy.getConstructor().newInstance();
+            }
+            catch (Throwable e)
+            {
+                throw new RuntimeException(e);
+            }
+        });
     }
 }

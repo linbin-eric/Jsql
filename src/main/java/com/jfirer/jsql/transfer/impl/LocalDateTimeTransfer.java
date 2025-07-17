@@ -8,6 +8,8 @@ import java.sql.Timestamp;
 
 public class LocalDateTimeTransfer implements ResultSetTransfer
 {
+    public static final LocalDateTimeTransfer INSTANCE = new LocalDateTimeTransfer();
+
     @SneakyThrows
     @Override
     public Object transfer(ResultSet resultSet, int columnIndex)

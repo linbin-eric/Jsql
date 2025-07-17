@@ -7,6 +7,8 @@ import java.sql.ResultSet;
 
 public class DoubleTransfer implements ResultSetTransfer
 {
+    public static final DoubleTransfer INSTANCE = new DoubleTransfer();
+
     @SneakyThrows
     @Override
     public Object transfer(ResultSet resultSet, int columnIndex)

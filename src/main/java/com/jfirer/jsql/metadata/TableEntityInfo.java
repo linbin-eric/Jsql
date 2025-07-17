@@ -1,6 +1,5 @@
 package com.jfirer.jsql.metadata;
 
-import com.jfirer.baseutil.STR;
 import com.jfirer.baseutil.StringUtil;
 import com.jfirer.baseutil.reflect.ReflectUtil;
 import com.jfirer.baseutil.reflect.valueaccessor.ValueAccessor;
@@ -17,20 +16,19 @@ import java.util.concurrent.ConcurrentHashMap;
 @Data
 public class TableEntityInfo
 {
-    public record ColumnInfo(String columnName, String propertyName, Field field, ValueAccessor accessor, String fullname)
+    public record ColumnInfo(String columnName, String propertyName, Field field, ValueAccessor accessor)
     {
     }
 
-    private static final Map<Class<?>, TableEntityInfo> store                           = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, TableEntityInfo> store              = new ConcurrentHashMap<>();
     private final        String                         classSimpleName;
     private final        String                         tableName;
-    private              Map<String, ColumnInfo>        propertyNameKeyMap              = new HashMap<>();
-    private              Map<String, ColumnInfo>        columnNameKeyMap                = new HashMap<>();
-    private              Map<String, ColumnInfo>        fullnameIgnoreCaseColumnInfoMap = new HashMap<>();
+    private              Map<String, ColumnInfo>        propertyNameKeyMap = new HashMap<>();
+    private              Map<String, ColumnInfo>        columnNameKeyMap   = new HashMap<>();
     private              ColumnInfo                     pkInfo;
     private final        Class<?>                       ckass;
     private              PkGenerator.Generator          pkGenerator;
-    private              PkReturnType                   pkReturnType                    = PkReturnType.NO_RETURN_PK;
+    private              PkReturnType                   pkReturnType       = PkReturnType.NO_RETURN_PK;
     private final        ColumnInfo[]                   allColumnInfos;
     private final        ColumnInfo[]                   allColumnInfosExcludePk;
 
@@ -43,11 +41,7 @@ public class TableEntityInfo
     {
         this.ckass      = ckass;
         classSimpleName = ckass.getSimpleName();
-        if (!ckass.isAnnotationPresent(TableDef.class))
-        {
-            throw new IllegalArgumentException(STR.format("类:{}没有使用TableDef注解，不能作为查询条件或者返回结果使用", ckass.getName()));
-        }
-        tableName = ckass.getAnnotation(TableDef.class).value();
+        tableName       = ckass.isAnnotationPresent(TableDef.class) ? ckass.getAnnotation(TableDef.class).value() : classSimpleName;
         try
         {
             ColumnNameStrategy strategy = ckass.isAnnotationPresent(ColumnName.class) ? //
@@ -56,45 +50,27 @@ public class TableEntityInfo
             for (Field field : getAllSuitableFields(ckass))
             {
                 field.setAccessible(true);
-                String     fullName, columnName;
-                ColumnName annotation = field.getAnnotation(ColumnName.class);
-                if (annotation == null)
+                String columnName;
+                if (field.isAnnotationPresent(ColumnName.class))
                 {
-                    columnName = strategy.toColumnName(field.getName());
-                    if (StringUtil.isNotBlank(tableName))
+                    ColumnName annotation = field.getAnnotation(ColumnName.class);
+                    if (StringUtil.isNotBlank(annotation.value()))
                     {
-                        fullName = tableName + '.' + columnName;
+                        columnName = annotation.value();
                     }
                     else
                     {
-                        fullName = columnName;
-                    }
-                }
-                else if (StringUtil.isNotBlank(annotation.fullname()))
-                {
-                    fullName   = annotation.fullname();
-                    columnName = fullName.substring(fullName.lastIndexOf('.') + 1);
-                }
-                else if (StringUtil.isNotBlank(annotation.value()))
-                {
-                    columnName = annotation.value();
-                    if (StringUtil.isNotBlank(tableName))
-                    {
-                        fullName = tableName + '.' + columnName;
-                    }
-                    else
-                    {
-                        fullName = columnName;
+                        ColumnNameStrategy columnNameStrategy = ColumnNameStrategy.find(annotation.strategy());
+                        columnName = columnNameStrategy.toColumnName(field.getName());
                     }
                 }
                 else
                 {
-                    throw new IllegalArgumentException(STR.format("注解在:{}上ColumnName中value和fullname的值都是空", field));
+                    columnName = strategy.toColumnName(field.getName());
                 }
-                ColumnInfo columnInfo = new ColumnInfo(columnName, field.getName(), field, ValueAccessor.compile(field), fullName);
+                ColumnInfo columnInfo = new ColumnInfo(columnName.toLowerCase(), field.getName(), field, ValueAccessor.compile(field));
                 propertyNameKeyMap.put(columnInfo.propertyName, columnInfo);
                 columnNameKeyMap.put(columnInfo.columnName(), columnInfo);
-                fullnameIgnoreCaseColumnInfoMap.put(columnInfo.fullname().toLowerCase(), columnInfo);
                 if (field.isAnnotationPresent(Pk.class))
                 {
                     if (pkInfo == null)
@@ -160,11 +136,6 @@ public class TableEntityInfo
         }
         Class<?> type = field.getType();
         return Collection.class.isAssignableFrom(type) || Map.class.isAssignableFrom(type);
-    }
-
-    public ColumnInfo findColumnInfoByFullnameIgnoreCase(String fullname)
-    {
-        return fullnameIgnoreCaseColumnInfoMap.get(fullname.toLowerCase());
     }
 
     public static TableEntityInfo parse(Class<?> entityClass)

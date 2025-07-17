@@ -7,6 +7,8 @@ import java.sql.ResultSet;
 
 public class ShortTransfer implements ResultSetTransfer
 {
+    public static final ShortTransfer INSTANCE = new ShortTransfer();
+
     @SneakyThrows
     @Override
     public Object transfer(ResultSet resultSet, int columnIndex)
