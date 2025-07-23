@@ -17,10 +17,8 @@ import java.sql.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.Calendar;
+import java.util.*;
 import java.util.Date;
-import java.util.List;
 
 public class BeanTransfer implements ResultSetTransfer
 {
@@ -58,7 +56,7 @@ public class BeanTransfer implements ResultSetTransfer
                         int columnIndex = i + 1;
                         //全局都采用小写作为数据库字段名
                         String                     columnName = metaData.getColumnLabel(columnIndex).toLowerCase();
-                        TableEntityInfo.ColumnInfo columnInfo = returnTypeInfo.getColumnNameKeyMap().get(columnName);
+                        TableEntityInfo.ColumnInfo columnInfo = returnTypeInfo.getColumnNameKeyMap().entrySet().stream().filter(e->e.getKey().equalsIgnoreCase(columnName)).map(Map.Entry::getValue).findAny().orElse(null);
                         if (columnInfo == null)
                         {
                             continue;
