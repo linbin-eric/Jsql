@@ -19,42 +19,39 @@ import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class SqlSessionImpl implements SqlSession
 {
-    private              boolean                                    transactionActive = false;
-    private              boolean                                    closed            = false;
-    private final        Connection                                 connection;
-    private final        SqlExecutor                                headSqlExecutor;
-    private final        Dialect                                    dialect;
-    private final static Logger                                     logger            = LoggerFactory.getLogger(SqlSession.class);
-    private static final ConcurrentMap<String, ResultSetTransfer>   transferCache     = new ConcurrentHashMap<>();
-    private static final ConcurrentMap<Class<?>, ResultSetTransfer> MAP               = new ConcurrentHashMap<>();
+    private              boolean                                  transactionActive = false;
+    private              boolean                                  closed            = false;
+    private final        Connection                               connection;
+    private final        SqlExecutor                              headSqlExecutor;
+    private final        Dialect                                  dialect;
+    private final static Logger                                   logger            = LoggerFactory.getLogger(SqlSession.class);
+    private static final ConcurrentMap<String, ResultSetTransfer> transferCache     = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, ResultSetTransfer>         BASIC_TRANSFER    = new HashMap<>();
 
     static
     {
-        MAP.put(Integer.class, IntegerTransfer.INSTANCE);
-        MAP.put(int.class, IntegerTransfer.INSTANCE);
-        MAP.put(Long.class, LongTransfer.INSTANCE);
-        MAP.put(long.class, LongTransfer.INSTANCE);
-        MAP.put(Float.class, FloatTransfer.INSTANCE);
-        MAP.put(float.class, FloatTransfer.INSTANCE);
-        MAP.put(Double.class, DoubleTransfer.INSTANCE);
-        MAP.put(double.class, DoubleTransfer.INSTANCE);
-        MAP.put(Boolean.class, BooleanTransfer.INSTANCE);
-        MAP.put(boolean.class, BooleanTransfer.INSTANCE);
-        MAP.put(String.class, StringTransfer.INSTANCE);
-        MAP.put(Short.class, ShortTransfer.INSTANCE);
-        MAP.put(short.class, ShortTransfer.INSTANCE);
-        MAP.put(BigDecimal.class, BigDecimalTransfer.INSTANCE);
-        MAP.put(Date.class, UtilDateTransfer.INSTANCE);
-        MAP.put(java.sql.Date.class, SqlDateTransfer.INSTANCE);
+        BASIC_TRANSFER.put(Integer.class, IntegerTransfer.INSTANCE);
+        BASIC_TRANSFER.put(int.class, IntegerTransfer.INSTANCE);
+        BASIC_TRANSFER.put(Long.class, LongTransfer.INSTANCE);
+        BASIC_TRANSFER.put(long.class, LongTransfer.INSTANCE);
+        BASIC_TRANSFER.put(Float.class, FloatTransfer.INSTANCE);
+        BASIC_TRANSFER.put(float.class, FloatTransfer.INSTANCE);
+        BASIC_TRANSFER.put(Double.class, DoubleTransfer.INSTANCE);
+        BASIC_TRANSFER.put(double.class, DoubleTransfer.INSTANCE);
+        BASIC_TRANSFER.put(Boolean.class, BooleanTransfer.INSTANCE);
+        BASIC_TRANSFER.put(boolean.class, BooleanTransfer.INSTANCE);
+        BASIC_TRANSFER.put(String.class, StringTransfer.INSTANCE);
+        BASIC_TRANSFER.put(Short.class, ShortTransfer.INSTANCE);
+        BASIC_TRANSFER.put(short.class, ShortTransfer.INSTANCE);
+        BASIC_TRANSFER.put(BigDecimal.class, BigDecimalTransfer.INSTANCE);
+        BASIC_TRANSFER.put(Date.class, UtilDateTransfer.INSTANCE);
+        BASIC_TRANSFER.put(java.sql.Date.class, SqlDateTransfer.INSTANCE);
     }
 
     public SqlSessionImpl(Connection connection, SqlExecutor headSqlExecutor, Dialect dialect)
@@ -256,7 +253,7 @@ public class SqlSessionImpl implements SqlSession
         String            sql    = result.sql();
         String            key    = sql + model.getReturnType().getSimpleName();
         ResultSetTransfer transfer = transferCache.computeIfAbsent(key, s -> {
-            ResultSetTransfer resultSetTransfer = MAP.get(model.getReturnType());
+            ResultSetTransfer resultSetTransfer = BASIC_TRANSFER.get(model.getReturnType());
             if (resultSetTransfer != null)
             {
                 return resultSetTransfer;
@@ -276,7 +273,7 @@ public class SqlSessionImpl implements SqlSession
         String            sql    = result.sql();
         String            key    = sql + model.getReturnType().getSimpleName();
         ResultSetTransfer transfer = transferCache.computeIfAbsent(key, s -> {
-            ResultSetTransfer resultSetTransfer = MAP.get(model.getReturnType());
+            ResultSetTransfer resultSetTransfer = BASIC_TRANSFER.get(model.getReturnType());
             if (resultSetTransfer != null)
             {
                 return resultSetTransfer;

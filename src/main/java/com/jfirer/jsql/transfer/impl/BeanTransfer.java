@@ -56,7 +56,7 @@ public class BeanTransfer implements ResultSetTransfer
                         int columnIndex = i + 1;
                         //全局都采用小写作为数据库字段名
                         String                     columnName = metaData.getColumnLabel(columnIndex).toLowerCase();
-                        TableEntityInfo.ColumnInfo columnInfo = returnTypeInfo.getColumnNameKeyMap().entrySet().stream().filter(e->e.getKey().equalsIgnoreCase(columnName)).map(Map.Entry::getValue).findAny().orElse(null);
+                        TableEntityInfo.ColumnInfo columnInfo = returnTypeInfo.getColumnNameKeyMap().entrySet().stream().filter(e -> e.getKey().equalsIgnoreCase(columnName)).map(Map.Entry::getValue).findAny().orElse(null);
                         if (columnInfo == null)
                         {
                             continue;
@@ -353,7 +353,10 @@ public class BeanTransfer implements ResultSetTransfer
                         java.sql.Time time = resultSet.getTime(columnIndex);
                         accessor.setReference(result, time.toLocalTime());
                     }
-                    throw new IllegalArgumentException("不能默认获取值的类型:{}" + field);
+                    else
+                    {
+                        throw new IllegalArgumentException("不能默认获取值的类型:{}" + field);
+                    }
                 }
             }
         }
