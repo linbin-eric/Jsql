@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>JSql API Documentation</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin-top: 0.5rem;
+        }
+        nav {
+            background-color: #2c3e50;
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        nav li {
+            margin: 0 15px;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        nav a:hover, nav a:focus {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        section {
+            background-color: white;
+            margin: 20px 0;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        h3 {
+            color: #3498db;
+            margin-top: 1.5rem;
+        }
+        pre {
+            background-color: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 0.9rem;
+        }
+        code {
+            font-family: 'Courier New', Consolas, Monaco, monospace;
+        }
+        .example {
+            margin: 1rem 0;
+        }
+        .note {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .warning {
+            background-color: #fff8e1;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 20px;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1rem 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        @media (max-width: 768px) {
+            nav ul {
+                flex-direction: column;
+                align-items: center;
+            }
+            nav li {
+                margin: 5px 0;
+            }
+            .container {
+                padding: 10px;
+            }
+            section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>JSql API Documentation</h1>
+            <p class="subtitle">一个高性能的Java SQL映射框架</p>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="#overview">概述</a></li>
+            <li><a href="#core-components">核心组件</a></li>
+            <li><a href="#model-api">Model API</a></li>
+            <li><a href="#mapper-api">Mapper API</a></li>
+            <li><a href="#annotations">注解</a></li>
+            <li><a href="#examples">使用示例</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <section id="overview">
+            <h2>概述</h2>
+            <p>JSql是一个高性能的Java SQL映射框架，旨在简化数据库操作。它通过接口绑定和流式API提供透明的数据库访问，支持动态SQL、自动结果映射和多种数据库方言。</p>
+            <p>核心特性包括：</p>
+            <ul>
+                <li>基于接口的SQL绑定</li>
+                <li>流式Model API构建SQL查询</li>
+                <li>支持动态SQL</li>
+                <li>自动对象映射</li>
+                <li>实体注解映射</li>
+                <li>多数据库支持</li>
+            </ul>
+        </section>
+
+        <section id="core-components">
+            <h2>核心组件</h2>
+            
+            <h3>SessionFactory</h3>
+            <p><code>SessionFactory</code>是JSql的入口点，用于创建<code>SqlSession</code>实例。它管理着数据库连接池和框架配置。</p>
+            <pre><code>// 创建SessionFactory的典型方式
+SessionFactoryConfig config = new SessionFactoryConfig();
+config.setDataSource(dataSource);
+// 可以添加其他配置，如扫描包、SQL执行器等
+SessionFactory sessionFactory = config.build();</code></pre>
+            
+            <h3>SqlSession</h3>
+            <p><code>SqlSession</code>代表一个数据库会话，提供CRUD操作、事务管理和Mapper访问。每次数据库交互都从<code>SqlSession</code>开始。</p>
+            <pre><code>// 获取并使用SqlSession
+SqlSession session = sessionFactory.openSession();
+try {
+    // 执行数据库操作
+    User user = session.findOne(Model.select(User::getName).from(User.class).where(Param.eq(User::getId, 1)));
+    // 提交事务（如果需要）
+    session.commit();
+} finally {
+    // 确保session被关闭
+    session.close();
+}</code></pre>
+        </section>
+
+        <section id="model-api">
+            <h2>Model API</h2>
+            <p>Model API是JSql提供的流式API，用于以编程方式构建SQL查询。它提供了类型安全和链式调用的特性。</p>
+            
+            <h3>基本查询</h3>
+            <pre><code>// 查询所有字段
+QueryModel model1 = Model.selectAll(User.class);
+
+// 查询特定字段
+QueryModel model2 = Model.select(User::getName, User::getAge).from(User.class);
+
+// 带条件查询
+QueryModel model3 = Model.selectAll(User.class)
+                        .where(Param.eq(User::getAge, 18));
+
+// 分页查询
+Page page = new Page(10, 0); // 每页10条，偏移量0
+QueryModel model4 = Model.selectAll(User.class)
+                        .where(Param.gt(User::getAge, 18))
+                        .page(page);</code></pre>
+            
+            <h3>插入操作</h3>
+            <pre><code>// 插入特定字段
+InsertModel insertModel = Model.insert(User.class)
+                               .insert(User::getName, "张三")
+                               .insert(User::getAge, 25);
+
+// 插入实体对象
+User user = new User();
+user.setName("李四");
+user.setAge(30);
+InsertEntityModel insertEntityModel = Model.insert(user);</code></pre>
+            
+            <h3>更新操作</h3>
+            <pre><code>// 更新特定字段
+UpdateModel updateModel = Model.update(User.class)
+                               .set(User::getAge, 26)
+                               .where(Param.eq(User::getName, "张三"));</code></pre>
+            
+            <h3>删除操作</h3>
+            <pre><code>// 删除记录
+DeleteModel deleteModel = Model.deleteFrom(User.class)
+                               .where(Param.eq(User::getName, "张三"));</code></pre>
+        </section>
+
+        <section id="mapper-api">
+            <h2>Mapper API</h2>
+            <p>Mapper API通过Java接口将方法与SQL语句绑定，实现自动代理生成。这是JSql推荐的数据库操作方式。</p>
+            
+            <h3>定义Mapper接口</h3>
+            <pre><code>import com.jfirer.jsql.annotation.Mapper;
+import com.jfirer.jsql.annotation.Sql;
+import com.jfirer.jsql.model.Param;
+import java.util.List;
+
+@Mapper(User.class) // 声明该Mapper关联的实体类
+public interface UserMapper {
+    // 使用@Sql注解定义SQL语句
+    @Sql("select * from user where name = ${name}")
+    User findByName(String name);
+    
+    @Sql("select * from user where age > ${age}")
+    List&lt;User&gt; findByMinAge(int age);
+    
+    @Sql("insert into user(name, age) values(${user.name}, ${user.age})")
+    int insertUser(User user);
+    
+    @Sql("update user set age = ${age} where name = ${name}")
+    int updateAgeByName(String name, int age);
+    
+    @Sql("delete from user where name = ${name}")
+    int deleteByName(String name);
+}</code></pre>
+            
+            <h3>使用Mapper</h3>
+            <pre><code>// 从SqlSession获取Mapper实例
+UserMapper userMapper = session.getMapper(UserMapper.class);
+
+// 调用Mapper方法
+User user = userMapper.findByName("张三");
+List&lt;User&gt; users = userMapper.findByMinAge(18);
+int result = userMapper.insertUser(new User("王五", 28));</code></pre>
+        </section>
+
+        <section id="annotations">
+            <h2>注解</h2>
+            <p>JSql使用注解来配置实体类与数据库表的映射关系。</p>
+            
+            <h3>@TableDef</h3>
+            <p>将Java类映射到数据库表。</p>
+            <pre><code>@TableDef("user")
+public class User {
+    // ...
+}</code></pre>
+            
+            <h3>@Pk</h3>
+            <p>标记字段为主键。</p>
+            <pre><code>public class User {
+    @Pk
+    private Integer id;
+    // ...
+}</code></pre>
+            
+            <h3>@ColumnName</h3>
+            <p>将字段映射到指定的数据库列。</p>
+            <pre><code>public class User {
+    @ColumnName("user_name")
+    private String name;
+    // ...
+}</code></pre>
+            
+            <h3>@AutoIncrement</h3>
+            <p>标记主键为自增字段。</p>
+            <pre><code>public class User {
+    @Pk
+    @AutoIncrement
+    private Integer id;
+    // ...
+}</code></pre>
+            
+            <h3>@SqlIgnore</h3>
+            <p>标记字段不参与SQL操作。</p>
+            <pre><code>public class User {
+    @SqlIgnore
+    private String temporaryField;
+    // ...
+}</code></pre>
+        </section>
+
+        <section id="examples">
+            <h2>使用示例</h2>
+            
+            <h3>完整示例：用户管理</h3>
+            <pre><code>// 1. 定义实体类
+@TableDef("user")
+public class User {
+    @Pk
+    @AutoIncrement
+    private Integer id;
+    
+    @ColumnName("user_name")
+    private String name;
+    
+    private int age;
+    
+    // 构造函数、Getter和Setter省略
+}
+
+// 2. 定义Mapper接口
+@Mapper(User.class)
+public interface UserMapper {
+    @Sql("select * from user where id = ${id}")
+    User findById(int id);
+    
+    @Sql("select * from user")
+    List&lt;User&gt; findAll();
+    
+    @Sql("insert into user(user_name, age) values(${user.name}, ${user.age})")
+    int insert(User user);
+    
+    @Sql("update user set user_name = ${user.name}, age = ${user.age} where id = ${user.id}")
+    int update(User user);
+    
+    @Sql("delete from user where id = ${id}")
+    int deleteById(int id);
+}
+
+// 3. 使用示例
+public class UserService {
+    private SessionFactory sessionFactory;
+    
+    public UserService(SessionFactory sessionFactory) {
+        this.sessionFactory = sessionFactory;
+    }
+    
+    public User getUser(int id) {
+        try (SqlSession session = sessionFactory.openSession()) {
+            UserMapper mapper = session.getMapper(UserMapper.class);
+            return mapper.findById(id);
+        }
+    }
+    
+    public void addUser(User user) {
+        try (SqlSession session = sessionFactory.openSession()) {
+            UserMapper mapper = session.getMapper(UserMapper.class);
+            mapper.insert(user);
+            session.commit();
+        }
+    }
+}</code></pre>
+        </section>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 JSql Project. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>

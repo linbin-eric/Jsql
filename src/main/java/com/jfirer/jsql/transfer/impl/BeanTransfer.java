@@ -341,17 +341,26 @@ public class BeanTransfer implements ResultSetTransfer
                     if (ckazz == LocalDate.class)
                     {
                         java.sql.Date date = resultSet.getDate(columnIndex);
-                        accessor.setReference(result, date.toLocalDate());
+                        if (date != null)
+                        {
+                            accessor.setReference(result, date.toLocalDate());
+                        }
                     }
                     else if (ckazz == LocalDateTime.class)
                     {
                         java.sql.Timestamp timestamp = resultSet.getTimestamp(columnIndex);
-                        accessor.setReference(result, timestamp.toLocalDateTime());
+                        if (timestamp != null)
+                        {
+                            accessor.setReference(result, timestamp.toLocalDateTime());
+                        }
                     }
                     else if (ckazz == LocalTime.class)
                     {
                         java.sql.Time time = resultSet.getTime(columnIndex);
-                        accessor.setReference(result, time.toLocalTime());
+                        if (time != null)
+                        {
+                            accessor.setReference(result, time.toLocalTime());
+                        }
                     }
                     else
                     {
