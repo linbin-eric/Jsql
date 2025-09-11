@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Data
 public class TableEntityInfo
 {
-    public record ColumnInfo(String columnName, String propertyName, Field field, ValueAccessor accessor)
+    public record ColumnInfo(String columnName, String propertyName, String tableName, Field field, ValueAccessor accessor)
     {
     }
 
@@ -68,7 +68,8 @@ public class TableEntityInfo
                 {
                     columnName = strategy.toColumnName(field.getName());
                 }
-                ColumnInfo columnInfo = new ColumnInfo(columnName.toLowerCase(), field.getName(), field, ValueAccessor.compile(field));
+                String     tableName  = field.isAnnotationPresent(TableName.class) ? field.getAnnotation(TableName.class).value() : null;
+                ColumnInfo columnInfo = new ColumnInfo(columnName.toLowerCase(), field.getName(), tableName, field, ValueAccessor.compile(field));
                 propertyNameKeyMap.put(columnInfo.propertyName, columnInfo);
                 columnNameKeyMap.put(columnInfo.columnName(), columnInfo);
                 if (field.isAnnotationPresent(Pk.class))
