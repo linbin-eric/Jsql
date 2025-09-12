@@ -10,6 +10,7 @@ import com.jfirer.jsql.test.vo.SqlLog;
 import com.jfirer.jsql.test.vo.User;
 import com.jfirer.jsql.test.vo.User3;
 import com.zaxxer.hikari.HikariDataSource;
+import lombok.SneakyThrows;
 import org.h2.Driver;
 import org.junit.Assert;
 import org.junit.Before;
@@ -34,36 +35,36 @@ public class CURDTest
 {
     private       SessionFactory sessionFactory;
     public static String         user2TableDml = """
-                                                 CREATE TABLE PUBLIC.user2 (
-                                                 name2 VARCHAR(64) ,
-                                                 id VARCHAR(64) ,
-                                                 age INTEGER
-                                                 )
-                                                 """;
+            CREATE TABLE PUBLIC.user2 (
+            name2 VARCHAR(64) ,
+            id VARCHAR(64) ,
+            age INTEGER
+            )
+            """;
     public static String         userTableDml  = """
-                                                 CREATE TABLE PUBLIC.user (
-                                                 calendar TIMESTAMP(3) ,
-                                                 date TIMESTAMP(3) ,
-                                                 b BOOLEAN ,
-                                                 b11 BOOLEAN ,
-                                                 l1 BIGINT ,
-                                                 d11 DOUBLE ,
-                                                 string_enum varchar(64) ,
-                                                 f11 DOUBLE ,
-                                                 f1 DOUBLE ,
-                                                 d1 DOUBLE ,
-                                                 l11 BIGINT ,
-                                                 sql_date TIMESTAMP ,
-                                                 n BIGINT ,
-                                                 barray BLOB ,
-                                                 name2 VARCHAR(64) ,
-                                                 id INTEGER AUTO_INCREMENT,
-                                                 state integer ,
-                                                 time TIME ,
-                                                 age INTEGER ,
-                                                 timestamp TIMESTAMP(3)
-                                                 )
-                                                 """;
+            CREATE TABLE PUBLIC.user (
+            calendar TIMESTAMP(3) ,
+            date TIMESTAMP(3) ,
+            b BOOLEAN ,
+            b11 BOOLEAN ,
+            l1 BIGINT ,
+            d11 DOUBLE ,
+            string_enum varchar(64) ,
+            f11 DOUBLE ,
+            f1 DOUBLE ,
+            d1 DOUBLE ,
+            l11 BIGINT ,
+            sql_date TIMESTAMP ,
+            n BIGINT ,
+            barray BLOB ,
+            name2 VARCHAR(64) ,
+            id INTEGER AUTO_INCREMENT,
+            state integer ,
+            time TIME ,
+            age INTEGER ,
+            timestamp TIMESTAMP(3)
+            )
+            """;
 
     @Before
     public void before()
@@ -102,7 +103,7 @@ public class CURDTest
         ResultSet resultSet = session.getConnection().prepareStatement("select age,id from user where name2 ='1221'").executeQuery();
         Assert.assertTrue(resultSet.next());
         Assert.assertEquals(12, resultSet.getInt(1));
-        assertEquals(user.getId().intValue(),resultSet.getInt(2));
+        assertEquals(user.getId().intValue(), resultSet.getInt(2));
         session.close();
     }
 
@@ -191,9 +192,9 @@ public class CURDTest
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
-        System.out.println(new Time(User.now ).getTime());
+        System.out.println(new Time(User.now).getTime());
         System.out.println(query.getTime().getTime());
-        Assert.assertEquals(new Time(User.now-calendar.getTimeInMillis()-8*60*60*1000 ), query.getTime());
+        Assert.assertEquals(new Time(User.now - calendar.getTimeInMillis() - 8 * 60 * 60 * 1000), query.getTime());
         Assert.assertEquals(calendar.getTimeInMillis(), query.getSqlDate().getTime());
         Assert.assertEquals(2.53d, query.getD1(), 0.001);
         Assert.assertEquals(5.36f, query.getF1(), 0.001);
@@ -267,14 +268,17 @@ public class CURDTest
         {
             new Thread(new Runnable()
             {
+                @SneakyThrows
                 @Override
                 public void run()
                 {
                     latch.countDown();
                     SqlSession session = one.openSession();
-                    session.beginTransAction();
+                    session.getConnection().setAutoCommit(false);
                     session.findList(Model.selectAll().from(User.class).where(Param.eq(User::getId, 1)).lockMode(LockMode.SHARE));
                     count.incrementAndGet();
+                    session.getConnection().commit();
+                    session.getConnection().setAutoCommit(true);
                     session.close();
                 }
             }).start();
@@ -302,12 +306,13 @@ public class CURDTest
         {
             new Thread(new Runnable()
             {
+                @SneakyThrows
                 @Override
                 public void run()
                 {
                     latch.countDown();
                     SqlSession session = one.openSession();
-                    session.beginTransAction();
+                    session.getConnection().setAutoCommit(false);
                     session.findList(Model.selectAll().from(User.class).where(Param.eq(User::getId, 1)).lockMode(LockMode.UPDATE));
                     count.incrementAndGet();
                     try
@@ -319,7 +324,8 @@ public class CURDTest
                         // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
-                    session.commit();
+                    session.getConnection().commit();
+                    session.getConnection().setAutoCommit(true);
                     session.close();
                 }
             }).start();

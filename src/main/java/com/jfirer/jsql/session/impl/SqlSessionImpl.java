@@ -13,8 +13,8 @@ import com.jfirer.jsql.model.model.QueryModel;
 import com.jfirer.jsql.session.SqlSession;
 import com.jfirer.jsql.transfer.ResultSetTransfer;
 import com.jfirer.jsql.transfer.impl.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
@@ -23,16 +23,16 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+@Slf4j
 public class SqlSessionImpl implements SqlSession
 {
-    private              boolean                                  transactionActive = false;
-    private              boolean                                  closed            = false;
-    private final        Connection                               connection;
+    private              boolean                                  closed         = false;
+    private              Connection                               connection;
     private final        SqlExecutor                              headSqlExecutor;
     private final        Dialect                                  dialect;
-    private final static Logger                                   logger            = LoggerFactory.getLogger(SqlSession.class);
-    private static final ConcurrentMap<String, ResultSetTransfer> transferCache     = new ConcurrentHashMap<>();
-    private static final Map<Class<?>, ResultSetTransfer>         BASIC_TRANSFER    = new HashMap<>();
+    //key：sql+类的简单名称
+    private static final ConcurrentMap<String, ResultSetTransfer> transferCache  = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, ResultSetTransfer>         BASIC_TRANSFER = new HashMap<>();
 
     static
     {
@@ -61,25 +61,6 @@ public class SqlSessionImpl implements SqlSession
         this.dialect         = dialect;
     }
 
-    @Override
-    public void beginTransAction()
-    {
-        checkIfClosed();
-        try
-        {
-            if (transactionActive)
-            {
-                return;
-            }
-            transactionActive = true;
-            connection.setAutoCommit(false);
-        }
-        catch (SQLException e)
-        {
-            ReflectUtil.throwException(e);
-        }
-    }
-
     private void checkIfClosed()
     {
         if (closed)
@@ -88,76 +69,22 @@ public class SqlSessionImpl implements SqlSession
         }
     }
 
-    @Override
-    public void commit()
-    {
-        checkIfClosed();
-        if (!transactionActive)
-        {
-            throw new IllegalStateException("当前链接未开启事务，无法进行提交");
-        }
-        try
-        {
-            connection.commit();
-            connection.setAutoCommit(true);
-            transactionActive = false;
-        }
-        catch (SQLException e)
-        {
-            ReflectUtil.throwException(e);
-        }
-    }
-
-    @Override
-    public void flush()
-    {
-        checkIfClosed();
-        try
-        {
-            connection.commit();
-        }
-        catch (SQLException e)
-        {
-            ReflectUtil.throwException(e);
-        }
-    }
-
-    @Override
-    public void rollback()
-    {
-        checkIfClosed();
-        if (!transactionActive)
-        {
-            throw new IllegalStateException("当前链接未开启事务，无需回滚");
-        }
-        try
-        {
-            connection.rollback();
-            connection.setAutoCommit(true);
-            transactionActive = false;
-        }
-        catch (SQLException e)
-        {
-            ReflectUtil.throwException(e);
-        }
-    }
-
+    @SneakyThrows
     @Override
     public void close()
     {
-        if (transactionActive)
+        if (connection != null)
         {
-            throw new IllegalStateException("当前链接仍然开启着事务，需要先执行提交");
-        }
-        try
-        {
-            closed = true;
+            if (connection.getAutoCommit()==false)
+            {
+                throw new IllegalStateException("还没有提交事务就关闭数据库连接");
+            }
             connection.close();
-            logger.trace("关闭session");
+            connection = null;
         }
-        catch (SQLException e)
+        else
         {
-            throw new RuntimeException("关闭", e);
+            throw new IllegalStateException("已经关闭过");
         }
     }
 

@@ -12,6 +12,7 @@ import com.jfirer.jsql.test.vo.SqlLog;
 import com.jfirer.jsql.test.vo.User;
 import com.jfirer.jsql.test.vo.User4;
 import com.zaxxer.hikari.HikariDataSource;
+import lombok.SneakyThrows;
 import org.h2.Driver;
 import org.junit.After;
 import org.junit.Assert;
@@ -147,6 +148,7 @@ public class ModelTest2
         Assert.assertEquals(12, user.getAge());
     }
 
+    @SneakyThrows
     @Test
     public void test_4()
     {
@@ -162,17 +164,19 @@ public class ModelTest2
         }
         Timewatch timewatch = new Timewatch();
         timewatch.start();
-        sqlSession.beginTransAction();
+        sqlSession.getConnection().setAutoCommit(false);
         sqlSession.batchInsert(list, 100);
-        sqlSession.commit();
+        sqlSession.getConnection().commit();
+        sqlSession.getConnection().setAutoCommit(true);
         timewatch.end();
         System.out.println("批量插入耗时:" + timewatch.getTotal());
         timewatch.start();
         for (User user : list)
         {
-            sqlSession.beginTransAction();
+            sqlSession.getConnection().setAutoCommit(false);
             sqlSession.insert(user);
-            sqlSession.commit();
+            sqlSession.getConnection().commit();
+            sqlSession.getConnection().setAutoCommit(true);
         }
         timewatch.end();
         System.out.println("循环插入耗时:" + timewatch.getTotal());

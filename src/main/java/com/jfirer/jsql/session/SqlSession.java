@@ -14,29 +14,9 @@ import java.util.List;
 interface ConnectionOp extends AutoCloseable
 {
     /**
-     * 关闭session，释放数据库链接
+     * 关闭关联的链接
      */
     void close();
-
-    /**
-     * 启动事务，设置提交模式为非自动提交
-     */
-    void beginTransAction();
-
-    /**
-     * 提交事务，并且设置提交模式为自动提交
-     */
-    void commit();
-
-    /**
-     * 提交事务到数据库，但不改变当前数据库链接的提交模式
-     */
-    void flush();
-
-    /**
-     * 事务回滚.并且设置当前数据库提交模式为自动提交
-     */
-    void rollback();
 
     /**
      * 获取当前session使用的数据库链接
