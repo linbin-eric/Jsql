@@ -1,10 +1,12 @@
 package com.jfirer.jsql.metadata;
 
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 import java.util.List;
 
 @Data
+@Accessors(chain = true)
 public class Page
 {
     private int          total;
