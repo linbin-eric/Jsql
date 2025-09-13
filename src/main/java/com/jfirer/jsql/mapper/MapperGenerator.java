@@ -216,6 +216,15 @@ public class MapperGenerator
                                     return session.findList(Model.selectAll().from(""" //
                             + SmcHelper.getReferenceName(repositoryEntityClass, classModel) + ".class).where($0));");
         classModel.putMethodModel(methodModel);
+        
+        // 添加带Page参数的findList方法
+        Method      findListWithPage = ckass.getMethod("findList", Param.class, Page.class);
+        MethodModel methodModel2     = new MethodModel(findListWithPage, classModel);
+        methodModel2.setBody("""
+                                    if(session==null){throw new NullPointerException("当前没有session");}
+                                    return session.findList(Model.selectAll().from(""" //
+                            + SmcHelper.getReferenceName(repositoryEntityClass, classModel) + ".class).where($0).page($1));");
+        classModel.putMethodModel(methodModel2);
     }
 
     private static void addFindOne(ClassModel classModel, Class<? extends Repository> ckass, Class<?> repositoryEntityClass) throws NoSuchMethodException

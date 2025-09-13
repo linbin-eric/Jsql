@@ -4,6 +4,7 @@ import com.jfirer.jsql.SessionFactory;
 import com.jfirer.jsql.SessionFactoryConfig;
 import com.jfirer.jsql.mapper.Mapper;
 import com.jfirer.jsql.mapper.Repository;
+import com.jfirer.jsql.metadata.Page;
 import com.jfirer.jsql.model.Param;
 import com.jfirer.jsql.session.SqlSession;
 import com.jfirer.jsql.test.vo.SqlLog;
@@ -74,5 +75,42 @@ public class RepositoryTest
         Assert.assertEquals(40, one.getAge());
         repositoryOp.delete(Param.eq(User::getAge, 40));
         Assert.assertEquals(2, repositoryOp.count(Param.notEq(User::getId, 0)));
+    }
+    
+    @Test
+    public void testPage() {
+        SqlSession session = sessionFactory.openSession();
+        // 插入测试数据
+        for (int i = 0; i < 20; i++) {
+            User user = new User();
+            user.setAge(10 + i);
+            user.setName("user" + i);
+            session.save(user);
+        }
+        
+        RepositoryOp repositoryOp = session.getMapper(RepositoryOp.class);
+        
+        // 测试分页查询
+        Page page = new Page();
+        page.setOffset(0);
+        page.setSize(10);
+        
+        List<User> list = repositoryOp.findList(null, page);
+        Assert.assertEquals(10, list.size());
+        
+        // 测试第二页
+        page.setOffset(10);
+        list = repositoryOp.findList(null, page);
+        Assert.assertEquals(10, list.size());
+        
+        // 测试带条件的分页查询
+        page.setOffset(0);
+        page.setSize(5);
+        list = repositoryOp.findList(Param.bt(User::getAge, 15), page);
+        Assert.assertEquals(5, list.size());
+        // 验证数据正确性
+        for (User user : list) {
+            Assert.assertTrue(user.getAge() > 15);
+        }
     }
 }
