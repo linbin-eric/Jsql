@@ -21,7 +21,8 @@ public interface ColumnNameStrategy
         @Override
         public String toColumnName(String name)
         {
-            return name.replaceAll("([a-z])([A-Z])", "$1_$2").toLowerCase();
+            // 在字母后跟数字或大写字母前添加下划线
+            return name.replaceAll("([a-z])([A-Z0-9])", "$1_$2").toLowerCase();
         }
     }
 
