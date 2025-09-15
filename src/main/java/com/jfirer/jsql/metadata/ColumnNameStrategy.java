@@ -22,7 +22,10 @@ public interface ColumnNameStrategy
         public String toColumnName(String name)
         {
             // 在字母后跟数字或大写字母前添加下划线
-            return name.replaceAll("([a-z])([A-Z0-9])", "$1_$2").toLowerCase();
+            // 处理连续大写字母的情况
+            return name.replaceAll("([a-z])([A-Z0-9])", "$1_$2")
+                      .replaceAll("([A-Z])([A-Z])(?=[a-z])", "$1_$2")
+                      .toLowerCase();
         }
     }
 
