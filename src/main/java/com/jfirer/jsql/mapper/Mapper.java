@@ -26,7 +26,7 @@ import java.lang.annotation.Target;
  * // 方式1：直接使用Mapper注解
  * &#64;Mapper({User.class, Order.class})
  * public interface UserOrderMapper {
- *     &#64;Sql(sql = "SELECT * FROM user WHERE id = $id", paramNames = "id")
+ *     &#64;Sql(sql = "SELECT * FROM user WHERE id = ${id}", paramNames = "id")
  *     User findUserById(int id);
  * }
  * 
