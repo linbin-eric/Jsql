@@ -109,6 +109,11 @@ public interface Param
         return new StringPatternParam(fn, StringPatternParam.PatternMode.BOTH, value, false);
     }
 
+    static <T> Param like(SFunction<T, ?> fn, Object value)
+    {
+        return new StringPatternParam(fn, StringPatternParam.PatternMode.NONE, value, false);
+    }
+
     static <T> Param notStartWith(SFunction<T, ?> fn, Object value)
     {
         return new StringPatternParam(fn, StringPatternParam.PatternMode.AFTER, value, true);
