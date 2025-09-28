@@ -7,14 +7,16 @@ import lombok.Data;
 @Data
 public class FunctionSelect implements Select
 {
-    SFunction<?, ?> fn;
-    String          function;
-    String          asName;
-    Model           model;
+    private Class<?> implClass;
+    private String   fieldName;
+    String function;
+    String asName;
+    Model  model;
 
-    public FunctionSelect(SFunction<?, ?> fn, String function, String asName, Model model)
+    public FunctionSelect(Class<?> implClass,String fieldName, String function, String asName, Model model)
     {
-        this.fn       = fn;
+        this.implClass = implClass;
+        this.fieldName = fieldName;
         this.function = function;
         this.asName   = asName;
         this.model    = model;
@@ -26,16 +28,28 @@ public class FunctionSelect implements Select
         String result;
         if (function == null)
         {
-            result = model.findColumnName(fn);
+            result = model.findColumnName(implClass, fieldName);
         }
         else
         {
-            result = function + "(" + model.findColumnName(fn) + ")";
+            result = function + "(" + model.findColumnName(implClass, fieldName) + ")";
         }
         if (asName != null)
         {
             result += " as " + asName;
         }
         return result;
+    }
+
+    @Override
+    public Class<?> implClass()
+    {
+        return implClass;
+    }
+
+    @Override
+    public String fieldName()
+    {
+        return fieldName;
     }
 }

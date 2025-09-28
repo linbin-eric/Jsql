@@ -3,12 +3,11 @@ package com.jfirer.jsql.model.model.query;
 import lombok.Data;
 
 @Data
-
-public class FixedContentSelect implements  Select
+public class FixedContentSelect implements Select
 {
     final String content;
-    String className;
-    String fieldName;
+    Class<?> implClass;
+    String   fieldName;
     /*---*/
 
     public FixedContentSelect(String content)
@@ -16,10 +15,10 @@ public class FixedContentSelect implements  Select
         this.content = content;
     }
 
-    public FixedContentSelect(String content, String className, String fieldName)
+    public FixedContentSelect(String content, Class<?> implClass, String fieldName)
     {
         this.content   = content;
-        this.className = className;
+        this.implClass = implClass;
         this.fieldName = fieldName;
     }
 
@@ -27,5 +26,17 @@ public class FixedContentSelect implements  Select
     public String toSql()
     {
         return content;
+    }
+
+    @Override
+    public Class<?> implClass()
+    {
+        return implClass;
+    }
+
+    @Override
+    public String fieldName()
+    {
+        return fieldName;
     }
 }

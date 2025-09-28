@@ -9,10 +9,15 @@ import java.util.List;
 
 public abstract class InternalParamImpl implements InternalParam
 {
-    protected SFunction<?, ?> fn;
-    protected RenderConsumer  consumer;
+    protected Class<?>       implClass;
+    protected String         fieldName;
+    protected RenderConsumer consumer;
 
-    protected InternalParamImpl(SFunction<?, ?> fn) {this.fn = fn;}
+    protected InternalParamImpl(SFunction<?, ?> fn)
+    {
+        implClass = fn.getImplClass();
+        fieldName = fn.resolveFieldName();
+    }
 
     public InternalParamImpl()
     {
@@ -99,7 +104,7 @@ public abstract class InternalParamImpl implements InternalParam
     @Override
     public void renderSql(Model model, StringBuilder builder, List<Object> paramValues)
     {
-        consumer.accept(model.findColumnName(fn), builder, paramValues);
+        consumer.accept(model.findColumnName(implClass,fieldName), builder, paramValues);
     }
 
     @FunctionalInterface

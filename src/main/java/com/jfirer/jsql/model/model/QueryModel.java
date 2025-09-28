@@ -45,7 +45,7 @@ public class QueryModel implements Model
 
     private <T> void addSelect(SFunction<T, ?> fn, String function, String asName)
     {
-        selects.add(new FunctionSelect(fn, function, asName, this));
+        selects.add(new FunctionSelect(fn.getImplClass(), fn.resolveFieldName(), function, asName, this));
     }
 
     public <T> QueryModel selectAs(SFunction<T, ?> fn, String asName)
@@ -165,8 +165,7 @@ public class QueryModel implements Model
 
     public <T> QueryModel orderBy(SFunction<T, ?> fn, boolean desc)
     {
-        String s = desc ? " desc" : " asc";
-        orderBy.add(new OrderBy(fn, desc));
+        orderBy.add(new OrderBy(fn.getImplClass(), fn.resolveFieldName(), desc));
         return this;
     }
 
@@ -209,8 +208,7 @@ public class QueryModel implements Model
             {
                 try
                 {
-                    SFunction<?, ?> fn = functionSelect.getFn();
-                    return fn.getImplClass().getDeclaredField(fn.resolveFieldName()).getType();
+                    return functionSelect.getImplClass().getDeclaredField(functionSelect.getFieldName()).getType();
                 }
                 catch (NoSuchFieldException e)
                 {
@@ -275,19 +273,9 @@ public class QueryModel implements Model
             for (Table table : from)
             {
                 TableEntityInfo entityInfo = TableEntityInfo.parse(table.tableClass);
-                if (StringUtil.isBlank(table.asName))
+                for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
                 {
-                    for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
-                    {
-                        selects.add(new FixedContentSelect(columnInfo.columnName(), table.tableClass.getName(), columnInfo.propertyName()));
-                    }
-                }
-                else
-                {
-                    for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
-                    {
-                        selects.add(new FixedContentSelect(table.asName + "." + columnInfo.columnName(), table.tableClass.getName(), columnInfo.propertyName()));
-                    }
+                    selects.add(new FunctionSelect(table.tableClass, columnInfo.propertyName(), null, null, this));
                 }
             }
         }
@@ -296,9 +284,8 @@ public class QueryModel implements Model
             if (from.isEmpty())
             {
                 Set<? extends Class<?>> collect = selects.stream()//
-                                                         .filter(s -> s instanceof FunctionSelect)//
-                                                         .filter(s -> ((FunctionSelect) s).getFn() != null)//
-                                                         .map(s -> ((FunctionSelect) s).getFn().getImplClass()).collect(Collectors.toSet());
+                                                         .filter(s -> s.implClass() != null)//
+                                                         .map(s -> s.implClass()).collect(Collectors.toSet());
                 if (collect.size() > 1)
                 {
                     throw new IllegalArgumentException("使用Select添加了1张以上的表，需要显式的使用from方法添加表");
@@ -311,24 +298,7 @@ public class QueryModel implements Model
         }
         if (exclude.isEmpty() == false)
         {
-            selects = selects.stream().filter(v -> {
-                if (v instanceof FunctionSelect functionSelect)
-                {
-                    return exclude.stream().noneMatch(ex -> ex.resolveFieldName().equalsIgnoreCase(functionSelect.getFn().resolveFieldName()) && ex.getImplClass().equals(functionSelect.getFn().getImplClass()));
-                }
-                else
-                {
-                    FixedContentSelect contentSelect = (FixedContentSelect) v;
-                    if (contentSelect.getClassName() == null)
-                    {
-                        return true;
-                    }
-                    else
-                    {
-                        return exclude.stream().noneMatch(ex -> ex.resolveFieldName().equalsIgnoreCase(contentSelect.getFieldName()) && ex.getImplClass().getName().equalsIgnoreCase(contentSelect.getClassName()));
-                    }
-                }
-            }).toList();
+            selects = selects.stream().filter(v -> exclude.stream().noneMatch(ex -> ex.resolveFieldName().equalsIgnoreCase(v.fieldName()) && ex.getImplClass().equals(v.implClass()))).toList();
         }
         String segment = selects.stream().map(select -> select.toSql()).collect(Collectors.joining(","));
         builder.append(segment).append(' ');
@@ -367,9 +337,9 @@ public class QueryModel implements Model
         return builder.toString();
     }
 
-    public String findColumnName(SFunction<?, ?> fn)
+    @Override
+    public String findColumnName(Class<?> implClass, String fieldName)
     {
-        Class implClass = fn.getImplClass();
         Table tableAs = from.stream()//
                             .filter(record -> {
                                 Class<?> tableClass = record.tableClass;
@@ -390,11 +360,11 @@ public class QueryModel implements Model
         TableEntityInfo tableEntityInfo = TableEntityInfo.parse(tableAs.tableClass);
         if (StringUtil.isBlank(tableAs.asName))
         {
-            return tableEntityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName();
+            return tableEntityInfo.getPropertyNameKeyMap().get(fieldName).columnName();
         }
         else
         {
-            return tableAs.asName + "." + tableEntityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName();
+            return tableAs.asName + "." + tableEntityInfo.getPropertyNameKeyMap().get(fieldName).columnName();
         }
     }
 
@@ -438,11 +408,11 @@ public class QueryModel implements Model
         }
     }
 
-    record OrderBy(SFunction<?, ?> fn, boolean desc)
+    record OrderBy(Class<?> implClass, String fieldName, boolean desc)
     {
         public String toString(QueryModel model)
         {
-            return model.findColumnName(fn) + (desc ? " desc" : " asc");
+            return model.findColumnName(implClass, fieldName) + (desc ? " desc" : " asc");
         }
     }
 
@@ -450,7 +420,7 @@ public class QueryModel implements Model
     {
         public String toString(QueryModel model)
         {
-            return model.findColumnName(fn);
+            return model.findColumnName(fn.getImplClass(),fn.resolveFieldName());
         }
     }
 }

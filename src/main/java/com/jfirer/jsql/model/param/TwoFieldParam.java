@@ -21,6 +21,6 @@ public class TwoFieldParam extends InternalParamImpl
     @Override
     public void renderSql(Model model, StringBuilder builder, List<Object> paramValues)
     {
-        builder.append(model.findColumnName(fn1)).append(operator).append(model.findColumnName(fn2));
+        builder.append(model.findColumnName(fn1.getImplClass(), fn1.resolveFieldName())).append(operator).append(model.findColumnName(fn2.getImplClass(), fn2.resolveFieldName()));
     }
 }

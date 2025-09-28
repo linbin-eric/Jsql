@@ -4,7 +4,6 @@ import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.InternalParam;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.Param;
-import com.jfirer.jsql.model.support.SFunction;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,9 +40,9 @@ public class DeleteModel implements Model
     }
 
     @Override
-    public String findColumnName(SFunction<?, ?> fn)
+    public String findColumnName(Class<?> ckass, String fieldName)
     {
-        return tableEntityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName();
+        return tableEntityInfo.getPropertyNameKeyMap().get(fieldName).columnName();
     }
 
     public DeleteModel where(Param param)

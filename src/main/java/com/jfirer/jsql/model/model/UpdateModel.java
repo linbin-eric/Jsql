@@ -29,7 +29,7 @@ public class UpdateModel implements Model
     public <T> UpdateModel set(SFunction<T, ?> fn, Object value)
     {
         TableEntityInfo.ColumnInfo columnInfo = tableEntityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName());
-        sets.add(new Set( columnInfo.columnName(), value, false));
+        sets.add(new Set(columnInfo.columnName(), value, false));
         return this;
     }
 
@@ -45,7 +45,7 @@ public class UpdateModel implements Model
         {
             TableEntityInfo.ColumnInfo columnInfo1 = tableEntityInfo.getPropertyNameKeyMap().get(fn1.resolveFieldName());
             TableEntityInfo.ColumnInfo columnInfo2 = tableEntityInfo.getPropertyNameKeyMap().get(fn2.resolveFieldName());
-            sets.add(new Set( columnInfo1.columnName(), columnInfo2.columnName(), true));
+            sets.add(new Set(columnInfo1.columnName(), columnInfo2.columnName(), true));
         }
         return this;
     }
@@ -90,9 +90,9 @@ public class UpdateModel implements Model
     }
 
     @Override
-    public String findColumnName(SFunction<?, ?> fn)
+    public String findColumnName(Class<?> ckass, String fieldName)
     {
-        return tableEntityInfo.getTableName() + "." + tableEntityInfo.getPropertyNameKeyMap().get(fn.resolveFieldName()).columnName();
+        return tableEntityInfo.getTableName() + "." + tableEntityInfo.getPropertyNameKeyMap().get(fieldName).columnName();
     }
 
     public UpdateModel where(Param param)

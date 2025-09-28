@@ -10,27 +10,27 @@ import java.util.List;
  * SQL模型接口，用于构建和执行各种类型的SQL语句。
  * Model接口提供了丰富的静态方法来创建不同类型的SQL操作模型，
  * 包括查询、插入、更新和删除等。
- * 
+ *
  * <p>Model接口的核心是其内部的{@link ModelResult}记录类，
  * 该类封装了生成的SQL语句和对应的参数值列表。</p>
- * 
+ *
  * <p>使用示例:</p>
  * <pre>
  * // 创建查询模型
  * QueryModel query = Model.select(User::getName, User::getAge)
  *                         .from(User.class)
  *                         .where(User::getId, 1);
- *                         
+ *
  * // 获取SQL结果
  * ModelResult result = query.getResult();
  * String sql = result.sql();
  * List&lt;Object&gt; params = result.paramValues();
- * 
+ *
  * // 执行查询
  * SqlSession session = sessionFactory.openSession();
  * List&lt;User&gt; users = session.findList(query);
  * </pre>
- * 
+ *
  * @see QueryModel
  * @see InsertModel
  * @see UpdateModel
@@ -68,7 +68,7 @@ public interface Model
     /**
      * 创建一个实体插入模型，用于插入指定的实体对象。
      *
-     * @param <T> 实体类型
+     * @param <T>    实体类型
      * @param entity 要插入的实体对象
      * @return 实体插入模型实例
      * @see InsertEntityModel
@@ -94,7 +94,7 @@ public interface Model
      * 创建一个实体更新模型，用于更新指定的实体对象。
      * 该方法会根据实体对象的主键值来定位要更新的记录。
      *
-     * @param <T> 实体类型
+     * @param <T>    实体类型
      * @param entity 要更新的实体对象
      * @return 实体更新模型实例
      * @see UpdateEntityModel
@@ -127,7 +127,7 @@ public interface Model
     /**
      * 创建一个批量插入模型，用于批量插入实体集合。
      *
-     * @param <T> 实体类型
+     * @param <T>      实体类型
      * @param entities 要批量插入的实体集合
      * @return 批量插入模型实例
      * @see BatchInsertModel
@@ -163,8 +163,8 @@ public interface Model
     /**
      * 创建一个带别名的查询模型，用于为查询的属性指定别名。
      *
-     * @param <T> 实体类型
-     * @param fn 要查询的属性函数
+     * @param <T>    实体类型
+     * @param fn     要查询的属性函数
      * @param asName 属性别名
      * @return 查询模型实例
      * @see QueryModel
@@ -178,10 +178,10 @@ public interface Model
      * 创建一个带函数的查询模型，用于在查询中使用SQL函数。
      * 例如：COUNT, SUM, MAX, MIN等。
      *
-     * @param <T> 实体类型
-     * @param fn 要应用函数的属性函数
+     * @param <T>      实体类型
+     * @param fn       要应用函数的属性函数
      * @param function SQL函数名
-     * @param asName 函数结果的别名
+     * @param asName   函数结果的别名
      * @return 查询模型实例
      * @see QueryModel
      */
@@ -194,8 +194,8 @@ public interface Model
      * 创建一个带函数的查询模型，不指定别名。
      * 该方法是{@link #selectWithFunction(SFunction, String, String)}的重载版本。
      *
-     * @param <T> 实体类型
-     * @param fn 要应用函数的属性函数
+     * @param <T>      实体类型
+     * @param fn       要应用函数的属性函数
      * @param function SQL函数名
      * @return 查询模型实例
      * @see QueryModel
@@ -209,7 +209,7 @@ public interface Model
      * 创建一个COUNT查询模型，用于统计指定属性的记录数。
      *
      * @param <T> 实体类型
-     * @param fn 要统计的属性函数
+     * @param fn  要统计的属性函数
      * @return 查询模型实例
      * @see QueryModel
      */
@@ -244,8 +244,8 @@ public interface Model
     /**
      * SQL模型结果记录类，封装了生成的SQL语句和对应的参数值列表。
      * 该记录类是不可变的，确保了线程安全性。
-     * 
-     * @param sql 生成的SQL语句
+     *
+     * @param sql         生成的SQL语句
      * @param paramValues SQL参数值列表
      */
     record ModelResult(String sql, List<Object> paramValues)
@@ -262,15 +262,15 @@ public interface Model
     ModelResult getResult();
 
     /**
-     * 根据属性函数查找对应的数据库列名。
+     * 根据实体类和属性名称查找对应的数据库列名。
      * 该方法在默认情况下会抛出UnsupportedOperationException异常，
      * 具体的模型实现类需要根据需要重写此方法。
      *
-     * @param fn 属性函数
-     * @return 数据库列名
-     * @throws UnsupportedOperationException 如果具体实现不支持此操作
+     * @param ckass
+     * @param fieldName
+     * @return
      */
-    default String findColumnName(SFunction<?, ?> fn)
+    default String findColumnName(Class<?> ckass, String fieldName)
     {
         throw new UnsupportedOperationException();
     }
