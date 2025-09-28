@@ -1,11 +1,10 @@
 package com.jfirer.jsql.model.model.query;
 
 import com.jfirer.jsql.model.Model;
-import com.jfirer.jsql.model.support.SFunction;
 import lombok.Data;
 
 @Data
-public class FunctionSelect implements Select
+public class TypeAndNameSelect implements Select
 {
     private Class<?> implClass;
     private String   fieldName;
@@ -13,7 +12,7 @@ public class FunctionSelect implements Select
     String asName;
     Model  model;
 
-    public FunctionSelect(Class<?> implClass,String fieldName, String function, String asName, Model model)
+    public TypeAndNameSelect(Class<?> implClass, String fieldName, String function, String asName, Model model)
     {
         this.implClass = implClass;
         this.fieldName = fieldName;

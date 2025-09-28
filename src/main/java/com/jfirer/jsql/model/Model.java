@@ -1,5 +1,6 @@
 package com.jfirer.jsql.model;
 
+import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.model.*;
 import com.jfirer.jsql.model.support.SFunction;
 
@@ -157,7 +158,10 @@ public interface Model
      */
     static QueryModel selectAll(Class<?> ckass)
     {
-        return new QueryModel().from(ckass);
+        QueryModel      queryModel = new QueryModel();
+        TableEntityInfo parse      = TableEntityInfo.parse(ckass);
+        parse.getPropertyNameKeyMap().values().stream().forEach(columnInfo -> queryModel.addSelect(columnInfo, ckass));
+        return queryModel;
     }
 
     /**

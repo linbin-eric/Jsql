@@ -8,7 +8,6 @@ public class FixedContentSelect implements Select
     final String content;
     Class<?> implClass;
     String   fieldName;
-    /*---*/
 
     public FixedContentSelect(String content)
     {

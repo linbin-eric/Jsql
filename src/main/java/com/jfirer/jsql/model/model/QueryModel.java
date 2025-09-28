@@ -8,7 +8,7 @@ import com.jfirer.jsql.model.InternalParam;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.Param;
 import com.jfirer.jsql.model.model.query.FixedContentSelect;
-import com.jfirer.jsql.model.model.query.FunctionSelect;
+import com.jfirer.jsql.model.model.query.TypeAndNameSelect;
 import com.jfirer.jsql.model.model.query.Select;
 import com.jfirer.jsql.model.support.LockMode;
 import com.jfirer.jsql.model.support.SFunction;
@@ -45,7 +45,12 @@ public class QueryModel implements Model
 
     private <T> void addSelect(SFunction<T, ?> fn, String function, String asName)
     {
-        selects.add(new FunctionSelect(fn.getImplClass(), fn.resolveFieldName(), function, asName, this));
+        selects.add(new TypeAndNameSelect(fn.getImplClass(), fn.resolveFieldName(), function, asName, this));
+    }
+
+    public void addSelect(TableEntityInfo.ColumnInfo columnInfo, Class<?> implClass)
+    {
+        selects.add(new TypeAndNameSelect(implClass, columnInfo.propertyName(), null, null, this));
     }
 
     public <T> QueryModel selectAs(SFunction<T, ?> fn, String asName)
@@ -93,7 +98,7 @@ public class QueryModel implements Model
 
     public QueryModel from(Class<?> ckass)
     {
-        fromAs(ckass, "");
+        fromAs(ckass, null);
         return this;
     }
 
@@ -204,11 +209,11 @@ public class QueryModel implements Model
             {
                 return from.get(0).tableClass;
             }
-            else if (select instanceof FunctionSelect functionSelect)
+            else if (select instanceof TypeAndNameSelect typeAndNameSelect)
             {
                 try
                 {
-                    return functionSelect.getImplClass().getDeclaredField(functionSelect.getFieldName()).getType();
+                    return typeAndNameSelect.getImplClass().getDeclaredField(typeAndNameSelect.getFieldName()).getType();
                 }
                 catch (NoSuchFieldException e)
                 {
@@ -275,7 +280,7 @@ public class QueryModel implements Model
                 TableEntityInfo entityInfo = TableEntityInfo.parse(table.tableClass);
                 for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
                 {
-                    selects.add(new FunctionSelect(table.tableClass, columnInfo.propertyName(), null, null, this));
+                    selects.add(new TypeAndNameSelect(table.tableClass, columnInfo.propertyName(), null, null, this));
                 }
             }
         }
@@ -420,7 +425,7 @@ public class QueryModel implements Model
     {
         public String toString(QueryModel model)
         {
-            return model.findColumnName(fn.getImplClass(),fn.resolveFieldName());
+            return model.findColumnName(fn.getImplClass(), fn.resolveFieldName());
         }
     }
 }
