@@ -21,11 +21,44 @@ public interface ColumnNameStrategy
         @Override
         public String toColumnName(String name)
         {
-            // 在字母后跟数字或大写字母前添加下划线
-            // 处理连续大写字母的情况
-            return name.replaceAll("([a-z])([A-Z0-9])", "$1_$2")
-                      .replaceAll("([A-Z])([A-Z])(?=[a-z])", "$1_$2")
-                      .toLowerCase();
+            // 处理连续的大写字母、字母数字混合等情况
+            StringBuilder result = new StringBuilder();
+            char[] chars = name.toCharArray();
+
+            for (int i = 0; i < chars.length; i++)
+            {
+                char current = chars[i];
+
+                if (i > 0)
+                {
+                    char previous = chars[i - 1];
+
+                    // 小写字母后跟大写字母
+                    if (Character.isLowerCase(previous) && Character.isUpperCase(current))
+                    {
+                        result.append('_');
+                    }
+                    // 连续大写字母
+                    else if (Character.isUpperCase(previous) && Character.isUpperCase(current))
+                    {
+                        result.append('_');
+                    }
+                    // 字母后面有数字
+                    else if (Character.isLetter(previous) && Character.isDigit(current))
+                    {
+                        result.append('_');
+                    }
+                    // 数字后面是字母
+                    else if (Character.isDigit(previous) && Character.isLetter(current))
+                    {
+                        result.append('_');
+                    }
+                }
+
+                result.append(Character.toLowerCase(current));
+            }
+
+            return result.toString();
         }
     }
 

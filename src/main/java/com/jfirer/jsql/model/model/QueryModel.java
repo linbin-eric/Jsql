@@ -7,6 +7,9 @@ import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.InternalParam;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.Param;
+import com.jfirer.jsql.model.model.query.FixedContentSelect;
+import com.jfirer.jsql.model.model.query.FunctionSelect;
+import com.jfirer.jsql.model.model.query.Select;
 import com.jfirer.jsql.model.support.LockMode;
 import com.jfirer.jsql.model.support.SFunction;
 import lombok.Getter;
@@ -19,7 +22,7 @@ import java.util.stream.Collectors;
 
 public class QueryModel implements Model
 {
-    private         List<Select>          select      = new LinkedList<>();
+    private         List<Select>          selects     = new LinkedList<>();
     private         List<SFunction<?, ?>> exclude     = new LinkedList<>();
     private         List<Table>           from        = new LinkedList<>();
     private         List<OrderBy>         orderBy     = new LinkedList<>();
@@ -42,7 +45,7 @@ public class QueryModel implements Model
 
     private <T> void addSelect(SFunction<T, ?> fn, String function, String asName)
     {
-        select.add(new Select(fn, function, asName, this));
+        selects.add(new FunctionSelect(fn, function, asName, this));
     }
 
     public <T> QueryModel selectAs(SFunction<T, ?> fn, String asName)
@@ -65,7 +68,7 @@ public class QueryModel implements Model
 
     public QueryModel selectCount()
     {
-        select.add(new Select("count(*)"));
+        selects.add(new FixedContentSelect("count(*)"));
         returnType = Integer.class;
         return this;
     }
@@ -191,27 +194,32 @@ public class QueryModel implements Model
         {
             return returnType;
         }
-        else if (select.size() > 1)
+        else if (selects.size() > 1)
         {
             return from.get(0).tableClass;
         }
         else
         {
-            SFunction<?, ?> fn = this.select.get(0).fn;
-            if (fn == null)
+            Select select = this.selects.get(0);
+            if (select instanceof FixedContentSelect)
             {
                 return from.get(0).tableClass;
             }
-            else
+            else if (select instanceof FunctionSelect functionSelect)
             {
                 try
                 {
+                    SFunction<?, ?> fn = functionSelect.getFn();
                     return fn.getImplClass().getDeclaredField(fn.resolveFieldName()).getType();
                 }
                 catch (NoSuchFieldException e)
                 {
                     throw new RuntimeException(e);
                 }
+            }
+            else
+            {
+                throw new IllegalArgumentException();
             }
         }
     }
@@ -258,7 +266,7 @@ public class QueryModel implements Model
     {
         StringBuilder builder = new StringBuilder();
         builder.append("select ");
-        if (select.isEmpty())
+        if (selects.isEmpty())
         {
             if (from.isEmpty())
             {
@@ -271,14 +279,14 @@ public class QueryModel implements Model
                 {
                     for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
                     {
-                        select.add(new Select(columnInfo.columnName(), table.tableClass.getName(), columnInfo.propertyName()));
+                        selects.add(new FixedContentSelect(columnInfo.columnName(), table.tableClass.getName(), columnInfo.propertyName()));
                     }
                 }
                 else
                 {
                     for (TableEntityInfo.ColumnInfo columnInfo : entityInfo.getPropertyNameKeyMap().values())
                     {
-                        select.add(new Select(table.asName + "." + columnInfo.columnName(), table.tableClass.getName(), columnInfo.propertyName()));
+                        selects.add(new FixedContentSelect(table.asName + "." + columnInfo.columnName(), table.tableClass.getName(), columnInfo.propertyName()));
                     }
                 }
             }
@@ -287,7 +295,10 @@ public class QueryModel implements Model
         {
             if (from.isEmpty())
             {
-                Set<? extends Class<?>> collect = select.stream().filter(s -> s.fn != null).map(s -> s.fn.getImplClass()).collect(Collectors.toSet());
+                Set<? extends Class<?>> collect = selects.stream()//
+                                                         .filter(s -> s instanceof FunctionSelect)//
+                                                         .filter(s -> ((FunctionSelect) s).getFn() != null)//
+                                                         .map(s -> ((FunctionSelect) s).getFn().getImplClass()).collect(Collectors.toSet());
                 if (collect.size() > 1)
                 {
                     throw new IllegalArgumentException("使用Select添加了1张以上的表，需要显式的使用from方法添加表");
@@ -300,22 +311,26 @@ public class QueryModel implements Model
         }
         if (exclude.isEmpty() == false)
         {
-            select = select.stream().filter(v -> {
-                if (v.content == null)
+            selects = selects.stream().filter(v -> {
+                if (v instanceof FunctionSelect functionSelect)
                 {
-                    return exclude.stream().noneMatch(ex -> ex.resolveFieldName().equalsIgnoreCase(v.fn.resolveFieldName()) && ex.getImplClass().equals(v.fn.getImplClass()));
-                }
-                else if (v.className == null)
-                {
-                    return true;
+                    return exclude.stream().noneMatch(ex -> ex.resolveFieldName().equalsIgnoreCase(functionSelect.getFn().resolveFieldName()) && ex.getImplClass().equals(functionSelect.getFn().getImplClass()));
                 }
                 else
                 {
-                    return exclude.stream().noneMatch(ex -> ex.resolveFieldName().equalsIgnoreCase(v.fieldName) && ex.getImplClass().getName().equalsIgnoreCase(v.className));
+                    FixedContentSelect contentSelect = (FixedContentSelect) v;
+                    if (contentSelect.getClassName() == null)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return exclude.stream().noneMatch(ex -> ex.resolveFieldName().equalsIgnoreCase(contentSelect.getFieldName()) && ex.getImplClass().getName().equalsIgnoreCase(contentSelect.getClassName()));
+                    }
                 }
             }).toList();
         }
-        String segment = select.stream().map(select -> select.toString()).collect(Collectors.joining(","));
+        String segment = selects.stream().map(select -> select.toSql()).collect(Collectors.joining(","));
         builder.append(segment).append(' ');
         from.forEach(table -> table.append(builder));
         if (where != null)
@@ -419,67 +434,6 @@ public class QueryModel implements Model
             {
                 builder.append("on ");
                 ((InternalParam) on).renderSql(QueryModel.this, builder, paramValues);
-            }
-        }
-    }
-
-    class Select
-    {
-        /*模式1：直接设定select字段的内容*/
-        final String content;
-        String className;
-        String fieldName;
-        /*---*/
-        /*模式2：通过fn来解析出select字段的内容*/ SFunction<?, ?> fn;
-        String function;
-        String asName;
-        Model  model;
-        /*---*/
-
-        public Select(SFunction<?, ?> fn, String function, String asName, Model model)
-        {
-            this.fn       = fn;
-            this.function = function;
-            this.asName   = asName;
-            this.model    = model;
-            this.content  = null;
-        }
-
-        public Select(String content)
-        {
-            this.content = content;
-        }
-
-        public Select(String content, String className, String fieldName)
-        {
-            this.content   = content;
-            this.className = className;
-            this.fieldName = fieldName;
-        }
-
-        @Override
-        public String toString()
-        {
-            if (content == null)
-            {
-                String result;
-                if (function == null)
-                {
-                    result = model.findColumnName(fn);
-                }
-                else
-                {
-                    result = function + "(" + model.findColumnName(fn) + ")";
-                }
-                if (asName != null)
-                {
-                    result += " as " + asName;
-                }
-                return result;
-            }
-            else
-            {
-                return content;
             }
         }
     }
