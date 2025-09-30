@@ -267,4 +267,261 @@ public class ModelTest
                                                    .returnType(UserDTO.class));
         assertEquals("A", list.get(0).getName2());
     }
+
+    /**
+     * 测试带boolean参数的条件方法 - eq
+     */
+    @Test
+    public void test_conditionalEq()
+    {
+        SqlSession session = sessionFactory.openSession();
+        User user = new User();
+        user.setName("testUser");
+        user.setAge(25);
+        session.save(user);
+
+        // condition为true时应该添加条件
+        User result = session.findOne(Model.selectAll(User.class).where(Param.eq(true, User::getName, "testUser")));
+        assertNotNull(result);
+        assertEquals("testUser", result.getName());
+
+        // condition为false时不应该添加条件，查询所有记录
+        result = session.findOne(Model.selectAll(User.class).where(Param.eq(false, User::getName, "nonExistent")));
+        assertNotNull(result); // 因为false时条件被忽略，应该能查到记录
+    }
+
+    /**
+     * 测试带boolean参数的条件方法 - notNull和isNull
+     */
+    @Test
+    public void test_conditionalNull()
+    {
+        SqlSession session = sessionFactory.openSession();
+        User user = new User();
+        user.setName("testUser");
+        user.setAge(25);
+        session.save(user);
+
+        // condition为true时应该添加notNull条件
+        User result = session.findOne(Model.selectAll(User.class).where(Param.notNull(true, User::getName)));
+        assertNotNull(result);
+
+        // condition为false时不添加条件
+        result = session.findOne(Model.selectAll(User.class).where(Param.notNull(false, User::getName)));
+        assertNotNull(result);
+    }
+
+    /**
+     * 测试带boolean参数的比较运算符 - bt, lt, be, le
+     */
+    @Test
+    public void test_conditionalComparison()
+    {
+        SqlSession session = sessionFactory.openSession();
+        User user1 = new User();
+        user1.setName("user1");
+        user1.setAge(20);
+        session.save(user1);
+
+        User user2 = new User();
+        user2.setName("user2");
+        user2.setAge(30);
+        session.save(user2);
+
+        // condition为true时应该添加大于条件
+        List<User> result = session.findList(Model.selectAll(User.class).where(Param.bt(true, User::getAge, 25)));
+        assertEquals(1, result.size());
+        assertEquals("user2", result.get(0).getName());
+
+        // condition为false时不添加条件，应该查到所有记录
+        result = session.findList(Model.selectAll(User.class).where(Param.bt(false, User::getAge, 100)));
+        assertEquals(2, result.size());
+
+        // 测试小于等于
+        result = session.findList(Model.selectAll(User.class).where(Param.le(true, User::getAge, 20)));
+        assertEquals(1, result.size());
+        assertEquals("user1", result.get(0).getName());
+    }
+
+    /**
+     * 测试带boolean参数的between方法
+     */
+    @Test
+    public void test_conditionalBetween()
+    {
+        SqlSession session = sessionFactory.openSession();
+        User user1 = new User();
+        user1.setName("user1");
+        user1.setAge(20);
+        session.save(user1);
+
+        User user2 = new User();
+        user2.setName("user2");
+        user2.setAge(30);
+        session.save(user2);
+
+        User user3 = new User();
+        user3.setName("user3");
+        user3.setAge(40);
+        session.save(user3);
+
+        // condition为true时应该添加between条件
+        List<User> result = session.findList(Model.selectAll(User.class).where(Param.between(true, User::getAge, 25, 35)));
+        assertEquals(1, result.size());
+        assertEquals("user2", result.get(0).getName());
+
+        // condition为false时不添加条件
+        result = session.findList(Model.selectAll(User.class).where(Param.between(false, User::getAge, 1, 10)));
+        assertEquals(3, result.size());
+    }
+
+    /**
+     * 测试带boolean参数的字符串模式匹配 - startWith, endWith, contain, like
+     */
+    @Test
+    public void test_conditionalStringPattern()
+    {
+        SqlSession session = sessionFactory.openSession();
+        User user1 = new User();
+        user1.setName("testUser");
+        user1.setAge(20);
+        session.save(user1);
+
+        User user2 = new User();
+        user2.setName("anotherUser");
+        user2.setAge(30);
+        session.save(user2);
+
+        // condition为true时应该添加startWith条件
+        List<User> result = session.findList(Model.selectAll(User.class).where(Param.startWith(true, User::getName, "test")));
+        assertEquals(1, result.size());
+        assertEquals("testUser", result.get(0).getName());
+
+        // condition为false时不添加条件
+        result = session.findList(Model.selectAll(User.class).where(Param.startWith(false, User::getName, "xyz")));
+        assertEquals(2, result.size());
+
+        // 测试contain
+        result = session.findList(Model.selectAll(User.class).where(Param.contain(true, User::getName, "User")));
+        assertEquals(2, result.size());
+
+        // 测试endWith
+        result = session.findList(Model.selectAll(User.class).where(Param.endWith(true, User::getName, "User")));
+        assertEquals(2, result.size());
+    }
+
+    /**
+     * 测试带boolean参数的in方法
+     */
+    @Test
+    public void test_conditionalIn()
+    {
+        SqlSession session = sessionFactory.openSession();
+        User user1 = new User();
+        user1.setName("user1");
+        user1.setAge(20);
+        session.save(user1);
+
+        User user2 = new User();
+        user2.setName("user2");
+        user2.setAge(30);
+        session.save(user2);
+
+        User user3 = new User();
+        user3.setName("user3");
+        user3.setAge(40);
+        session.save(user3);
+
+        // condition为true时应该添加in条件
+        List<User> result = session.findList(Model.selectAll(User.class).where(Param.in(true, User::getAge, 20, 30)));
+        assertEquals(2, result.size());
+
+        // condition为false时不添加条件
+        result = session.findList(Model.selectAll(User.class).where(Param.in(false, User::getAge, 999)));
+        assertEquals(3, result.size());
+
+        // 测试String类型的in
+        result = session.findList(Model.selectAll(User.class).where(Param.in(true, User::getName, "user1", "user3")));
+        assertEquals(2, result.size());
+    }
+
+    /**
+     * 测试带boolean参数的notIn方法
+     */
+    @Test
+    public void test_conditionalNotIn()
+    {
+        SqlSession session = sessionFactory.openSession();
+        User user1 = new User();
+        user1.setName("user1");
+        user1.setAge(20);
+        session.save(user1);
+
+        User user2 = new User();
+        user2.setName("user2");
+        user2.setAge(30);
+        session.save(user2);
+
+        User user3 = new User();
+        user3.setName("user3");
+        user3.setAge(40);
+        session.save(user3);
+
+        // condition为true时应该添加notIn条件
+        List<User> result = session.findList(Model.selectAll(User.class).where(Param.notIn(true, User::getAge, 20, 30)));
+        assertEquals(1, result.size());
+        assertEquals("user3", result.get(0).getName());
+
+        // condition为false时不添加条件
+        result = session.findList(Model.selectAll(User.class).where(Param.notIn(false, User::getAge, 20, 30, 40)));
+        assertEquals(3, result.size());
+    }
+
+    /**
+     * 测试组合多个带boolean参数的条件
+     */
+    @Test
+    public void test_conditionalCombination()
+    {
+        SqlSession session = sessionFactory.openSession();
+        User user1 = new User();
+        user1.setName("alice");
+        user1.setAge(20);
+        session.save(user1);
+
+        User user2 = new User();
+        user2.setName("bob");
+        user2.setAge(30);
+        session.save(user2);
+
+        User user3 = new User();
+        user3.setName("charlie");
+        user3.setAge(40);
+        session.save(user3);
+
+        boolean includeAgeFilter = true;
+        boolean includeNameFilter = false;
+
+        // 只有年龄条件生效
+        List<User> result = session.findList(Model.selectAll(User.class)
+                .where(Param.bt(includeAgeFilter, User::getAge, 25)
+                        .and(Param.startWith(includeNameFilter, User::getName, "x"))));
+        assertEquals(2, result.size()); // bob和charlie的年龄都大于25
+
+        // 两个条件都生效
+        includeNameFilter = true;
+        result = session.findList(Model.selectAll(User.class)
+                .where(Param.bt(includeAgeFilter, User::getAge, 25)
+                        .and(Param.startWith(includeNameFilter, User::getName, "c"))));
+        assertEquals(1, result.size());
+        assertEquals("charlie", result.get(0).getName());
+
+        // 两个条件都不生效
+        includeAgeFilter = false;
+        includeNameFilter = false;
+        result = session.findList(Model.selectAll(User.class)
+                .where(Param.bt(includeAgeFilter, User::getAge, 100)
+                        .and(Param.startWith(includeNameFilter, User::getName, "xyz"))));
+        assertEquals(3, result.size()); // 没有任何过滤条件，返回所有记录
+    }
 }
