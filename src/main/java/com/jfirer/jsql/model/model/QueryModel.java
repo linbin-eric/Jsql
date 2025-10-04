@@ -10,6 +10,7 @@ import com.jfirer.jsql.model.Param;
 import com.jfirer.jsql.model.model.query.FixedContentSelect;
 import com.jfirer.jsql.model.model.query.TypeAndNameSelect;
 import com.jfirer.jsql.model.model.query.Select;
+import com.jfirer.jsql.model.param.NoOpParam;
 import com.jfirer.jsql.model.support.LockMode;
 import com.jfirer.jsql.model.support.SFunction;
 import lombok.Getter;
@@ -308,7 +309,7 @@ public class QueryModel implements Model
         String segment = selects.stream().map(select -> select.toSql()).collect(Collectors.joining(","));
         builder.append(segment).append(' ');
         from.forEach(table -> table.append(builder));
-        if (where != null)
+        if (where != null && where != NoOpParam.INSTANCE)
         {
             builder.append(" where ");
             ((InternalParam) where).renderSql(this, builder, paramValues);

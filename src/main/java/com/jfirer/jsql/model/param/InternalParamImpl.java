@@ -86,13 +86,27 @@ public abstract class InternalParamImpl implements InternalParam
     @Override
     public Param and(Param param)
     {
-        return new AndParam(this, (InternalParam) param);
+        if (param == NoOpParam.INSTANCE)
+        {
+            return this;
+        }
+        else
+        {
+            return new AndParam(this, (InternalParam) param);
+        }
     }
 
     @Override
     public Param or(Param param)
     {
-        return new OrParam(this, (InternalParam) param);
+        if (param == NoOpParam.INSTANCE)
+        {
+            return this;
+        }
+        else
+        {
+            return new OrParam(this, (InternalParam) param);
+        }
     }
 
     @Override
@@ -104,7 +118,7 @@ public abstract class InternalParamImpl implements InternalParam
     @Override
     public void renderSql(Model model, StringBuilder builder, List<Object> paramValues)
     {
-        consumer.accept(model.findColumnName(implClass,fieldName), builder, paramValues);
+        consumer.accept(model.findColumnName(implClass, fieldName), builder, paramValues);
     }
 
     @FunctionalInterface

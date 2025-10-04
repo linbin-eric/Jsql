@@ -4,6 +4,7 @@ import com.jfirer.jsql.metadata.TableEntityInfo;
 import com.jfirer.jsql.model.InternalParam;
 import com.jfirer.jsql.model.Model;
 import com.jfirer.jsql.model.Param;
+import com.jfirer.jsql.model.param.NoOpParam;
 import com.jfirer.jsql.model.support.SFunction;
 
 import java.util.ArrayList;
@@ -72,7 +73,7 @@ public class UpdateModel implements Model
             }
         }
         builder.setLength(builder.length() - 1);
-        if (where != null)
+        if (where != null && where != NoOpParam.INSTANCE)
         {
             builder.append(" where ");
             ((InternalParam) where).renderSql(this, builder, paramValues);
