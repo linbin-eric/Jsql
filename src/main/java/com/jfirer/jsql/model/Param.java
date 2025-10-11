@@ -548,4 +548,21 @@ public interface Param
             return NoOpParam.INSTANCE;
         }
     }
+
+    static <T> Param bitwiseAndByEquals(SFunction<T, ?> fn, int bitwise, int value)
+    {
+        return new BitwiseParam(fn, bitwise, "&", value, "=");
+    }
+
+    static <T> Param bitwiseAndByEquals(boolean condition, SFunction<T, ?> fn, int bitwise, int value)
+    {
+        if (condition)
+        {
+            return new BitwiseParam(fn, bitwise, "&", value, "=");
+        }
+        else
+        {
+            return NoOpParam.INSTANCE;
+        }
+    }
 }

@@ -32,7 +32,7 @@ public class ModelTest
     {
         SessionFactoryConfig config     = new SessionFactoryConfig();
         HikariDataSource     dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl("jdbc:h2:mem:orderdb");
+        dataSource.setJdbcUrl("jdbc:h2:mem:orderdb;mode=mysql");
         dataSource.setDriverClassName(Driver.class.getName());
         dataSource.setUsername("sa");
         dataSource.setPassword("");
@@ -523,5 +523,16 @@ public class ModelTest
                 .where(Param.bt(includeAgeFilter, User::getAge, 100)
                         .and(Param.startWith(includeNameFilter, User::getName, "xyz"))));
         assertEquals(3, result.size()); // 没有任何过滤条件，返回所有记录
+    }
+
+    @Test
+    public void testBitwise(){
+        SqlSession session = sessionFactory.openSession();
+        User       user    = new User();
+        user.setName("1221");
+        user.setAge(12);
+        session.save(user);
+        User one = session.findOne(Model.select(User::getId).where(Param.bitwiseAndByEquals(User::getAge, 4, 4)));
+        assertEquals(one.getId(), user.getId());
     }
 }
