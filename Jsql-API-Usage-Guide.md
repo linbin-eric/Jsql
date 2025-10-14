@@ -137,6 +137,83 @@ QueryModel<User> query = Model.selectAll(User.class)
     .where(Param.between(User::getAge, 25, 65));
 ```
 
+#### 动态条件查询（带条件参数）
+
+Param接口的所有静态方法都提供了两个版本：基础版本和带boolean条件参数的版本。当条件参数为false时，该条件不会被添加到查询中，这样可以极大地简化动态查询的构建。
+
+```java
+// 传统方式：使用if-else判断（不推荐）
+Param param = null;
+if (name != null) {
+    param = Param.eq(User::getName, name);
+}
+if (age != null) {
+    if (param == null) {
+        param = Param.bt(User::getAge, age);
+    } else {
+        param = param.and(Param.bt(User::getAge, age));
+    }
+}
+QueryModel<User> query = Model.selectAll(User.class)
+    .from(User.class)
+    .where(param);
+
+// 推荐方式：使用条件参数简化动态查询
+QueryModel<User> query = Model.selectAll(User.class)
+    .from(User.class)
+    .where(Param.eq(name != null, User::getName, name)
+           .and(Param.bt(age != null, User::getAge, age)));
+
+// 更多动态查询示例
+// 根据不同的搜索条件动态构建查询
+String keyword = getUserInput();
+String status = getStatusFilter();
+Integer minAge = getMinAgeFilter();
+Integer maxAge = getMaxAgeFilter();
+
+QueryModel<User> query = Model.selectAll(User.class)
+    .from(User.class)
+    .where(Param.contain(keyword != null && !keyword.isEmpty(), User::getName, keyword)
+           .and(Param.eq(status != null, User::getStatus, status))
+           .and(Param.be(minAge != null, User::getAge, minAge))
+           .and(Param.le(maxAge != null, User::getAge, maxAge)));
+
+// 动态IN查询
+List<String> departments = getSelectedDepartments();
+QueryModel<User> query = Model.selectAll(User.class)
+    .from(User.class)
+    .where(Param.in(departments != null && !departments.isEmpty(),
+                    User::getDepartment, departments));
+```
+
+所有的Param方法都支持条件参数：
+
+- **比较运算**: `eq`, `notEq`, `bt`, `lt`, `be`, `le` - 支持字段与值比较，以及字段间比较
+- **空值判断**: `isNull`, `notNull`
+- **范围查询**: `between`
+- **字符串匹配**: `startWith`, `endWith`, `contain`, `like`, `notStartWith`, `notEndWith`, `notContain`
+- **IN查询**: `in`, `notIn` - 支持int、long、float、double、String数组和Collection
+- **位运算**: `bitwiseAndByEquals` - 用于位标志判断
+
+```java
+// 位运算示例：检查用户权限标志
+// 假设权限标志位定义：READ = 0x01, WRITE = 0x02, DELETE = 0x04
+int READ_PERMISSION = 0x01;
+int WRITE_PERMISSION = 0x02;
+
+// 查询具有读权限的用户
+QueryModel<User> query = Model.selectAll(User.class)
+    .from(User.class)
+    .where(Param.bitwiseAndByEquals(User::getPermissions, READ_PERMISSION, READ_PERMISSION));
+
+// 动态检查权限
+boolean checkWrite = needsWritePermission();
+QueryModel<User> query = Model.selectAll(User.class)
+    .from(User.class)
+    .where(Param.bitwiseAndByEquals(checkWrite, User::getPermissions,
+                                    WRITE_PERMISSION, WRITE_PERMISSION));
+```
+
 #### 关联查询
 
 ```java
@@ -288,6 +365,17 @@ page.setPageSize(10);
 List<User> pagedUsers = userMapper.findList(Param.eq(User::getStatus, "ACTIVE"), page);
 
 long count = userMapper.count(Param.eq(User::getStatus, "ACTIVE"));
+
+// 使用条件参数实现动态查询
+String name = getSearchName();      // 可能为null
+String status = getStatusFilter();  // 可能为null
+Integer minAge = getMinAge();       // 可能为null
+
+List<User> results = userMapper.findList(
+    Param.contain(name != null && !name.isEmpty(), User::getName, name)
+         .and(Param.eq(status != null, User::getStatus, status))
+         .and(Param.be(minAge != null, User::getAge, minAge))
+);
 ```
 
 ### 3.3 获取和使用Mapper
