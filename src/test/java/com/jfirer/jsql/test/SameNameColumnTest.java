@@ -75,9 +75,9 @@ public class SameNameColumnTest
         {
             UserVo vo = session.findOne(Model.selectAll().addSelect(SeUser::getId, SeUser::getName)//
                                              .addSelect(User1::getId, User1::getName, User1::getEmail)//
-                                             .fromAs(SeUser.class, "seU").leftJoin(User1.class, "u1")//
+                                             .from(SeUser.class, "seU").leftJoin(User1.class, "u1")//
                                              .on(Param.eq(SeUser::getTargetId, User1::getTargetId))//
-                                                .where(Param.eq(User1::getTargetId, 1))//
+                                             .where(Param.eq(User1::getTargetId, 1))//
                                              .returnType(UserVo.class));
             log.debug("内容:{}", vo);
         }

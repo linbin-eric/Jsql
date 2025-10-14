@@ -88,7 +88,7 @@ public class QueryModel implements Model
         return this;
     }
 
-    public QueryModel fromAs(Class<?> ckass, String asName)
+    public QueryModel from(Class<?> ckass, String asName)
     {
         if (from.stream().noneMatch(table -> table.tableClass.equals(ckass) && table.asName.equalsIgnoreCase(asName)))
         {
@@ -99,7 +99,7 @@ public class QueryModel implements Model
 
     public QueryModel from(Class<?> ckass)
     {
-        fromAs(ckass, null);
+        from(ckass, null);
         return this;
     }
 

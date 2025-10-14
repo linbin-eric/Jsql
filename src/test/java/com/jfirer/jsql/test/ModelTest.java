@@ -173,7 +173,7 @@ public class ModelTest
         user3.setId("2");
         user3.setAge(20);
         session.insert(user3);
-        int count = session.count(Model.selectCount(User3::getName).fromAs(User3.class, "user2").innerJoin(User2.class, "user").on(Param.eq(User3::getAge, User2::getAge)));
+        int count = session.count(Model.selectCount(User3::getName).from(User3.class, "user2").innerJoin(User2.class, "user").on(Param.eq(User3::getAge, User2::getAge)));
         Assert.assertEquals(1, count);
     }
 
@@ -262,7 +262,7 @@ public class ModelTest
         user3.setName("B");
         user3.setAge(14);
         session.save(user3);
-        List<UserDTO> list = session.findList(Model.selectAlias(User2::getName,"name2").fromAs(User2.class, "u").leftJoin(User3.class, "user3").on(Param.eq(User2::getAge, User3::getAge))//
+        List<UserDTO> list = session.findList(Model.selectAlias(User2::getName,"name2").from(User2.class, "u").leftJoin(User3.class, "user3").on(Param.eq(User2::getAge, User3::getAge))//
                                                    .where(Param.eq(User2::getId, 1))//
                                                    .returnType(UserDTO.class));
         assertEquals("A", list.get(0).getName2());
