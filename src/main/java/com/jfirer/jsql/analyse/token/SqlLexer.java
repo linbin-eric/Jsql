@@ -16,6 +16,39 @@ public class SqlLexer
     private static final int VARIABLE  = 3;
     private static final int EXECUTION = 4;
 
+    /**
+     * 解析SQL语句，将其中的实体类名和属性名转换为对应的数据库表名和列名。
+     * <p>
+     * 该方法支持以下几种名称转换场景：
+     * <ul>
+     *   <li>实体类简单名称 → 表名（如：User → user_table）</li>
+     *   <li>属性名称 → 列名（如：userName → user_name）</li>
+     *   <li>别名.属性名 → 别名.列名（如：u.userName → u.user_name）</li>
+     *   <li>类名.属性名 → 表名.列名（如：User.userName → user_table.user_name）</li>
+     *   <li>函数中的属性引用（如：concat(user.name,'ss') → concat(u.name_col,'ss')）</li>
+     * </ul>
+     * <p>
+     * 解析过程会自动跳过以下特殊语法块，不对其内容进行转换：
+     * <ul>
+     *   <li>${...} - 参数占位符</li>
+     *   <li>#{...} - 变量占位符</li>
+     *   <li>&lt;% %&gt; - 执行块</li>
+     * </ul>
+     * <p>
+     * 处理流程：
+     * <ol>
+     *   <li>将SQL分割为多个Segment片段，区分普通文本和特殊语法块</li>
+     *   <li>识别SQL中实际使用的实体类</li>
+     *   <li>解析表别名映射关系（如：User as u 或 User u）</li>
+     *   <li>将实体类名替换为数据库表名</li>
+     *   <li>将"别名.属性名"或"类名.属性名"格式替换为对应的列名</li>
+     *   <li>将独立的属性名替换为列名</li>
+     * </ol>
+     *
+     * @param sql      原始SQL语句，可包含实体类名和属性名
+     * @param entities 可能在SQL中使用的实体类数组，用于提供名称映射信息
+     * @return 转换后的SQL语句，其中实体类名和属性名已替换为数据库表名和列名
+     */
     public static String parse(String sql, Class<?>... entities)
     {
         List<Segment> list         = parseSegments(sql);
