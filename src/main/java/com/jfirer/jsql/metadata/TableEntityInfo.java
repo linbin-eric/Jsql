@@ -8,6 +8,9 @@ import lombok.Data;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -88,7 +91,7 @@ public class TableEntityInfo
                     }
                     else if (field.isAnnotationPresent(AutoIncrement.class) || field.isAnnotationPresent(Sequence.class))
                     {
-                        pkReturnType = detectPkValueType(field);
+                        pkReturnType = detectPkValueType(field, ckass);
                     }
                     else
                     {
@@ -144,14 +147,83 @@ public class TableEntityInfo
         return store.computeIfAbsent(entityClass, TableEntityInfo::new);
     }
 
-    private PkReturnType detectPkValueType(Field pkField)
+    private PkReturnType detectPkValueType(Field pkField, Class<?> origin)
     {
-        return switch (ReflectUtil.getClassId(pkField.getType()))
+        Class<?> pkType = pkField.getType();
+        // 如果pkField的类型是泛型参数，需要通过origin来解析实际类型
+        Type genericType = pkField.getGenericType();
+        if (genericType instanceof TypeVariable<?> typeVariable)
+        {
+            pkType = resolveTypeVariable(typeVariable, origin);
+        }
+        return switch (ReflectUtil.getClassId(pkType))
         {
             case ReflectUtil.CLASS_STRING -> PkReturnType.STRING;
             case ReflectUtil.CLASS_INT -> PkReturnType.INT;
             case ReflectUtil.CLASS_LONG -> PkReturnType.LONG;
             default -> throw new IllegalArgumentException("不支持非String，Integer，Long以外类型的主键,请检查:" + pkField.getDeclaringClass().getName() + "." + pkField.getName());
         };
+    }
+
+    /**
+     * 解析泛型类型变量的实际类型
+     * 通过origin类的继承链向上查找，找到定义该泛型参数的类，并获取实际类型
+     */
+    private Class<?> resolveTypeVariable(TypeVariable<?> typeVariable, Class<?> origin)
+    {
+        // 获取泛型参数定义所在的类
+        Class<?> declaringClass = (Class<?>) typeVariable.getGenericDeclaration();
+        String typeParamName = typeVariable.getName();
+        // 从origin开始向上查找继承链
+        Class<?> currentClass = origin;
+        while (currentClass != null && currentClass != Object.class)
+        {
+            Type genericSuperclass = currentClass.getGenericSuperclass();
+            if (genericSuperclass instanceof ParameterizedType parameterizedType)
+            {
+                // 检查是否是我们要找的那个泛型父类
+                if (parameterizedType.getRawType() == declaringClass)
+                {
+                    // 找到泛型参数在父类定义中的位置
+                    TypeVariable<?>[] typeParameters = declaringClass.getTypeParameters();
+                    for (int i = 0; i < typeParameters.length; i++)
+                    {
+                        if (typeParameters[i].getName().equals(typeParamName))
+                        {
+                            Type actualType = parameterizedType.getActualTypeArguments()[i];
+                            if (actualType instanceof Class<?>)
+                            {
+                                return (Class<?>) actualType;
+                            }
+                            else if (actualType instanceof TypeVariable<?> nestedTypeVar)
+                            {
+                                // 如果实际类型还是泛型变量，继续递归解析
+                                return resolveTypeVariable(nestedTypeVar, origin);
+                            }
+                        }
+                    }
+                }
+            }
+            currentClass = currentClass.getSuperclass();
+        }
+        throw new IllegalArgumentException("无法解析泛型类型: " + typeVariable.getName() + "，请检查类: " + origin.getName());
+    }
+
+    @Data
+    public static  class BaseEntity<T>{
+        @Pk
+        @AutoIncrement
+        private T id;
+
+    }
+
+    public static class  User extends  BaseEntity<Long>{
+
+    }
+
+    public static void main(String[] args)
+    {
+        TableEntityInfo tableEntityInfo = new TableEntityInfo(User.class);
+        System.out.println(tableEntityInfo.getPkInfo().columnName);
     }
 }
