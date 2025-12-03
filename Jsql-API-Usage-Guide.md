@@ -532,7 +532,7 @@ List<User> findByStringEnum(User.StringEnum enum);
 
 ```java
 // 引用类的静态常量
-@Sql(sql = "SELECT * FROM users WHERE name = ${@(com.jfirer.jsql.test.vo.User).customName}",
+@Sql(sql = "SELECT * FROM users WHERE name = ${@(vo.test.cc.jfire.jsql.User).customName}",
      paramNames = "")
 User findByStaticConstant();
 ```

@@ -4,8 +4,8 @@
         xmlns="http://maven.apache.org/POM/4.0.0"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
-    <groupId>com.jfirer</groupId>
-    <version>1.3.2-SNAPSHOT</version>
+    <groupId>cc.jfire</groupId>
+    <version>1.0</version>
     <artifactId>Jsql</artifactId>
     <name>Jsql</name>
     <properties>
@@ -24,21 +24,19 @@
         </license>
     </licenses>
     <scm>
-        <connection>scm:git:http://git.oschina.net/eric_ds</connection>
-        <developerConnection>scm:git:http://git.oschina.net/eric_ds</developerConnection>
-        <url>http://git.oschina.net/eric_ds</url>
+        <url>git@github.com:linbin-eric/Jsql.git</url>
     </scm>
     <developers>
         <developer>
-            <name>linbin</name>
-            <email>eric@jfire.cn</email>
+            <name>jfirer</name>
+            <email>495561397@qq.com</email>
         </developer>
     </developers>
     <dependencies>
         <dependency>
-            <groupId>com.jfirer</groupId>
+            <groupId>cc.jfire</groupId>
             <artifactId>jfireEL</artifactId>
-            <version>1.1-SNAPSHOT</version>
+            <version>1.0</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -96,9 +94,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.jfirer</groupId>
-            <artifactId>dson</artifactId>
-            <version>1.3-SNAPSHOT</version>
+            <groupId>cc.jfire</groupId>
+            <artifactId>Dson</artifactId>
+            <version>1.0</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -108,20 +106,13 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
-    <distributionManagement>
-        <repository>
-            <id>nexus3</id>
-            <name>nexus</name>
-            <url>http://yynas.cn:8081/repository/maven-releases/</url>
-        </repository>
-        <snapshotRepository>
-            <id>nexus3</id>
-            <name>nexus</name>
-            <url>http://yynas.cn:8081/repository/maven-snapshots/</url>
-        </snapshotRepository>
-    </distributionManagement>
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
@@ -139,19 +130,18 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.9.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>central</publishingServerId>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.6.0</version>
-                <configuration>
-                    <encoding>UTF-8</encoding>
-                    <charset>UTF-8</charset>
-                    <docencoding>UTF-8</docencoding>
-                </configuration>
+                <version>3.6.3</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
@@ -160,6 +150,26 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>3.2.4</version>   <!-- 2025年最新版 -->
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <gpgArguments>
+                        <arg>--pinentry-mode</arg>
+                        <arg>loopback</arg>
+                    </gpgArguments>
+                </configuration>
             </plugin>
         </plugins>
     </build>

@@ -1,0 +1,23 @@
+package cc.jfire.jsql.transfer.impl;
+
+import cc.jfire.jsql.transfer.ResultSetTransfer;
+import lombok.SneakyThrows;
+
+import java.sql.ResultSet;
+
+public class LongTransfer implements ResultSetTransfer
+{
+    public static final LongTransfer INSTANCE = new LongTransfer();
+
+    @SneakyThrows
+    @Override
+    public Object transfer(ResultSet resultSet, int columnIndex)
+    {
+        long l = resultSet.getLong(columnIndex);
+        if (resultSet.wasNull())
+        {
+            return null;
+        }
+        return l;
+    }
+}

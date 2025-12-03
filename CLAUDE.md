@@ -44,12 +44,12 @@ mvn test -Dtest=CURDTest#testMethodName
 
 ### 关键组件
 
-1. **SessionFactory** (`com.jfirer.jsql.SessionFactory`)
+1. **SessionFactory** (`cc.jfire.jsql.SessionFactory`)
    - 创建和管理SqlSession实例
    - 框架初始化的入口点
    - 实现类：`SessionFactoryImpl`
 
-2. **SqlSession** (`com.jfirer.jsql.session.SqlSession`)
+2. **SqlSession** (`session.cc.jfire.jsql.SqlSession`)
    - 代表一个数据库连接
    - 提供CRUD操作和mapper访问
    - 支持事务管理（开始、提交、回滚）
@@ -60,7 +60,7 @@ mvn test -Dtest=CURDTest#testMethodName
    - 自动代理生成接口实现
    - 通过`session.getMapper(MapperInterface.class)`访问
 
-4. **Model系统** (`com.jfirer.jsql.model.Model`)
+4. **Model系统** (`model.cc.jfire.jsql.Model`)
    - 流式API构建SQL查询
    - 静态工厂方法：`Model.select()`、`Model.update()`、`Model.insert()`等
    - 通过`SFunction`支持类型安全的lambda表达式
