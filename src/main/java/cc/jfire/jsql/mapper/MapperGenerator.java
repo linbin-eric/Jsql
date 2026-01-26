@@ -77,20 +77,20 @@ public class MapperGenerator
                     FieldModel fieldModel = switch (ReflectUtil.getClassId(resultType))
                     {
                         case ReflectUtil.CLASS_INT,
-                             ReflectUtil.PRIMITIVE_INT -> new FieldModel(transferFieldName, IntegerTransfer.class, "com.jfirer.jsql.transfer.impl.IntegerTransfer.INSTANCE", classModel);
+                             ReflectUtil.PRIMITIVE_INT -> new FieldModel(transferFieldName, IntegerTransfer.class, "cc.jfire.jsql.transfer.impl.IntegerTransfer.INSTANCE", classModel);
                         case ReflectUtil.CLASS_LONG,
-                             ReflectUtil.PRIMITIVE_LONG -> new FieldModel(transferFieldName, LongTransfer.class, "com.jfirer.jsql.transfer.impl.LongTransfer.INSTANCE", classModel);
+                             ReflectUtil.PRIMITIVE_LONG -> new FieldModel(transferFieldName, LongTransfer.class, "cc.jfire.jsql.transfer.impl.LongTransfer.INSTANCE", classModel);
                         case ReflectUtil.CLASS_DOUBLE,
-                             ReflectUtil.PRIMITIVE_DOUBLE -> new FieldModel(transferFieldName, DoubleTransfer.class, "com.jfirer.jsql.transfer.impl.DoubleTransfer.INSTANCE", classModel);
+                             ReflectUtil.PRIMITIVE_DOUBLE -> new FieldModel(transferFieldName, DoubleTransfer.class, "cc.jfire.jsql.transfer.impl.DoubleTransfer.INSTANCE", classModel);
                         case ReflectUtil.CLASS_FLOAT,
-                             ReflectUtil.PRIMITIVE_FLOAT -> new FieldModel(transferFieldName, FloatTransfer.class, "com.jfirer.jsql.transfer.impl.FloatTransfer.INSTANCE", classModel);
-                        case ReflectUtil.CLASS_STRING -> new FieldModel(transferFieldName, StringTransfer.class, "com.jfirer.jsql.transfer.impl.StringTransfer.INSTANCE", classModel);
-                        case ReflectUtil.CLASS_DATE -> new FieldModel(transferFieldName, UtilDateTransfer.class, "com.jfirer.jsql.transfer.impl.UtilDateTransfer.INSTANCE", classModel);
-                        case ReflectUtil.CLASS_SQL_DATE -> new FieldModel(transferFieldName, SqlDateTransfer.class, "com.jfirer.jsql.transfer.impl.SqlDateTransfer.INSTANCE", classModel);
-                        case ReflectUtil.CLASS_TIMESTAMP -> new FieldModel(transferFieldName, TimeStampTransfer.class, "com.jfirer.jsql.transfer.impl.TimeStampTransfer.INSTANCE", classModel);
-                        case ReflectUtil.CLASS_BIGDECIMAL -> new FieldModel(transferFieldName, BigDecimalTransfer.class, "com.jfirer.jsql.transfer.impl.BigDecimalTransfer.INSTANCE", classModel);
+                             ReflectUtil.PRIMITIVE_FLOAT -> new FieldModel(transferFieldName, FloatTransfer.class, "cc.jfire.jsql.transfer.impl.FloatTransfer.INSTANCE", classModel);
+                        case ReflectUtil.CLASS_STRING -> new FieldModel(transferFieldName, StringTransfer.class, "cc.jfire.jsql.transfer.impl.StringTransfer.INSTANCE", classModel);
+                        case ReflectUtil.CLASS_DATE -> new FieldModel(transferFieldName, UtilDateTransfer.class, "cc.jfire.jsql.transfer.impl.UtilDateTransfer.INSTANCE", classModel);
+                        case ReflectUtil.CLASS_SQL_DATE -> new FieldModel(transferFieldName, SqlDateTransfer.class, "cc.jfire.jsql.transfer.impl.SqlDateTransfer.INSTANCE", classModel);
+                        case ReflectUtil.CLASS_TIMESTAMP -> new FieldModel(transferFieldName, TimeStampTransfer.class, "cc.jfire.jsql.transfer.impl.TimeStampTransfer.INSTANCE", classModel);
+                        case ReflectUtil.CLASS_BIGDECIMAL -> new FieldModel(transferFieldName, BigDecimalTransfer.class, "cc.jfire.jsql.transfer.impl.BigDecimalTransfer.INSTANCE", classModel);
                         case ReflectUtil.CLASS_SHORT,
-                             ReflectUtil.PRIMITIVE_SHORT -> new FieldModel(transferFieldName, ShortTransfer.class, "com.jfirer.jsql.transfer.impl.ShortTransfer.INSTANCE", classModel);
+                             ReflectUtil.PRIMITIVE_SHORT -> new FieldModel(transferFieldName, ShortTransfer.class, "cc.jfire.jsql.transfer.impl.ShortTransfer.INSTANCE", classModel);
                         case ReflectUtil.CLASS_OBJECT -> new FieldModel(transferFieldName, BeanTransfer.class, STR.format("new BeanTransfer({}.class)", SmcHelper.getReferenceName(resultType, classModel)), classModel);
                         default -> throw new IllegalArgumentException();
                     };
@@ -267,7 +267,8 @@ public class MapperGenerator
         Sql        annotation        = method.getAnnotation(Sql.class);
         String     formatSql         = SqlLexer.parse(annotation.sql(), ckazzes);
         String     templateFieldName = "template_" + (fieldNameCount.getAndIncrement());
-        FieldModel fieldModel        = new FieldModel(templateFieldName, Template.class, "Template.parse(\"" + formatSql + "\")", classModel);
+        String     escapedSql        = escapeJavaString(formatSql);
+        FieldModel fieldModel        = new FieldModel(templateFieldName, Template.class, "Template.parse(\"" + escapedSql + "\")", classModel);
         classModel.addField(fieldModel);
         Class<?>[] parameterTypes = method.getParameterTypes();
         String     paramNames     = annotation.paramNames();
@@ -286,6 +287,39 @@ public class MapperGenerator
         {
             cache.append("params.add($").append(parameterTypes.length - 1).append(");\r\n");
         }
-        return formatSql;
+        return escapedSql;
+    }
+
+    /**
+     * 将SQL字符串中的换行符、回车符、制表符替换为空格，并转义双引号和反斜杠
+     */
+    private static String escapeJavaString(String str)
+    {
+        if (str == null)
+        {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder(str.length());
+        for (int i = 0; i < str.length(); i++)
+        {
+            char c = str.charAt(i);
+            switch (c)
+            {
+                case '\\':
+                    sb.append("\\\\");
+                    break;
+                case '"':
+                    sb.append("\\\"");
+                    break;
+                case '\n':
+                case '\r':
+                case '\t':
+                    sb.append(' ');
+                    break;
+                default:
+                    sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 }

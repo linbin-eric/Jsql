@@ -209,7 +209,7 @@ public class Template
                     {
                         if (mark != index)
                         {
-                            builder.append("print(outputStr,'").append(content.substring(mark, index)).append("');\r\n");
+                            builder.append("print(outputStr,`").append(content.substring(mark, index)).append("`);\r\n");
                         }
                         mark = index += 2;
                         type = IN_VARIABLE;
@@ -218,7 +218,7 @@ public class Template
                     {
                         if (mark != index)
                         {
-                            builder.append("print(outputStr,'").append(content.substring(mark, index)).append("');\r\n");
+                            builder.append("print(outputStr,`").append(content.substring(mark, index)).append("`);\r\n");
                         }
                         mark = index += 2;
                         type = IN_PARAM;
@@ -227,7 +227,7 @@ public class Template
                     {
                         if (mark != index)
                         {
-                            builder.append("print(outputStr,'").append(content.substring(mark, index)).append("');\r\n");
+                            builder.append("print(outputStr,`").append(content.substring(mark, index)).append("`);\r\n");
                         }
                         mark = index += 2;
                         type = IN_COLLECTION;
@@ -236,7 +236,7 @@ public class Template
                     {
                         if (mark != index)
                         {
-                            builder.append("print(outputStr,'").append(content.substring(mark, index)).append("');\r\n");
+                            builder.append("print(outputStr,`").append(content.substring(mark, index)).append("`);\r\n");
                         }
                         mark = index += 2;
                         type = IN_CODE_AREA;
@@ -295,7 +295,8 @@ public class Template
         }
         if (mark != index)
         {
-            builder.append("print(outputStr,'").append(content.substring(mark, index)).append("');\r\n");
+            //由于 sql 语句可能会采用''来包围固定的参数，所以这里使用 `` 来包围EL表达式中的字符串，避免冲突。
+            builder.append("print(outputStr,`").append(content.substring(mark, index)).append("`);\r\n");
         }
         return new Template(Expression.parse(builder.toString()));
     }

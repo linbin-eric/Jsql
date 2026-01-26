@@ -96,17 +96,17 @@ public class InterfaceGenerateTest
     @Mapper
     public interface test_1
     {
-        @Sql(sql = "select * from User as u where u.name= ${@(com.jfirer.jsql.test.vo.User).xx}", paramNames = "")
+        @Sql(sql = "select * from User as u where u.name= ${@(cc.jfire.jsql.test.vo.User).xx}", paramNames = "")
         List<User> find3();
     }
 
     @Mapper
     public interface test_2
     {
-        @Sql(sql = "select * from User where name = ${@(com.jfirer.jsql.test.vo.User).xx}", paramNames = "")
+        @Sql(sql = "select * from User where name = ${@(cc.jfire.jsql.test.vo.User).xx}", paramNames = "")
         List<User> query();
 
-        @Sql(sql = "update User set name = ${@(com.jfirer.jsql.test.vo.User).xx}", paramNames = "")
+        @Sql(sql = "update User set name = ${@(cc.jfire.jsql.test.vo.User).xx}", paramNames = "")
         int update();
     }
 
@@ -132,7 +132,7 @@ public class InterfaceGenerateTest
     @Mapper
     public interface test_6
     {
-        @Sql(sql = "select * from User where state = ${@(com.jfirer.jsql.test.vo.User$State).off}", paramNames = "")
+        @Sql(sql = "select * from User where state = ${@(cc.jfire.jsql.test.vo.User$State).off}", paramNames = "")
         User find4();
     }
 
