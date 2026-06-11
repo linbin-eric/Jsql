@@ -25,7 +25,7 @@ public class SqlLexerTest
         sql = """
                 select name,age from user where id!=1 
                 and sex=1""";
-        Assert.assertEquals(sql, SqlLexer.parse(sql, User.class));
+        Assert.assertEquals("select name,age from user where id!=1 and sex=1", SqlLexer.parse(sql, User.class));
         //
         sql = "select name , age from user where (name='sada' and sex=1) or age >=13";
         Assert.assertEquals(sql, SqlLexer.parse(sql, User.class));
@@ -56,6 +56,22 @@ public class SqlLexerTest
         //
         sql = "select * from User where name = '1212'";
         Assert.assertEquals("select * from user where name2 = '1212'", SqlLexer.parse(sql, User.class));
+        //
+        sql = """
+                select * from User
+                where name = ${name}
+                """;
+        Assert.assertEquals("select * from user where name2 = ${name}", SqlLexer.parse(sql, User.class));
+        //
+        sql = """
+                select * from User
+                <%  if( name != null) {    %>
+                 where name like ${'%'+name+'%'}
+                <%} else {%>
+                 where id=${id}
+                 <%}%>
+                """;
+        Assert.assertEquals("select * from user <%  if( name != null) {    %> where name2 like ${'%'+name+'%'} <%} else {%> where id = ${id} <%}%>", SqlLexer.parse(sql, User.class));
     }
 
     @Test

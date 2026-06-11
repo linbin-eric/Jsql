@@ -235,10 +235,7 @@ public class SqlLexer
         if (i >= 0)
         {
             char c = s.charAt(i);
-            if (c == ',' || c == '(' || c == ')' ||//
-                c == '!' || c == '#' || c == '>' || c == '<' || c == ';' || c == '?'//
-                || c == ':' || c == '=' || c == '+' || c == '-' || c == '*' || c == '/' || c == '%' || c == '^'//
-                || c == '&' || c == '|' || c == '~' || c == '$' || c == '@' || c == '`' || c == ']' || c == '}' || c == ' ')
+            if (isDelimiter(c))
             {
                 findPre = true;
             }
@@ -255,14 +252,7 @@ public class SqlLexer
         if (i < s.length())
         {
             char c = s.charAt(i);
-            if (c == ' ')
-            {
-                ;
-            }
-            else if (c == ',' || c == ')' ||//
-                     c == '!' || c == '#' || c == '>' || c == '<' || c == ';' || c == '?'//
-                     || c == ':' || c == '=' || c == '+' || c == '-' || c == '*' || c == '/' || c == '%' || c == '^'//
-                     || c == '&' || c == '|' || c == '~' || c == '$' || c == '@' || c == '`' || c == ']' || c == '}')
+            if (isDelimiter(c))
             {
                 findAfter = true;
             }
@@ -272,6 +262,14 @@ public class SqlLexer
             }
         }
         return findAfter;
+    }
+
+    private static boolean isDelimiter(char c)
+    {
+        return Character.isWhitespace(c) || c == ',' || c == '(' || c == ')' ||//
+               c == '!' || c == '#' || c == '>' || c == '<' || c == ';' || c == '?'//
+               || c == ':' || c == '=' || c == '+' || c == '-' || c == '*' || c == '/' || c == '%' || c == '^'//
+               || c == '&' || c == '|' || c == '~' || c == '$' || c == '@' || c == '`' || c == ']' || c == '}';
     }
 
     private static void replaceEntityNameToTableName(List<Segment> list, Map<String, TableEntityInfo> tableEntityInfoMap)
@@ -363,19 +361,19 @@ public class SqlLexer
                 {
                     if (c == '#' && i + 1 < sql.length() && sql.charAt(i + 1) == '{')
                     {
-                        list.addAll(Arrays.stream(sql.substring(start, i).split(" ")).map(str -> new Segment().setType(TEXT).setContent(str)).toList());
+                        addTextSegments(list, sql.substring(start, i));
                         start = i;
                         type  = VARIABLE;
                     }
                     else if (c == '$' && i + 1 < sql.length() && sql.charAt(i + 1) == '{')
                     {
-                        list.addAll(Arrays.stream(sql.substring(start, i).split(" ")).map(str -> new Segment().setType(TEXT).setContent(str)).toList());
+                        addTextSegments(list, sql.substring(start, i));
                         start = i;
                         type  = PARAM;
                     }
                     else if (c == '<' && i + 1 < sql.length() && sql.charAt(i + 1) == '%')
                     {
-                        list.addAll(Arrays.stream(sql.substring(start, i).split(" ")).map(str -> new Segment().setType(TEXT).setContent(str)).toList());
+                        addTextSegments(list, sql.substring(start, i));
                         start = i;
                         type  = EXECUTION;
                     }
@@ -414,9 +412,14 @@ public class SqlLexer
         }
         if (start < sql.length())
         {
-            list.addAll(Arrays.stream(sql.substring(start).split(" ")).map(str -> new Segment().setType(TEXT).setContent(str)).toList());
+            addTextSegments(list, sql.substring(start));
         }
         return list.stream().filter(Predicate.not(segment -> segment.isEmptyText())).toList();
+    }
+
+    private static void addTextSegments(List<Segment> list, String text)
+    {
+        list.addAll(Arrays.stream(text.split("\\s+")).map(str -> new Segment().setType(TEXT).setContent(str)).toList());
     }
 
     @Data

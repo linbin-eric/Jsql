@@ -359,7 +359,7 @@ public class MapperTest2
         /**
          * 因为有了别名，所以实际上是无法映射的
          */
-        Assert.assertEquals(12, testOp.find3("lin").getAge());
+        Assert.assertEquals(0, testOp.find3("lin").getAge());
     }
 
     /**
