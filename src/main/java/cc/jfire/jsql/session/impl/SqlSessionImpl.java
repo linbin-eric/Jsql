@@ -17,8 +17,13 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
+import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -30,7 +35,7 @@ public class SqlSessionImpl implements SqlSession
     private              Connection                               connection;
     private final        SqlExecutor                              headSqlExecutor;
     private final        Dialect                                  dialect;
-    //key：sql+类的简单名称
+    //key：sql+返回类型完整类名
     private static final ConcurrentMap<String, ResultSetTransfer> transferCache  = new ConcurrentHashMap<>();
     private static final Map<Class<?>, ResultSetTransfer>         BASIC_TRANSFER = new HashMap<>();
 
@@ -52,6 +57,13 @@ public class SqlSessionImpl implements SqlSession
         BASIC_TRANSFER.put(BigDecimal.class, BigDecimalTransfer.INSTANCE);
         BASIC_TRANSFER.put(Date.class, UtilDateTransfer.INSTANCE);
         BASIC_TRANSFER.put(java.sql.Date.class, SqlDateTransfer.INSTANCE);
+        BASIC_TRANSFER.put(Timestamp.class, TimeStampTransfer.INSTANCE);
+        BASIC_TRANSFER.put(Time.class, new TimeTransfer());
+        BASIC_TRANSFER.put(Calendar.class, new CalendarTransfer());
+        BASIC_TRANSFER.put(byte[].class, new ByteArrayTransfer());
+        BASIC_TRANSFER.put(Clob.class, new ClobTransfer());
+        BASIC_TRANSFER.put(LocalDate.class, LocalDateTransfer.INSTANCE);
+        BASIC_TRANSFER.put(LocalDateTime.class, LocalDateTimeTransfer.INSTANCE);
     }
 
     public SqlSessionImpl(Connection connection, SqlExecutor headSqlExecutor, Dialect dialect)
@@ -178,18 +190,8 @@ public class SqlSessionImpl implements SqlSession
     {
         Model.ModelResult result = model.getResult();
         String            sql    = result.sql();
-        String            key    = sql + model.getReturnType().getSimpleName();
-        ResultSetTransfer transfer = transferCache.computeIfAbsent(key, s -> {
-            ResultSetTransfer resultSetTransfer = BASIC_TRANSFER.get(model.getReturnType());
-            if (resultSetTransfer != null)
-            {
-                return resultSetTransfer;
-            }
-            else
-            {
-                return new BeanTransfer(model.getReturnType());
-            }
-        });
+        String            key    = sql + model.getReturnType().getName();
+        ResultSetTransfer transfer = transferCache.computeIfAbsent(key, s -> getTransfer(model.getReturnType()));
         return query(sql, transfer, result.paramValues());
     }
 
@@ -198,19 +200,28 @@ public class SqlSessionImpl implements SqlSession
     {
         Model.ModelResult result = model.getResult();
         String            sql    = result.sql();
-        String            key    = sql + model.getReturnType().getSimpleName();
-        ResultSetTransfer transfer = transferCache.computeIfAbsent(key, s -> {
-            ResultSetTransfer resultSetTransfer = BASIC_TRANSFER.get(model.getReturnType());
-            if (resultSetTransfer != null)
-            {
-                return resultSetTransfer;
-            }
-            else
-            {
-                return new BeanTransfer(model.getReturnType());
-            }
-        });
+        String            key    = sql + model.getReturnType().getName();
+        ResultSetTransfer transfer = transferCache.computeIfAbsent(key, s -> getTransfer(model.getReturnType()));
         return queryList(sql, transfer, result.paramValues());
+    }
+
+    private static ResultSetTransfer getTransfer(Class<?> returnType)
+    {
+        ResultSetTransfer resultSetTransfer = BASIC_TRANSFER.get(returnType);
+        if (resultSetTransfer != null)
+        {
+            return resultSetTransfer;
+        }
+        else if (returnType.isEnum())
+        {
+            EnumNameTransfer enumNameTransfer = new EnumNameTransfer();
+            enumNameTransfer.awareType(returnType);
+            return enumNameTransfer;
+        }
+        else
+        {
+            return new BeanTransfer(returnType);
+        }
     }
 
     @Override

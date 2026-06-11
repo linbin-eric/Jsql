@@ -16,11 +16,15 @@ import cc.jfire.jsql.metadata.TableEntityInfo;
 import cc.jfire.jsql.model.Model;
 import cc.jfire.jsql.model.Param;
 import cc.jfire.jsql.session.SqlSession;
+import cc.jfire.jsql.transfer.CustomTransfer;
+import cc.jfire.jsql.transfer.ResultSetTransfer;
 import cc.jfire.jsql.transfer.impl.*;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -74,26 +78,7 @@ public class MapperGenerator
                     {
                         resultType = method.getReturnType();
                     }
-                    FieldModel fieldModel = switch (ReflectUtil.getClassId(resultType))
-                    {
-                        case ReflectUtil.CLASS_INT,
-                             ReflectUtil.PRIMITIVE_INT -> new FieldModel(transferFieldName, IntegerTransfer.class, "cc.jfire.jsql.transfer.impl.IntegerTransfer.INSTANCE", classModel);
-                        case ReflectUtil.CLASS_LONG,
-                             ReflectUtil.PRIMITIVE_LONG -> new FieldModel(transferFieldName, LongTransfer.class, "cc.jfire.jsql.transfer.impl.LongTransfer.INSTANCE", classModel);
-                        case ReflectUtil.CLASS_DOUBLE,
-                             ReflectUtil.PRIMITIVE_DOUBLE -> new FieldModel(transferFieldName, DoubleTransfer.class, "cc.jfire.jsql.transfer.impl.DoubleTransfer.INSTANCE", classModel);
-                        case ReflectUtil.CLASS_FLOAT,
-                             ReflectUtil.PRIMITIVE_FLOAT -> new FieldModel(transferFieldName, FloatTransfer.class, "cc.jfire.jsql.transfer.impl.FloatTransfer.INSTANCE", classModel);
-                        case ReflectUtil.CLASS_STRING -> new FieldModel(transferFieldName, StringTransfer.class, "cc.jfire.jsql.transfer.impl.StringTransfer.INSTANCE", classModel);
-                        case ReflectUtil.CLASS_DATE -> new FieldModel(transferFieldName, UtilDateTransfer.class, "cc.jfire.jsql.transfer.impl.UtilDateTransfer.INSTANCE", classModel);
-                        case ReflectUtil.CLASS_SQL_DATE -> new FieldModel(transferFieldName, SqlDateTransfer.class, "cc.jfire.jsql.transfer.impl.SqlDateTransfer.INSTANCE", classModel);
-                        case ReflectUtil.CLASS_TIMESTAMP -> new FieldModel(transferFieldName, TimeStampTransfer.class, "cc.jfire.jsql.transfer.impl.TimeStampTransfer.INSTANCE", classModel);
-                        case ReflectUtil.CLASS_BIGDECIMAL -> new FieldModel(transferFieldName, BigDecimalTransfer.class, "cc.jfire.jsql.transfer.impl.BigDecimalTransfer.INSTANCE", classModel);
-                        case ReflectUtil.CLASS_SHORT,
-                             ReflectUtil.PRIMITIVE_SHORT -> new FieldModel(transferFieldName, ShortTransfer.class, "cc.jfire.jsql.transfer.impl.ShortTransfer.INSTANCE", classModel);
-                        case ReflectUtil.CLASS_OBJECT -> new FieldModel(transferFieldName, BeanTransfer.class, STR.format("new BeanTransfer({}.class)", SmcHelper.getReferenceName(resultType, classModel)), classModel);
-                        default -> throw new IllegalArgumentException();
-                    };
+                    FieldModel fieldModel = buildTransferFieldModel(method, resultType, transferFieldName, classModel);
                     classModel.addField(fieldModel);
                     if (List.class.isAssignableFrom(method.getReturnType()))
                     {
@@ -148,6 +133,68 @@ public class MapperGenerator
             ReflectUtil.throwException(e);
             return null;
         }
+    }
+
+    public static ResultSetTransfer createTransfer(Class<? extends ResultSetTransfer> transferClass, Class<?> resultType)
+    {
+        try
+        {
+            ResultSetTransfer transfer = transferClass.getDeclaredConstructor().newInstance();
+            transfer.awareType(resultType);
+            return transfer;
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static FieldModel buildTransferFieldModel(Method method, Class resultType, String transferFieldName, ClassModel classModel)
+    {
+        if (method.isAnnotationPresent(CustomTransfer.class))
+        {
+            return buildAwareTransferFieldModel(transferFieldName, method.getAnnotation(CustomTransfer.class).value(), resultType, classModel);
+        }
+        if (resultType == LocalDate.class)
+        {
+            return new FieldModel(transferFieldName, LocalDateTransfer.class, "cc.jfire.jsql.transfer.impl.LocalDateTransfer.INSTANCE", classModel);
+        }
+        else if (resultType == LocalDateTime.class)
+        {
+            return new FieldModel(transferFieldName, LocalDateTimeTransfer.class, "cc.jfire.jsql.transfer.impl.LocalDateTimeTransfer.INSTANCE", classModel);
+        }
+        return switch (ReflectUtil.getClassId(resultType))
+        {
+            case ReflectUtil.CLASS_INT,
+                 ReflectUtil.PRIMITIVE_INT -> new FieldModel(transferFieldName, IntegerTransfer.class, "cc.jfire.jsql.transfer.impl.IntegerTransfer.INSTANCE", classModel);
+            case ReflectUtil.CLASS_BOOL,
+                 ReflectUtil.PRIMITIVE_BOOL -> new FieldModel(transferFieldName, BooleanTransfer.class, "cc.jfire.jsql.transfer.impl.BooleanTransfer.INSTANCE", classModel);
+            case ReflectUtil.CLASS_LONG,
+                 ReflectUtil.PRIMITIVE_LONG -> new FieldModel(transferFieldName, LongTransfer.class, "cc.jfire.jsql.transfer.impl.LongTransfer.INSTANCE", classModel);
+            case ReflectUtil.CLASS_DOUBLE,
+                 ReflectUtil.PRIMITIVE_DOUBLE -> new FieldModel(transferFieldName, DoubleTransfer.class, "cc.jfire.jsql.transfer.impl.DoubleTransfer.INSTANCE", classModel);
+            case ReflectUtil.CLASS_FLOAT,
+                 ReflectUtil.PRIMITIVE_FLOAT -> new FieldModel(transferFieldName, FloatTransfer.class, "cc.jfire.jsql.transfer.impl.FloatTransfer.INSTANCE", classModel);
+            case ReflectUtil.CLASS_STRING -> new FieldModel(transferFieldName, StringTransfer.class, "cc.jfire.jsql.transfer.impl.StringTransfer.INSTANCE", classModel);
+            case ReflectUtil.CLASS_DATE -> new FieldModel(transferFieldName, UtilDateTransfer.class, "cc.jfire.jsql.transfer.impl.UtilDateTransfer.INSTANCE", classModel);
+            case ReflectUtil.CLASS_SQL_DATE -> new FieldModel(transferFieldName, SqlDateTransfer.class, "cc.jfire.jsql.transfer.impl.SqlDateTransfer.INSTANCE", classModel);
+            case ReflectUtil.CLASS_TIMESTAMP -> new FieldModel(transferFieldName, TimeStampTransfer.class, "cc.jfire.jsql.transfer.impl.TimeStampTransfer.INSTANCE", classModel);
+            case ReflectUtil.CLASS_TIME -> new FieldModel(transferFieldName, TimeTransfer.class, "new cc.jfire.jsql.transfer.impl.TimeTransfer()", classModel);
+            case ReflectUtil.CLASS_BIGDECIMAL -> new FieldModel(transferFieldName, BigDecimalTransfer.class, "cc.jfire.jsql.transfer.impl.BigDecimalTransfer.INSTANCE", classModel);
+            case ReflectUtil.CLASS_SHORT,
+                 ReflectUtil.PRIMITIVE_SHORT -> new FieldModel(transferFieldName, ShortTransfer.class, "cc.jfire.jsql.transfer.impl.ShortTransfer.INSTANCE", classModel);
+            case ReflectUtil.CLASS_CALENDAR -> new FieldModel(transferFieldName, CalendarTransfer.class, "new cc.jfire.jsql.transfer.impl.CalendarTransfer()", classModel);
+            case ReflectUtil.PRIMITIVE_BYTE_ARRAY -> new FieldModel(transferFieldName, ByteArrayTransfer.class, "new cc.jfire.jsql.transfer.impl.ByteArrayTransfer()", classModel);
+            case ReflectUtil.CLASS_CLOB -> new FieldModel(transferFieldName, ClobTransfer.class, "new cc.jfire.jsql.transfer.impl.ClobTransfer()", classModel);
+            case ReflectUtil.CLASS_ENUM -> buildAwareTransferFieldModel(transferFieldName, EnumNameTransfer.class, resultType, classModel);
+            case ReflectUtil.CLASS_OBJECT -> new FieldModel(transferFieldName, BeanTransfer.class, STR.format("new BeanTransfer({}.class)", SmcHelper.getReferenceName(resultType, classModel)), classModel);
+            default -> throw new IllegalArgumentException();
+        };
+    }
+
+    private static FieldModel buildAwareTransferFieldModel(String transferFieldName, Class<? extends ResultSetTransfer> transferClass, Class resultType, ClassModel classModel)
+    {
+        return new FieldModel(transferFieldName, ResultSetTransfer.class, STR.format("cc.jfire.jsql.mapper.MapperGenerator.createTransfer({}.class, {}.class)", SmcHelper.getReferenceName(transferClass, classModel), SmcHelper.getReferenceName(resultType, classModel)), classModel);
     }
 
     private static void addCount(Class<?> ckass, ClassModel classModel, Class<?> repositoryEntityClass) throws NoSuchMethodException

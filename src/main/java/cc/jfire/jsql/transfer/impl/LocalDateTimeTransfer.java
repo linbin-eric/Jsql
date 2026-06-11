@@ -15,7 +15,7 @@ public class LocalDateTimeTransfer implements ResultSetTransfer
     public Object transfer(ResultSet resultSet, int columnIndex)
     {
         Timestamp timestamp = resultSet.getTimestamp(columnIndex);
-        if (timestamp == null)
+        if (timestamp != null)
         {
             return timestamp.toLocalDateTime();
         }

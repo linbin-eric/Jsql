@@ -19,6 +19,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Calendar;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -131,6 +135,31 @@ public class ModelTest2
         Assert.assertEquals(1, result);
         user = sqlSession.findOne(Model.selectAll().from(User.class).where(Param.eq(User::getAge, 1)));
         Assert.assertNotNull(user);
+    }
+
+    @Test
+    public void testDirectReturnTransfer()
+    {
+        Boolean b = sqlSession.findOne(Model.select(User::isB).from(User.class).where(Param.eq(User::getId, 1)));
+        Assert.assertTrue(b);
+
+        User.StringEnum stringEnum = sqlSession.findOne(Model.select(User::getStringEnum).from(User.class).where(Param.eq(User::getId, 1)));
+        Assert.assertEquals(User.StringEnum.v1, stringEnum);
+
+        LocalDate localDate = sqlSession.findOne(Model.select(User::getSqlDate).from(User.class).where(Param.eq(User::getId, 1)).returnType(LocalDate.class));
+        Assert.assertNotNull(localDate);
+
+        Calendar calendar = sqlSession.findOne(Model.select(User::getCalendar).from(User.class).where(Param.eq(User::getId, 1)));
+        Assert.assertNotNull(calendar);
+
+        Timestamp timestamp = sqlSession.findOne(Model.select(User::getCalendar).from(User.class).where(Param.eq(User::getId, 1)).returnType(Timestamp.class));
+        Assert.assertNotNull(timestamp);
+
+        LocalDateTime localDateTime = sqlSession.findOne(Model.select(User::getCalendar).from(User.class).where(Param.eq(User::getId, 1)).returnType(LocalDateTime.class));
+        Assert.assertNotNull(localDateTime);
+
+        byte[] barray = sqlSession.findOne(Model.select(User::getBarray).from(User.class).where(Param.eq(User::getId, 1)));
+        Assert.assertArrayEquals(new byte[]{1, 2}, barray);
     }
 
     @Test

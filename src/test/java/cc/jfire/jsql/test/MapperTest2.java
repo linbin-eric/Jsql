@@ -24,6 +24,9 @@ import org.junit.Test;
 import java.sql.PreparedStatement;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -151,7 +154,7 @@ public class MapperTest2
 
         /* 测试page */
         /* 静态常量 */
-        @Sql(sql = "select * from User where name = ${@(com.jfirer.jsql.test.vo.User).customName}", paramNames = "")
+        @Sql(sql = "select * from User where name = ${@(cc.jfire.jsql.test.vo.User).customName}", paramNames = "")
         User find3();
         /* 静态常量 */
 
@@ -187,6 +190,29 @@ public class MapperTest2
 
         @Sql(sql = "select F11 from User where id=1", paramNames = "")
         float findByTransfer_7();
+
+        @Sql(sql = "select cast('2020-01-02' as date)", paramNames = "")
+        LocalDate findByTransfer_8();
+
+        @Sql(sql = "select cast('2020-01-02 03:04:05' as timestamp)", paramNames = "")
+        LocalDateTime findByTransfer_9();
+
+        @Sql(sql = "select barray from User where id=1", paramNames = "")
+        byte[] findByTransfer_10();
+
+        @Sql(sql = "select calendar from User where id=1", paramNames = "")
+        Calendar findByTransfer_11();
+
+        @Sql(sql = "select stringEnum from User order by id", paramNames = "")
+        List<User.StringEnum> findByTransfer_12();
+
+        @CustomTransfer(EnumOrdinalTransfer.class)
+        @Sql(sql = "select 1", paramNames = "")
+        User.State findByTransfer_13();
+
+        @CustomTransfer(EnumOrdinalTransfer.class)
+        @Sql(sql = "select 0 union all select 1", paramNames = "")
+        List<User.State> findByTransfer_14();
         /* 测试Transfer */
 
         /*
@@ -409,6 +435,17 @@ public class MapperTest2
         assertNotNull(testOp.findByTransfer_5());
         assertNotNull(testOp.findByTransfer_6());
         assertEquals(5.69f, testOp.findByTransfer_7(), 0.0001);
+        assertEquals(LocalDate.of(2020, 1, 2), testOp.findByTransfer_8());
+        assertEquals(LocalDateTime.of(2020, 1, 2, 3, 4, 5), testOp.findByTransfer_9());
+        assertArrayEquals(new byte[]{1, 2}, testOp.findByTransfer_10());
+        assertNotNull(testOp.findByTransfer_11());
+        List<User.StringEnum> stringEnums = testOp.findByTransfer_12();
+        assertEquals(User.StringEnum.v1, stringEnums.get(0));
+        assertEquals(User.StringEnum.v2, stringEnums.get(1));
+        assertEquals(User.State.on, testOp.findByTransfer_13());
+        List<User.State> states = testOp.findByTransfer_14();
+        assertEquals(User.State.off, states.get(0));
+        assertEquals(User.State.on, states.get(1));
     }
 
     /**
